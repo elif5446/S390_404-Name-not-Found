@@ -36,7 +36,8 @@ graph TB
         NotificationService[Notification Service]
     end
     
-    UI --> Gateway
+    WebApp --> UI
+    MobileApp --> UI
     WebApp --> Gateway
     MobileApp --> Gateway
     

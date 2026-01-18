@@ -12,8 +12,6 @@ erDiagram
     USER ||--o{ COMMENT : writes
     POST ||--o{ COMMENT : contains
     POST }o--o{ CATEGORY : "belongs to"
-    POST }o--o{ POST_CATEGORY : through
-    CATEGORY }o--o{ POST_CATEGORY : through
     
     USER {
         varchar user_id PK
@@ -56,7 +54,7 @@ erDiagram
         varchar post_id FK
         varchar user_id FK
         text content
-        varchar parent_comment_id FK
+        varchar parent_comment_id FK "nullable"
         timestamp created_at
         timestamp updated_at
     }
@@ -101,7 +99,7 @@ Represents content created by users.
 - **Relationships**: 
   - Belongs to one USER
   - Contains many COMMENTs
-  - Belongs to many CATEGORYs (through POST_CATEGORY)
+  - Belongs to many CATEGORIES (through POST_CATEGORY)
 
 ### COMMENT
 Represents user comments on posts.
