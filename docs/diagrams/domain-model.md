@@ -11,7 +11,7 @@ classDiagram
         +String userId
         +String username
         +String email
-        +String password
+        +String passwordHash
         +Date createdAt
         +login()
         +logout()

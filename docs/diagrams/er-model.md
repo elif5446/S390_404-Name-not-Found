@@ -75,6 +75,8 @@ erDiagram
     }
 ```
 
+**Note:** In POST_CATEGORY, both fields are marked as "PK,FK" indicating they form a composite primary key and are also foreign keys to their respective tables.
+
 ## Entity Descriptions
 
 ### USER
