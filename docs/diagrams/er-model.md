@@ -69,8 +69,8 @@ erDiagram
     }
     
     POST_CATEGORY {
-        varchar post_id FK
-        varchar category_id FK
+        varchar post_id PK,FK
+        varchar category_id PK,FK
         timestamp created_at
     }
 ```

@@ -65,9 +65,9 @@ graph TB
 ## Component Descriptions
 
 ### Frontend Layer
-- **User Interface**: Common UI components and design system
-- **Web Application**: Browser-based client application
-- **Mobile Application**: Native/hybrid mobile client
+- **User Interface**: Shared UI component library containing reusable components, design system, and common UI elements used by both web and mobile applications
+- **Web Application**: Browser-based client application that uses the UI library and communicates with the API Gateway
+- **Mobile Application**: Native/hybrid mobile client that uses the UI library and communicates with the API Gateway
 
 ### API Gateway
 - **API Gateway**: Central entry point for all client requests, handles routing and load balancing
