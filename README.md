@@ -12,4 +12,11 @@
 |Kristi Doce|40155592 |@dokilax|
 |Yasmeen Adi|40223656|@yas176|
 |Marwa Hammani|40289362|@rwatoun|  
-|Justyne Phan|40278509|@JustynePhan|  
+|Justyne Phan|40278509|@JustynePhan|
+
+## Documentation
+
+- [Project Documentation](docs/README.md) - System design and architecture
+  - [Domain Model](docs/diagrams/domain-model.md)
+  - [Component Diagram](docs/diagrams/component-diagram.md)
+  - [ER Model](docs/diagrams/er-model.md)  
