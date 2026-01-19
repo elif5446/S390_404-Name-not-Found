@@ -10,12 +10,12 @@ frontend/ios/Pods/
 frontend/*.log
 
 # Backend (Python)
-backend/venv/
-backend/__pycache__/
-backend/*.pyc
-backend/.env
-backend/.pytest_cache/
-backend/instance/
+#backend/venv/
+#backend/__pycache__/
+#backend/*.pyc
+#backend/.env
+#backend/.pytest_cache/
+#backend/instance/
 
 # IDE
 .vscode/
