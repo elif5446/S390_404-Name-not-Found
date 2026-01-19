@@ -1,7 +1,7 @@
 # S390_404-Name-not-Found
 
 ## Team Members
-| Full Name      | Username     | Student ID |
+| Full Name      | Student ID   | GitHub Username |
 | -------------- | ------------ | ---------- |
 |Carla Chamandi|40300354|@Carlaeatdirt|
 |Nicole Antoun|40284018|@nicoledesigns|  
