@@ -1,0 +1,32 @@
+name: SonarCloud Analysis
+
+on:
+  push:
+    branches: ["main", "dev"]
+  pull_request:
+    branches: ["main", "dev"]
+
+permissions:
+  contents: read
+  pull_requests: read
+
+jobs:
+  sonarcloud:
+    runs-on: ubuntu_latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # add backend folder when we have it
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@689fb39b34b9aa95ebc5f8f119343ddd51542402
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.organization=elif5446
+            -Dsonar.projectKey=elif5446_S390_404-Name-not-Found
+            -Dsonar.sources=frontend
+            -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**
