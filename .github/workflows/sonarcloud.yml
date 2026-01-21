@@ -21,12 +21,12 @@ jobs:
 
       # add backend folder when we have it
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v3
+        uses: SonarSource/sonarqube-scan-action
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
-            -Dsonar.organization=YOUR_ORG_KEY
-            -Dsonar.projectKey=YOUR_PROJECT_KEY
+            -Dsonar.organization=elif5446
+            -Dsonar.projectKey=elif5446_S390_404-Name-not-Found
             -Dsonar.sources=frontend
             -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**
