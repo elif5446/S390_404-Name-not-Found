@@ -1,0 +1,32 @@
+name: SonarCloud Analysis
+
+on:
+  push:
+    branches: ["main", "dev"]
+  pull_request:
+    branches: ["main", "dev"]
+
+permissions:
+  contents: read
+  pull_requests: read
+
+jobs:
+  sonarcloud:
+    runs-on: ubuntu_latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # add backend folder when we have it
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v3
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.organization=YOUR_ORG_KEY
+            -Dsonar.projectKey=YOUR_PROJECT_KEY
+            -Dsonar.sources=frontend
+            -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**
