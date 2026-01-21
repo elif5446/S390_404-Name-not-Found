@@ -21,7 +21,7 @@ jobs:
 
       # add backend folder when we have it
       - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action
+        uses: SonarSource/sonarqube-scan-action@689fb39b34b9aa95ebc5f8f119343ddd51542402
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
