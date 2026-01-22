@@ -1,0 +1,140 @@
+name: Release Quality Report 
+
+on:
+  push:
+    tags:
+      - "v*.*.*"   
+
+permissions:
+  contents: write   
+
+jobs:
+  release_report:
+    runs-on: ubuntu-latest
+
+    env:
+      SONAR_ORG: ${{ secrets.SONAR_ORG }}
+      SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8
+        with:
+          fetch-depth: 0
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@689fb39b34b9aa95ebc5f8f119343ddd51542402
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.organization=${{ secrets.SONAR_ORG }}
+            -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
+            -Dsonar.sources=frontend,backend
+            -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**,**/.venv/**,**/__pycache__/**
+
+      - name: Generate SonarCloud report 
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          VERSION: ${{ github.ref_name }} 
+        run: |
+          set -e
+          mkdir -p out
+
+          REPORT="out/Code-Quality-${VERSION}.md"
+
+          # Fetch key measures
+          curl -s -u "${SONAR_TOKEN}:" \
+            "https://sonarcloud.io/api/measures/component?component=${SONAR_PROJECT_KEY}&metricKeys=alert_status,ncloc,duplicated_lines_density,comment_lines_density,cognitive_complexity,sqale_index,bugs,vulnerabilities,code_smells,security_hotspots" \
+            > out/metrics.json
+
+          # Helper to get metric value by key (prints N/A if missing)
+          metric () {
+            jq -r --arg k "$1" '.component.measures[]? | select(.metric==$k) | .value' out/metrics.json | head -n 1
+          }
+          val_or_na () {
+            v="$(metric "$1")"
+            if [ -z "$v" ] || [ "$v" = "null" ]; then echo "N/A"; else echo "$v"; fi
+          }
+
+          QUALITY_GATE="$(val_or_na alert_status)"
+          LOC="$(val_or_na ncloc)"
+          DUP="$(val_or_na duplicated_lines_density)"
+          DOC="$(val_or_na comment_lines_density)"
+          CCO="$(val_or_na cognitive_complexity)"
+          DEBT_MIN="$(val_or_na sqale_index)"
+          BUGS="$(val_or_na bugs)"
+          VULNS="$(val_or_na vulnerabilities)"
+          SMELLS="$(val_or_na code_smells)"
+          HOTSPOTS="$(val_or_na security_hotspots)"
+
+          # Convert sqale_index to human-readable if numeric
+          if echo "$DEBT_MIN" | grep -Eq '^[0-9]+(\.[0-9]+)?$'; then
+            DEBT_INT=$(printf "%.0f" "$DEBT_MIN")
+            HOURS=$((DEBT_INT / 60))
+            MINS=$((DEBT_INT % 60))
+            TECH_DEBT="${HOURS}h ${MINS}m"
+          else
+            TECH_DEBT="$DEBT_MIN"
+          fi
+
+          {
+            echo "# Code Quality and Security Report – ${VERSION}"
+            echo ""
+            echo "**Release tag:** \`${VERSION}\`"
+            echo "**Commit:** \`${GITHUB_SHA}\`"
+            echo "**Generated (UTC):** \`$(date -u +'%Y-%m-%d %H:%M')\`"
+            echo ""
+            echo "## Quality Gate"
+            echo "- Status: **${QUALITY_GATE}**"
+            echo ""
+            echo "## Software Metrics (Current Release)"
+            echo "| Category | Metric | Value |"
+            echo "|---|---|---:|"
+            echo "| Size | Lines of Code (ncloc) | ${LOC} |"
+            echo "| Duplication | Duplicated Lines (%) | ${DUP} |"
+            echo "| Documentation | Comment Density (%) | ${DOC} |"
+            echo "| Complexity | Cognitive Complexity | ${CCO} |"
+            echo ""
+            echo "## Maintainability / Technical Debt"
+            echo "| Metric | Value |"
+            echo "|---|---:|"
+            echo "| Technical Debt (est.) | ${TECH_DEBT} |"
+            echo "| Code Smells (convention violations proxy) | ${SMELLS} |"
+            echo ""
+            echo "## Reliability & Security"
+            echo "| Metric | Value |"
+            echo "|---|---:|"
+            echo "| Bugs | ${BUGS} |"
+            echo "| Vulnerabilities | ${VULNS} |"
+            echo "| Security Hotspots | ${HOTSPOTS} |"
+            echo ""
+            echo "## Notes"
+            echo "- This report is generated automatically from SonarCloud measures for the tagged release."
+          } > "$REPORT"
+
+          echo "Generated $REPORT"
+          ls -la out
+
+      - name: Publish report to GitHub Wiki (one page per release)
+        env:
+          VERSION: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+
+          git config --global user.email "github-actions@github.com"
+          git config --global user.name "github-actions"
+
+          # Clone wiki repo
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.wiki.git" wiki
+
+          # One page per release
+          PAGE="wiki/Code-Quality-${VERSION}.md"
+          cp "out/Code-Quality-${VERSION}.md" "$PAGE"
+
+          cd wiki
+          git add .
+          git commit -m "Add SonarCloud quality report for ${VERSION}" || echo "No changes to commit."
+          git push
