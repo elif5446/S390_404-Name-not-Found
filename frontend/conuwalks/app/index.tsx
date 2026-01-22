@@ -1,6 +1,6 @@
-import { Text, View } from "react-native";
+import { Text, View, Button } from "react-native";
 
-export default function Index() {
+export default function HomePage() {
   return (
     <View
       style={{

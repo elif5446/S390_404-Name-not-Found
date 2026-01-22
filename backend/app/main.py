@@ -1,7 +1,19 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.routes import tester
 
-app = FastAPI(title="Backend API")
+app = FastAPI()
 
-@app.get("/health")
-def health():
-    return {"status": "ok"}
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # dev only
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.include_router(tester.router, prefix="/tester")
+
+@app.get("/")
+def root():
+    return {"status": "API running"}
