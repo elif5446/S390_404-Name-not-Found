@@ -3,17 +3,23 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
 
 ## How to run
 
-1. Install dependencies
+1. `cd frontend/conuwalks`
+2. Install dependencies
 
    ```bash
    npm install
    ```
 
-2. Start the app
+3. Start the app
 
    ```bash
    npx expo start
    ```
+4. Scan QR code to run Expo Go on your mobile phone or press w to open browser view
+
+Note: If running expo go at school you need to either 
+- `npx expo start --tunnel`
+- or connect your phone and laptop to your own personal data
 
 In the output, you'll find options to open the app in a
 
