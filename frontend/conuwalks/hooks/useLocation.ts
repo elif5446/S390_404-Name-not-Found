@@ -23,12 +23,19 @@ export function useLocation(): UseLocationReturn {
       const { status } = await Location.requestForegroundPermissionsAsync();
       setPermissionStatus(status);
       
-      if (status !== Location.PermissionStatus.GRANTED) {
+      if (status === Location.PermissionStatus.DENIED) {
         setErrorMsg('Permission to access location was denied');
         return;
       }
+      
+      if (status !== Location.PermissionStatus.GRANTED) {
+        setErrorMsg('Unable to get location permission');
+        return;
+      }
 
-      const currentLocation = await Location.getCurrentPositionAsync({});
+      const currentLocation = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.Balanced,
+      });
       setLocation({
         latitude: currentLocation.coords.latitude,
         longitude: currentLocation.coords.longitude,
@@ -44,6 +51,21 @@ export function useLocation(): UseLocationReturn {
     (async () => {
       const { status } = await Location.getForegroundPermissionsAsync();
       setPermissionStatus(status);
+      
+      // If permission is already granted, fetch location automatically
+      if (status === Location.PermissionStatus.GRANTED) {
+        try {
+          const currentLocation = await Location.getCurrentPositionAsync({
+            accuracy: Location.Accuracy.Balanced,
+          });
+          setLocation({
+            latitude: currentLocation.coords.latitude,
+            longitude: currentLocation.coords.longitude,
+          });
+        } catch (error) {
+          setErrorMsg(`Error getting location: ${error}`);
+        }
+      }
     })();
   }, []);
 
