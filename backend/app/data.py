@@ -1,4 +1,5 @@
 from app.models import Building
+from typing import List, Optional
 
 # Sample buildings for both SGW and Loyola campuses
 BUILDINGS = {
@@ -72,16 +73,16 @@ BUILDINGS = {
 }
 
 
-def get_all_buildings() -> list[Building]:
+def get_all_buildings() -> List[Building]:
     """Get all buildings"""
     return list(BUILDINGS.values())
 
 
-def get_building_by_id(building_id: str) -> Building | None:
+def get_building_by_id(building_id: str) -> Optional[Building]:
     """Get a building by its ID"""
     return BUILDINGS.get(building_id)
 
 
-def get_buildings_by_campus(campus: str) -> list[Building]:
+def get_buildings_by_campus(campus: str) -> List[Building]:
     """Get all buildings for a specific campus"""
     return [b for b in BUILDINGS.values() if b.campus == campus]

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Literal
+from typing import Literal, List
 
 
 class Building(BaseModel):
@@ -24,5 +24,5 @@ class DirectionsResponse(BaseModel):
     destination: Building
     distance_km: float
     estimated_time_minutes: int
-    instructions: list[str]
+    instructions: List[str]
     requires_shuttle: bool

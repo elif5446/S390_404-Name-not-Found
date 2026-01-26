@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from typing import List, Optional
 from app.models import DirectionsRequest, DirectionsResponse, Building
 from app.data import get_all_buildings, get_building_by_id, get_buildings_by_campus
 from app.routes import generate_directions
@@ -7,6 +8,7 @@ from app.routes import generate_directions
 app = FastAPI(title="ConuWalks API")
 
 # Enable CORS for frontend
+# TODO: In production, replace '*' with specific frontend origin(s) from environment config
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # In production, specify exact origins
@@ -21,8 +23,8 @@ def health():
     return {"status": "ok"}
 
 
-@app.get("/buildings", response_model=list[Building])
-def get_buildings(campus: str | None = None):
+@app.get("/buildings", response_model=List[Building])
+def get_buildings(campus: Optional[str] = None):
     """Get all buildings, optionally filtered by campus"""
     if campus:
         if campus not in ["SGW", "Loyola"]:
