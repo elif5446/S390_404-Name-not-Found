@@ -14,6 +14,9 @@ const BUILDINGS = [
 ];
 
 // Replace with your actual Google Maps API Key
+// SECURITY NOTE: In production, consider using a backend proxy to hide the API key
+// from client-side requests and prevent unauthorized usage. For now, use API key
+// restrictions in Google Cloud Console (limit to your app's package name/bundle ID).
 const GOOGLE_MAPS_API_KEY = 'YOUR_GOOGLE_MAPS_API_KEY';
 
 interface Building {

@@ -21,7 +21,11 @@ This feature allows users to see directions between buildings on the Concordia U
    - Maps SDK for iOS
    - Directions API
 4. Create credentials (API Key)
-5. (Optional) Restrict the API key to your app's package name for security
+5. **IMPORTANT**: Restrict the API key for security:
+   - Go to API Key settings in Google Cloud Console
+   - Add application restrictions (iOS bundle ID / Android package name)
+   - Add API restrictions (limit to Maps SDK and Directions API only)
+   - Set usage quotas to prevent excessive billing
 
 ### 2. Configure API Key
 
@@ -30,9 +34,17 @@ Replace `YOUR_GOOGLE_MAPS_API_KEY` in the following files with your actual API k
 - `app.json` (3 places: iOS config, Android config, and react-native-maps plugin)
 - `app/index.tsx` (GOOGLE_MAPS_API_KEY constant)
 
+**Security Best Practices:**
+- Never commit real API keys to version control
+- Use environment variables for sensitive configuration
+- Consider implementing a backend proxy to hide the API key from client-side code
+- Set up billing alerts in Google Cloud Console
+- Regularly monitor API usage
+
 Alternatively, you can use environment variables:
 1. Copy `.env.example` to `.env`
 2. Add your API key to the `.env` file
+3. Add `.env` to your `.gitignore`
 3. Update the code to read from environment variables
 
 ### 3. Install Dependencies

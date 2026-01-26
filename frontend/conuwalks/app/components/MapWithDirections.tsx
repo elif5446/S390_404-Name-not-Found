@@ -42,7 +42,28 @@ const MapWithDirections: React.FC<MapWithDirectionsProps> = ({
       const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${origin}&destination=${destination}&mode=walking&key=${googleMapsApiKey}`;
       
       const response = await fetch(url);
+      
+      // Check HTTP response status
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
+
+      // Check Google Directions API response status
+      if (data.status !== 'OK') {
+        if (data.status === 'ZERO_RESULTS') {
+          console.warn('No route found between the selected buildings');
+        } else if (data.status === 'OVER_QUERY_LIMIT') {
+          console.error('Google Directions API query limit exceeded');
+        } else if (data.status === 'REQUEST_DENIED') {
+          console.error('Google Directions API request denied. Check your API key configuration.');
+        } else {
+          console.error(`Google Directions API error: ${data.status}`);
+        }
+        setRouteCoordinates([]);
+        return;
+      }
 
       if (data.routes && data.routes.length > 0) {
         const points = decodePolyline(data.routes[0].overview_polyline.points);
@@ -50,6 +71,7 @@ const MapWithDirections: React.FC<MapWithDirectionsProps> = ({
       }
     } catch (error) {
       console.error('Error fetching directions:', error);
+      setRouteCoordinates([]);
     }
   }, [startBuilding, destinationBuilding, googleMapsApiKey]);
 
