@@ -38,8 +38,6 @@ jobs:
         timeout-minutes: 5
         with:
           pollingTimeoutSec: 120
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: Generate SonarCloud report
         env:
