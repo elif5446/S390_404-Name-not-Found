@@ -12,6 +12,8 @@ const BUILDINGS = [
 
 type Building = typeof BUILDINGS[0];
 
+const SAME_BUILDING_ERROR_MESSAGE = 'Start and destination buildings cannot be the same. Please select a different building.';
+
 export default function Index() {
   const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
   const [startBuilding, setStartBuilding] = useState<Building | null>(null);
@@ -23,13 +25,16 @@ export default function Index() {
     setErrorMessage('');
   };
 
+  const showSameBuildingError = () => {
+    setErrorMessage(SAME_BUILDING_ERROR_MESSAGE);
+    Alert.alert('Same Building', SAME_BUILDING_ERROR_MESSAGE, [{ text: 'OK' }]);
+  };
+
   const handleSetStart = () => {
     if (selectedBuilding) {
       // Check if start and destination are the same
       if (destinationBuilding && selectedBuilding.id === destinationBuilding.id) {
-        const message = 'Start and destination buildings cannot be the same. Please select a different building.';
-        setErrorMessage(message);
-        Alert.alert('Same Building', message, [{ text: 'OK' }]);
+        showSameBuildingError();
         return;
       }
       setStartBuilding(selectedBuilding);
@@ -42,9 +47,7 @@ export default function Index() {
     if (selectedBuilding) {
       // Check if start and destination are the same
       if (startBuilding && selectedBuilding.id === startBuilding.id) {
-        const message = 'Start and destination buildings cannot be the same. Please select a different building.';
-        setErrorMessage(message);
-        Alert.alert('Same Building', message, [{ text: 'OK' }]);
+        showSameBuildingError();
         return;
       }
       setDestinationBuilding(selectedBuilding);
