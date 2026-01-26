@@ -15,7 +15,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Run Tests
         run: echo "Running tests... (Pass)"
 
@@ -23,12 +23,12 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     permissions:
-      contents: write             # required to write tags
-        
+      contents: write # required to write tags
+
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
-          fetch-depth: 0        # recommended by some tagging actions to get full git history
+          fetch-depth: 0 # recommended by some tagging actions to get full git history
 
       - name: Bump version and tag
         id: tag_version
@@ -51,4 +51,4 @@ jobs:
       - name: Output New Version
         run: |
           echo "The new version is ${{ steps.tag_version.outputs.new_version }}"
-          echo "The new version is ${{ steps.tag_version.outputs.new_tag }}"
+          echo "The new tag is ${{ steps.tag_version.outputs.new_tag }}"

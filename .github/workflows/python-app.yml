@@ -1,0 +1,46 @@
+name: ConUWalks Backend CI
+
+on:
+  pull_request:
+    branches:
+      - main
+      - dev
+
+permissions:
+  contents: read
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+          cache: 'pip'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install flake8 pytest pytest-cov
+          if [[ -f requirements.txt ]]; then pip install -r requirements.txt; fi
+      - name: Lint with flake8
+        run: |
+          # stop the build if there are Python syntax errors or undefined names
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+      - name: Test with pytest
+      # ex: pytest tests.py --doctest-modules --junitxml=junit/test-results.xml --cov=com --cov-report=xml --cov-report=html
+        run: |
+          echo "Here's where I would run my pytest, if I had one."
+      #
+      #
+      # - name: Upload pytest test results
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: pytest-results-${{ matrix.python-version }}
+      #     path: junit/test-results-${{ matrix.python-version }}.xml
+      #   # Use always() to always run this step to publish test results when there are test failures
+      #   if: ${{ always() }}
