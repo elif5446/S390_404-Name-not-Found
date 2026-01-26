@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, Dimensions } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
 
@@ -23,7 +23,6 @@ const MapWithDirections: React.FC<MapWithDirectionsProps> = ({
   const [routeCoordinates, setRouteCoordinates] = useState<
     { latitude: number; longitude: number }[]
   >([]);
-  const [isLoadingRoute, setIsLoadingRoute] = useState(false);
 
   // Concordia University campus center coordinates (SGW Campus)
   const initialRegion = {
@@ -33,18 +32,9 @@ const MapWithDirections: React.FC<MapWithDirectionsProps> = ({
     longitudeDelta: 0.01,
   };
 
-  useEffect(() => {
-    if (startBuilding && destinationBuilding && googleMapsApiKey) {
-      fetchDirections();
-    } else {
-      setRouteCoordinates([]);
-    }
-  }, [startBuilding, destinationBuilding, googleMapsApiKey]);
-
-  const fetchDirections = async () => {
+  const fetchDirections = useCallback(async () => {
     if (!startBuilding || !destinationBuilding) return;
 
-    setIsLoadingRoute(true);
     try {
       const origin = `${startBuilding.latitude},${startBuilding.longitude}`;
       const destination = `${destinationBuilding.latitude},${destinationBuilding.longitude}`;
@@ -60,10 +50,16 @@ const MapWithDirections: React.FC<MapWithDirectionsProps> = ({
       }
     } catch (error) {
       console.error('Error fetching directions:', error);
-    } finally {
-      setIsLoadingRoute(false);
     }
-  };
+  }, [startBuilding, destinationBuilding, googleMapsApiKey]);
+
+  useEffect(() => {
+    if (startBuilding && destinationBuilding && googleMapsApiKey) {
+      fetchDirections();
+    } else {
+      setRouteCoordinates([]);
+    }
+  }, [startBuilding, destinationBuilding, googleMapsApiKey, fetchDirections]);
 
   // Decode polyline from Google Directions API
   const decodePolyline = (encoded: string) => {
