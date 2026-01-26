@@ -1,7 +1,6 @@
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from enum import Enum
-from typing import Optional
 
 class TransportMode(str, Enum):
     walk = "walk"
@@ -12,9 +11,10 @@ class TransportMode(str, Enum):
 app = FastAPI(title="Backend API")
 
 # Configure CORS to allow requests from the frontend
+# TODO: In production, replace "*" with specific frontend origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific origins
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

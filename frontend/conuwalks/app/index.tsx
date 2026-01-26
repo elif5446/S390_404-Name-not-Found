@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, Text } from 'react-native';
 import TransportModeSelector, { TransportMode } from '../components/TransportModeSelector';
 import RouteDisplay from '../components/RouteDisplay';
@@ -27,7 +27,7 @@ export default function Index() {
   // Backend API URL - adjust this based on your deployment
   const API_BASE_URL = 'http://localhost:8000';
 
-  const fetchRoute = async (mode: TransportMode) => {
+  const fetchRoute = useCallback(async (mode: TransportMode) => {
     setLoading(true);
     setError(null);
 
@@ -48,13 +48,12 @@ export default function Index() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_BASE_URL, START_LAT, START_LNG, END_LAT, END_LNG]);
 
   // Fetch route when component mounts or mode changes
   useEffect(() => {
     fetchRoute(selectedMode);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedMode]);
+  }, [selectedMode, fetchRoute]);
 
   const handleModeSelect = (mode: TransportMode) => {
     setSelectedMode(mode);
