@@ -1,4 +1,4 @@
-{
+export const LOY = {
   "type": "FeatureCollection",
   "features": [
     {
@@ -23,7 +23,6 @@
         ]]
       }
     },
-
     {
       "type": "Feature",
       "properties": {
@@ -52,7 +51,6 @@
         ]]
       }
     },
-
     {
       "type": "Feature",
       "properties": {
@@ -94,7 +92,6 @@
         ]]
       }
     },
-
     {
       "type": "Feature",
       "properties": {
@@ -113,7 +110,6 @@
         ]]
       }
     },
-
     {
       "type": "Feature",
       "properties": {
@@ -144,7 +140,6 @@
         ]]
       }
     },
-
     {
       "type": "Feature",
       "properties": {
@@ -167,7 +162,6 @@
         ]]
       }
     },
-
     {
       "type": "Feature",
       "properties": {
@@ -187,4 +181,6 @@
       }
     }
   ]
-}
+};
+
+export default LOY;
