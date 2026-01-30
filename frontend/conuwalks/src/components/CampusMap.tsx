@@ -48,6 +48,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
     <View style={styles.container}>
       <MapView
         style={styles.map}
+        showsPointsOfInterest={false} //takes out the information off all businesses
         initialRegion={{
           ...initialLocation,
           latitudeDelta: 0.008,
