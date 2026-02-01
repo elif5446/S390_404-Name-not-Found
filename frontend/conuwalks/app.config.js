@@ -9,7 +9,10 @@ export default {
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.conuwalks"
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "conuwalks needs your location to show you on the map."
+      },
+      "bundleIdentifier": "com.conuwalks.app"
     },
     "android": {
       "edgeToEdgeEnabled": true,
