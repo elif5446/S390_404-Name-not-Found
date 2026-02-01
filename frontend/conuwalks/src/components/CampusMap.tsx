@@ -1,11 +1,25 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, ActivityIndicator } from 'react-native';
-import MapView, { LatLng, Circle, Region, Marker } from 'react-native-maps';
+import { View, Text, ActivityIndicator, Platform, useColorScheme } from 'react-native';
+import MapView, { LatLng, Circle, Region, Marker, PROVIDER_GOOGLE, Polygon } from 'react-native-maps';
 import styles from '@/src/styles/campusMap';
 import { useUserLocation } from '@/src/hooks/useUserLocation';
+import SGW from '@/src/data/SGW.geojson';
+import LOY from '@/src/data/LOY.geojson';
+
+
+// Convert GeoJSON coordinates to LatLng
+const polygonFromGeoJSON = (coordinates: number[][]): LatLng[] =>
+  coordinates.map(([longitude, latitude]) => ({ latitude, longitude }));
 
 interface CampusMapProps {
   initialLocation?: LatLng; // optional prop to set initial map location
+}
+
+// TypeScript type for properties with color
+interface FeatureProperties {
+  id: string;
+  name?: string;
+  color: string;
 }
 
 const CampusMap: React.FC<CampusMapProps> = ({
@@ -43,18 +57,52 @@ const CampusMap: React.FC<CampusMapProps> = ({
     }
   };
 
+  // Helper function to render polygons
+  const renderPolygons = (geojson: typeof SGW | typeof LOY) =>
+    geojson.features.map((feature) => {
+      if (feature.geometry.type !== 'Polygon') return null;
+
+      const coordinates = feature.geometry.coordinates[0];
+      const properties = feature.properties as FeatureProperties; // assert type
+
+      return (
+        <Polygon
+          key={properties.id}
+          coordinates={polygonFromGeoJSON(coordinates)}
+          fillColor={properties.color + '75'} // add alpha for semi-transparent
+          strokeColor={properties.color}
+          strokeWidth={1}
+          tappable
+          onPress={() => console.log('Tapped:', properties.id)}
+        />
+      );
+    });
+
+  const mapID = useColorScheme() === 'dark' ? "eb0ccd6d2f7a95e23f1ec398" : "eb0ccd6d2f7a95e117328051"; // Workaround
+
   return (
     <View style={styles.container}>
       <MapView
         ref={mapRef}
+        key={mapID} // Rerender
+        provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
+        googleMapId={Platform.OS === 'android' ? mapID : undefined} // Style
         style={styles.map}
+        pitchEnabled={false} // No 3D
+        maxDelta={0}
+        mapType={Platform.OS === 'ios' ? 'mutedStandard' : 'standard'}
+        showsPointsOfInterest={false} // takes out the information off all businesses
+        showsTraffic={false}
+        showsIndoors={false}
+        showsBuildings={false}
+        tintColor="#FF2D55"
         initialRegion={{
           ...mapCenter,
           latitudeDelta: 0.008,
           longitudeDelta: 0.008,
         }}
         onRegionChange={setMapRegion}
-      > 
+      >
         {userLocation && ( //Show user's current location if available
           <Circle
             center={userLocation}
@@ -74,6 +122,12 @@ const CampusMap: React.FC<CampusMapProps> = ({
             <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: 'rgba(33, 150, 243, 0.5)' }} />
           </Marker>
         )}
+
+        {/* Render SGW campus */}
+        {renderPolygons(SGW)}
+
+        {/* Render Loyola campus */}
+        {renderPolygons(LOY)}
       </MapView>
 
       {locationLoading && (
