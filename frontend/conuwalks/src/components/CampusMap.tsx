@@ -65,8 +65,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
         tintColor="#FF2D55"
         region={{
           ...initialLocation,
-          latitudeDelta: 0.004,
-          longitudeDelta: 0.004,
+          latitudeDelta: 0.0043,
+          longitudeDelta: 0.0043,
         }}
       >
         {/* Render SGW campus */}
