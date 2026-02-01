@@ -12,6 +12,8 @@ const StatusGradient = () => {
     ]}
     style={[styles.topGradient, { height: useSafeAreaInsets().top + 100 }]}
     pointerEvents="none"
+    accessibilityElementsHidden={true} 
+    importantForAccessibility="no-hide-descendants"
   />);
 }
 

@@ -40,6 +40,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
           strokeWidth={1}
           tappable
           onPress={() => console.log('Tapped:', properties.id)}
+          accessibilityLabel={properties.name || properties.id}
+          accessibilityRole="button"
         />
       );
     });
