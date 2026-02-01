@@ -1,9 +1,10 @@
 import React from 'react';
-import { View } from 'react-native';
-import MapView, { Polygon, LatLng } from 'react-native-maps';
+import { View, Platform, useColorScheme } from 'react-native';
+import MapView, { PROVIDER_GOOGLE, Polygon, LatLng } from 'react-native-maps';
 import styles from '@/src/styles/campusMap';
 import SGW from '@/src/data/SGW.geojson';
 import LOY from '@/src/data/LOY.geojson';
+
 
 // Convert GeoJSON coordinates to LatLng
 const polygonFromGeoJSON = (coordinates: number[][]): LatLng[] =>
@@ -35,7 +36,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
         <Polygon
           key={properties.id}
           coordinates={polygonFromGeoJSON(coordinates)}
-          fillColor={properties.color + '66'} // add alpha for semi-transparent
+          fillColor={properties.color + '75'} // add alpha for semi-transparent
           strokeColor={properties.color}
           strokeWidth={1}
           tappable
@@ -44,11 +45,23 @@ const CampusMap: React.FC<CampusMapProps> = ({
       );
     });
 
+  const mapID = useColorScheme() === 'dark' ? "eb0ccd6d2f7a95e23f1ec398" : "eb0ccd6d2f7a95e117328051"; // Workaround
+
   return (
     <View style={styles.container}>
       <MapView
+        key={mapID} // Rerender
+        provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
+        googleMapId={Platform.OS === 'android' ? mapID : undefined} // Style
         style={styles.map}
-        showsPointsOfInterest={false} //takes out the information off all businesses
+        pitchEnabled={false} // No 3D
+        maxDelta={0}
+        mapType={Platform.OS === 'ios' ? 'mutedStandard' : 'standard'}
+        showsPointsOfInterest={false} // takes out the information off all businesses
+        showsTraffic={false}
+        showsIndoors={false}
+        showsBuildings={false}
+        tintColor="#FF2D55"
         initialRegion={{
           ...initialLocation,
           latitudeDelta: 0.008,
