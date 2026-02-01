@@ -22,12 +22,12 @@ jobs:
           fetch-depth: 0
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@689fb39b34b9aa95ebc5f8f119343ddd51542402
+        uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
             -Dsonar.organization=${{ secrets.SONAR_ORG }}
             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
-            -Dsonar.sources=frontend,backend
+            -Dsonar.sources=frontend, backend
             -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**
