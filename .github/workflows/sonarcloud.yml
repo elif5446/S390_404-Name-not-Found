@@ -29,5 +29,5 @@ jobs:
           args: >
             -Dsonar.organization=${{ secrets.SONAR_ORG }}
             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
-            -Dsonar.sources=frontend, backend
+            -Dsonar.sources=frontend,backend
             -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**
