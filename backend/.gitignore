@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.egg-info/
+.eggs/
+.env
+.venv/
+venv/
+ENV/
+env/
+
+# FastAPI / Uvicorn
+*.log
+uvicorn.log
+
+# Pytest / Coverage
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Docker
+docker-data/
+*.tar
+*.pid
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build / Dist
+build/
+dist/
+
+# Local overrides
+.env.local
+.env.*.local
