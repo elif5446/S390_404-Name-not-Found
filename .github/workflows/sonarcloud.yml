@@ -20,6 +20,29 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Node deps for frontend path
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: |
+            frontend/conuwalks/package-lock.json
+
+      - name: Install frontend deps
+        working-directory: frontend/conuwalks
+        run: npm ci
+
+      # debug to confirm tsconfig path exists
+      - name: Debug tsconfig presence
+        run: |
+          ls -la frontend/conuwalks
+          ls -la frontend/conuwalks/tsconfig*.json || true
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9
