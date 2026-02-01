@@ -10,7 +10,7 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <View key={campus} style={styles.mapWrapper}>
         {campus === 'SGW' && <CampusMap initialLocation={{ latitude: 45.49599, longitude: -73.57854 }} /> ||
-        campus === 'Loyola' && <CampusMap initialLocation={{ latitude: 45.45805, longitude: -73.63987 }} />}
+        campus === 'Loyola' && <CampusMap initialLocation={{ latitude: 45.45846, longitude: -73.63999 }} />}
       </View>
       <StatusGradient/>
       <SegmentedToggle campus={campus} setCampus={setCampus}/>

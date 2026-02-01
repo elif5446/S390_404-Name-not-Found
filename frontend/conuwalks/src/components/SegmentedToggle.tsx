@@ -31,7 +31,20 @@ const SegmentedToggle = ({ campus, setCampus }: { campus: 'SGW' | 'Loyola', setC
       <SegmentedButtons
         value={campus}
         onValueChange={setCampus}
-        buttons={[{value: 'SGW', label: 'Sir George Williams', showSelectedCheck: true}, {value: 'Loyola', label: 'Loyola', showSelectedCheck: true}]}
+        buttons={[
+          {
+            value: 'SGW', 
+            label: 'Sir George Williams', 
+            showSelectedCheck: true,
+            accessibilityLabel: 'Switch to Sir George Williams Campus' 
+          }, 
+          {
+            value: 'Loyola', 
+            label: 'Loyola', 
+            showSelectedCheck: true,
+            accessibilityLabel: 'Switch to Loyola Campus'
+          }
+        ]}
         theme={{
           colors: {
             secondaryContainer: '#FF2D55',
