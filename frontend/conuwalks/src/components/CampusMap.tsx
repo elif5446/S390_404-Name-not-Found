@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
-import MapView, { LatLng, Circle, Region } from 'react-native-maps';
+import MapView, { LatLng, Circle, Region, Marker } from 'react-native-maps';
 import styles from '@/src/styles/campusMap';
 import { useUserLocation } from '@/src/hooks/useUserLocation';
 
@@ -28,9 +28,25 @@ const CampusMap: React.FC<CampusMapProps> = ({
   // Larger longitudeDelta = zoomed out = bigger circle
   const circleRadius = Math.max(30, mapRegion.longitudeDelta * 2000);
 
+  // Create a ref to the MapView so we can control it
+  const mapRef = useRef<MapView>(null);
+
+  // Handle clicking on the location circle to zoom in
+  const handleLocationPress = () => {
+    if (userLocation && mapRef.current) {
+      mapRef.current.animateToRegion({
+        latitude: userLocation.latitude,
+        longitude: userLocation.longitude,
+        latitudeDelta: 0.003, // Zoom in closer
+        longitudeDelta: 0.003,
+      }, 500); // 500ms animation
+    }
+  };
+
   return (
     <View style={styles.container}>
       <MapView
+        ref={mapRef}
         style={styles.map}
         initialRegion={{
           ...mapCenter,
@@ -47,6 +63,16 @@ const CampusMap: React.FC<CampusMapProps> = ({
             strokeColor="rgba(33, 150, 243, 0.8)"
             strokeWidth={2}
           />
+        )}
+
+        {userLocation && (
+          <Marker
+            coordinate={userLocation}
+            onPress={handleLocationPress}
+            tracksViewChanges={false}
+          >
+            <View style={{ width: 12, height: 12, borderRadius: 6, backgroundColor: 'rgba(33, 150, 243, 0.5)' }} />
+          </Marker>
         )}
       </MapView>
 
