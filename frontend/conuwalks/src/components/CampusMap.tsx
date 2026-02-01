@@ -49,7 +49,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
   return (
     <View style={styles.container}>
       <MapView
-        key={mapID} // Rerender
+        key={mapID} // Rerender when mode (light/dark) changes
         provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
         googleMapId={Platform.OS === 'android' ? mapID : undefined} // Style
         style={styles.map}
