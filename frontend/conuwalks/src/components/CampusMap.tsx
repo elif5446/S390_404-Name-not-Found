@@ -5,7 +5,6 @@ import styles from '@/src/styles/campusMap';
 import SGW from '@/src/data/SGW.geojson';
 import LOY from '@/src/data/LOY.geojson';
 
-
 // Convert GeoJSON coordinates to LatLng
 const polygonFromGeoJSON = (coordinates: number[][]): LatLng[] =>
   coordinates.map(([longitude, latitude]) => ({ latitude, longitude }));
@@ -22,7 +21,7 @@ interface FeatureProperties {
 }
 
 const CampusMap: React.FC<CampusMapProps> = ({
-  initialLocation = { latitude: 45.4974, longitude: -73.5771 },
+  initialLocation = { latitude: 45.49599, longitude: -73.57854 },
 }) => {
   // Helper function to render polygons
   const renderPolygons = (geojson: typeof SGW | typeof LOY) =>
@@ -62,10 +61,10 @@ const CampusMap: React.FC<CampusMapProps> = ({
         showsIndoors={false}
         showsBuildings={false}
         tintColor="#FF2D55"
-        initialRegion={{
+        region={{
           ...initialLocation,
-          latitudeDelta: 0.008,
-          longitudeDelta: 0.008,
+          latitudeDelta: 0.004,
+          longitudeDelta: 0.004,
         }}
       >
         {/* Render SGW campus */}
