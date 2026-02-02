@@ -6,7 +6,6 @@ import { useUserLocation } from '@/src/hooks/useUserLocation';
 import SGW from '@/src/data/SGW.geojson';
 import LOY from '@/src/data/LOY.geojson';
 
-
 // Convert GeoJSON coordinates to LatLng
 const polygonFromGeoJSON = (coordinates: number[][]): LatLng[] =>
   coordinates.map(([longitude, latitude]) => ({ latitude, longitude }));
@@ -23,7 +22,7 @@ interface FeatureProperties {
 }
 
 const CampusMap: React.FC<CampusMapProps> = ({
-  initialLocation = { latitude: 45.4974, longitude: -73.5771 },
+  initialLocation = { latitude: 45.49599, longitude: -73.57854 },
 }) => {
   // Get user's location with permission handling
   const { location: userLocation, error: locationError, loading: locationLoading } = useUserLocation();
@@ -74,6 +73,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
           strokeWidth={1}
           tappable
           onPress={() => console.log('Tapped:', properties.id)}
+          accessibilityLabel={properties.name || properties.id}
+          accessibilityRole="button"
         />
       );
     });
@@ -83,8 +84,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
   return (
     <View style={styles.container}>
       <MapView
+        key={mapID} // Rerender when mode (light/dark) changes
         ref={mapRef}
-        key={mapID} // Rerender
         provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
         googleMapId={Platform.OS === 'android' ? mapID : undefined} // Style
         style={styles.map}
@@ -96,10 +97,10 @@ const CampusMap: React.FC<CampusMapProps> = ({
         showsIndoors={false}
         showsBuildings={false}
         tintColor="#FF2D55"
-        initialRegion={{
-          ...mapCenter,
-          latitudeDelta: 0.008,
-          longitudeDelta: 0.008,
+        region={{
+          ...initialLocation,
+          latitudeDelta: 0.0043,
+          longitudeDelta: 0.0043,
         }}
         onRegionChange={setMapRegion}
       >
