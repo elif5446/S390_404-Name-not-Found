@@ -1,0 +1,128 @@
+name: Nightly sync dev -> main (v0.x.0)
+
+on:
+  schedule:
+    # 07:00 UTC is ~ 02:00 Montreal (EST)
+    - cron: "0 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+
+concurrency:
+  group: nightly-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+      - name: Ensure GitHub CLI is available
+        run: gh --version
+
+      # guard to only proceed if CI on dev is green for latest dev commit
+      - name: Guard - require successful CI on dev
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          CI_WORKFLOW_NAME: "CI Workflow"
+        run: |
+          set -euo pipefail
+
+          # get latest commit SHA on dev
+          DEV_SHA="$(gh api repos/${REPO}/commits/dev --jq '.sha')"
+          echo "Latest dev SHA: $DEV_SHA"
+
+          # find the most recent run of the ci workflow on dev matching that SHA
+          RUN_JSON="$(gh api "repos/${REPO}/actions/runs?branch=dev&per_page=50")"
+
+          RUN_ID="$(echo "$RUN_JSON" | jq -r --arg name "$CI_WORKFLOW_NAME" --arg sha "$DEV_SHA" '
+            .workflow_runs
+            | map(select(.name == $name and .head_sha == $sha))
+            | sort_by(.run_started_at)
+            | last
+            | .id // empty
+          ')"
+
+          if [ -z "$RUN_ID" ]; then
+            echo "::error::No CI run found for workflow '$CI_WORKFLOW_NAME' on dev at SHA $DEV_SHA. Aborting nightly sync."
+            exit 1
+          fi
+
+          CONCLUSION="$(gh api "repos/${REPO}/actions/runs/${RUN_ID}" --jq '.conclusion')"
+          STATUS="$(gh api "repos/${REPO}/actions/runs/${RUN_ID}" --jq '.status')"
+          echo "CI run id: $RUN_ID | status: $STATUS | conclusion: $CONCLUSION"
+
+          if [ "$STATUS" != "completed" ]; then
+            echo "::error::CI is not completed yet (status=$STATUS). Aborting nightly sync."
+            exit 1
+          fi
+
+          if [ "$CONCLUSION" != "success" ]; then
+            echo "::error::CI conclusion is '$CONCLUSION' (not success). Aborting nightly sync."
+            exit 1
+          fi
+
+          echo "CI is successful on dev. Proceeding."
+
+      - name: Create or find PR dev -> main
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          existing="$(gh pr list --base main --head dev --state open --json number -q '.[0].number')"
+          if [ -n "$existing" ]; then
+            echo "PR already exists: $existing"
+            exit 0
+          fi
+
+          pr_url="$(gh pr create \
+            --base main \
+            --head dev \
+            --title "Nightly sync: dev -> main" \
+            --body "Automated nightly sync from dev to main." \
+            --label "nightly-sync")"
+
+          pr_number="$(echo "$pr_url" | sed -E 's#.*/pull/([0-9]+).*#\1#')"
+          echo "Created PR: $pr_number"
+
+      - name: Auto-merge PR (merge commit)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          pr_number="$(gh pr list --base main --head dev --state open --json number -q '.[0].number')"
+          echo "Merging PR: $pr_number"
+          gh pr merge "$pr_number" --merge --auto
+
+      - name: Tag nightly version v0.x.0
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git fetch --tags origin
+
+          latest="$(git tag -l 'v0.*.*' --sort=-v:refname | head -n 1)"
+          if [ -z "$latest" ]; then
+            next="v0.1.0"
+          else
+            minor="$(echo "$latest" | cut -d. -f2)"
+            next="v0.$((minor+1)).0"
+          fi
+
+          echo "Next nightly tag: $next"
+
+          git checkout main
+          git pull origin main
+
+          git tag "$next"
+          git push origin "$next"
