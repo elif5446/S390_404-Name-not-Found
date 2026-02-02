@@ -1,0 +1,49 @@
+name: Major Release on PR merge to main (vN.0.0)
+
+on:
+  pull_request:
+    types: [closed]
+    branches: ["main"]
+
+permissions:
+  contents: write
+
+jobs:
+  major_release:
+    if: >
+      github.event.pull_request.merged == true &&
+      contains(github.event.pull_request.labels.*.name, 'major-release')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+      - name: Compute next major tag vN.0.0
+        id: ver
+        run: |
+          git fetch --tags origin
+
+          latest="$(git tag -l 'v[0-9]*.0.0' --sort=-v:refname | head -n 1)"
+          if [ -z "$latest" ]; then
+            next="v1.0.0"
+          else
+            major="$(echo "$latest" | cut -d. -f1 | sed 's/^v//')"
+            next="v$((major+1)).0.0"
+          fi
+
+          echo "next_tag=$next" >> $GITHUB_OUTPUT
+
+      - name: Tag and push
+        run: |
+          git checkout main
+          git pull origin main
+          git tag "${{ steps.ver.outputs.next_tag }}"
+          git push origin "${{ steps.ver.outputs.next_tag }}"
