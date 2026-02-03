@@ -1,0 +1,169 @@
+# Burndown Chart for GitHub Projects
+
+## UPDATES
+
+This project is a derivative work of https://github.com/thehale/github-projects-burndown-chart.<br>
+This projecrt has been modified to support user repositories to be used in Concordia University Software Engineering SOEN 390.
+
+## Table of Contents
+
+* [Installation](#installation)
+* [Assumptions](#assumptions)
+* [Configuration](#configuration)
+* [Usage](#usage)
+* [About](#about)
+
+## Assumptions
+
+This tool, while flexible, makes the following assumptions about your project management workflow:
+
+* You use one and only one [GitHub Project Board](https://docs.github.com/en/issues/organizing-your-work-with-project-boards/managing-project-boards/about-project-boards) for each of your [Sprints](https://scrumguides.org/scrum-guide.html#the-sprint)
+* You use one and only one [GitHub Milestone](https://docs.github.com/en/issues/using-labels-and-milestones-to-track-work/about-milestones) for each of your [User Stories](https://www.scrum.org/resources/blog/user-story-or-stakeholder-story)
+* You use one and only one [GitHub Issue](https://docs.github.com/en/issues/tracking-your-work-with-issues/about-issues) for each of your [Sprint Backlog Items/Tasks](https://scrumguides.org/scrum-guide.html#sprint-backlog)
+* If you want to track points, each of your GitHub Issues has a [label](https://docs.github.com/en/issues/using-labels-and-milestones-to-track-work/managing-labels) indicating how many [points](https://www.scrum.org/resources/scrum-glossary#:~:text=several%20ways%20such%20as-,user%20story%20points,-or%20task%20hours.%20Work) its corresponding task is worth.
+   - Furthermore, all labels that indicate point values have the format `<prefix><int>`.
+   - Multiple labels indicating points on the same Issue are supported.
+* A Sprint Backlog Task is considered [Done](https://www.scrum.org/resources/professional-scrum-developer-glossary#:~:text=D-,definition%20of%20done%3A,-a%20shared%20understanding) if its corresponding GitHub Issue is Closed.
+
+## Installation
+
+### 1. Create a virtual environment
+
+```sh
+python -m venv ./venv
+```
+
+### 2. Activate the virtual environment
+
+*Linux/macOS*
+
+```sh
+source venv/bin/activate
+```
+
+*Windows (Powershell)*
+
+```sh
+.\venv\Scripts\activate
+```
+
+*Windows (Command Prompt)*
+
+```sh
+.\venv\Scripts\activate.bat
+```
+
+### 3. Install the dependencies
+
+```sh
+pip install -r requirements.txt
+```
+
+## Configuration
+
+### 1. Create a [Personal Access Token](https://github.com/settings/tokens) with the `repo` scope. If Project V2, add `read:project` scope.
+
+Fine-grained Token:
+
+* owner: Select yourself
+* access: Select All repositories (or specifically the ones containing the issues in your project)
+* permissions: 
+  * Issues: read-only
+  * Pull requests: read-only
+  * Projects: read-only
+
+Classic Token: simpler but less secure. You only need to check one box:
+  
+* Scopes: read:project (and repo if your linked issues are in private repositories).
+
+This is required to pull the Project Board data from GitHub's GraphQL API.
+
+### 2. Make a copy of `src/github_projects_burndown_chart/config/secrets.json.dist` without the `.dist` ending.
+
+This allows the `.gitignore` to exclude your `secrets.json` from being accidentally committed.
+
+### 3. Fill out the `github_token` with your newly created Personal Access Token.
+
+### 4. Make a copy of `src/github_projects_burndown_chart/config/config.json.dist` without the `.dist` ending.
+
+This allows the `.gitignore` to exclude your `config.json` from being accidentally committed.
+
+### 5. Fill out all the configuration settings
+
+#### User Projects
+
+`project_name`: A memorable name for your project for use with this tool.
+
+`project_name.query_variables`
+| Variable | Meaning |
+|----------|---------|
+| `repo_owner` | The username of the owner of the repo. <br/><br/> Example: `thehale` |
+| `repo_name` | The name of the repo. <br/><br/> Example: `github-projects-burndown-chart`|
+| `project_number` | The ID of the project for which you want to generate a burndown chart. This is found in the URL when looking at the project board on GitHub. <br/><br/> Example: `1` (from [`https://github.com/thehale/github-projects-burndown-chart/projects/1`](https://github.com/thehale/github-projects-burndown-chart/projects/1)) |
+| `column_count` | A number >= the number of columns on the project board. (DEFAULT: 5)<br/><br/> A closer fit improves performance and reduces the chance of rate limiting from GitHub's GraphQL API. If Project V2, it is optional. |
+| `max_cards_per_column_count` | A number >= the maximum number of cards in any column on the project board. (DEFAULT: 50)<br/><br/> A closer fit improves performance and reduces the chance of rate limiting from GitHub's GraphQL API. If Project V2, it is optional. |
+| `labels_per_issue_count` | A number >= the number of labels on any issue on project board. (DEFAULT: 5)<br/><br/> A closer fit improves performance and reduces the chance of rate limiting from GitHub's GraphQL API. |
+
+`project_name.settings`
+| Variable | Meaning |
+|----------|---------|
+| `sprint_start_date` | The first day of the sprint formatted as `YYYY-MM-DD`. <br/><br/> Must be entered here since GitHub Project Boards don't have an assigned start/end date. <br/><br/> Example: `2021-10-08` |
+| `sprint_end_date` | The last day of the sprint formatted as `YYYY-MM-DD`. <br/><br/> Must be entered here since GitHub Project Boards don't have an assigned start/end date. <br/><br/> Example: `2021-10-21` |
+| `chart_end_date` | (OPTIONAL) The last day to show on the burndown chart formatted as `YYYY-MM-DD`. <br/><br/> Used to change the end date of the chart without affecting the slope of the ideal burndown line (e.g. to show tasks that were completed after the official end of a sprint). <br/><br/> Example: `2021-10-24` |
+| `points_label` | (OPTIONAL) The prefix for issue labels containing the point value of the issue. Removing this prefix must leave just an integer. If set to `null`, the burndown chart will count open issues instead of points.<br/><br/> Example: `Points: ` (with the space) |
+| `calculators` | (OPTIONAL) A list of the calculator(s) to use to calculate the point burndown lines to show on the burndown chart. (DEFAULT: [`closed`])<br/><br/>_OPTIONS:_ `closed`, `assigned`, `created`, `taiga`, `burndown`<br/><br/> Example: [`taiga`, `closed`, `assigned`] |
+| `version` | (OPTIONAL) The version number of GitHub Projects to use the burndown chart. (DEFAULT: [`1`])<br/><br/> OPTIONS: `1`, `2`<br/><br/> Example: `2` |
+
+## Usage
+
+Given that `PROJECT_TYPE` is one of `[repository, organization]` and `PROJECT_NAME` matches a key in the `config.json` under the chosen `PROJECT_TYPE`, run the following command:
+
+```sh
+make run type=PROJECT_TYPE name=PROJECT_NAME
+
+or
+cd ./src/github_projects_burndown_chart
+python main.py -t user -n Concordia_Navigation_App_Project      # uses cached data if any
+python main.py -t user -n Concordia_Navigation_App_Project -nc  # -nc means fetch new data
+```
+
+This will pop up an interactive window containing the burndown chart, including a button for saving it as a picture.
+
+### Example
+
+Make a copy of `example.config.json` without the leading `example.`
+
+```sh
+make run type=user name=burndown_chart_kickoff
+make run type=repository name=burndown_chart_kickoff
+make run type=organization name=golang_on_deck
+```
+
+### Discord Webhook
+
+This project also supports posting the burndown chart to a Discord Webhook. Here's how to set that up:
+
+1. [Create a webhook](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks#:~:text=Facebook-,making%20a%20webhook,-With%20that%20in) in your Discord server.
+2. Put the webhook's URL into the `discord_webhook` setting in `secrets.json`.
+3. Add the `--discord` option when running the script.
+
+```sh
+make run type=user name=burndown_chart_kickoff opts="--discord"
+make run type=repository name=burndown_chart_kickoff opts="--discord"
+```
+
+### Save as file
+
+This project also supports saving the burndown chart file. Here's how to set that up:
+
+1. Add the `--filepath=$filepath` option when running the script.
+
+```sh
+make run type=user name=burndown_chart_kickoff opts="--filepath=./tmp/chart.png"
+```
+
+## About
+
+This project was first created by Joseph Hale (@thehale) and Jacob Janes (@jgjanes) to facilitate their coursework in the BS Software Engineering degree program at Arizona State University.
+
+We hope it will be especially useful to other students in computing-related fields.

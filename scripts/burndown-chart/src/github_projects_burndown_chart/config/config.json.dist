@@ -1,0 +1,76 @@
+{
+  "user": {
+    "PROJECT_1_NAME": {
+      "query_variables": {
+        "repo_owner": "REQUIRED",
+        "repo_name": "REQUIRED",
+        "project_number": -1,  //REQUIRED
+        "column_count": 5,
+        "max_cards_per_column_count": 50,
+        "labels_per_issue_count": 5
+      },
+      "settings": {
+        "version": 2,
+        "sprint_start_date": "REQUIRED",
+        "sprint_end_date": "REQUIRED",
+        "points_label": null,
+        "calculators" : [
+            "closed",
+            "assigned",
+            "created",
+            "taiga",
+            "burndown"
+        ]
+      }
+    }
+  },
+  "repository": {
+    "PROJECT_1_NAME": {
+      "query_variables": {
+        "repo_owner": "REQUIRED",
+        "repo_name": "REQUIRED",
+        "project_number": -1,  //REQUIRED
+        "column_count": 5,
+        "max_cards_per_column_count": 50,
+        "labels_per_issue_count": 5
+      },
+      "settings": {
+        "version": 2,
+        "sprint_start_date": "REQUIRED",
+        "sprint_end_date": "REQUIRED",
+        "points_label": null,
+        "calculators" : [
+            "closed",
+            "assigned",
+            "created",
+            "taiga",
+            "burndown"
+        ]
+      }
+    }
+  },
+  "organization": {
+    "PROJECT_1_NAME": {
+      "query_variables": {
+        "organization_name": "REQUIRED",
+        "project_number": -1,  //REQUIRED
+        "column_count": 5,
+        "max_cards_per_column_count": 50,
+        "labels_per_issue_count": 5
+      },
+      "settings": {
+        "version": 2,
+        "sprint_start_date": "REQUIRED",
+        "sprint_end_date": "REQUIRED",
+        "points_label": null,
+        "calculators" : [
+            "closed",
+            "assigned",
+            "created",
+            "taiga",
+            "burndown"
+        ]
+      }
+    }
+  }
+}
