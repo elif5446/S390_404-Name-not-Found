@@ -3,7 +3,16 @@ name: Release Quality Report
 on:
   push:
     tags:
-      - "v[0-9]*.0.0"   
+      - "v[0-9]*.0.0"  
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version/tag label to use"
+        required: true
+        default: "v0.0.0-test"
+
+env:
+  VERSION: ${{ inputs.version || github.ref_name }}
 
 permissions:
   contents: write   
@@ -30,13 +39,13 @@ jobs:
           args: >
             -Dsonar.organization=${{ secrets.SONAR_ORG }}
             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
-            -Dsonar.sources=frontend,backend
+            -Dsonar.sources=frontend
             -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**,**/.venv/**,**/__pycache__/**
 
       - name: Generate SonarCloud report 
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          VERSION: ${{ github.ref_name }} 
+          VERSION: $VERSION 
         run: |
           set -e
           mkdir -p out
@@ -118,7 +127,7 @@ jobs:
 
       - name: Publish report to GitHub Wiki (one page per release)
         env:
-          VERSION: ${{ github.ref_name }}
+          VERSION: $VERSION
           REPO: ${{ github.repository }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
