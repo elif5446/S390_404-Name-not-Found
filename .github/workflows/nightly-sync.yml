@@ -126,3 +126,10 @@ jobs:
 
           git tag "$next"
           git push origin "$next"
+
+      - name: Trigger SonarCloud analysis
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh workflow run "SonarCloud Analysis" --repo "$REPO" --ref main
