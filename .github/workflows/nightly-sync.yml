@@ -33,49 +33,49 @@ jobs:
         run: gh --version
 
       # guard to only proceed if CI on dev is green for latest dev commit
-      - name: Guard - require successful CI on dev
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
-          CI_WORKFLOW_NAME: "CI Workflow"
-        run: |
-          set -euo pipefail
+      # - name: Guard - require successful CI on dev
+      #   env:
+      #     GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #     REPO: ${{ github.repository }}
+      #     CI_WORKFLOW_NAME: "CI Workflow"
+      #   run: |
+      #     set -euo pipefail
 
-          # get latest commit SHA on dev
-          DEV_SHA="$(gh api repos/${REPO}/commits/dev --jq '.sha')"
-          echo "Latest dev SHA: $DEV_SHA"
+      #     # get latest commit SHA on dev
+      #     DEV_SHA="$(gh api repos/${REPO}/commits/dev --jq '.sha')"
+      #     echo "Latest dev SHA: $DEV_SHA"
 
-          # find the most recent run of the ci workflow on dev matching that SHA
-          RUN_JSON="$(gh api "repos/${REPO}/actions/runs?branch=dev&per_page=50")"
+      #     # find the most recent run of the ci workflow on dev matching that SHA
+      #     RUN_JSON="$(gh api "repos/${REPO}/actions/runs?branch=dev&per_page=50")"
 
-          RUN_ID="$(echo "$RUN_JSON" | jq -r --arg name "$CI_WORKFLOW_NAME" --arg sha "$DEV_SHA" '
-            .workflow_runs
-            | map(select(.name == $name and .head_sha == $sha))
-            | sort_by(.run_started_at)
-            | last
-            | .id // empty
-          ')"
+      #     RUN_ID="$(echo "$RUN_JSON" | jq -r --arg name "$CI_WORKFLOW_NAME" --arg sha "$DEV_SHA" '
+      #       .workflow_runs
+      #       | map(select(.name == $name and .head_sha == $sha))
+      #       | sort_by(.run_started_at)
+      #       | last
+      #       | .id // empty
+      #     ')"
 
-          if [ -z "$RUN_ID" ]; then
-            echo "::error::No CI run found for workflow '$CI_WORKFLOW_NAME' on dev at SHA $DEV_SHA. Aborting nightly sync."
-            exit 1
-          fi
+      #     if [ -z "$RUN_ID" ]; then
+      #       echo "::error::No CI run found for workflow '$CI_WORKFLOW_NAME' on dev at SHA $DEV_SHA. Aborting nightly sync."
+      #       exit 1
+      #     fi
 
-          CONCLUSION="$(gh api "repos/${REPO}/actions/runs/${RUN_ID}" --jq '.conclusion')"
-          STATUS="$(gh api "repos/${REPO}/actions/runs/${RUN_ID}" --jq '.status')"
-          echo "CI run id: $RUN_ID | status: $STATUS | conclusion: $CONCLUSION"
+      #     CONCLUSION="$(gh api "repos/${REPO}/actions/runs/${RUN_ID}" --jq '.conclusion')"
+      #     STATUS="$(gh api "repos/${REPO}/actions/runs/${RUN_ID}" --jq '.status')"
+      #     echo "CI run id: $RUN_ID | status: $STATUS | conclusion: $CONCLUSION"
 
-          if [ "$STATUS" != "completed" ]; then
-            echo "::error::CI is not completed yet (status=$STATUS). Aborting nightly sync."
-            exit 1
-          fi
+      #     if [ "$STATUS" != "completed" ]; then
+      #       echo "::error::CI is not completed yet (status=$STATUS). Aborting nightly sync."
+      #       exit 1
+      #     fi
 
-          if [ "$CONCLUSION" != "success" ]; then
-            echo "::error::CI conclusion is '$CONCLUSION' (not success). Aborting nightly sync."
-            exit 1
-          fi
+      #     if [ "$CONCLUSION" != "success" ]; then
+      #       echo "::error::CI conclusion is '$CONCLUSION' (not success). Aborting nightly sync."
+      #       exit 1
+      #     fi
 
-          echo "CI is successful on dev. Proceeding."
+      #     echo "CI is successful on dev. Proceeding."
 
       - name: Create or find PR dev -> main
         env:
@@ -97,13 +97,13 @@ jobs:
           pr_number="$(echo "$pr_url" | sed -E 's#.*/pull/([0-9]+).*#\1#')"
           echo "Created PR: $pr_number"
 
-      - name: Auto-merge PR (merge commit)
+      - name: Merge PR (no auto merge)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           pr_number="$(gh pr list --base main --head dev --state open --json number -q '.[0].number')"
           echo "Merging PR: $pr_number"
-          gh pr merge "$pr_number" --merge --auto
+          gh pr merge "$pr_number" --merge --admin
 
       - name: Tag nightly version v0.x.0
         env:

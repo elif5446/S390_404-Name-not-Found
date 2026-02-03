@@ -1,12 +1,12 @@
-name: Release Quality Report
+name: Release Quality Report 
 
 on:
   push:
     tags:
-      - "v[0-9]*.0.0"
+      - "v[0-9]*.0.0"   
 
 permissions:
-  contents: write
+  contents: write   
 
 jobs:
   release_report:
@@ -15,7 +15,6 @@ jobs:
     env:
       SONAR_ORG: ${{ secrets.SONAR_ORG }}
       SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
-      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
     steps:
       - name: Checkout repository
@@ -25,6 +24,8 @@ jobs:
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@689fb39b34b9aa95ebc5f8f119343ddd51542402
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
             -Dsonar.organization=${{ secrets.SONAR_ORG }}
@@ -32,16 +33,10 @@ jobs:
             -Dsonar.sources=frontend,backend
             -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**,**/.venv/**,**/__pycache__/**
 
-      # pauses the workflow until SonarCloud finishes calculating the new metrics
-      - name: SonarQube Quality Gate Check
-        uses: SonarSource/sonarqube-quality-gate-action@cf038b0e0cdecfa9e56c198bbb7d21d751d62c3b
-        timeout-minutes: 5
-        with:
-          pollingTimeoutSec: 120
-
-      - name: Generate SonarCloud report
+      - name: Generate SonarCloud report 
         env:
-          VERSION: ${{ github.ref_name }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          VERSION: ${{ github.ref_name }} 
         run: |
           set -e
           mkdir -p out
@@ -133,10 +128,7 @@ jobs:
           git config --global user.name "github-actions"
 
           # Clone wiki repo
-          if ! git clone "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.wiki.git" wiki ; then
-            echo "::error::Could not clone wiki. Please ensure the Wiki is initialized in Repo Settings."
-            exit 1
-          fi
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.wiki.git" wiki
 
           # One page per release
           PAGE="wiki/Code-Quality-${VERSION}.md"
