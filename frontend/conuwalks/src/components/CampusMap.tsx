@@ -79,6 +79,31 @@ const CampusMap: React.FC<CampusMapProps> = ({
       );
     });
 
+    // Helper function to render labels at centroids
+    const renderLabels = (geojson: typeof SGW | typeof LOY) =>
+      geojson.features.map((feature) => {
+        const properties = feature.properties as FeatureProperties & { centroid?: LatLng };
+        if (!properties.centroid) return null;
+    
+        const { latitude, longitude } = properties.centroid; 
+    
+        return (
+          <Marker
+            key={properties.id + "-label"}
+            coordinate={{ latitude, longitude }}
+            tracksViewChanges={false}
+            pointerEvents="none" // so taps pass through to polygon
+          >
+            <View style={{ backgroundColor: 'transparent' }}>
+              <Text style={{ fontSize: 12, fontWeight: 'bold', color: properties.color }}>
+                {properties.id}
+              </Text>
+            </View>
+          </Marker>
+        );
+      });
+    
+
   const mapID = useColorScheme() === 'dark' ? "eb0ccd6d2f7a95e23f1ec398" : "eb0ccd6d2f7a95e117328051"; // Workaround
 
   return (
@@ -126,9 +151,12 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
         {/* Render SGW campus */}
         {renderPolygons(SGW)}
+        {renderLabels(SGW)}
 
         {/* Render Loyola campus */}
         {renderPolygons(LOY)}
+        {renderLabels(LOY)}
+
       </MapView>
 
       {locationLoading && (
