@@ -97,13 +97,13 @@ jobs:
           pr_number="$(echo "$pr_url" | sed -E 's#.*/pull/([0-9]+).*#\1#')"
           echo "Created PR: $pr_number"
 
-      - name: Auto-merge PR (merge commit)
+      - name: Merge PR (no auto merge)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           pr_number="$(gh pr list --base main --head dev --state open --json number -q '.[0].number')"
           echo "Merging PR: $pr_number"
-          gh pr merge "$pr_number" --merge --auto
+          gh pr merge "$pr_number" --merge --admin
 
       - name: Tag nightly version v0.x.0
         env:
