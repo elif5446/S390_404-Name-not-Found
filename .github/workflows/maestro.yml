@@ -65,16 +65,20 @@ jobs:
       - name: Build iOS App
         working-directory: frontend/conuwalks
         run: |
-          # Find the workspace name automatically (e.g., MyApp.xcworkspace)
           WORKSPACE=$(find ios -name "*.xcworkspace" | head -n 1)
           SCHEME=$(basename "$WORKSPACE" .xcworkspace)
           
+          # Force pod install to ensure workspace is valid
+          cd ios && pod install && cd ..
+
           echo "Building Scheme: $SCHEME from Workspace: $WORKSPACE"
-          
+          # use 'generic/platform=iOS Simulator'
+          #   This builds a binary compatible with ANY simulator.
+          # 'ONLY_ACTIVE_ARCH=NO' ensures we build for both x86_64 and arm64
           xcodebuild \
             -workspace "$WORKSPACE" \
             -scheme "$SCHEME" \
-            -destination "platform=iOS Simulator,name=${{env.IPHONE_VERSION}},OS=latest" \
+            -destination 'generic/platform=iOS Simulator' \
             -configuration Debug \
             -derivedDataPath build/ \
             -quiet \
@@ -87,19 +91,15 @@ jobs:
           erase_before_boot: true
           shutdown_after_job: true
 
-      - name: Install Maestro CLI
-        run: |
-          curl -Ls "https://get.maestro.mobile.dev" | bash
-          echo "$HOME/.maestro/bin" >> $GITHUB_PATH
-
-      - name: Run Maestro Tests
+      - name: Install and Run Maestro Tests
         working-directory: frontend/conuwalks
         run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
           export PATH="$HOME/.maestro/bin:$PATH"
 
           APP_PATH=$(find build/Build/Products/Debug-iphonesimulator -name "*.app" | head -n 1)
           if [ -z "$APP_PATH" ]; then
-            echo "Error: .app binary not found. Build may have failed."
+            echo "Error: .app binary not found."
             exit 1
           fi
 
