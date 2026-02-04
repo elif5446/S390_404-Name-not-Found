@@ -81,10 +81,11 @@ jobs:
             -workspace "$WORKSPACE" \
             -scheme "$SCHEME" \
             -destination 'generic/platform=iOS Simulator' \
-            -configuration Debug \
+            -configuration Release \
             -sdk 'iphonesimulator' \
             -derivedDataPath build/ \
             ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGNING_ALLOWED=NO \
             -quiet \
             clean build
 
@@ -101,7 +102,7 @@ jobs:
           curl -Ls "https://get.maestro.mobile.dev" | bash
           export PATH="$HOME/.maestro/bin:$PATH"
 
-          APP_PATH=$(find build/Build/Products/Debug-iphonesimulator -name "*.app" | head -n 1)
+          APP_PATH=$(find build/Build/Products/Release-iphonesimulator -name "*.app" | head -n 1)
           if [ -z "$APP_PATH" ]; then
             echo "Error: .app binary not found."
             exit 1
