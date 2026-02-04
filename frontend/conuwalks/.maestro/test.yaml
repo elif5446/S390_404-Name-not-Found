@@ -12,7 +12,5 @@ appId: com.conuwalks.app
     commands:
       - tapOn: "Allow While Using App"
 
-- assertVisible:
-    text: "Sir George Williams"
-    timeout: 10000
+- assertVisible: "Sir George Williams"
 - assertVisible: "Loyola"

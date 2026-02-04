@@ -67,9 +67,6 @@ jobs:
         run: |
           WORKSPACE=$(find ios -name "*.xcworkspace" | head -n 1)
           SCHEME=$(basename "$WORKSPACE" .xcworkspace)
-          
-          # Force pod install to ensure workspace is valid
-          cd ios && pod install && cd ..
 
           echo "Building Scheme: $SCHEME from Workspace: $WORKSPACE"
           # use 'generic/platform=iOS Simulator'
@@ -80,6 +77,7 @@ jobs:
             -scheme "$SCHEME" \
             -destination 'generic/platform=iOS Simulator' \
             -configuration Debug \
+            -sdk 'iphonesimulator' \
             -derivedDataPath build/ \
             -quiet \
             clean build
@@ -105,8 +103,32 @@ jobs:
 
           echo "Installing App: $APP_PATH"
           xcrun simctl install booted "$APP_PATH"
+
+          mkdir -p .maestro/artifacts
           
           echo "Testing Binary: $APP_PATH"
           maestro test .maestro \
             --format junit \
-            --output maestro-ios-report.xml
+            --output maestro-ios-report.xml \
+            --record \
+            --screen-recording-fps 15
+          
+          mv *.mp4 .maestro/artifacts/ || true
+          mv *.png .maestro/artifacts/ || true
+          mv maestro-ios-report.xml .maestro/artifacts/
+
+      - name: Commit and Push Recordings
+        if: always() 
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          
+          git add frontend/conuwalks/.maestro/artifacts/
+          
+          # Commit if there are changes
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: add maestro test recordings [skip ci]"
+            git push
+          fi
