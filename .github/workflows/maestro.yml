@@ -1,15 +1,20 @@
 name: Maestro iOS E2E Tests
 
 on:
-  push:
-    branches: ["main"]
-  pull_request:
-    branches: ["main"]
+  # push:
+  #   branches: ["main"]
+  # pull_request:
+  #   branches: ["main"]
   workflow_dispatch: 
 
+# Cancel previous pending/running workflows
+concurrency:
+  group: '${{ github.workflow }}-${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+  cancel-in-progress: true
+
 permissions:
-  contents: read
-  actions: read
+  contents: write
+  actions: write
   checks: write
 
 env:
@@ -104,22 +109,22 @@ jobs:
           echo "Installing App: $APP_PATH"
           xcrun simctl install booted "$APP_PATH"
 
-          
           echo "Testing Binary: $APP_PATH"
           maestro test .maestro \
-          --format junit \
-          --output maestro-ios-report.xml
+            --format junit \
+            --output maestro-ios-report.xml
           
           mkdir -p .maestro/artifacts
           mv maestro-ios-report.xml .maestro/artifacts/
 
       - name: Commit and Push Recordings
+        working-directory: frontend/conuwalks
         if: always() 
         run: |
           git config --global user.name "GitHub Action"
           git config --global user.email "action@github.com"
           
-          git add frontend/conuwalks/.maestro/artifacts/
+          git add .maestro/artifacts/
           
           # Commit if there are changes
           if git diff --staged --quiet; then

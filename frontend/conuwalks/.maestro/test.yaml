@@ -5,7 +5,7 @@ appId: com.conuwalks.app
       all: allow
 
 # handle potential Location Permission dialog
-#    this "runFlow" block only runs IF the system dialog appears.
+# only runs IF the system dialog appears
 - runFlow:
     when:
       visible: "Allow.*"
