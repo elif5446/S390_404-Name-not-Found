@@ -42,7 +42,7 @@ jobs:
       - name: Boot iOS Simulator
         uses: futureware-tech/simulator-action@dab10d813144ef59b48d401cd95da151222ef8cd
         with:
-          model: 'iPhone 15 Pro'
+          model: 'iPhone 16'
           erase_before_boot: true
           shutdown_after_job: true
 
