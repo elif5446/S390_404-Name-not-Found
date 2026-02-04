@@ -10,7 +10,9 @@ appId: com.conuwalks.app
     when:
       visible: "Allow.*"
     commands:
-      - tapOn: "Allow While Using App"
+      - tapOn: 
+          text: "Allow.*"
+          retryTapIfNoChange: false
 
 - assertVisible: "Sir George Williams"
 - assertVisible: "Loyola"

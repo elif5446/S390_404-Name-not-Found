@@ -84,6 +84,7 @@ jobs:
             -configuration Debug \
             -sdk 'iphonesimulator' \
             -derivedDataPath build/ \
+            ONLY_ACTIVE_ARCH=NO \
             -quiet \
             clean build
 
@@ -108,16 +109,16 @@ jobs:
 
           echo "Installing App: $APP_PATH"
           xcrun simctl install booted "$APP_PATH"
+          mkdir -p .maestro/artifacts
 
           echo "Testing Binary: $APP_PATH"
           maestro test .maestro \
             --format junit \
             --output maestro-ios-report.xml
           
-          mkdir -p .maestro/artifacts
           mv maestro-ios-report.xml .maestro/artifacts/
 
-      - name: Commit and Push Recordings
+      - name: Commit and Push report
         working-directory: frontend/conuwalks
         if: always() 
         run: |
