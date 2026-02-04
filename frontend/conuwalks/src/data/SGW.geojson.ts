@@ -3,7 +3,12 @@ const SGW = {
   "features": [
     {
       "type": "Feature",
-      "properties": { "id": "H", "color": "#0A84FF" },
+      "properties": { "id": "H", "name": "Henry F. Hall Building", "address": "1455 De Maisonneuve Blvd. W.", "description" : "The Henry F. Hall Building is a building that belongs to the Concordia University which includes classroons, engineering and research labs, social science departments, and major student areas. " ,  
+      "openingHours": {
+          "weekdays": "Monday-Friday: 7:00 AM - 11:00 PM",
+          "weekend": "Saturday-Sunday: 7:00 AM - 9:00 PM"}, 
+          "color": "#0A84FF", 
+          "facilities":["Accessible entrance", "Accessible building elevator"] },
       "geometry": {
         "type": "Polygon",
         "coordinates": [[
@@ -20,7 +25,12 @@ const SGW = {
     },
     {
       "type": "Feature",
-      "properties": { "id": "LB", "color": "#34C759" },
+      "properties": { "id": "LB", "name": "J.W. McConnell Building (Webster Library)", "address": "	1400 De Maisonneuve Blvd. W.",
+         "openingHoursConcStudents" : "24 hours", "openingHoursEveryone" : "7:00 AM - 11:00 PM" ,
+         "description" : "The Webster Library is the main library that offers study spaces, loans & returns, technology services, and reservable study rooms for Concordia students." ,
+         "color": "#34C759"
+        , "facilities":["Accessible entrance", "Accessible building elevator", "Parking"]
+       },
       "geometry": {
         "type": "Polygon",
         "coordinates":[[
@@ -40,7 +50,11 @@ const SGW = {
     },
     {
       "type": "Feature",
-      "properties": { "id": "LS", "color": "#AF52DE" },
+      "properties": { "id": "LS", "name": "Learning Square", "address": "	1535 De Maisonneuve Blvd. W.", "description" : "The LS Building is a modern facility that includes eight classrooms, welcoming up to 80 students per classroom." ,  "openingHours": {
+          "weekdays": "Monday-Friday: 7:00 AM - 11:00 PM",
+          "weekend": "Saturday-Sunday: 7:00 AM - 9:00 PM"},
+          "color": "#AF52DE", 
+          "facilities":["Accessible entrance",  "Accessibility ramp"] },
       "geometry": {
         "type": "Polygon",
         "coordinates": [[
@@ -57,7 +71,11 @@ const SGW = {
     },
     {
       "type": "Feature",
-      "properties": { "id": "EV", "color": "#FF9F0A" },
+      "properties": { "id": "EV", "name": "Engineering, Computer Science and Visual Arts Integrated Complex", "address": "1515 Ste-Catherine St. W.", "description" : "The EV Building contains the faculty Dean's Office, many specialized labs, as well as student areas and classrooms. " ,  "openingHours": {
+          "weekdays": "Monday-Friday: 7:00 AM - 11:00 PM",
+          "weekend": "Saturday-Sunday: 7:00 AM - 9:00 PM"},
+          "color": "#FF9F0A", 
+          "facilities":["Accessible entrance", "Accessible building elevator", "Metro"] },
       "geometry": {
         "type": "Polygon",
     "coordinates":[[
@@ -74,7 +92,11 @@ const SGW = {
     },
     {
       "type": "Feature",
-      "properties": { "id": "MB", "color": "#30D158" },
+      "properties": { "id": "MB", "name": "John Molson Building", "address": "1450 Guy St.", "description" : "The JMSB building is a business school, offering many classrooms, study areas, and student services. " ,   "openingHours": {
+          "weekdays": "Monday-Friday: 7:00 AM - 11:00 PM",
+          "weekend": "Saturday-Sunday: 7:00 AM - 9:00 PM"},
+          "color": "#30D158", 
+          "facilities":["Accessible entrance", "Accessible building elevator", "Metro"] },
       "geometry": {
         "type": "Polygon",
         "coordinates":[
@@ -93,7 +115,11 @@ const SGW = {
     },
     {
       "type": "Feature",
-      "properties": { "id": "FB", "color": "#FFD60A" },
+      "properties": { "id": "FB", "name": "Faubourg Building", "address": "1250 Guy St." , "description" : "The Faubourg Building (FB) is a postmodern Concordia Building featuring labs, classrooms, offices, study spaces, student services, and most importantly the Concordia Continuing Education and the Mel Hoppenheim School of Cinema" ,   "openingHours": {
+          "weekdays": "Monday-Friday: 7:00 AM - 11:00 PM",
+          "weekend": "Saturday-Sunday: 7:00 AM - 9:00 PM"},
+          "color": "#FFD60A", 
+          "facilities":["Accessible entrance", "Accessible building elevator", "Wheelchair lift", "Parking"] },
       "geometry": {
         "type": "Polygon",
         "coordinates":[[
@@ -107,7 +133,11 @@ const SGW = {
     },
     {
       "type": "Feature",
-      "properties": { "id": "FG", "color": "#64D2FF" },
+      "properties": { "id": "FG", "name": "Faubourg Ste-Catherine Building", "address": "1610 Ste-Catherine St. W.", "description" : "The Faubourg Ste-Catherine Building (FG) features the Department of Education's Student Resource Center, classroms and some restaurants." ,  "openingHours": {
+          "weekdays": "Monday-Friday: 7:00 AM - 11:00 PM",
+          "weekend": "Saturday-Sunday: 7:00 AM - 9:00 PM"}, 
+          "color": "#64D2FF",
+          "facilities":["Accessible entrance", "Accessible building elevator", "Wheelchair lift", "Accessibility ramp"]  },
       "geometry": {
         "type": "Polygon",
         "coordinates":[[
@@ -125,7 +155,11 @@ const SGW = {
     },
     {
       "type": "Feature",
-      "properties": { "id": "CL", "color": "#FF375F" },
+      "properties": { "id": "CL","name": "CL Annex", "address": "1665 Ste-Catherine St. W." , "description" : "The CL Annex (CL) building features classrooms and facilities that support Concordia Continuing Education programs. " ,   "openingHours": {
+          "weekdays": "Monday-Friday: 7:00 AM - 11:00 PM",
+          "weekend": "Saturday-Sunday: 7:00 AM - 9:00 PM"},
+          "color": "#FF375F",
+         "facilities":["Accessible entrance", "Accessible building elevator"] },
       "geometry": {
         "type": "Polygon",
        "coordinates":[[
@@ -140,7 +174,11 @@ const SGW = {
     },
     {
       "type": "Feature",
-      "properties": { "id": "GM", "color": "#FF375F" },
+      "properties": { "id": "GM", "name": "Guy-De Maisonneuve Building" ,"address": "1550 De Maisonneuve Blvd. W." , "description" : "The GM building offers many offices, classrooms, studios for Dance, Theatre and Music Departments." ,  "openingHours": {
+          "weekdays": "Monday-Friday: 7:00 AM - 11:00 PM",
+          "weekend": "Saturday-Sunday: 7:00 AM - 9:00 PM"},
+           "color": "#FF375F", 
+           "facilities":["Accessible entrance", "Accessible building elevator"] },
       "geometry": {
         "type": "Polygon",
  "coordinates": [[
@@ -155,7 +193,11 @@ const SGW = {
     },
     {
       "type": "Feature",
-      "properties": { "id": "ER", "color": "#FFCC00" },
+      "properties": { "id": "ER", "name": "ER Building", "address": "2155 Guy St.", "description" : "The ER Building is a University facility housing academic departments and research centers and institutes. " ,  "openingHours": {
+          "weekdays": "Monday-Friday: 7:00 AM - 11:00 PM",
+          "weekend": "Saturday-Sunday: 7:00 AM - 9:00 PM"},
+          "color": "#FFCC00",
+          "facilities":["Accessible entrance", "Accessible building elevator", "Accessibility ramp"] },
       "geometry": {
         "type": "Polygon",
         "coordinates":[[
