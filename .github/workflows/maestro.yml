@@ -104,17 +104,13 @@ jobs:
           echo "Installing App: $APP_PATH"
           xcrun simctl install booted "$APP_PATH"
 
-          mkdir -p .maestro/artifacts
           
           echo "Testing Binary: $APP_PATH"
           maestro test .maestro \
-            --format junit \
-            --output maestro-ios-report.xml \
-            --record \
-            --screen-recording-fps 15
+          --format junit \
+          --output maestro-ios-report.xml
           
-          mv *.mp4 .maestro/artifacts/ || true
-          mv *.png .maestro/artifacts/ || true
+          mkdir -p .maestro/artifacts
           mv maestro-ios-report.xml .maestro/artifacts/
 
       - name: Commit and Push Recordings
