@@ -1,0 +1,5 @@
+appId: com.conuwalks.app
+---
+- launchApp:
+- assertVisible: "Sir George Williams"
+- assertVisible: "Loyola"
