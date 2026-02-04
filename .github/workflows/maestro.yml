@@ -18,7 +18,7 @@ env:
 jobs:
   maestro-ios-test:
     runs-on: macos-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -31,10 +31,6 @@ jobs:
           cache: npm
           cache-dependency-path: |
             frontend/conuwalks/package-lock.json
-
-      - name: Install frontend deps
-        working-directory: frontend/conuwalks
-        run: npm ci
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -106,10 +102,11 @@ jobs:
             echo "Error: .app binary not found. Build may have failed."
             exit 1
           fi
+
+          echo "Installing App: $APP_PATH"
+          xcrun simctl install booted "$APP_PATH"
           
           echo "Testing Binary: $APP_PATH"
-
           maestro test .maestro \
-            --app-file "$APP_PATH" \
             --format junit \
             --output maestro-ios-report.xml
