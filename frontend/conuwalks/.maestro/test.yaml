@@ -1,5 +1,18 @@
 appId: com.conuwalks.app
 ---
-- launchApp
-- assertVisible: "Sir George Williams"
+- launchApp:
+    permissions:
+      all: allow
+
+# handle potential Location Permission dialog
+#    this "runFlow" block only runs IF the system dialog appears.
+- runFlow:
+    when:
+      visible: "Allow.*"
+    commands:
+      - tapOn: "Allow While Using App"
+
+- assertVisible:
+    text: "Sir George Williams"
+    timeout: 10000
 - assertVisible: "Loyola"
