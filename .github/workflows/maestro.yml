@@ -1,0 +1,53 @@
+name: Maestro iOS E2E Tests
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch: 
+
+permissions:
+  contents: read
+  actions: read
+  checks: write
+
+jobs:
+  maestro-ios-test:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+        # Java 17 is the recommended stable version for Maestro to avoid JNI/Linker errors
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: |
+            frontend/conuwalks/package-lock.json
+
+      - name: Install frontend deps
+        working-directory: frontend/conuwalks
+        run: npm ci
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Boot iOS Simulator
+        uses: futureware-tech/simulator-action@dab10d813144ef59b48d401cd95da151222ef8cd
+        with:
+          model: 'iPhone 15 Pro'
+          erase_before_boot: true
+          shutdown_after_job: true
+
+      - name: maestro-test-action
+        uses: dniHze/maestro-test-action@bda8a93211c86d0a05b7a4597c5ad134566fbde4
+        with:
+          flow: .maestro
+          report: meastro-ios-report.xml
