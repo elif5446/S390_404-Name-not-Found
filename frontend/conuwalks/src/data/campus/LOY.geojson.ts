@@ -3,11 +3,7 @@ export const LOY = {
   "features": [
     {
       "type": "Feature",
-      "properties": { "id": "VL", "name": "Vanier Library Building", "address": "7141 Sherbrooke St. W.", 
-      "openingHoursConcStudents" : "24 hours", "openingHoursEveryone" : "7:00 AM - 11:00 PM",
-      "description" : "The Vanier Library (VL) offers collaborative and silent study spaces,22 learning spaces, and reservable group study rooms across three floors.", 
-      "color": "#0A84FF", 
-      "facilities":["Accessible entrance", "Accessible building elevator"] },
+      "properties": { "id": "VL" },
       "geometry": {
         "type": "Polygon",
         "coordinates": [[
@@ -44,12 +40,7 @@ export const LOY = {
     },
     {
       "type": "Feature",
-      "properties": { "id": "SP", "name": "Richard J. Renaud Science Complex","address": "7141 Sherbrooke St. W.",  "openingHours": {
-          "weekdays": "Monday-Friday: 7:00 AM - 11:00 PM",
-          "weekend": "Saturday-Sunday: 7:00 AM - 9:00 PM"}, 
-          "description" : "The Richard J. Renaud Science Complex (RC) is a state-of-the-art Concordia facility offering teaching spaces, offices, and laboratories for different science departments.", 
-          "color": "#34C759",
-          "facilities":["Accessible entrance", "Accessible building elevator", "Accesibility ramp"] },
+      "properties": { "id": "SP" },
       "geometry": {
         "type": "Polygon",
        "coordinates": [[
@@ -98,12 +89,7 @@ export const LOY = {
     },
     {
       "type": "Feature",
-      "properties": { "id": "CJ", "name": "Communication Studies and Journalism Building", "address": "7141 Sherbrooke St. W.",   "openingHours": {
-          "weekdays": "Monday-Friday: 7:00 AM - 11:00 PM",
-          "weekend": "Saturday-Sunday: 7:00 AM - 9:00 PM"},
-          "description" : "The Communication Studies and Journalism Building (CJ) houses the Communication Studies and Journalism departments, a bookstore, café, lounge, and specialized media spaces, high-tech classrooms, and computer labs.",
-          "color": "#AF52DE" , 
-          "facilities":["Accessible entrance", "Accessible building elevator", "Accesibility ramp", "Wheelchair lift"]},
+      "properties": { "id": "CJ" },
       "geometry": {
         "type": "Polygon",
         "coordinates": [
@@ -148,12 +134,7 @@ export const LOY = {
     },
     {
       "type": "Feature",
-      "properties": { "id": "CC", "name": "Central Building", "address": "7141 Sherbrooke St. W.",   "openingHours": {
-          "weekdays": "Monday-Friday: 7:00 AM - 11:00 PM",
-          "weekend": "Saturday-Sunday: 7:00 AM - 9:00 PM"}, 
-          "description" : "The Central Building (CC), a Loyola Campus building, features classrooms, the Guadagni Lounge, and the student-run radio station CJLO.", 
-          "color": "#FF9F0A", 
-          "facilities":["Accessible entrance", "Accessible building elevator", "Wheelchair lift"] },
+      "properties": { "id": "CC" },
       "geometry": {
         "type": "Polygon",
        "coordinates": [[
@@ -170,12 +151,7 @@ export const LOY = {
     },
     {
       "type": "Feature",
-      "properties": { "id": "AD", "name": "	Administration Building", "address": "7141 Sherbrooke St. W.",  "openingHours": {
-          "weekdays": "Monday-Friday: 7:00 AM - 11:00 PM",
-          "weekend": "Saturday-Sunday: 7:00 AM - 9:00 PM"}, 
-          "description" : "The Administration Building (AD), a Loyola Campus building, houses Student Services and Faculty of Arts and Science offices, connecting to the F.C. Smith and Central buildings.",
-          "color": "#30D158",
-          "facilities":["Accessible entrance", "Accessible building elevator", "Accesibility ramp", "Parking"] },
+      "properties": { "id": "AD" },
       "geometry": {
         "type": "Polygon",
         "coordinates": [[
@@ -216,12 +192,7 @@ export const LOY = {
     },
     {
       "type": "Feature",
-      "properties": { "id": "FC", "name": "F.C. Smith Building","address": "7141 Sherbrooke St. W.",   "openingHours": {
-          "weekdays": "Monday-Friday: 7:00 AM - 11:00 PM",
-          "weekend": "Saturday-Sunday: 7:00 AM - 9:00 PM"}, 
-          "description" : "The F.C. Smith Building (FC), a Loyola Campus building, houses the Loyola Chapel, classrooms, and spaces for student life and community events.", 
-          "color": "#FFD60A",
-          "facilities":["Accessible entrance", "Accesibility ramp"] },
+      "properties": { "id": "FC" },
       "geometry": {
         "type": "Polygon",
        "coordinates": [[
@@ -264,12 +235,7 @@ export const LOY = {
     },
     {
       "type": "Feature",
-      "properties": { "id": "HU", "name": "Applied Science Hub", "address": "7141 Sherbrooke St. W.",   "openingHours": {
-          "weekdays": "Monday-Friday: 7:00 AM - 11:00 PM",
-          "weekend": "Saturday-Sunday: 7:00 AM - 9:00 PM"}, 
-          "description" : "The Applied Science Hub (HU) is a LEED Gold-certified Concordia facility which includes high-tech labs, collaborative research spaces, and the District 3 Innovation Hub supporting interdisciplinary projects in agriculture, health, sustainability, and engineering.", 
-          "color": "#64D2FF", 
-          "facilities":["Accessible entrance", "Accessible building elevator"] },
+      "properties": { "id": "HU" },
       "geometry": {
         "type": "Polygon",
         "coordinates": [[
