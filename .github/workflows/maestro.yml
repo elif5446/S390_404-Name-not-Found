@@ -1,21 +1,29 @@
 name: Maestro iOS E2E Tests
 
 on:
-  push:
-    branches: ["main"]
-  pull_request:
-    branches: ["main"]
+  # push:
+  #   branches: ["main"]
+  # pull_request:
+  #   branches: ["main"]
   workflow_dispatch: 
 
+# Cancel previous pending/running workflows
+concurrency:
+  group: '${{ github.workflow }}-${{ github.event.pull_request.head.label || github.head_ref || github.ref }}'
+  cancel-in-progress: true
+
 permissions:
-  contents: read
-  actions: read
+  contents: write
+  actions: write
   checks: write
+
+env:
+  IPHONE_VERSION: "iPhone 16"
 
 jobs:
   maestro-ios-test:
     runs-on: macos-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -29,25 +37,101 @@ jobs:
           cache-dependency-path: |
             frontend/conuwalks/package-lock.json
 
-      - name: Install frontend deps
-        working-directory: frontend/conuwalks
-        run: npm ci
-
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
+      
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@60606e260d2fc5762a71e64e74b2174e8ea3c8bd
+        with:
+          xcode-version: 'latest-stable'
+
+      - name: Install Dependencies
+        working-directory: frontend/conuwalks
+        run: npm ci
+
+      # Caching CocoaPods is essential for build speed
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: frontend/conuwalks/ios/Pods
+          key: ${{ runner.os }}-pods-${{ hashFiles('frontend/conuwalks/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-pods-
+
+      # Generates the 'ios' folder for the build
+      - name: Expo Prebuild
+        working-directory: frontend/conuwalks
+        run: npx expo prebuild --platform ios --clean
+
+      # Builds the binary for the Simulator (x86_64/arm64)
+      - name: Build iOS App
+        working-directory: frontend/conuwalks
+        run: |
+          WORKSPACE=$(find ios -name "*.xcworkspace" | head -n 1)
+          SCHEME=$(basename "$WORKSPACE" .xcworkspace)
+
+          echo "Building Scheme: $SCHEME from Workspace: $WORKSPACE"
+          # use 'generic/platform=iOS Simulator'
+          #   This builds a binary compatible with ANY simulator.
+          # 'ONLY_ACTIVE_ARCH=NO' ensures we build for both x86_64 and arm64
+          xcodebuild \
+            -workspace "$WORKSPACE" \
+            -scheme "$SCHEME" \
+            -destination 'generic/platform=iOS Simulator' \
+            -configuration Release \
+            -sdk 'iphonesimulator' \
+            -derivedDataPath build/ \
+            ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            -quiet \
+            clean build
 
       - name: Boot iOS Simulator
         uses: futureware-tech/simulator-action@dab10d813144ef59b48d401cd95da151222ef8cd
         with:
-          model: 'iPhone 15 Pro'
+          model: ${{env.IPHONE_VERSION}}
           erase_before_boot: true
           shutdown_after_job: true
 
-      - name: maestro-test-action
-        uses: dniHze/maestro-test-action@bda8a93211c86d0a05b7a4597c5ad134566fbde4
-        with:
-          flow: .maestro
-          report: meastro-ios-report.xml
+      - name: Install and Run Maestro Tests
+        working-directory: frontend/conuwalks
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          export PATH="$HOME/.maestro/bin:$PATH"
+
+          APP_PATH=$(find build/Build/Products/Release-iphonesimulator -name "*.app" | head -n 1)
+          if [ -z "$APP_PATH" ]; then
+            echo "Error: .app binary not found."
+            exit 1
+          fi
+
+          echo "Installing App: $APP_PATH"
+          xcrun simctl install booted "$APP_PATH"
+          mkdir -p .maestro/artifacts
+
+          echo "Testing Binary: $APP_PATH"
+          maestro test .maestro \
+            --format junit \
+            --output maestro-ios-report.xml
+          
+          mv maestro-ios-report.xml .maestro/artifacts/
+
+      - name: Commit and Push report
+        working-directory: frontend/conuwalks
+        if: always() 
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          
+          git add .maestro/artifacts/
+          
+          # Commit if there are changes
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: add maestro test recordings [skip ci]"
+            git push
+          fi
