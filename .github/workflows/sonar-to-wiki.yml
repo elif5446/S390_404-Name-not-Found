@@ -1,9 +1,9 @@
-name: Release Quality Report 
+name: Release Quality Report
 
 on:
   push:
     tags:
-      - "v[0-9]*.0.0"  
+      - "v[0-9]*.0.0"
   workflow_dispatch:
     inputs:
       version:
@@ -11,11 +11,8 @@ on:
         required: true
         default: "v0.0.0-test"
 
-env:
-  VERSION: ${{ inputs.version || github.ref_name }}
-
 permissions:
-  contents: write   
+  contents: write
 
 jobs:
   release_report:
@@ -31,6 +28,35 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Resolve version (tag)
+        id: version
+        run: |
+          set -euo pipefail
+          git fetch --tags origin
+
+          # if workflow_dispatch provides an input then we use it
+          if [ -n "${{ github.event.inputs.version || '' }}" ]; then
+            VERSION="${{ github.event.inputs.version }}"
+            echo "Using provided version: $VERSION"
+          else
+            # if triggered by tag push then use that tag
+            if [ "${{ github.ref_type }}" = "tag" ] && [ -n "${{ github.ref_name }}" ]; then
+              VERSION="${{ github.ref_name }}"
+              echo "Using pushed tag: $VERSION"
+            else
+              # else pick the latest tag matching v*.0.0
+              VERSION="$(git tag -l 'v*.0.0' --sort=-v:refname | head -n 1)"
+              if [ -z "$VERSION" ]; then
+                echo "::error::No tag matching v*.0.0 found."
+                exit 1
+              fi
+              echo "Using latest v*.0.0 tag: $VERSION"
+            fi
+          fi
+
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@689fb39b34b9aa95ebc5f8f119343ddd51542402
         env:
@@ -42,27 +68,36 @@ jobs:
             -Dsonar.sources=frontend
             -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**,**/.venv/**,**/__pycache__/**
 
-      - name: Generate SonarCloud report 
+      - name: Generate SonarCloud report
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           VERSION: ${{ env.VERSION }}
         run: |
-          set -e
+          set -euo pipefail
           mkdir -p out
 
           REPORT="out/Code-Quality-${VERSION}.md"
+          METRICS="alert_status,ncloc,duplicated_lines_density,comment_lines_density,coverage,branch_coverage,line_coverage,tests,test_success_density,\
+          cognitive_complexity,complexity,sqale_index,sqale_rating,sqale_debt_ratio,\
+          bugs,vulnerabilities,code_smells,security_hotspots,\
+          reliability_rating,security_rating,maintainability_rating,\
+          new_bugs,new_vulnerabilities,new_code_smells,new_security_hotspots,new_coverage"
+
 
           # Fetch key measures
           curl -s -u "${SONAR_TOKEN}:" \
             "https://sonarcloud.io/api/measures/component?component=${SONAR_PROJECT_KEY}&metricKeys=alert_status,ncloc,duplicated_lines_density,comment_lines_density,cognitive_complexity,sqale_index,bugs,vulnerabilities,code_smells,security_hotspots" \
             > out/metrics.json
+          curl -s -u "${SONAR_TOKEN}:" \
+            "https://sonarcloud.io/api/issues/search?componentKeys=${SONAR_PROJECT_KEY}&resolved=false&ps=10&s=SEVERITY&asc=false" \
+            > out/issues.json || echo '{}' > out/issues.json
 
           # Helper to get metric value by key (prints N/A if missing)
           metric () {
             jq -r --arg k "$1" '.component.measures[]? | select(.metric==$k) | .value' out/metrics.json | head -n 1
           }
           val_or_na () {
-            v="$(metric "$1")"
+            v="$(metric "$1" || true)"
             if [ -z "$v" ] || [ "$v" = "null" ]; then echo "N/A"; else echo "$v"; fi
           }
 
@@ -70,12 +105,30 @@ jobs:
           LOC="$(val_or_na ncloc)"
           DUP="$(val_or_na duplicated_lines_density)"
           DOC="$(val_or_na comment_lines_density)"
+          COV="$(val_or_na coverage)"
+          BR_COV="$(val_or_na branch_coverage)"
+          LN_COV="$(val_or_na line_coverage)"
           CCO="$(val_or_na cognitive_complexity)"
+          CPLX="$(val_or_na complexity)"
           DEBT_MIN="$(val_or_na sqale_index)"
           BUGS="$(val_or_na bugs)"
           VULNS="$(val_or_na vulnerabilities)"
           SMELLS="$(val_or_na code_smells)"
           HOTSPOTS="$(val_or_na security_hotspots)"
+          TESTS="$(val_or_na tests)"
+          TEST_OK="$(val_or_na test_success_density)"
+          SQALE_RATING="$(val_or_na sqale_rating)"
+          DEBT_RATIO="$(val_or_na sqale_debt_ratio)"
+
+          REL_RATING="$(val_or_na reliability_rating)"
+          SEC_RATING="$(val_or_na security_rating)"
+          MAIN_RATING="$(val_or_na maintainability_rating)"
+
+          NEW_BUGS="$(val_or_na new_bugs)"
+          NEW_VULNS="$(val_or_na new_vulnerabilities)"
+          NEW_SMELLS="$(val_or_na new_code_smells)"
+          NEW_HOTSPOTS="$(val_or_na new_security_hotspots)"
+          NEW_COV="$(val_or_na new_coverage)"
 
           # Convert sqale_index to human-readable if numeric
           if echo "$DEBT_MIN" | grep -Eq '^[0-9]+(\.[0-9]+)?$'; then
@@ -87,51 +140,113 @@ jobs:
             TECH_DEBT="$DEBT_MIN"
           fi
 
+          rating_letter () {
+            case "$1" in
+              1) echo "A" ;;
+              2) echo "B" ;;
+              3) echo "C" ;;
+              4) echo "D" ;;
+              5) echo "E" ;;
+              *) echo "N/A" ;;
+            esac
+          }
+
+          REL_LET="$(rating_letter "$REL_RATING")"
+          SEC_LET="$(rating_letter "$SEC_RATING")"
+          MAIN_LET="$(rating_letter "$MAIN_RATING")"
+
           {
             echo "# Code Quality and Security Report – ${VERSION}"
             echo ""
-            echo "**Release tag:** \`${VERSION}\`"
-            echo "**Commit:** \`${GITHUB_SHA}\`"
-            echo "**Generated (UTC):** \`$(date -u +'%Y-%m-%d %H:%M')\`"
+            echo "**Release tag:** \`${VERSION}\` "
+            echo "**Commit:** \`${GITHUB_SHA}\` "
+            echo "**Generated (UTC):** \`$(date -u +'%Y-%m-%d %H:%M')\` "
             echo ""
+
             echo "## Quality Gate"
             echo "- Status: **${QUALITY_GATE}**"
             echo ""
-            echo "## Software Metrics (Current Release)"
-            echo "| Category | Metric | Value |"
-            echo "|---|---|---:|"
-            echo "| Size | Lines of Code (ncloc) | ${LOC} |"
-            echo "| Duplication | Duplicated Lines (%) | ${DUP} |"
-            echo "| Documentation | Comment Density (%) | ${DOC} |"
-            echo "| Complexity | Cognitive Complexity | ${CCO} |"
-            echo ""
-            echo "## Maintainability / Technical Debt"
+
+            echo "## Size, Coverage & Tests"
             echo "| Metric | Value |"
             echo "|---|---:|"
-            echo "| Technical Debt (est.) | ${TECH_DEBT} |"
-            echo "| Code Smells (convention violations proxy) | ${SMELLS} |"
+            echo "| Lines of Code (ncloc) | ${LOC} |"
+            echo "| Coverage (%) | ${COV} |"
+            echo "| Line Coverage (%) | ${LN_COV} |"
+            echo "| Branch Coverage (%) | ${BR_COV} |"
+            echo "| Tests | ${TESTS} |"
+            echo "| Test Success Density (%) | ${TEST_OK} |"
             echo ""
+            echo "### New Code (if available)"
+            echo "| Metric | Value |"
+            echo "|---|---:|"
+            echo "| New Coverage (%) | ${NEW_COV} |"
+            echo "| New Bugs | ${NEW_BUGS} |"
+            echo "| New Vulnerabilities | ${NEW_VULNS} |"
+            echo "| New Code Smells | ${NEW_SMELLS} |"
+            echo "| New Security Hotspots | ${NEW_HOTSPOTS} |"
+            echo ""
+
+            echo "## Complexity & Duplication"
+            echo "| Metric | Value |"
+            echo "|---|---:|"
+            echo "| Cognitive Complexity | ${CCO} |"
+            echo "| Cyclomatic Complexity | ${CPLX} |"
+            echo "| Duplicated Lines (%) | ${DUP} |"
+            echo "| Comment Density (%) | ${DOC} |"
+            echo ""
+
+            echo "## Maintainability & Technical Debt"
+            echo "| Metric | Value |"
+            echo "|---|---:|"
+            echo "| Maintainability Rating | ${MAIN_LET} (${MAIN_RATING}) |"
+            echo "| SQALE Rating | ${SQALE_RATING} |"
+            echo "| SQALE Debt Ratio (%) | ${DEBT_RATIO} |"
+            echo "| Technical Debt (est.) | ${TECH_DEBT} |"
+            echo "| Code Smells | ${SMELLS} |"
+            echo ""
+
             echo "## Reliability & Security"
             echo "| Metric | Value |"
             echo "|---|---:|"
+            echo "| Reliability Rating | ${REL_LET} (${REL_RATING}) |"
+            echo "| Security Rating | ${SEC_LET} (${SEC_RATING}) |"
             echo "| Bugs | ${BUGS} |"
             echo "| Vulnerabilities | ${VULNS} |"
             echo "| Security Hotspots | ${HOTSPOTS} |"
             echo ""
+
+            echo "## Top Unresolved Issues (snapshot)"
+            echo "_Top 10 unresolved issues (sorted by severity), at report generation time._"
+            echo ""
+            echo "| Severity | Type | Component | Line | Message |"
+            echo "|---|---|---|---:|---|"
+            jq -r '
+              if (.issues // empty) == empty then empty
+              else .issues[]
+                | [
+                    (.severity // "N/A"),
+                    (.type // "N/A"),
+                    (.component // "N/A"),
+                    (.line // 0),
+                    (.message // "N/A" | gsub("\\|"; "/") | .[0:120])
+                  ]
+                | @tsv
+              end
+            ' out/issues.json \
+            | awk -F'\t' '{printf("| %s | %s | %s | %s | %s |\n",$1,$2,$3,$4,$5)}' || true
+
+            echo ""
             echo "## Notes"
-            echo "- This report is generated automatically from SonarCloud measures for the tagged release."
+            echo "- Report generated automatically from SonarCloud measures for the tagged release."
           } > "$REPORT"
 
-          echo "Generated $REPORT"
-          ls -la out
-
-      - name: Publish report to GitHub Wiki (one page per release)
+      - name: Publish report to GitHub Wiki
         env:
-          VERSION: ${{ env.VERSION }}
           REPO: ${{ github.repository }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -e
+          set -euo pipefail
 
           git config --global user.email "github-actions@github.com"
           git config --global user.name "github-actions"
@@ -140,8 +255,128 @@ jobs:
           git clone "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.wiki.git" wiki
 
           # One page per release
-          PAGE="wiki/Code-Quality-${VERSION}.md"
-          cp "out/Code-Quality-${VERSION}.md" "$PAGE"
+          WIKI_PAGE="wiki/Code-Quality-Reports.md"
+          cp "out/Code-Quality-${VERSION}.md" "wiki/Code-Quality-${VERSION}.md"
+
+          BEGIN_MARK="<!-- BEGIN RELEASE QUALITY REPORTS -->"
+          END_MARK="<!-- END RELEASE QUALITY REPORTS -->"
+
+          # Ensure landing page exists + has markers
+          if [ ! -f "$WIKI_PAGE" ]; then
+            cat > "$WIKI_PAGE" <<EOF
+          # Code Quality Reports
+
+          This page is updated automatically on each major release tag \`vX.0.0\`.
+
+          ${BEGIN_MARK}
+          ${END_MARK}
+          EOF
+          fi
+
+          if ! grep -q "${BEGIN_MARK}" "$WIKI_PAGE"; then
+            printf "\n%s\n%s\n" "${BEGIN_MARK}" "${END_MARK}" >> "$WIKI_PAGE"
+          fi
+
+          # Evolution: compare against previous report page (latest v*.0.0 excluding current)
+          prev_file="$(ls -1 wiki/Code-Quality-v*.0.0.md 2>/dev/null | grep -v "Code-Quality-${VERSION}.md" | sort -V | tail -n 1 || true)"
+          EVO_BLOCK=""
+
+          if [ -n "$prev_file" ]; then
+            prev_val () {
+              grep -E "^\|[[:space:]]*$1[[:space:]]*\|" "$prev_file" \
+                | head -n 1 | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$/, "", $3); print $3}'
+            }
+            cur_file="out/Code-Quality-${VERSION}.md"
+            cur_val () {
+              grep -E "^\|[[:space:]]*$1[[:space:]]*\|" "$cur_file" \
+                | head -n 1 | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$/, "", $3); print $3}'
+            }
+            delta () {
+              a="$1"; b="$2"
+              if echo "$a" | grep -Eq '^[0-9]+(\.[0-9]+)?$' && echo "$b" | grep -Eq '^[0-9]+(\.[0-9]+)?$'; then
+                python3 - <<PY
+                a=float("$a"); b=float("$b")
+                print(f"{(b-a):+.2f}")
+                PY
+              else
+                echo "N/A"
+              fi
+            }
+            trend () {
+              d="$1"
+              if echo "$d" | grep -Eq '^[+-]'; then
+                python3 - <<PY
+                d=float("$d")
+                print("⬆️" if d>0 else "⬇️" if d<0 else "➡️")
+                PY
+              else
+                echo ""
+              fi
+            }
+
+            P_LOC="$(prev_val 'Lines of Code \(ncloc\)')"; C_LOC="$(cur_val 'Lines of Code \(ncloc\)')"
+            P_COV="$(prev_val 'Coverage \(%\)')";         C_COV="$(cur_val 'Coverage \(%\)')"
+            P_DUP="$(prev_val 'Duplicated Lines \(%\)')"; C_DUP="$(cur_val 'Duplicated Lines \(%\)')"
+            P_BUGS="$(prev_val 'Bugs')";                 C_BUGS="$(cur_val 'Bugs')"
+            P_VULNS="$(prev_val 'Vulnerabilities')";     C_VULNS="$(cur_val 'Vulnerabilities')"
+            P_SMELLS="$(prev_val 'Code Smells')";        C_SMELLS="$(cur_val 'Code Smells')"
+
+            D_LOC="$(delta "$P_LOC" "$C_LOC")";     T_LOC="$(trend "$D_LOC")"
+            D_COV="$(delta "$P_COV" "$C_COV")";     T_COV="$(trend "$D_COV")"
+            D_DUP="$(delta "$P_DUP" "$C_DUP")";     T_DUP="$(trend "$D_DUP")"
+            D_BUGS="$(delta "$P_BUGS" "$C_BUGS")";  T_BUGS="$(trend "$D_BUGS")"
+            D_VULNS="$(delta "$P_VULNS" "$C_VULNS")";T_VULNS="$(trend "$D_VULNS")"
+            D_SMELLS="$(delta "$P_SMELLS" "$C_SMELLS")";T_SMELLS="$(trend "$D_SMELLS")"
+
+            EVO_BLOCK="$(cat <<EOF
+
+          Previous report: \`$(basename "$prev_file" .md)\`
+
+          | Metric | Previous | Current | Δ | Trend |
+          |---|---:|---:|---:|:---:|
+          | LOC (ncloc) | ${P_LOC} | ${C_LOC} | ${D_LOC} | ${T_LOC} |
+          | Coverage (%) | ${P_COV} | ${C_COV} | ${D_COV} | ${T_COV} |
+          | Duplication (%) | ${P_DUP} | ${C_DUP} | ${D_DUP} | ${T_DUP} |
+          | Bugs | ${P_BUGS} | ${C_BUGS} | ${D_BUGS} | ${T_BUGS} |
+          | Vulnerabilities | ${P_VULNS} | ${C_VULNS} | ${D_VULNS} | ${T_VULNS} |
+          | Code Smells | ${P_SMELLS} | ${C_SMELLS} | ${D_SMELLS} | ${T_SMELLS} |
+          EOF
+          )"
+          else
+            EVO_BLOCK="### Metrics Evolution (vs previous major release)\n\n_No previous major release report found in the wiki to compare against._"
+          fi
+
+          # Build the block for this release (newest at top)
+          BLOCK_FILE="out/wiki-block-${VERSION}.md"
+          {
+            echo "## ${VERSION}"
+            echo ""
+            echo "- **Commit:** \`${GITHUB_SHA}\`"
+            echo "- **Generated (UTC):** \`$(date -u +'%Y-%m-%d %H:%M')\`"
+            echo "- **Full report page:** [[Code-Quality-${VERSION}]]"
+            echo ""
+            echo -e "${EVO_BLOCK}"
+            echo ""
+            echo "<details>"
+            echo "<summary><b> Snapshot</b></summary>"
+            echo ""
+            sed 's/^# /### /' "out/Code-Quality-${VERSION}.md"
+            echo ""
+            echo "</details>"
+            echo ""
+          } > "$BLOCK_FILE"
+
+          # Insert block immediately after BEGIN marker (keeps newest first)
+          tmp="wiki/.tmp-code-quality-reports.md"
+          awk -v begin="$BEGIN_MARK" -v blockfile="$BLOCK_FILE" '
+            { print }
+            $0 ~ begin {
+              while ((getline line < blockfile) > 0) print line
+              close(blockfile)
+            }
+          ' "$WIKI_PAGE" > "$tmp"
+
+          mv "$tmp" "$WIKI_PAGE"
 
           cd wiki
           git add .
