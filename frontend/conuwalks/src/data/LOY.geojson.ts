@@ -1,30 +1,4 @@
-import { LatLng } from 'react-native-maps';
-
-type Coordinates = [number, number];
-type PolygonCoordinates = Coordinates[][];
-
-interface FeatureProperties {
-  id: string;
-  color: string;
-  centroid?: LatLng; // mark centroid optional
-}
-
-interface Feature {
-  type: "Feature";
-  properties: FeatureProperties;
-  geometry: {
-    type: "Polygon";
-    coordinates: PolygonCoordinates;
-  };
-}
-
-interface FeatureCollection {
-  type: "FeatureCollection";
-  features: Feature[];
-}
-
- 
- const LOY: FeatureCollection =  {
+ const LOY =  {
   "type": "FeatureCollection",
   "features": [
     {
@@ -275,38 +249,4 @@ interface FeatureCollection {
     }
   ]
 };
-// 3️⃣ Centroid function with types
-
-function computeCentroid(coords: PolygonCoordinates): LatLng {
-  let lngSum = 0;
-  let latSum = 0;
-  const points = coords[0]; // first ring of the polygon
-  points.forEach(([lng, lat]) => {
-    lngSum += lng;
-    latSum += lat;
-  });
-
-  return {
-    latitude: latSum / points.length,
-    longitude: lngSum / points.length,
-  };
-}
-
-// 4️⃣ Add centroid to each building
-// 4️⃣ Add centroid to each building with manual adjustments for SP and CJ
-LOY.features.forEach((feature: Feature) => {
-  switch (feature.properties.id) {
-    case "SP":
-      feature.properties.centroid = { latitude: 45.4577, longitude: -73.6410 - 0.0006 }; // manually adjusted
-      break;
-    case "CJ":
-      feature.properties.centroid = { latitude: 45.4574, longitude: -73.6405 + 0.0001}; // manually adjusted
-      break;
-    default:
-      feature.properties.centroid = computeCentroid(feature.geometry.coordinates);
-      break;
-  }
-});
-
-
 export default LOY;

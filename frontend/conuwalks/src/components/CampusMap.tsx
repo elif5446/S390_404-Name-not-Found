@@ -5,6 +5,7 @@ import styles from '@/src/styles/campusMap';
 import { useUserLocation } from '@/src/hooks/useUserLocation';
 import SGW from '@/src/data/SGW.geojson';
 import LOY from '@/src/data/LOY.geojson';
+import { SGWData, LOYData, getLabelFontSize } from "@/src/data/BuildingLabels";
 
 // Convert GeoJSON coordinates to LatLng
 const polygonFromGeoJSON = (coordinates: number[][]): LatLng[] =>
@@ -95,9 +96,12 @@ const CampusMap: React.FC<CampusMapProps> = ({
             pointerEvents="none" // so taps pass through to polygon
           >
             <View style={{ backgroundColor: 'transparent' }}>
-              <Text style={{ fontSize: 12, fontWeight: 'bold', color: properties.color }}>
-                {properties.id}
-              </Text>
+            <Text
+            style={{ fontSize: getLabelFontSize(mapRegion.longitudeDelta),
+                     fontWeight: 'bold',
+                     color: properties.color,}}
+                  >  {properties.id}
+            </Text>
             </View>
           </Marker>
         );
@@ -149,13 +153,12 @@ const CampusMap: React.FC<CampusMapProps> = ({
           </Marker>
         )}
 
-        {/* Render SGW campus */}
-        {renderPolygons(SGW)}
-        {renderLabels(SGW)}
-
-        {/* Render Loyola campus */}
-        {renderPolygons(LOY)}
-        {renderLabels(LOY)}
+     
+        {renderPolygons(SGW)} {/* Render SGW campus polygons (raw coordinates) */}
+        {renderLabels(SGWData)} {/* Render SGW labels (with centroids) */}
+      
+        {renderPolygons(LOY)} {/* Render LOY campus polygons (raw coordinates) */}
+        {renderLabels(LOYData)} {/* Render LOY labels (with centroids) */}
 
       </MapView>
 

@@ -1,29 +1,4 @@
-import { LatLng } from 'react-native-maps';
-
-type Coordinates = [number, number];
-type PolygonCoordinates = Coordinates[][];
-
-interface FeatureProperties {
-  id: string;
-  color: string;
-  centroid?: LatLng; // mark centroid optional
-}
-
-interface Feature {
-  type: "Feature";
-  properties: FeatureProperties;
-  geometry: {
-    type: "Polygon";
-    coordinates: PolygonCoordinates;
-  };
-}
-
-interface FeatureCollection {
-  type: "FeatureCollection";
-  features: Feature[];
-}
-
-const SGW: FeatureCollection =  {
+const SGW =  {
   "type": "FeatureCollection",
   "features": [
     {
@@ -198,35 +173,5 @@ const SGW: FeatureCollection =  {
     }
   ]
 };
-// 3️⃣ Centroid function with types
-
-function computeCentroid(coords: PolygonCoordinates): LatLng {
-  let lngSum = 0;
-  let latSum = 0;
-  const points = coords[0]; // first ring of the polygon
-  points.forEach(([lng, lat]) => {
-    lngSum += lng;
-    latSum += lat;
-  });
-
-  return {
-    latitude: latSum / points.length,
-    longitude: lngSum / points.length,
-  };
-}
-
-// 4️⃣ Add centroid to each building
-SGW.features.forEach((feature: Feature) => {
-  switch (feature.properties.id) {
-    case "LS": // shift right
-      feature.properties.centroid = {
-        latitude: 45.496460041324774 - 0.0001,
-        longitude: -73.57969901828174 + 0.0002,
-      };
-      break;
-    default:
-      feature.properties.centroid = computeCentroid(feature.geometry.coordinates);
-      break;
-  }});
 
 export default SGW;
