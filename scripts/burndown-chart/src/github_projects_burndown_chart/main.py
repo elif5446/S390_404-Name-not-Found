@@ -1,4 +1,5 @@
 import argparse
+from datetime import datetime, timezone
 import sys
 
 from chart.burndown import BurndownChart, BurndownChartData, BurndownChartDataSeries
@@ -8,9 +9,11 @@ from gh.api_wrapper import (
     get_organization_project,
     get_repository_project,
     get_project_v2,
+    get_sprint_dates,
 )
 from gh.project import Project
 from util import colors
+from util.dates import date_range
 from util.stats import ProjectStats
 from util.calculators import (
     ClosedPointsCalculator,
@@ -28,12 +31,18 @@ def parse_cli_args():
     parser.add_argument(
         "--type",
         "-t",
+        default="user",
         choices=["repository", "organization", "user"],
         help="The type of project to generate a burndown chart for. Can be either 'organization' or 'repository' or 'user'.",
+        required=True,
     )
     parser.add_argument(
-        "--name", "-n", help="The name of the project as it appears in the config.json"
+        "--name",
+        "-n",
+        help="The name of the project as it appears in the config.json",
+        required=True,
     )
+    parser.add_argument("--sprint", "-s", help="The name of the sprint.", required=True)
     parser.add_argument(
         "--filepath",
         help="The filepath where the burndown chart is saved.",
@@ -55,10 +64,10 @@ def parse_cli_args():
 
 
 def download_project_data(
-    project_type: str, project_version: int, use_cache: bool = True
+    project_type: str, project_version: int, sprint: str, use_cache: bool = True
 ) -> Project:
     if project_version == 2:
-        return get_project_v2(project_type, use_cache)
+        return get_project_v2(project_type, sprint, use_cache)
 
     if project_type == "repository":
         return get_repository_project(use_cache)
@@ -115,14 +124,6 @@ def prepare_chart_data(stats: ProjectStats):
             )
         )
 
-    # series_list.append(
-    #     BurndownChartDataSeries(
-    #         name="Ideal",
-    #         data=stats.get_ideal_burndown(),
-    #         format=dict(color="#aaaaaa", linestyle="--"),
-    #     )
-    # )
-
     # construct the Data Object
     points_label = config["settings"].get("points_label", "Points")
     if not points_label:
@@ -145,10 +146,22 @@ if __name__ == "__main__":
     args = parse_cli_args()
     config.set_project(args.type, args.name)
 
+    start, end = get_sprint_dates(args.sprint)
+    if start and end:
+        config["settings"]["sprint_start_date"] = start
+        config["settings"]["sprint_end_date"] = end
+    else:
+        config["settings"]["sprint_start_date"] = "2026-01-12"
+        config["settings"]["sprint_end_date"] = (
+            datetime.now(timezone.utc)
+            .replace(hour=0, minute=0, second=0, microsecond=0)
+            .strftime("%Y-%m-%d")
+        )
+
     try:
         print(f"Fetching data for {args.name}...")
         project = download_project_data(
-            args.type, config["settings"].get("version", 2), args.use_cache
+            args.type, config["settings"].get("version", 2), args.sprint, args.use_cache
         )
 
         # Calculate Stats
