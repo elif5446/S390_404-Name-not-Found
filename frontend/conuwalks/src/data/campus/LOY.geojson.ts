@@ -3,7 +3,7 @@ export const LOY = {
   "features": [
     {
       "type": "Feature",
-      "properties": { "id": "VL", "name": "VL", "color": "#0A84FF" },
+      "properties": { "id": "VL" },
       "geometry": {
         "type": "Polygon",
         "coordinates": [[
@@ -40,7 +40,7 @@ export const LOY = {
     },
     {
       "type": "Feature",
-      "properties": { "id": "SP", "name": "SP", "color": "#34C759" },
+      "properties": { "id": "SP" },
       "geometry": {
         "type": "Polygon",
        "coordinates": [[
@@ -89,7 +89,7 @@ export const LOY = {
     },
     {
       "type": "Feature",
-      "properties": { "id": "CJ", "name": "CJ", "color": "#AF52DE" },
+      "properties": { "id": "CJ" },
       "geometry": {
         "type": "Polygon",
         "coordinates": [
@@ -134,7 +134,7 @@ export const LOY = {
     },
     {
       "type": "Feature",
-      "properties": { "id": "CC", "name": "CC", "color": "#FF9F0A" },
+      "properties": { "id": "CC" },
       "geometry": {
         "type": "Polygon",
        "coordinates": [[
@@ -151,7 +151,7 @@ export const LOY = {
     },
     {
       "type": "Feature",
-      "properties": { "id": "AD", "name": "AD", "color": "#30D158" },
+      "properties": { "id": "AD" },
       "geometry": {
         "type": "Polygon",
         "coordinates": [[
@@ -192,7 +192,7 @@ export const LOY = {
     },
     {
       "type": "Feature",
-      "properties": { "id": "FC", "name": "FC", "color": "#FFD60A" },
+      "properties": { "id": "FC" },
       "geometry": {
         "type": "Polygon",
        "coordinates": [[
@@ -235,7 +235,7 @@ export const LOY = {
     },
     {
       "type": "Feature",
-      "properties": { "id": "HU", "name": "HU", "color": "#64D2FF" },
+      "properties": { "id": "HU" },
       "geometry": {
         "type": "Polygon",
         "coordinates": [[

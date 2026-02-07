@@ -1,0 +1,30 @@
+query ProjectIterations($repo_owner: String!, $project_number: Int!) {
+  user(login: $repo_owner) {
+    projectV2(number: $project_number) {
+      title
+      field(name: "Sprint") {
+        ... on ProjectV2IterationField {
+          id
+          name
+          configuration {
+            completedIterations {
+              id
+              title
+              startDate
+              duration
+            }
+            duration
+            startDay
+            iterations {
+              id
+              title
+              startDate
+              duration
+            }
+          }
+        }
+      }
+    }
+  }
+}
+

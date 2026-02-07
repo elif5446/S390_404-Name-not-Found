@@ -1,0 +1,18 @@
+appId: com.conuwalks.app
+---
+- launchApp:
+    permissions:
+      all: allow
+
+# handle potential Location Permission dialog
+# only runs IF the system dialog appears
+- runFlow:
+    when:
+      visible: "Allow.*"
+    commands:
+      - tapOn: 
+          text: "Allow.*"
+          retryTapIfNoChange: false
+
+- assertVisible: "Sir George Williams"
+- assertVisible: "Loyola"
