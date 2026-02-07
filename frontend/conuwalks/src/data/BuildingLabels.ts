@@ -1,6 +1,6 @@
 import { LatLng } from 'react-native-maps';
-import SGW from "@/src/data/SGW.geojson";
-import LOY from "@/src/data/LOY.geojson";
+import SGW from "@/src/data/campus/SGW.geojson";
+import LOY from "@/src/data/campus/LOY.geojson";
 
 // ------------------------
 // Types
@@ -10,7 +10,6 @@ export type PolygonCoordinates = Coordinates[][];
 
 export interface FeatureProperties {
   id: string;
-  color: string;
   centroid?: LatLng;
 }
 

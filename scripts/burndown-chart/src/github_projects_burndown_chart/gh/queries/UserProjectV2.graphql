@@ -1,0 +1,43 @@
+query UserProjectV2($repo_owner: String!, $project_number: Int!, $cursor: String) {
+  user(login: $repo_owner) {
+    projectV2(number: $project_number) {
+      title
+      field(name: "Status") {
+        ... on ProjectV2SingleSelectField { options { name } }
+      }
+      items(first: 100, after: $cursor) {
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+        nodes {
+          id
+          fieldValueByName(name: "Status") {
+            ... on ProjectV2ItemFieldSingleSelectValue { name }
+          }
+          estimateField: fieldValueByName(name: "Estimate") {
+            ... on ProjectV2ItemFieldNumberValue { number }
+          }
+          content {
+            ... on Issue {
+              title
+              createdAt
+              closedAt
+              timelineItems(first: 5, itemTypes: [ASSIGNED_EVENT]) {
+                nodes { ... on AssignedEvent { createdAt } }
+              }
+            }
+            ... on PullRequest {
+              title
+              createdAt
+              closedAt
+              timelineItems(first: 5, itemTypes: [ASSIGNED_EVENT]) {
+                 nodes { ... on AssignedEvent { createdAt } }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
