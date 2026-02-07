@@ -1,8 +1,9 @@
-export const LOY = {
+ const LOY =  {
   "type": "FeatureCollection",
   "features": [
     {
       "type": "Feature",
+
       "properties": { "id": "VL" },
       "geometry": {
         "type": "Polygon",
@@ -40,6 +41,7 @@ export const LOY = {
     },
     {
       "type": "Feature",
+
       "properties": { "id": "SP" },
       "geometry": {
         "type": "Polygon",
@@ -89,6 +91,7 @@ export const LOY = {
     },
     {
       "type": "Feature",
+
       "properties": { "id": "CJ" },
       "geometry": {
         "type": "Polygon",
@@ -134,6 +137,7 @@ export const LOY = {
     },
     {
       "type": "Feature",
+
       "properties": { "id": "CC" },
       "geometry": {
         "type": "Polygon",
@@ -151,6 +155,7 @@ export const LOY = {
     },
     {
       "type": "Feature",
+
       "properties": { "id": "AD" },
       "geometry": {
         "type": "Polygon",
@@ -192,6 +197,7 @@ export const LOY = {
     },
     {
       "type": "Feature",
+
       "properties": { "id": "FC" },
       "geometry": {
         "type": "Polygon",
@@ -235,6 +241,7 @@ export const LOY = {
     },
     {
       "type": "Feature",
+
       "properties": { "id": "HU" },
       "geometry": {
         "type": "Polygon",
@@ -249,5 +256,4 @@ export const LOY = {
     }
   ]
 };
-
 export default LOY;
