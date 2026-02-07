@@ -1,9 +1,9 @@
-const SGW = {
+const SGW =  {
   "type": "FeatureCollection",
   "features": [
     {
       "type": "Feature",
-      "properties": { "id": "H", "color": "#0A84FF" },
+      "properties": { "id": "H" },
       "geometry": {
         "type": "Polygon",
         "coordinates": [[
@@ -20,7 +20,7 @@ const SGW = {
     },
     {
       "type": "Feature",
-      "properties": { "id": "LB", "color": "#34C759" },
+      "properties": { "id": "LB" },
       "geometry": {
         "type": "Polygon",
         "coordinates":[[
@@ -40,7 +40,7 @@ const SGW = {
     },
     {
       "type": "Feature",
-      "properties": { "id": "LS", "color": "#AF52DE" },
+      "properties": { "id": "LS" },
       "geometry": {
         "type": "Polygon",
         "coordinates": [[
@@ -57,7 +57,7 @@ const SGW = {
     },
     {
       "type": "Feature",
-      "properties": { "id": "EV", "color": "#FF9F0A" },
+      "properties": { "id": "EV"},
       "geometry": {
         "type": "Polygon",
     "coordinates":[[
@@ -74,7 +74,7 @@ const SGW = {
     },
     {
       "type": "Feature",
-      "properties": { "id": "MB", "color": "#30D158" },
+      "properties": { "id": "MB" },
       "geometry": {
         "type": "Polygon",
         "coordinates":[
@@ -93,7 +93,7 @@ const SGW = {
     },
     {
       "type": "Feature",
-      "properties": { "id": "FB", "color": "#FFD60A" },
+      "properties": { "id": "FB"},
       "geometry": {
         "type": "Polygon",
         "coordinates":[[
@@ -107,7 +107,7 @@ const SGW = {
     },
     {
       "type": "Feature",
-      "properties": { "id": "FG", "color": "#64D2FF" },
+      "properties": { "id": "FG"},
       "geometry": {
         "type": "Polygon",
         "coordinates":[[
@@ -125,7 +125,7 @@ const SGW = {
     },
     {
       "type": "Feature",
-      "properties": { "id": "CL", "color": "#FF375F" },
+      "properties": { "id": "CL"},
       "geometry": {
         "type": "Polygon",
        "coordinates":[[
@@ -140,7 +140,7 @@ const SGW = {
     },
     {
       "type": "Feature",
-      "properties": { "id": "GM", "color": "#FF375F" },
+      "properties": { "id": "GM"},
       "geometry": {
         "type": "Polygon",
  "coordinates": [[
@@ -155,7 +155,7 @@ const SGW = {
     },
     {
       "type": "Feature",
-      "properties": { "id": "ER", "color": "#FFCC00" },
+      "properties": { "id": "ER"},
       "geometry": {
         "type": "Polygon",
         "coordinates":[[
