@@ -17,3 +17,6 @@ with open(os.path.join(__location__, "OrganizationProjectV2.graphql")) as query:
 
 with open(os.path.join(__location__, "UserProjectV2.graphql")) as query:
     UserProjectV2 = query.read()
+
+with open(os.path.join(__location__, "ProjectIterationsQuery.graphql")) as query:
+    ProjectIterationsQuery = query.read()

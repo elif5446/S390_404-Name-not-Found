@@ -18,6 +18,11 @@ query UserProjectV2($repo_owner: String!, $project_number: Int!, $cursor: String
           estimateField: fieldValueByName(name: "Estimate") {
             ... on ProjectV2ItemFieldNumberValue { number }
           }
+          sprintField: fieldValueByName(name: "Sprint") {
+            ... on ProjectV2ItemFieldIterationValue {
+              title       # e.g., "Sprint 5"
+            }
+          }
           content {
             ... on Issue {
               title
