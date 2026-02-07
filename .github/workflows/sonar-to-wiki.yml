@@ -251,8 +251,8 @@ jobs:
           git config --global user.email "github-actions@github.com"
           git config --global user.name "github-actions"
 
-          # Clone wiki repo
-          git clone "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.wiki.git" wiki
+          # Clone wiki repo with clean URL
+          git clone "https://github.com/${REPO}.wiki.git" wiki
 
           # One page per release
           WIKI_PAGE="wiki/Code-Quality-Reports.md"
@@ -381,4 +381,7 @@ jobs:
           cd wiki
           git add .
           git commit -m "Add SonarCloud quality report for ${VERSION}" || echo "No changes to commit."
-          git push
+          git push || {
+          echo "::error::Failed to push to wiki"
+          exit 1
+          }
