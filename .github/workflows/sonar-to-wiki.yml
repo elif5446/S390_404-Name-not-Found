@@ -57,6 +57,14 @@ jobs:
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
+      - name: Install deps
+        working-directory: frontend/conuwalks
+        run: npm ci
+
+      - name: Run Jest with coverage
+        working-directory: frontend/conuwalks
+        run: npm test -- --coverage
+
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@689fb39b34b9aa95ebc5f8f119343ddd51542402
         env:
@@ -67,6 +75,10 @@ jobs:
             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
             -Dsonar.sources=frontend
             -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**,**/.venv/**,**/__pycache__/**
+            -Dsonar.tests=frontend/conuwalks/src
+            -Dsonar.test.inclusions=frontend/conuwalks/src/**/*.test.ts,frontend/conuwalks/src/**/*.test.tsx
+            -Dsonar.javascript.lcov.reportPaths=frontend/conuwalks/coverage/lcov.info
+            -Dsonar.typescript.lcov.reportPaths=frontend/conuwalks/coverage/lcov.info
 
       - name: Generate SonarCloud report
         env:
