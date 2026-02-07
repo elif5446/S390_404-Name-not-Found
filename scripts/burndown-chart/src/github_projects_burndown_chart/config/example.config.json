@@ -12,7 +12,14 @@
       "settings": {
         "sprint_start_date": "2021-10-07",
         "sprint_end_date": "2021-10-21",
-        "points_label": "Points: "
+        "points_label": "Points: ",
+        "calculators" : [
+            "closed",
+            "assigned",
+            "created",
+            "taiga",
+            "burndown"
+        ]
       }
     }
   },

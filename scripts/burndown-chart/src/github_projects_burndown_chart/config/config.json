@@ -1,0 +1,27 @@
+{
+  "user": {
+    "Concordia_Navigation_App_Project": {
+      "query_variables": {
+        "repo_owner": "elif5446",
+        "repo_name": "S390_404-Name-not-Found",
+        "project_number": 1,
+        "column_count": 5,
+        "max_cards_per_column_count": 50,
+        "labels_per_issue_count": 5
+      },
+      "settings": {
+        "version": 2,
+        "sprint_start_date": "2026-01-12",
+        "sprint_end_date": "2026-04-05",
+        "points_label": "Points",
+        "calculators" : [
+            "closed",
+            "assigned",
+            "created",
+            "taiga",
+            "burndown"
+        ]
+      }
+    }
+  }
+}
