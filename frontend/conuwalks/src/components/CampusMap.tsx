@@ -4,25 +4,16 @@ import MapView, { LatLng, Circle, Region, Marker, PROVIDER_GOOGLE, Polygon } fro
 import styles from '@/src/styles/campusMap';
 import { useUserLocation } from '@/src/hooks/useUserLocation';
 
-import { SGWData, LOYData, getLabelFontSize } from "@/src/data/BuildingLabels";
-import SGW from '@/src/data/campus/SGW.geojson';
-import LOY from '@/src/data/campus/LOY.geojson';
-import { LoyolaBuildingMetadata } from '@/src/data/metadata/LOY.BuildingMetadata';
-import { SGWBuildingMetadata } from '@/src/data/metadata/SGW.BuildingMetaData';
-import BuildingTheme from '@/src/styles/BuildingTheme';
+import CampusPolygons from '@/src/components/polygons';
+import CampusLabels from '@/src/components/campusLabels';
+import { CampusConfig } from '@/src/data/campus/campusConfig';
 
-// Convert GeoJSON coordinates to LatLng
-const polygonFromGeoJSON = (coordinates: number[][]): LatLng[] =>
-  coordinates.map(([longitude, latitude]) => ({ latitude, longitude }));
 
 interface CampusMapProps {
-  initialLocation?: LatLng; // optional prop to set initial map location
-}
-
-// TypeScript type for properties with color
-interface FeatureProperties {
-  id: string;
-  name?: string;
+  initialLocation?: {
+    latitude: number;
+    longitude: number;
+  };
 }
 
 const CampusMap: React.FC<CampusMapProps> = ({
@@ -59,77 +50,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
       }, 500); // 500ms animation
     }
   };
-
-  // Helper function to render polygons
-const renderPolygons = (
-  geojson: typeof SGW | typeof LOY,
-  campus: 'SGW' | 'LOY'
-) =>
-  geojson.features.map((feature) => {
-    if (feature.geometry.type !== 'Polygon') return null;
-
-    const coordinates = feature.geometry.coordinates[0];
-    const properties = feature.properties as { id: string }; // only id now
-
-const color = BuildingTheme[campus][
-  properties.id as keyof typeof BuildingTheme[typeof campus]
-] || "#888888";
-    const buildingMetadata =
-      campus === 'LOY' ? LoyolaBuildingMetadata[properties.id] : SGWBuildingMetadata[properties.id];
-console.log(`Campus: ${campus}, Building: ${properties.id}, Color: ${color}, Name: ${buildingMetadata?.name}`);
-
-    return (
-      <Polygon
-        key={properties.id}
-        coordinates={polygonFromGeoJSON(coordinates)}
-        fillColor={color + '75'} // semi-transparent
-        strokeColor={color}
-        strokeWidth={1}
-        tappable
-        //onPress={() => console.log('Tapped:', properties.id, buildingMetadata.name)}
-        onPress={() =>
-          console.log(
-            'Tapped:',
-            properties.id,
-            buildingMetadata?.name ?? 'Unknown building'
-          )
-        }
-        
-        accessibilityLabel={buildingMetadata?.name || properties.id}
-        accessibilityRole="button"
-      />
-    );
-  });
-
-
-    // Helper function to render labels at centroids
-    const renderLabels = (geojson: typeof SGWData | typeof LOYData, campus: 'SGW' | 'LOY') =>
-        geojson.features.map((feature) => {
-        const properties = feature.properties as FeatureProperties & { centroid?: LatLng };
-        if (!properties.centroid) return null;
-    
-        const { latitude, longitude } = properties.centroid; 
-        const color = BuildingTheme[campus][properties.id as keyof typeof BuildingTheme[typeof campus]] || "#000000";
-
-        return (
-          <Marker
-            key={properties.id + "-label"}
-            coordinate={{ latitude, longitude }}
-            tracksViewChanges={false}
-            pointerEvents="none" // so taps pass through to polygon
-          >
-            <View style={{ backgroundColor: 'transparent' }}>
-            <Text
-            style={{ fontSize: getLabelFontSize(mapRegion.longitudeDelta),
-                     fontWeight: 'bold',
-                     color: color,}}
-                  >  {properties.id}
-            </Text>
-            </View>
-          </Marker>
-        );
-      });
-    
 
   const mapID = useColorScheme() === 'dark' ? "eb0ccd6d2f7a95e23f1ec398" : "eb0ccd6d2f7a95e117328051"; // Workaround
 
@@ -177,12 +97,21 @@ console.log(`Campus: ${campus}, Building: ${properties.id}, Color: ${color}, Nam
         )}
 
      
-        {renderPolygons(SGW,'SGW')} {/* Render SGW campus polygons (raw coordinates) */}
-        {renderLabels(SGWData, 'SGW')} {/* Render SGW labels (with centroids) */}
-      
-        {renderPolygons(LOY,'LOY')} {/* Render LOY campus polygons (raw coordinates) */}
-        {renderLabels(LOYData, 'LOY')} {/* Render LOY labels (with centroids) */}
+        {/* ---------------- overlays + labels ---------------- */}
+        {(Object.keys(CampusConfig) as Array<keyof typeof CampusConfig>).map(
+          (campus) => {
+            const config = CampusConfig[campus];
 
+            return (
+              <React.Fragment key={campus}>
+                <CampusPolygons campus={campus} geojson={config.geojson} metadata={config.metadata}
+                />
+                <CampusLabels campus={campus} data={config.labels} longitudeDelta={mapRegion.longitudeDelta}
+                />
+              </React.Fragment>
+            );
+          }
+        )}
 
       </MapView>
 
