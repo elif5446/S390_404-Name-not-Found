@@ -42,7 +42,7 @@ def parse_cli_args():
         help="The name of the project as it appears in the config.json",
         required=True,
     )
-    parser.add_argument("--sprint", "-s", help="The name of the sprint.", required=True)
+    parser.add_argument("--sprint", "-s", help="The name of the sprint.")
     parser.add_argument(
         "--filepath",
         help="The filepath where the burndown chart is saved.",
