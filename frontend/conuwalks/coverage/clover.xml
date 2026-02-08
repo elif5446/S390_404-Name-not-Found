@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<coverage generated="1770499445074" clover="3.2.0">
-  <project timestamp="1770499445074" name="All files">
+<coverage generated="1770573442978" clover="3.2.0">
+  <project timestamp="1770573442979" name="All files">
     <metrics statements="23" coveredstatements="23" conditionals="2" coveredconditionals="2" methods="3" coveredmethods="3" elements="28" coveredelements="28" complexity="0" loc="23" ncloc="23" packages="1" files="1" classes="1"/>
-    <file name="useUserLocation.ts" path="C:\Users\Yasmeen\MiniCap\S390_404-Name-not-Found\frontend\conuwalks\src\hooks\useUserLocation.ts">
+    <file name="useUserLocation.ts" path="C:\Users\carla\Desktop\Winter 2026\SOEN-390\S390_404-Name-not-Found\frontend\conuwalks\src\hooks\useUserLocation.ts">
       <metrics statements="23" coveredstatements="23" conditionals="2" coveredconditionals="2" methods="3" coveredmethods="3"/>
       <line num="12" count="1" type="stmt"/>
       <line num="13" count="45" type="stmt"/>
