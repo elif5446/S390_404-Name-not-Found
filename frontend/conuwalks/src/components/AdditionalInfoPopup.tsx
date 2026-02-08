@@ -66,13 +66,12 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
       if (metadata) {
         setBuildingInfo(metadata);
       } else {
-        // Fallback: create a basic info object if metadata not found
+        // Fallback- Create a basic info object if metadata not found
         setBuildingInfo({ name: buildingId });
       }
     }
   }, [buildingId, campus]);
 
-  const windowWidth = Dimensions.get("window").width;
   const isIOS = Platform.OS === "ios";
 
   const panResponder = useRef(
@@ -103,7 +102,6 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
         }
 
         let targetHeight = currentHeight;
-        let shouldAnimate = true;
 
         // If dragged up significantly, expand
         if (gestureState.dy < -50) {
@@ -145,7 +143,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
     }
   };
 
-  // Fetching accessibility info from metadata (facilities) and rendering in popup as icons
+  // Fetching accessibility info from metadata (facilities) and rendering in popup as icons (emojis for now)
   const getAccessibilityIcons = (facilities: any) => {
     if (!buildingInfo?.facilities) {
       return null;
@@ -275,11 +273,6 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
 
   // iOS styling
   if (isIOS) {
-    const translateY = panY.interpolate({
-      inputRange: [0, MAX_HEIGHT - MIN_HEIGHT],
-      outputRange: [0, MAX_HEIGHT - MIN_HEIGHT],
-      extrapolate: "clamp",
-    });
     return (
       <Modal
         visible={visible}
@@ -308,7 +301,6 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                 >
                   <View style={styles.handleBar} />
                 </View>
-
                 {/* Header */}
                 <View style={[styles.iosHeader]}>
                   {/* Close button */}
@@ -336,7 +328,6 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                       </Text>
                     </View>
                   </TouchableOpacity>
-
                   {/* Center text container */}
                   <View style={styles.headerTextContainer}>
                     <Text
@@ -349,7 +340,6 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                     >
                       {buildingInfo?.name || "Building"}
                     </Text>
-
                     {/* Building ID and icons */}
                     <View style={styles.buildingIdWithIconsContainer}>
                       {/* Building ID */}
@@ -366,7 +356,6 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                           {buildingId}
                         </Text>
                       </View>
-
                       {/* Accessibility icons - on the far right of this row */}
                       {accessibilityIcons && accessibilityIcons.length > 0 && (
                         <View style={styles.accessibilityIconsContainer}>
@@ -386,10 +375,8 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                       )}
                     </View>
                   </View>
-
                   <View style={styles.rightSpacer} />
                 </View>
-
                 {/* Scrollable content area */}
                 <ScrollView
                   ref={scrollViewRef}

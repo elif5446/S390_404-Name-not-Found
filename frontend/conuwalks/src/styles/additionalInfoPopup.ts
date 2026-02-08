@@ -1,6 +1,4 @@
-import {StyleSheet, Dimensions, Platform} from "react-native";
-
-const windowWidth = Dimensions.get("window").width;
+import {StyleSheet, Platform} from "react-native";
 
 const additionalInfoPopupStyles = StyleSheet.create({
     // iOS styles
@@ -95,10 +93,6 @@ const additionalInfoPopupStyles = StyleSheet.create({
         marginTop: 4,
         width: "100%",
         position: "relative",},
-    accessibilityIconsInnerContainer: {
-        flexDirection: "row",
-        alignItems: "center",
-    },
     accessibilityIconWrapper: {
         marginLeft:8,
     },
@@ -140,9 +134,6 @@ const additionalInfoPopupStyles = StyleSheet.create({
     section: {
         paddingHorizontal: 20,
         paddingBottom:15,
-    },
-    sectionHeader: {
-
     },
     sectionTitle: {
         fontSize: 16,
@@ -198,16 +189,9 @@ const additionalInfoPopupStyles = StyleSheet.create({
     descriptionText: {  
         fontSize: 15,
         lineHeight: 22,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',},
+        fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',},
 
     // Android styles
-    androidBackdrop: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "transparent",
-        padding: 20
-    },
 });
 
 export {additionalInfoPopupStyles as styles};
