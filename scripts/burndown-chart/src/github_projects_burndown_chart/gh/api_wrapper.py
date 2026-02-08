@@ -1,7 +1,7 @@
 import logging
 import os
 import requests
-from datetime import date
+from datetime import date, datetime, timedelta
 import hashlib
 import json
 import tempfile
@@ -14,6 +14,7 @@ from .queries import (
     RepositoryProject,
     RepositoryProjectV2,
     UserProjectV2,
+    ProjectIterationsQuery,
 )
 
 # Set up logging
@@ -29,6 +30,7 @@ __project_v2_queries = {
     "repository": RepositoryProjectV2,
     "organization": OrganizationProjectV2,
     "user": UserProjectV2,
+    "sprint": ProjectIterationsQuery,
 }
 
 
@@ -48,7 +50,7 @@ def get_organization_project(use_cache: bool = True) -> Project:
     return get_project_v2("organization", use_cache)
 
 
-def get_project_v2(project_type, use_cache: bool = True) -> Project:
+def get_project_v2(project_type, sprint: str, use_cache: bool = True) -> Project:
     query = __project_v2_queries[project_type]
     query_variables = config["query_variables"].copy()
     query_response = gh_api_query(query, query_variables, use_cache)
@@ -58,21 +60,6 @@ def get_project_v2(project_type, use_cache: bool = True) -> Project:
         exit(1)
 
     data_root = query_response.get("data", {}).get(project_type, {})
-    if data_root and "projectV2" not in data_root:
-        # Check if maybe it returned null explicitly
-        print(f"DEBUG: Found {project_type} data, but 'projectV2' is missing.")
-        print(f"DEBUG: Available keys in response: {data_root.keys()}")
-        # Sometimes it returns 'projectV2': None
-        if "projectV2" in data_root and data_root["projectV2"] is None:
-            print(
-                f"DEBUG: GitHub explicitly returned null for project number {query_variables.get('project_number')}"
-            )
-            print(
-                "HINT: Are you sure this is a Repository project? Most V2 projects belong to the Organization."
-            )
-            print(
-                "TRY: Switch 'project_type' to 'organization' in your command line args."
-            )
     if not data_root:
         __logger.critical(
             f"Could not find {project_type} data. Check your config names."
@@ -91,7 +78,7 @@ def get_project_v2(project_type, use_cache: bool = True) -> Project:
         project_data["items"]["nodes"].extend(items["nodes"])
         page_info = items["pageInfo"]
 
-    return ProjectV2(project_data)
+    return ProjectV2(project_data, sprint)
 
 
 def gh_api_query(query: str, variables: dict, use_cache: bool = True) -> dict:
@@ -106,6 +93,63 @@ def gh_api_query(query: str, variables: dict, use_cache: bool = True) -> dict:
 
 def prepare_payload(query, variables):
     return {"query": query, "variables": variables}
+
+
+def get_all_sprints():
+    query = __project_v2_queries["sprint"]
+    query_variables = config["query_variables"].copy()
+    response = gh_api_query(query, query_variables, True)
+
+    # Navigate the response structure
+    # user -> projectV2 -> field -> configuration -> iterations
+    try:
+        data = response["data"]["user"]["projectV2"]
+        field_data = data["field"]
+
+        if not field_data:
+            print(
+                f"Error: Field '{query_variables.get('sprint_field_name', 'Sprint')}' not found."
+            )
+            return []
+
+        iterations = field_data["configuration"]["completedIterations"]
+        iterations += field_data["configuration"]["iterations"]
+        return iterations
+
+    except (KeyError, TypeError) as e:
+        print(f"Failed to parse iterations: {e}")
+        return []
+
+
+def get_sprint_dates(target_sprint: str):
+    sprints = get_all_sprints()
+
+    for s in sprints:
+        if s.get("title") == target_sprint:
+            start = datetime.strptime(s["startDate"], "%Y-%m-%d")
+            duration = s["duration"]
+            end = start + timedelta(days=duration)
+            return start.strftime("%Y-%m-%d"), end.strftime("%Y-%m-%d")
+
+    return None, None
+
+
+def print_sprint_schedule():
+    sprints = get_all_sprints()
+    print(f"\nFound {len(sprints)} Sprints in Project:")
+    print("-" * 60)
+    print(f"{'Title':<20} | {'Start Date':<12} | {'Duration':<5} | {'End Date'}")
+    print("-" * 60)
+
+    for s in sprints:
+        start = datetime.strptime(s["startDate"], "%Y-%m-%d")
+        duration = s["duration"]
+        end = start + timedelta(days=duration)
+
+        print(
+            f"{s['title']:<20} | {s['startDate']:<12} | {duration:<5}days | {end.strftime('%Y-%m-%d')}"
+        )
+    print("-" * 60)
 
 
 def __get_from_api(query, variables):

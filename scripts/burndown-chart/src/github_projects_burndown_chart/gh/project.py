@@ -34,12 +34,14 @@ class ProjectV1(Project):
 
 
 class ProjectV2(Project):
-    def __init__(self, project_data):
+    def __init__(self, project_data, sprint: str):
         if not project_data:
             raise ValueError(
                 "project_data is None. Verify your GraphQL query and permissions."
             )
         self.name = project_data.get("title", "Project")
+        self.target_sprint = sprint
+        print(self.target_sprint)
         self.columns = self.__parse_columns(project_data)
 
     def __parse_columns(self, project_data):
@@ -53,6 +55,13 @@ class ProjectV2(Project):
         items_nodes = project_data.get("items", {}).get("nodes", [])
         for item_data in items_nodes:
             status = (item_data.get("fieldValueByName") or {}).get("name")
+
+            sprint_data = item_data.get("sprintField", {}) or {}
+            sprint_name = sprint_data.get("title")
+
+            # If a target sprint is set, SKIP items that don't match
+            if self.target_sprint and sprint_name != self.target_sprint:
+                continue
 
             card = Card(item_data)
             if status in column_dict:

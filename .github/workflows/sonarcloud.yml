@@ -45,6 +45,10 @@ jobs:
           ls -la frontend/conuwalks
           ls -la frontend/conuwalks/tsconfig*.json || true
 
+      - name: Run Jest with coverage
+        working-directory: frontend/conuwalks
+        run: npm test -- --coverage
+        
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9
         env:
@@ -53,5 +57,10 @@ jobs:
           args: >
             -Dsonar.organization=${{ secrets.SONAR_ORG }}
             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
-            -Dsonar.sources=frontend
+            -Dsonar.projectBaseDir=frontend/conuwalks
+            -Dsonar.sources=src
+            -Dsonar.tests=src
+            -Dsonar.test.inclusions=src/**/*.test.ts,src/**/*.test.tsx
             -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+            -Dsonar.verbose=true

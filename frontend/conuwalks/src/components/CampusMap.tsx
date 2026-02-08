@@ -16,6 +16,29 @@ import MapView, {
 } from "react-native-maps";
 import styles from "@/src/styles/campusMap";
 import { useUserLocation } from "@/src/hooks/useUserLocation";
+
+import CampusPolygons from "@/src/components/polygons";
+import CampusLabels from "@/src/components/campusLabels";
+import { CampusConfig } from "@/src/data/campus/campusConfig";
+
+import React, { useState, useRef } from "react";
+import {
+  View,
+  Text,
+  ActivityIndicator,
+  Platform,
+  useColorScheme,
+} from "react-native";
+import MapView, {
+  LatLng,
+  Circle,
+  Region,
+  Marker,
+  PROVIDER_GOOGLE,
+  Polygon,
+} from "react-native-maps";
+import styles from "@/src/styles/campusMap";
+import { useUserLocation } from "@/src/hooks/useUserLocation";
 import SGW from "@/src/data/campus/SGW.geojson";
 import LOY from "@/src/data/campus/LOY.geojson";
 import { LoyolaBuildingMetadata } from "@/src/data/metadata/LOY.BuildingMetadata";
@@ -28,14 +51,10 @@ const polygonFromGeoJSON = (coordinates: number[][]): LatLng[] =>
   coordinates.map(([longitude, latitude]) => ({ latitude, longitude }));
 
 interface CampusMapProps {
-  initialLocation?: LatLng; // optional prop to set initial map location
-}
-
-// TypeScript type for properties with color
-interface FeatureProperties {
-  id: string;
-  name?: string;
-  color: string;
+  initialLocation?: {
+    latitude: number;
+    longitude: number;
+  };
 }
 
 const CampusMap: React.FC<CampusMapProps> = ({
@@ -116,6 +135,11 @@ const CampusMap: React.FC<CampusMapProps> = ({
   const handleClosePopup = () => {
     setSelectedBuilding((prev) => ({ ...prev, visible: false }));
   };
+
+  const mapID =
+    useColorScheme() === "dark"
+      ? "eb0ccd6d2f7a95e23f1ec398"
+      : "eb0ccd6d2f7a95e117328051"; // Workaround
 
   // Helper function to render polygons
   const renderPolygons = (
@@ -208,6 +232,28 @@ const CampusMap: React.FC<CampusMapProps> = ({
               }}
             />
           </Marker>
+        )}
+
+        {/* ---------------- overlays + labels ---------------- */}
+        {(Object.keys(CampusConfig) as Array<keyof typeof CampusConfig>).map(
+          (campus) => {
+            const config = CampusConfig[campus];
+
+            return (
+              <React.Fragment key={campus}>
+                <CampusPolygons
+                  campus={campus}
+                  geojson={config.geojson}
+                  metadata={config.metadata}
+                />
+                <CampusLabels
+                  campus={campus}
+                  data={config.labels}
+                  longitudeDelta={mapRegion.longitudeDelta}
+                />
+              </React.Fragment>
+            );
+          },
         )}
 
         {/* Render SGW campus */}
