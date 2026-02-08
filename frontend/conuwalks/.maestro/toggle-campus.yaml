@@ -13,22 +13,19 @@ appId: com.conuwalks.app
           text: "Allow.*"
           retryTapIfNoChange: false
 
-- tapOn: "Sir George Williams"
-- assertVisible: "GM"
-- assertVisible: "LB"
-- assertVisible: "EV"
-- assertVisible: "MB"
-- assertVisible: "FB"
-- assertVisible: "FG"
-
+- output: "Switching to Loyola Campus"
 - tapOn: "Loyola"
 - assertVisible: "SP"
 - assertVisible: "VL"
 - assertVisible: "AD"
 - assertVisible: "CJ"
 
+- output: "Switching back to SGW Campus"
 - tapOn: "Sir George Williams"
+- assertVisible: "LB"
+- assertVisible: "EV"
 - assertVisible: "MB"
-- assertVisible: "GM"
+- assertVisible: "FB"
+- assertVisible: "FG"
 - assertNotVisible: "SP"
 - assertNotVisible: CJ"
