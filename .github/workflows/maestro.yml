@@ -116,6 +116,7 @@ jobs:
           maestro test .maestro \
             --format junit \
             --output maestro-ios-report.xml
+            --test-output-dir=.maestro/artifacts
           
           mv maestro-ios-report.xml .maestro/artifacts/
 
