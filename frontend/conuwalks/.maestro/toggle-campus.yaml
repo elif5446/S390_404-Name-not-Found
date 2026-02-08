@@ -14,7 +14,7 @@ appId: com.conuwalks.app
           retryTapIfNoChange: false
 
 - tapOn: "Sir George Williams"
-- assertVisible: "H"
+- assertVisible: "GM"
 - assertVisible: "LB"
 - assertVisible: "EV"
 - assertVisible: "MB"
@@ -31,3 +31,4 @@ appId: com.conuwalks.app
 - assertVisible: "MB"
 - assertVisible: "GM"
 - assertNotVisible: "SP"
+- assertNotVisible: CJ"
