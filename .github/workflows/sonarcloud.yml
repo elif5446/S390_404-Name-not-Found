@@ -49,6 +49,13 @@ jobs:
         working-directory: frontend/conuwalks
         run: npm test -- --coverage
         
+      - name: Normalize lcov paths (possible debug)
+        working-directory: frontend/conuwalks
+        run: |
+          sed -i 's#\\#/#g' coverage/lcov.info
+          echo "First SF lines after normalization:"
+          grep -n "^SF:" coverage/lcov.info | head -n 10
+        
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9
         env:
