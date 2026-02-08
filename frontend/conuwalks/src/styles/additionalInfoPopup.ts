@@ -1,5 +1,4 @@
 import {StyleSheet, Dimensions, Platform} from "react-native";
-import { red100, transparent, white } from "react-native-paper/lib/typescript/styles/themes/v2/colors";
 
 const windowWidth = Dimensions.get("window").width;
 
@@ -14,7 +13,6 @@ const additionalInfoPopupStyles = StyleSheet.create({
         borderTopLeftRadius: 45,
         borderTopRightRadius:45,
         overflow:"hidden",
-        //maxHeight:Dimensions.get("window").height*0.8
     },
     iosContentContainer: {
         minHeight:300,
@@ -22,7 +20,7 @@ const additionalInfoPopupStyles = StyleSheet.create({
         paddingBottom: 8,
     },
     handleBarContainer: {
-        
+        paddingTop: 4,
     },
     handleBar: {
         width: 40,
@@ -30,25 +28,27 @@ const additionalInfoPopupStyles = StyleSheet.create({
         borderRadius:2.5,
         backgroundColor: "rgba(0, 0, 0, 0.29)",
         alignSelf: "center",
-        marginTop: 12,
+        marginTop: 8,
         marginBottom:0
     },
     iosHeader: {
         flexDirection: "row",
-        alignItems: "center",
-        justifyContent:"center",
+        alignItems: "flex-start",
+        justifyContent:"space-between",
         paddingHorizontal: 20,
         paddingVertical: 5,
-        borderBottomWidth: 1,
-        borderBottomColor: "transparent",
         width: '100%',
-        position: 'relative',
         backgroundColor:"transparent",
         minHeight:80,
     },
     headerTextContainer: {
         flex:1,
-        backgroundColor:"transparent"
+        backgroundColor:"transparent",
+        alignItems:"center",
+        justifyContent:"center",
+        marginHorizontal:44,
+        marginTop: -5,
+        position:"relative",
     },
     buildingName: {
         fontSize: 18,
@@ -59,43 +59,54 @@ const additionalInfoPopupStyles = StyleSheet.create({
         flexWrap:"wrap",
         flexShrink:1,
         width:'100%',
-        paddingHorizontal:30,
         lineHeight:24, 
         textAlignVertical:"center"
     },
-    buildingIdRow: {
-        flexDirection:"row",
-        alignItems:"center",
+    buildingIdAccessibilityRow: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+    buildingIdContainer: {
+        alignItems: "center",
+        justifyContent: "center",
+        marginTop: 4, 
     },
     buildingId: {
         fontSize: 26,
         fontWeight: "600" as const,
-        textAlign:"center",
-        lineHeight:24,
-        paddingTop:3,
+        textAlign: "center",
+        lineHeight: 24,
+        paddingTop: 3,
         fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
-        justifyContent:"center",
     },
     accessibilityIconsContainer: {
-        flexDirection:"row",
-        alignItems:"center",
-        justifyContent:"flex-end"
+        position: "absolute",
+        right: 20, 
+        top: "50%", 
+        marginTop: 15,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "flex-end",
+        zIndex: 1,
+    },
+    accessibilityIconsInnerContainer: {
+        flexDirection: "row",
+        alignItems: "center",
     },
     accessibilityIconWrapper: {
-        marginHorizontal:2,
+        marginLeft:8,
     },
     accessibilityIcon: {
         fontSize:22,
+        lineHeight:24,
     },
     closeButton: {
-        left:10,
-        top:0,
-        position:"absolute",
         width: 44,
         height: 44,
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 10,
+        marginTop: -5,
     },
     closeButtonText: {
         fontSize: 24,
@@ -110,7 +121,11 @@ const additionalInfoPopupStyles = StyleSheet.create({
         height:35,
         borderRadius:80,
         justifyContent:"center",
-        alignItems:"center"
+        alignItems:"center",
+    },
+    rightSpacer: {
+        width: 44,
+        height: 44,
     },
     contentArea: {
         flex: 1,
@@ -157,7 +172,6 @@ const additionalInfoPopupStyles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 12,
-        //paddingVertical: 4,
         borderRadius: 8,
         backgroundColor: 'transparent',
     },
@@ -180,9 +194,8 @@ const additionalInfoPopupStyles = StyleSheet.create({
         lineHeight: 22,
     fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',},
 
-
     // Android styles
-    andriodBackdrop: {
+    androidBackdrop: {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",

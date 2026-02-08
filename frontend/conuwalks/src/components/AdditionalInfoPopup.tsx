@@ -14,7 +14,6 @@ import {
   Animated,
   PanResponder,
   ScrollView,
-  Image,
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { LoyolaBuildingMetadata } from "../data/metadata/LOY.BuildingMetadata";
@@ -75,11 +74,6 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
       }
     }
   }, [buildingId, campus]);
-
-  // useEffect(() => {
-  //   // Sync panY with currentHeight
-  //   panY.setValue(currentHeight - MIN_HEIGHT);
-  // }, [currentHeight]);
 
   const windowWidth = Dimensions.get("window").width;
   const isIOS = Platform.OS === "ios";
@@ -283,7 +277,6 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
   const accessibilityIcons = getAccessibilityIcons(buildingInfo?.facilities);
 
   // iOS styling
-
   if (isIOS) {
     const translateY = panY.interpolate({
       inputRange: [0, MAX_HEIGHT - MIN_HEIGHT],
@@ -321,7 +314,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
 
                 {/* Header with close button */}
                 <View style={[styles.iosHeader]}>
-                  {/* Close button*/}
+                  {/* Close button */}
                   <TouchableOpacity
                     onPress={onClose}
                     style={styles.closeButton}
@@ -346,6 +339,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                       </Text>
                     </View>
                   </TouchableOpacity>
+
                   {/* Center text container */}
                   <View style={styles.headerTextContainer}>
                     <Text
@@ -358,7 +352,8 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                     >
                       {buildingInfo?.name || "Building"}
                     </Text>
-                    <View style={styles.buildingIdRow}>
+                    {/* Building ID only */}
+                    <View style={styles.buildingIdContainer}>
                       <Text
                         style={[
                           styles.buildingId,
@@ -369,28 +364,30 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                       >
                         {buildingId}
                       </Text>
-                      {/* Accessibility icons */}
-                      {accessibilityIcons && accessibilityIcons.length > 0 && (
-                        <View style={styles.accessibilityIconsContainer}>
-                          {accessibilityIcons.map((icon) => (
-                            <View
-                              key={icon.key}
-                              style={styles.accessibilityIconWrapper}
-                              accessible={true}
-                              accessibilityLabel={icon.label}
-                            >
-                              <Text style={styles.accessibilityIcon}>
-                                {icon.icon}
-                              </Text>
-                            </View>
-                          ))}
-                        </View>
-                      )}
                     </View>
                   </View>
 
-                  {/* Spacer to balance the layout (same width as close button) */}
-                  <View style={styles.closeButton} />
+                  {/* Accessibility icons */}
+                  <View style={styles.accessibilityIconsContainer}>
+                    {accessibilityIcons && accessibilityIcons.length > 0 && (
+                      <View style={styles.accessibilityIconsInnerContainer}>
+                        {accessibilityIcons.map((icon) => (
+                          <View
+                            key={icon.key}
+                            style={styles.accessibilityIconWrapper}
+                            accessible={true}
+                            accessibilityLabel={icon.label}
+                          >
+                            <Text style={styles.accessibilityIcon}>
+                              {icon.icon}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+
+                  <View style={styles.rightSpacer} />
                 </View>
 
                 {/* Scrollable content area */}
@@ -405,10 +402,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                   nestedScrollEnabled={true}
                   contentContainerStyle={{ flexGrow: 1, paddingBottom: 24 }}
                 >
-                  {/*Opening hours section*/}
-                  {buildingInfo?.openingHours &&
-                    renderOpeningHours(buildingInfo.openingHours)}
-                  {/*Schedule section*/}
+                  {/* Schedule section */}
                   <View style={styles.section}>
                     <Text
                       style={[
@@ -420,7 +414,10 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                     </Text>
                     {/* Schedule information will be here in future versions */}
                   </View>
-                  {/*Address section*/}
+                  {/* Opening hours section */}
+                  {buildingInfo?.openingHours &&
+                    renderOpeningHours(buildingInfo.openingHours)}
+                  {/* Address section */}
                   {buildingInfo?.address && (
                     <View style={styles.section}>
                       <Text
@@ -459,7 +456,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                       </View>
                     </View>
                   )}
-                  {/*Description section*/}
+                  {/* Description section */}
                   {buildingInfo?.description && (
                     <View style={styles.section}>
                       <Text
@@ -486,10 +483,10 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
           </Animated.View>
         </TouchableOpacity>
       </Modal>
-    ); // continue...
+    );
   } else {
     // Android (Google Maps) styling
-    return null; // continue...
+    return null;
   }
 };
 
