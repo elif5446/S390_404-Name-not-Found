@@ -249,8 +249,7 @@ describe('useUserLocation Hook - Unit Tests', () => {
         expect(Location.getCurrentPositionAsync).toHaveBeenCalledTimes(1);
       });
 
-      // Verify it only called once (no continuous tracking)
-      expect(Location.getCurrentPositionAsync).toHaveBeenCalledTimes(1);
+      
     });
   });
 
