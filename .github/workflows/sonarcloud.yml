@@ -48,13 +48,33 @@ jobs:
       - name: Run Jest with coverage
         working-directory: frontend/conuwalks
         run: npm test -- --coverage
-        
+
+      - name: Debug lcov (existence and paths)
+        working-directory: frontend/conuwalks
+        run: |
+          ls -la coverage || true
+          test -f coverage/lcov.info && echo "lcov.info FOUND" || (echo "lcov.info MISSING" && exit 1)
+          echo "First 20 SF paths:"
+          grep -n "^SF:" coverage/lcov.info | head -n 20 || true
+      
       - name: Normalize lcov paths (possible debug)
         working-directory: frontend/conuwalks
         run: |
           sed -i 's#\\#/#g' coverage/lcov.info
           echo "First SF lines after normalization:"
           grep -n "^SF:" coverage/lcov.info | head -n 10
+
+      - name: Verify lcov file paths exist
+        working-directory: frontend/conuwalks
+        run: |
+          echo "Checking first 20 SF paths exist..."
+          grep "^SF:" coverage/lcov.info | head -n 20 | sed 's/^SF://' | while read -r f; do
+            if [ -f "$f" ]; then
+              echo "OK   $f"
+            else
+              echo "MISS $f"
+            fi
+          done
         
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@a31c9398be7ace6bbfaf30c0bd5d415f843d45e9
