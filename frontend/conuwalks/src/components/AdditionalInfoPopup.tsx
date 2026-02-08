@@ -5,9 +5,7 @@ import {
   Text,
   TouchableOpacity,
   Platform,
-  Pressable,
   useColorScheme,
-  StyleSheet,
   Dimensions,
   Clipboard,
   Alert,
@@ -36,12 +34,11 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
 }) => {
   const mode = useColorScheme() || "light";
   const [buildingInfo, setBuildingInfo] = useState<any>(null);
-  const [isExpanded, setIsExpanded] = useState(false); // For a "Read More" functionality
+  const [isExpanded, setIsExpanded] = useState(false);
 
   // Animation values
   const panY = useRef(new Animated.Value(0)).current;
   const scrollViewRef = useRef<ScrollView>(null);
-  const contentHeight = useRef(0);
   const screenHeight = Dimensions.get("window").height;
 
   // Default height
@@ -183,7 +180,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
       });
     }
 
-    // Check for direct metro access - STM logo icon (metro emoji as fallback)
+    // Check for direct metro access
     if (
       facilities.some(
         (f: string) =>
@@ -312,7 +309,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                   <View style={styles.handleBar} />
                 </View>
 
-                {/* Header with close button */}
+                {/* Header */}
                 <View style={[styles.iosHeader]}>
                   {/* Close button */}
                   <TouchableOpacity
@@ -352,39 +349,42 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                     >
                       {buildingInfo?.name || "Building"}
                     </Text>
-                    {/* Building ID only */}
-                    <View style={styles.buildingIdContainer}>
-                      <Text
-                        style={[
-                          styles.buildingId,
-                          {
-                            color: mode === "dark" ? "#ffffff7d" : "#ff80979b",
-                          },
-                        ]}
-                      >
-                        {buildingId}
-                      </Text>
-                    </View>
-                  </View>
 
-                  {/* Accessibility icons */}
-                  <View style={styles.accessibilityIconsContainer}>
-                    {accessibilityIcons && accessibilityIcons.length > 0 && (
-                      <View style={styles.accessibilityIconsInnerContainer}>
-                        {accessibilityIcons.map((icon) => (
-                          <View
-                            key={icon.key}
-                            style={styles.accessibilityIconWrapper}
-                            accessible={true}
-                            accessibilityLabel={icon.label}
-                          >
-                            <Text style={styles.accessibilityIcon}>
-                              {icon.icon}
-                            </Text>
-                          </View>
-                        ))}
+                    {/* Building ID and icons */}
+                    <View style={styles.buildingIdWithIconsContainer}>
+                      {/* Building ID */}
+                      <View style={styles.buildingIdContainer}>
+                        <Text
+                          style={[
+                            styles.buildingId,
+                            {
+                              color:
+                                mode === "dark" ? "#ffffff7d" : "#ff80979b",
+                            },
+                          ]}
+                        >
+                          {buildingId}
+                        </Text>
                       </View>
-                    )}
+
+                      {/* Accessibility icons - on the far right of this row */}
+                      {accessibilityIcons && accessibilityIcons.length > 0 && (
+                        <View style={styles.accessibilityIconsContainer}>
+                          {accessibilityIcons.map((icon) => (
+                            <View
+                              key={icon.key}
+                              style={styles.accessibilityIconWrapper}
+                              accessible={true}
+                              accessibilityLabel={icon.label}
+                            >
+                              <Text style={styles.accessibilityIcon}>
+                                {icon.icon}
+                              </Text>
+                            </View>
+                          ))}
+                        </View>
+                      )}
+                    </View>
                   </View>
 
                   <View style={styles.rightSpacer} />

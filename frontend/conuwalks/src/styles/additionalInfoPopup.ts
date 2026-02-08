@@ -69,7 +69,7 @@ const additionalInfoPopupStyles = StyleSheet.create({
     buildingIdContainer: {
         alignItems: "center",
         justifyContent: "center",
-        marginTop: 4, 
+        flex:1,
     },
     buildingId: {
         fontSize: 26,
@@ -81,14 +81,20 @@ const additionalInfoPopupStyles = StyleSheet.create({
     },
     accessibilityIconsContainer: {
         position: "absolute",
-        right: 20, 
-        top: "50%", 
-        marginTop: 15,
+        right: -90,
+        top: 0,
+        bottom: 0,
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "flex-end",
-        zIndex: 1,
     },
+    buildingIdWithIconsContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        marginTop: 4,
+        width: "100%",
+        position: "relative",},
     accessibilityIconsInnerContainer: {
         flexDirection: "row",
         alignItems: "center",
