@@ -4,7 +4,7 @@
 1. `cd frontend/conuwalks`  
 
 2. Install Required Libraries:   
-```npm install --save-dev jest jest-expo @testing-library/react-native @testing-library/jest-native @testing-library/react-hooks react-test-renderer@19.1.0 @types/jest --legacy-peer-deps  
+```npm install --save-dev jest jest-expo @testing-library/react-native @testing-library/jest-native react-test-renderer@19.1.0 @types/jest --legacy-peer-deps
 ```  
 
 3. Install dependencies  
