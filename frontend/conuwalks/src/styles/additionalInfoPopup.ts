@@ -19,6 +19,7 @@ const additionalInfoPopupStyles = StyleSheet.create({
     },
     handleBarContainer: {
         paddingTop: 4,
+        paddingBottom:8,
     },
     handleBar: {
         width: 40,

@@ -1,22 +1,3 @@
-import React, { useState, useRef } from "react";
-import {
-  View,
-  Text,
-  ActivityIndicator,
-  Platform,
-  useColorScheme,
-} from "react-native";
-import MapView, {
-  LatLng,
-  Circle,
-  Region,
-  Marker,
-  PROVIDER_GOOGLE,
-  Polygon,
-} from "react-native-maps";
-import styles from "@/src/styles/campusMap";
-import { useUserLocation } from "@/src/hooks/useUserLocation";
-
 import CampusPolygons from "@/src/components/polygons";
 import CampusLabels from "@/src/components/campusLabels";
 import { CampusConfig } from "@/src/data/campus/campusConfig";
@@ -178,11 +159,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
         />
       );
     });
-
-  const mapID =
-    useColorScheme() === "dark"
-      ? "eb0ccd6d2f7a95e23f1ec398"
-      : "eb0ccd6d2f7a95e117328051"; // Workaround
 
   return (
     <View style={styles.container}>
