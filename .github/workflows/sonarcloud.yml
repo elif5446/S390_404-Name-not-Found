@@ -57,9 +57,10 @@ jobs:
           args: >
             -Dsonar.organization=${{ secrets.SONAR_ORG }}
             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
-            -Dsonar.sources=frontend/conuwalks
+            -Dsonar.projectBaseDir=frontend/conuwalks
+            -Dsonar.sources=src
+            -Dsonar.tests=src
+            -Dsonar.test.inclusions=src/**/*.test.ts,src/**/*.test.tsx
             -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**
-            -Dsonar.tests=frontend/conuwalks/src
-            -Dsonar.test.inclusions=frontend/conuwalks/src/**/*.test.ts,frontend/conuwalks/src/**/*.test.tsx
-            -Dsonar.javascript.lcov.reportPaths=frontend/conuwalks/coverage/lcov.info
-            -Dsonar.typescript.lcov.reportPaths=frontend/conuwalks/coverage/lcov.info
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info
+            -Dsonar.verbose=true
