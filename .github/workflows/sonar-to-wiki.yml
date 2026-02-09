@@ -283,7 +283,7 @@ jobs:
 
           ${BEGIN_MARK}
           ${END_MARK}
-          EOF
+            EOF
           fi
 
           if ! grep -q "${BEGIN_MARK}" "$WIKI_PAGE"; then
