@@ -353,7 +353,7 @@ jobs:
           | Bugs | ${P_BUGS} | ${C_BUGS} | ${D_BUGS} | ${T_BUGS} |
           | Vulnerabilities | ${P_VULNS} | ${C_VULNS} | ${D_VULNS} | ${T_VULNS} |
           | Code Smells | ${P_SMELLS} | ${C_SMELLS} | ${D_SMELLS} | ${T_SMELLS} |
-          EOF
+                         EOF
           )"
           else
             EVO_BLOCK="### Metrics Evolution (vs previous major release)\n\n_No previous major release report found in the wiki to compare against._"
