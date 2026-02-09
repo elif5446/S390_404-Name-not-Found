@@ -276,14 +276,14 @@ jobs:
 
           # Ensure landing page exists + has markers
           if [ ! -f "$WIKI_PAGE" ]; then
-            cat > "$WIKI_PAGE" <<EOF
-          # Code Quality Reports
-
-          This page is updated automatically on each major release tag \`vX.0.0\`.
-
-          ${BEGIN_MARK}
-          ${END_MARK}
-            EOF
+            printf '%s\n' \
+              "# Code Quality Reports" \
+              "" \
+              "This page is updated automatically on each major release tag \`vX.0.0\`." \
+              "" \
+              "${BEGIN_MARK}" \
+              "${END_MARK}" \
+              > "$WIKI_PAGE"
           fi
 
           if ! grep -q "${BEGIN_MARK}" "$WIKI_PAGE"; then
@@ -292,7 +292,8 @@ jobs:
 
           # Evolution: compare against previous report page (latest v*.0.0 excluding current)
           prev_file="$(ls -1 wiki/Code-Quality-v*.0.0.md 2>/dev/null | grep -v "Code-Quality-${VERSION}.md" | sort -V | tail -n 1 || true)"
-          EVO_BLOCK=""
+          EVO_BLOCK_FILE="out/evo-block-${VERSION}.md"
+          : > "$EVO_BLOCK_FILE"
 
           if [ -n "$prev_file" ]; then
             prev_val () {
@@ -304,24 +305,20 @@ jobs:
               grep -E "^\|[[:space:]]*$1[[:space:]]*\|" "$cur_file" \
                 | head -n 1 | awk -F'|' '{gsub(/^[ \t]+|[ \t]+$/, "", $3); print $3}'
             }
+
             delta () {
               a="$1"; b="$2"
               if echo "$a" | grep -Eq '^[0-9]+(\.[0-9]+)?$' && echo "$b" | grep -Eq '^[0-9]+(\.[0-9]+)?$'; then
-                python3 - <<PY
-                a=float("$a"); b=float("$b")
-                print(f"{(b-a):+.2f}")
-                PY
+                python3 -c "a=float('$a'); b=float('$b'); print(f'{(b-a):+.2f}')"
               else
                 echo "N/A"
               fi
             }
+
             trend () {
               d="$1"
               if echo "$d" | grep -Eq '^[+-]'; then
-                python3 - <<PY
-                d=float("$d")
-                print("⬆️" if d>0 else "⬇️" if d<0 else "➡️")
-                PY
+                python3 -c "d=float('$d'); print('⬆️' if d>0 else '⬇️' if d<0 else '➡️')"
               else
                 echo ""
               fi
@@ -334,32 +331,34 @@ jobs:
             P_VULNS="$(prev_val 'Vulnerabilities')";     C_VULNS="$(cur_val 'Vulnerabilities')"
             P_SMELLS="$(prev_val 'Code Smells')";        C_SMELLS="$(cur_val 'Code Smells')"
 
-            D_LOC="$(delta "$P_LOC" "$C_LOC")";     T_LOC="$(trend "$D_LOC")"
-            D_COV="$(delta "$P_COV" "$C_COV")";     T_COV="$(trend "$D_COV")"
-            D_DUP="$(delta "$P_DUP" "$C_DUP")";     T_DUP="$(trend "$D_DUP")"
-            D_BUGS="$(delta "$P_BUGS" "$C_BUGS")";  T_BUGS="$(trend "$D_BUGS")"
+            D_LOC="$(delta "$P_LOC" "$C_LOC")";      T_LOC="$(trend "$D_LOC")"
+            D_COV="$(delta "$P_COV" "$C_COV")";      T_COV="$(trend "$D_COV")"
+            D_DUP="$(delta "$P_DUP" "$C_DUP")";      T_DUP="$(trend "$D_DUP")"
+            D_BUGS="$(delta "$P_BUGS" "$C_BUGS")";   T_BUGS="$(trend "$D_BUGS")"
             D_VULNS="$(delta "$P_VULNS" "$C_VULNS")";T_VULNS="$(trend "$D_VULNS")"
             D_SMELLS="$(delta "$P_SMELLS" "$C_SMELLS")";T_SMELLS="$(trend "$D_SMELLS")"
 
-            EVO_BLOCK="$(cat <<EOF
-
-          Previous report: \`$(basename "$prev_file" .md)\`
-
-          | Metric | Previous | Current | Δ | Trend |
-          |---|---:|---:|---:|:---:|
-          | LOC (ncloc) | ${P_LOC} | ${C_LOC} | ${D_LOC} | ${T_LOC} |
-          | Coverage (%) | ${P_COV} | ${C_COV} | ${D_COV} | ${T_COV} |
-          | Duplication (%) | ${P_DUP} | ${C_DUP} | ${D_DUP} | ${T_DUP} |
-          | Bugs | ${P_BUGS} | ${C_BUGS} | ${D_BUGS} | ${T_BUGS} |
-          | Vulnerabilities | ${P_VULNS} | ${C_VULNS} | ${D_VULNS} | ${T_VULNS} |
-          | Code Smells | ${P_SMELLS} | ${C_SMELLS} | ${D_SMELLS} | ${T_SMELLS} |
-                         EOF
-          )"
+            {
+              echo ""
+              echo "Previous report: \`$(basename "$prev_file" .md)\`"
+              echo ""
+              echo "| Metric | Previous | Current | Δ | Trend |"
+              echo "|---|---:|---:|---:|:---:|"
+              echo "| LOC (ncloc) | ${P_LOC} | ${C_LOC} | ${D_LOC} | ${T_LOC} |"
+              echo "| Coverage (%) | ${P_COV} | ${C_COV} | ${D_COV} | ${T_COV} |"
+              echo "| Duplication (%) | ${P_DUP} | ${C_DUP} | ${D_DUP} | ${T_DUP} |"
+              echo "| Bugs | ${P_BUGS} | ${C_BUGS} | ${D_BUGS} | ${T_BUGS} |"
+              echo "| Vulnerabilities | ${P_VULNS} | ${C_VULNS} | ${D_VULNS} | ${T_VULNS} |"
+              echo "| Code Smells | ${P_SMELLS} | ${C_SMELLS} | ${D_SMELLS} | ${T_SMELLS} |"
+            } > "$EVO_BLOCK_FILE"
           else
-            EVO_BLOCK="### Metrics Evolution (vs previous major release)\n\n_No previous major release report found in the wiki to compare against._"
+            {
+              echo "### Metrics Evolution (vs previous major release)"
+              echo ""
+              echo "_No previous major release report found in the wiki to compare against._"
+            } > "$EVO_BLOCK_FILE"
           fi
 
-          # Build the block for this release (newest at top)
           BLOCK_FILE="out/wiki-block-${VERSION}.md"
           {
             echo "## ${VERSION}"
@@ -368,7 +367,7 @@ jobs:
             echo "- **Generated (UTC):** \`$(date -u +'%Y-%m-%d %H:%M')\`"
             echo "- **Full report page:** [[Code-Quality-${VERSION}]]"
             echo ""
-            echo -e "${EVO_BLOCK}"
+            cat "$EVO_BLOCK_FILE"
             echo ""
             echo "<details>"
             echo "<summary><b> Snapshot</b></summary>"
@@ -379,7 +378,6 @@ jobs:
             echo ""
           } > "$BLOCK_FILE"
 
-          # Insert block immediately after BEGIN marker (keeps newest first)
           tmp="wiki/.tmp-code-quality-reports.md"
           awk -v begin="$BEGIN_MARK" -v blockfile="$BLOCK_FILE" '
             { print }
@@ -395,6 +393,6 @@ jobs:
           git add .
           git commit -m "Add SonarCloud quality report for ${VERSION}" || echo "No changes to commit."
           git push || {
-          echo "::error::Failed to push to wiki"
-          exit 1
+            echo "::error::Failed to push to wiki"
+            exit 1
           }
