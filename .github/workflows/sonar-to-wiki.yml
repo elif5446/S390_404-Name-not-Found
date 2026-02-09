@@ -92,9 +92,34 @@ jobs:
           REPORT="out/Code-Quality-${VERSION}.md"
 
           # Pull metrics (expanded list like your original)
-          curl -s -u "${SONAR_TOKEN}:" \
-            "https://sonarcloud.io/api/measures/component?component=${SONAR_PROJECT_KEY}&metricKeys=alert_status,ncloc,duplicated_lines_density,comment_lines_density,coverage,branch_coverage,line_coverage,tests,test_success_density,cognitive_complexity,complexity,sqale_index,sqale_rating,sqale_debt_ratio,bugs,vulnerabilities,code_smells,security_hotspots,reliability_rating,security_rating,maintainability_rating,new_bugs,new_vulnerabilities,new_code_smells,new_security_hotspots,new_coverage" \
-            > out/metrics.json
+          #curl -s -u "${SONAR_TOKEN}:" \
+          #  "https://sonarcloud.io/api/measures/component?component=${SONAR_PROJECT_KEY}&metricKeys=alert_status,ncloc,duplicated_lines_density,comment_lines_density,coverage,branch_coverage,line_coverage,tests,test_success_density,cognitive_complexity,complexity,sqale_index,sqale_rating,sqale_debt_ratio,bugs,vulnerabilities,code_smells,security_hotspots,reliability_rating,security_rating,maintainability_rating,new_bugs,new_vulnerabilities,new_code_smells,new_security_hotspots,new_coverage" \
+          #  > out/metrics.json
+          API_URL="https://sonarcloud.io/api/measures/component?component=${SONAR_PROJECT_KEY}&metricKeys=alert_status,ncloc,duplicated_lines_density,comment_lines_density,coverage,branch_coverage,line_coverage,tests,test_success_density,cognitive_complexity,complexity,sqale_index,sqale_rating,sqale_debt_ratio,bugs,vulnerabilities,code_smells,security_hotspots,reliability_rating,security_rating,maintainability_rating,new_bugs,new_vulnerabilities,new_code_smells,new_security_hotspots,new_coverage"
+
+          #debug
+          echo "Fetching SonarCloud measures..."
+          echo "$API_URL"
+
+          http_code="$(curl -sS -u "${SONAR_TOKEN}:" -o out/metrics.json -w "%{http_code}" "$API_URL")"
+          echo "HTTP: $http_code"
+          sed -n '1,120p' out/metrics.json
+
+          if [ "$http_code" != "200" ]; then
+            echo "::error::SonarCloud API failed (HTTP $http_code)"
+            exit 1
+          fi
+
+          if jq -e '.errors? | length > 0' out/metrics.json >/dev/null; then
+            echo "::error::SonarCloud returned errors:"
+            jq -r '.errors[]?.msg' out/metrics.json || true
+            exit 1
+          fi
+
+          if ! jq -e '.component.measures? | length > 0' out/metrics.json >/dev/null; then
+            echo "::error::No measures returned. Check project key, permissions, or branch context."
+            exit 1
+          fi
 
           curl -s -u "${SONAR_TOKEN}:" \
             "https://sonarcloud.io/api/issues/search?componentKeys=${SONAR_PROJECT_KEY}&resolved=false&ps=10&s=SEVERITY&asc=false" \
