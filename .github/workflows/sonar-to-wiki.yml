@@ -45,7 +45,7 @@ jobs:
       - name: Generate SonarCloud report 
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          VERSION: ${{ env.VERSION }}
+          VERSION: $VERSION 
         run: |
           set -e
           mkdir -p out
@@ -127,7 +127,7 @@ jobs:
 
       - name: Publish report to GitHub Wiki (one page per release)
         env:
-          VERSION: ${{ env.VERSION }}
+          VERSION: $VERSION
           REPO: ${{ github.repository }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

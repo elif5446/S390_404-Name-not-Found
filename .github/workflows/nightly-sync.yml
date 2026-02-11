@@ -32,58 +32,37 @@ jobs:
       - name: Ensure GitHub CLI is available
         run: gh --version
 
-      # guard to only proceed if CI on dev is green for latest dev commit
-      # - name: Guard - require successful CI on dev
-      #   env:
-      #     GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      #     REPO: ${{ github.repository }}
-      #     CI_WORKFLOW_NAME: "CI Workflow"
-      #   run: |
-      #     set -euo pipefail
+      - name: Guard - skip if dev has nothing new vs main
+        id: guard
+        run: |
+          set -euo pipefail
+          git fetch origin main dev
 
-      #     # get latest commit SHA on dev
-      #     DEV_SHA="$(gh api repos/${REPO}/commits/dev --jq '.sha')"
-      #     echo "Latest dev SHA: $DEV_SHA"
+          counts="$(git rev-list --left-right --count origin/main...origin/dev)"
+          behind="$(echo "$counts" | awk '{print $1}')"  # commits in main not in dev
+          ahead="$(echo "$counts"  | awk '{print $2}')"  # commits in dev not in main
 
-      #     # find the most recent run of the ci workflow on dev matching that SHA
-      #     RUN_JSON="$(gh api "repos/${REPO}/actions/runs?branch=dev&per_page=50")"
+          echo "dev ahead of main by: $ahead commit(s)"
+          echo "dev behind main by: $behind commit(s)"
 
-      #     RUN_ID="$(echo "$RUN_JSON" | jq -r --arg name "$CI_WORKFLOW_NAME" --arg sha "$DEV_SHA" '
-      #       .workflow_runs
-      #       | map(select(.name == $name and .head_sha == $sha))
-      #       | sort_by(.run_started_at)
-      #       | last
-      #       | .id // empty
-      #     ')"
+          if [ "$ahead" -eq 0 ]; then
+            echo "No new commits on dev to merge into main. Exiting."
+            echo "should_merge=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_merge=true" >> "$GITHUB_OUTPUT"
+          fi
 
-      #     if [ -z "$RUN_ID" ]; then
-      #       echo "::error::No CI run found for workflow '$CI_WORKFLOW_NAME' on dev at SHA $DEV_SHA. Aborting nightly sync."
-      #       exit 1
-      #     fi
-
-      #     CONCLUSION="$(gh api "repos/${REPO}/actions/runs/${RUN_ID}" --jq '.conclusion')"
-      #     STATUS="$(gh api "repos/${REPO}/actions/runs/${RUN_ID}" --jq '.status')"
-      #     echo "CI run id: $RUN_ID | status: $STATUS | conclusion: $CONCLUSION"
-
-      #     if [ "$STATUS" != "completed" ]; then
-      #       echo "::error::CI is not completed yet (status=$STATUS). Aborting nightly sync."
-      #       exit 1
-      #     fi
-
-      #     if [ "$CONCLUSION" != "success" ]; then
-      #       echo "::error::CI conclusion is '$CONCLUSION' (not success). Aborting nightly sync."
-      #       exit 1
-      #     fi
-
-      #     echo "CI is successful on dev. Proceeding."
-
-      - name: Create or find PR dev -> main
+      - name: Create or find PR from dev to main
+        if: steps.guard.outputs.should_merge == 'true'
+        id: pr
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -euo pipefail
           existing="$(gh pr list --base main --head dev --state open --json number -q '.[0].number')"
           if [ -n "$existing" ]; then
             echo "PR already exists: $existing"
+            echo "number=$existing" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -96,19 +75,58 @@ jobs:
 
           pr_number="$(echo "$pr_url" | sed -E 's#.*/pull/([0-9]+).*#\1#')"
           echo "Created PR: $pr_number"
+          echo "number=$pr_number" >> "$GITHUB_OUTPUT"
+
+      - name: Update PR branch to be up to date with main
+        if: steps.guard.outputs.should_merge == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR: ${{ steps.pr.outputs.number }}
+        run: |
+          set -euo pipefail
+          echo "Updating PR branch for PR #$PR to include latest main."
+
+          gh api -X PUT "repos/${REPO}/pulls/${PR}/update-branch" \
+            -f expected_head_sha="$(gh pr view "$PR" --json headRefOid -q .headRefOid)"
 
       - name: Merge PR (no auto merge)
+        if: steps.guard.outputs.should_merge == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ steps.pr.outputs.number }}
+        run: |
+          set -euo pipefail
+          echo "Merging PR: $PR"
+          gh pr merge "$PR" --merge --admin
+
+      - name: Sync dev to main after merge (keep branches aligned)
+        if: steps.guard.outputs.should_merge == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          pr_number="$(gh pr list --base main --head dev --state open --json number -q '.[0].number')"
-          echo "Merging PR: $pr_number"
-          gh pr merge "$pr_number" --merge --admin
+          set -euo pipefail
+          git fetch origin main dev
+
+          git checkout -B dev origin/dev
+
+          # bring main into dev 
+          git merge origin/main --no-edit || true
+
+          # push only if dev actually changed
+          if git diff --quiet origin/dev..dev; then
+            echo "dev already matches main (no sync needed)."
+          else
+            echo "Pushing dev to include latest main..."
+            git push origin dev
+          fi
 
       - name: Tag nightly version v0.x.0
+        if: steps.guard.outputs.should_merge == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -euo pipefail
           git fetch --tags origin
 
           latest="$(git tag -l 'v0.*.*' --sort=-v:refname | head -n 1)"
