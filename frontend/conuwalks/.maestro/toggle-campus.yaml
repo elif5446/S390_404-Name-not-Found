@@ -1,0 +1,34 @@
+appId: com.conuwalks.app
+---
+- launchApp:
+    permissions:
+      all: allow
+
+# Handle initial location permissions if they appear
+- runFlow:
+    when:
+      visible: "Allow.*"
+    commands:
+      - tapOn: 
+          text: "Allow.*"
+          retryTapIfNoChange: false
+
+- tapOn: "Sir George Williams"
+- assertVisible: "GM"
+- assertVisible: "LB"
+- assertVisible: "EV"
+- assertVisible: "MB"
+- assertVisible: "FB"
+- assertVisible: "FG"
+
+- tapOn: "Loyola"
+- assertVisible: "SP"
+- assertVisible: "VL"
+- assertVisible: "AD"
+- assertVisible: "CJ"
+
+- tapOn: "Sir George Williams"
+- assertVisible: "MB"
+- assertVisible: "GM"
+- assertNotVisible: "SP"
+- assertNotVisible: CJ"

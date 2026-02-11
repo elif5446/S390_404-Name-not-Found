@@ -11,7 +11,7 @@ const styles = StyleSheet.create({
   },
   segmentedIos: {
     width: '100%',
-    alignSelf: 'center'
+    alignSelf: 'center',
   },
   shadowiOS: {
     width: '100%',

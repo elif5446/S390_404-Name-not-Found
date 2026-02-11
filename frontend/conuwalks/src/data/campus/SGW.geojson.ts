@@ -1,4 +1,4 @@
-const SGW = {
+const SGW =  {
   "type": "FeatureCollection",
   "features": [
     {
