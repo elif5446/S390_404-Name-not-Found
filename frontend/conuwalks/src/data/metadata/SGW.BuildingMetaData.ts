@@ -84,7 +84,7 @@ export const SGWBuildingMetadata: Record<string, BuildingData> = {
     address: "1550 De Maisonneuve Blvd. W.",
     category: "general",
     description: "The GM building offers many offices, classrooms, studios for Dance, Theatre and Music Departments.",
-    facilities: ["Accessible entrance", "Accessible building elevator"],
+    facilities: ["Accessible entrance", "Accessible building elevator", "Metro", "Underground Passage"],
     openingHours: { weekdays: defaultWeekday, weekend: defaultWeekend }
   },
   "ER": {

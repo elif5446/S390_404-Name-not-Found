@@ -42,3 +42,13 @@ app-example
 # generated native folders
 /ios
 /android
+
+# General build artifacts
+build/
+bin/
+obj/
+**/ModuleCache.noindex/
+**/*.pcm
+
+# Node modules
+node_modules/
