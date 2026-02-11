@@ -103,7 +103,7 @@ jobs:
               echo -e "\n### Bug Details"
               echo "| Severity | Message | File |"
               echo "|---|---|---|"
-              jq -r '.issues[] | select(.type=="BUG") | "| \(.severity) | \(.message) | \(.component | split(":") | .[-1]) |"' out/issues.json >> "$REPORT"
+              jq -r '.issues[] | select(.type=="BUG") | "| \(.severity) | \(.message) | \(.component | split(":") | .[-1]) |"' out/issues.json
             fi
 
             echo -e "\n## Maintainability"
@@ -114,8 +114,11 @@ jobs:
               echo -e "\n### Code Smell Details"
               echo "| Severity | Message | File |"
               echo "|---|---|---|"
-              jq -r '.issues[] | select(.type=="CODE_SMELL") | "| \(.severity) | \(.message) | \(.component | split(":") | .[-1]) |"' out/issues.json >> "$REPORT"
+              # cap this at 50 so the wiki doesn't break
+              jq -r '.issues[] | select(.type=="CODE_SMELL") | "| \(.severity) | \(.message) | \(.component | split(":") | .[-1]) |"' out/issues.json | head -n 50 
+              if [ "$SMELLS" -gt 50 ]; then echo -e "\n*(Showing first 50 smells only)*"; fi
             fi
+              
 
             echo -e "\n## Security Review"
             echo "| Metric | Value | Rating |"
@@ -131,7 +134,7 @@ jobs:
                 MSG=$(jq -r '.message' out/temp_hotspot.json)
                 FILE=$(jq -r '.component.path' out/temp_hotspot.json)
                 LINE=$(jq -r '.line' out/temp_hotspot.json)
-                echo "| $PROB | $MSG | \`$FILE:$LINE\` |" >> "$REPORT"
+                echo "| $PROB | $MSG | \`$FILE:$LINE\` |" 
               done
             fi
 
@@ -151,7 +154,7 @@ jobs:
                echo -e "\n### Vulnerability Details"
                echo "| Severity | Message | File |"
                echo "|---|---|---|"
-               jq -r '.issues[] | select(.type=="VULNERABILITY") | "| \(.severity) | \(.message) | \(.component | split(":") | .[-1]) |"' out/issues.json >> "$REPORT"
+               jq -r '.issues[] | select(.type=="VULNERABILITY") | "| \(.severity) | \(.message) | \(.component | split(":") | .[-1]) |"' out/issues.json 
             fi
 
             # metrics evolution
@@ -176,7 +179,7 @@ jobs:
               echo "\`\`\`"
             fi
             
-          } >> "$REPORT"
+          } > "$REPORT"
 
       # 4. publishing to wiki
       - name: Publish to Wiki
