@@ -1,18 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import {
-  Modal,
-  View,
-  Text,
-  TouchableOpacity,
-  Platform,
-  useColorScheme,
-  Dimensions,
-  Clipboard,
-  Alert,
-  Animated,
-  PanResponder,
-  ScrollView,
-} from "react-native";
+import {Modal, View, Text, TouchableOpacity, Platform, useColorScheme, Dimensions, Alert, Animated, PanResponder, ScrollView} from "react-native";
+import Clipboard, { setStringAsync } from 'expo-clipboard';
 import { BlurView } from "expo-blur";
 import { LoyolaBuildingMetadata } from "../data/metadata/LOY.BuildingMetadata";
 import { SGWBuildingMetadata } from "../data/metadata/SGW.BuildingMetaData";
@@ -62,7 +50,6 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
         campus === "SGW"
           ? SGWBuildingMetadata[buildingId]
           : LoyolaBuildingMetadata[buildingId];
-      console.log(`Looking for ${buildingId} in ${campus}:`, metadata);
       if (metadata) {
         setBuildingInfo(metadata);
       } else {
@@ -136,9 +123,9 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
   ).current;
 
   // Address copy functionality
-  const copyAddressToClipboard = () => {
+  const copyAddressToClipboard = async() => {
     if (buildingInfo?.address) {
-      Clipboard.setString(buildingInfo.address);
+      await setStringAsync(buildingInfo.address);
       Alert.alert("Address copied to clipboard.");
     }
   };

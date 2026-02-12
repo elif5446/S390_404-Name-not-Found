@@ -141,9 +141,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
         campus === "LOY"
           ? LoyolaBuildingMetadata[properties.id]
           : SGWBuildingMetadata[properties.id];
-      console.log(
-        `Campus: ${campus}, Building: ${properties.id}, Color: ${color}, Name: ${buildingMetadata?.name}`,
-      );
 
       return (
         <Polygon
