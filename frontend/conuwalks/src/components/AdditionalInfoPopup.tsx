@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import {Modal, View, Text, TouchableOpacity, Platform, useColorScheme, Dimensions, Alert, Animated, PanResponder, ScrollView} from "react-native";
-import Clipboard, { setStringAsync } from 'expo-clipboard';
+import { setStringAsync } from 'expo-clipboard';
 import { BlurView } from "expo-blur";
 import { LoyolaBuildingMetadata } from "../data/metadata/LOY.BuildingMetadata";
 import { SGWBuildingMetadata } from "../data/metadata/SGW.BuildingMetaData";
@@ -22,24 +22,45 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
 }) => {
   const mode = useColorScheme() || "light";
   const [buildingInfo, setBuildingInfo] = useState<any>(null);
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  // Animation values
-  const panY = useRef(new Animated.Value(0)).current;
   const scrollViewRef = useRef<ScrollView>(null);
-  const screenHeight = Dimensions.get("window").height;
 
-  // Default height
-  const MIN_HEIGHT = 300;
-  const MAX_HEIGHT = screenHeight * 0.8;
-  const [currentHeight, setCurrentHeight] = useState(MIN_HEIGHT);
+  // Default heights
+  const screenHeight = Dimensions.get("window").height;
+  const MIN_HEIGHT = 300; //initial popup view
+  const MAX_HEIGHT = screenHeight * 0.80; //full popup will be around 80% of the screen
+
+  const SNAP_OFFSET = MAX_HEIGHT - MIN_HEIGHT;
+
+    // translateY drives ALL sheet movement — open, drag, snap, dismiss
+  const translateY = useRef(new Animated.Value(MAX_HEIGHT)).current;
+
+  const translateYRef = useRef(MAX_HEIGHT);
+  const translateYAtGestureStart = useRef(MAX_HEIGHT);
+  const scrollOffsetRef = useRef(0);
+
+  useEffect(()=>{
+    const id = translateY.addListener(({ value }) => {
+      translateYRef.current = value;
+    });
+    return () => translateY.removeListener(id);
+  }, []) //on first render only
 
   useEffect(() => {
     if (visible) {
-      setCurrentHeight(MIN_HEIGHT);
-      setIsExpanded(false);
+      scrollOffsetRef.current=0;
+      scrollViewRef.current?.scrollTo({y:0, animated: false});
 
-      panY.setValue(0);
+      translateY.setValue(MAX_HEIGHT);
+      translateYRef.current = MAX_HEIGHT;
+
+      Animated.spring(translateY, {
+        toValue: SNAP_OFFSET,
+        useNativeDriver: true, // native driver works on translateY
+        tension: 70,
+        friction: 12,
+      }).start(() => {
+        translateYRef.current = SNAP_OFFSET;
+      });
     }
   }, [visible]);
 
@@ -59,65 +80,108 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
     }
   }, [buildingId, campus]);
 
+  //this will allow us to snap into a full view position
+  const snapTo = (toValue: number, onDone?: () => void) => {
+    Animated.spring(translateY, {
+      toValue,
+      useNativeDriver: true, // ✓ native driver
+      tension: 68,
+      friction: 12,
+      overshootClamping: true,
+    }).start(({ finished }) => {
+      if (finished) {
+        translateYRef.current = toValue;
+        onDone?.();
+      }
+    });
+  };
+
+  const dismiss = () => {
+    Animated.timing(translateY, {
+      toValue: MAX_HEIGHT,
+      duration: 240,
+      useNativeDriver: true, // native driver
+    }).start(({ finished }) => {
+      if (finished) onClose();
+    });
+  };
+
   const isIOS = Platform.OS === "ios";
 
+// ─── PanResponder ─────────────────────────────────────────────────────────────
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, gestureState) => {
-        return Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
+      onStartShouldSetPanResponderCapture: () => true,
+
+      onMoveShouldSetPanResponder: (_, g) => {
+        const isVertical = Math.abs(g.dy) > Math.abs(g.dx) * 1.2;
+        if (!isVertical) return false;
+
+        const isExpanded = translateYRef.current < SNAP_OFFSET - 20;
+
+        // Collapsed: intercept all vertical drags
+        if (!isExpanded) return true;
+
+        // Expanded + dragging up: let ScrollView scroll the content
+        if (g.dy < 0) return false;
+
+        // Expanded + dragging down + scroll at top: collapse the sheet
+        return scrollOffsetRef.current <= 0;
       },
-      onPanResponderMove: (_, gestureState) => {
-        // Don't adjust if scrolling in expanded view
-        if (isExpanded && scrollViewRef.current) {
+
+      onMoveShouldSetPanResponderCapture: (_, g) => {
+        // Capture upward drags when collapsed so ScrollView can't steal them
+        const isExpanded = translateYRef.current < SNAP_OFFSET - 20;
+        if (!isExpanded && g.dy < -5) return true;
+        return false;
+      },
+
+      onPanResponderGrant: () => {
+        // Stop any in-progress spring and record position at touch-down
+        translateY.stopAnimation((value) => {
+          translateYAtGestureStart.current = value;
+          translateYRef.current = value;
+        });
+        translateYAtGestureStart.current = translateYRef.current;
+      },
+
+      onPanResponderMove: (_, g) => {
+        // 1:1 finger tracking — computed from gesture start, not cumulative dy.
+        // setValue is synchronous, no setState, no re-render.
+        const newY = translateYAtGestureStart.current + g.dy;
+        // Clamp: can't go above fully expanded (0), allow slight overscroll down
+        const clamped = Math.max(0, Math.min(MAX_HEIGHT * 0.92, newY));
+        translateY.setValue(clamped);
+      },
+
+      onPanResponderRelease: (_, g) => {
+        const currentY = translateYRef.current;
+        const velocity = g.vy; // positive = moving down
+
+        // Fast flick down near collapsed → dismiss
+        if (velocity > 1.5 && currentY > SNAP_OFFSET - 60) {
+          dismiss();
           return;
         }
-
-        const sensitivity = 0.2;
-        const newHeight = MIN_HEIGHT - gestureState.dy * sensitivity;
-        const clampedHeight = Math.max(
-          MIN_HEIGHT,
-          Math.min(MAX_HEIGHT, newHeight),
-        );
-        setCurrentHeight(clampedHeight);
-
-        setIsExpanded(clampedHeight > MIN_HEIGHT + 20);
-      },
-      onPanResponderRelease: (_, gestureState) => {
-        if (isExpanded && Math.abs(gestureState.dy) < 10) {
+        // Fast flick down → collapse
+        if (velocity > 1.0) {
+          snapTo(SNAP_OFFSET);
           return;
         }
-
-        let targetHeight = currentHeight;
-
-        // If dragged up significantly, expand
-        if (gestureState.dy < -50) {
-          targetHeight = MAX_HEIGHT;
-          setIsExpanded(true);
+        // Fast flick up → expand
+        if (velocity < -1.0) {
+          snapTo(0);
+          return;
         }
-        // If dragged down significantly from expanded, collapse
-        else if (gestureState.dy > 50) {
-          if (currentHeight > MIN_HEIGHT + 100) {
-            targetHeight = MIN_HEIGHT;
-            setIsExpanded(false);
-          } else {
-            onClose();
-            return;
-          }
-        } else {
-          const threshold = MIN_HEIGHT + (MAX_HEIGHT - MIN_HEIGHT) * 0.3;
-          if (currentHeight > threshold) {
-            targetHeight = MAX_HEIGHT;
-            setIsExpanded(true);
-          } else {
-            targetHeight = MIN_HEIGHT;
-            setIsExpanded(false);
-          }
+        // Dragged mostly off screen → dismiss
+        if (currentY > MAX_HEIGHT * 0.75) {
+          dismiss();
+          return;
         }
-
-        // Update height immediately so the UI matches the user's gesture
-        setCurrentHeight(targetHeight);
-        setIsExpanded(targetHeight > MIN_HEIGHT + 20);
+        // Snap to nearest pole
+        const mid = SNAP_OFFSET * 0.5;
+        snapTo(currentY < mid ? 0 : SNAP_OFFSET);
       },
     }),
   ).current;
@@ -273,7 +337,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
           onPress={onClose}
         >
           <Animated.View
-            style={[styles.iosBlurContainer, { height: currentHeight }]}
+            style={[styles.iosBlurContainer, { height: MAX_HEIGHT }]}
           >
             <BlurView
               style={[styles.iosBlurContainer, { height: "100%" }]}
@@ -368,11 +432,9 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                 <ScrollView
                   ref={scrollViewRef}
                   style={[styles.contentArea, { flex: 1 }]}
-                  scrollEnabled={isExpanded || currentHeight >= MAX_HEIGHT}
-                  showsVerticalScrollIndicator={
-                    isExpanded || currentHeight >= MAX_HEIGHT
-                  }
-                  bounces={isExpanded || currentHeight >= MAX_HEIGHT}
+                  scrollEnabled={true}
+                  showsVerticalScrollIndicator={true}
+                  bounces={true}
                   nestedScrollEnabled={true}
                   contentContainerStyle={{ flexGrow: 1, paddingBottom: 24 }}
                 >
