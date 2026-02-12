@@ -1,4 +1,5 @@
 import React from 'react';
+import { useState, useEffect } from 'react';
 import { Marker } from 'react-native-maps';
 import { View, Text } from 'react-native';
 
@@ -18,6 +19,21 @@ const CampusLabels: React.FC<Props> = ({
   data,
   longitudeDelta,
 }) => {
+  const [tracksViewChanges, setTracksViewChanges] = useState(true);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setTracksViewChanges(false);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, []);
+  useEffect(() => {
+      setTracksViewChanges(true);
+      const timer = setTimeout(() => {
+        setTracksViewChanges(false);
+      }, 500);
+      return () => clearTimeout(timer);
+  }, [longitudeDelta]);
   return (
     <>
       {data.features.map((feature) => {
@@ -32,18 +48,22 @@ const CampusLabels: React.FC<Props> = ({
           <Marker
             key={`${id}-label`}
             coordinate={centroid}
-            tracksViewChanges={false}
+            tracksViewChanges={tracksViewChanges}
             pointerEvents="none"
+            zIndex={100}
+            anchor={{ x: 0.25, y: 0.25 }}
           >
-            <Text
-              style={{
-                fontSize: getLabelFontSize(longitudeDelta),
-                fontWeight: 'bold',
-                color,
-              }}
-            >
-              {id}
-            </Text>
+            <View style={{ padding: 2 }}>
+              <Text
+                style={{
+                  fontSize: getLabelFontSize(longitudeDelta),
+                  fontWeight: 'bold',
+                  color,
+                }}
+              >
+                {id}
+              </Text>
+            </View>
           </Marker>
         );
       })}

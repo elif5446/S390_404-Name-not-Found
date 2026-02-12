@@ -67,7 +67,7 @@ export function attachCentroids(
 // Dynamic font size for labels based on zoom
 export const getLabelFontSize = (delta: number) => {
   const zoomFactor = 0.004 / delta;
-  const size = 10 * zoomFactor;
+  const size = 33 * zoomFactor;
   return Math.min(14, Math.max(6, size));
 };
 

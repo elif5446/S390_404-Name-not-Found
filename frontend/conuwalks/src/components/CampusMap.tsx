@@ -71,7 +71,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
   // Calculate circle radius based on zoom level (longitudeDelta)
   // Larger longitudeDelta = zoomed out = bigger circle
-  const circleRadius = Math.max(30, mapRegion.longitudeDelta * 2000);
+  const circleRadius = Math.max(2.5, mapRegion.longitudeDelta * 2000);
 
   // Create a ref to the MapView so we can control it
   const mapRef = useRef<MapView>(null);
@@ -149,13 +149,14 @@ const CampusMap: React.FC<CampusMapProps> = ({
         <Polygon
           key={properties.id}
           coordinates={polygonFromGeoJSON(coordinates)}
-          fillColor={color + "75"} // semi-transparent
+          fillColor={color + "50"} // semi-transparent
           strokeColor={color}
           strokeWidth={1}
           tappable
           onPress={() => handleBuildingPress(properties.id, campus)}
           accessibilityLabel={buildingMetadata?.name || properties.id}
           accessibilityRole="button"
+          zIndex={1}
         />
       );
     });
@@ -183,13 +184,42 @@ const CampusMap: React.FC<CampusMapProps> = ({
         }}
         onRegionChange={setMapRegion}
       >
+
+        {/* ---------------- overlays ---------------- */}
+        {(Object.keys(CampusConfig) as Array<keyof typeof CampusConfig>).map(
+          (campus) => (
+            <CampusPolygons
+              key={`poly-${campus}`}
+              campus={campus}
+              geojson={CampusConfig[campus].geojson}
+              metadata={CampusConfig[campus].metadata}
+            />
+        ))}
+
+        {/* Render SGW campus */}
+        {renderPolygons(SGW, "SGW")}
+
+        {/* Render Loyola campus */}
+        {renderPolygons(LOY, "LOY")}
+
+        {/* ---------------- labels ---------------- */}
+        {(Object.keys(CampusConfig) as Array<keyof typeof CampusConfig>).map(campus => (
+          <CampusLabels
+            key={`label-${campus}`}
+            campus={campus}
+            data={CampusConfig[campus].labels}
+            longitudeDelta={mapRegion.longitudeDelta}
+          />
+        ))}
+
         {userLocation && ( //Show user's current location if available
           <Circle
             center={userLocation}
             radius={circleRadius}
-            fillColor="rgba(33, 150, 243, 0.3)"
-            strokeColor="rgba(33, 150, 243, 0.8)"
+            fillColor="#FF2D55BF"
+            strokeColor="#FFFFFF"
             strokeWidth={2}
+            zIndex={9999}
           />
         )}
 
@@ -198,45 +228,18 @@ const CampusMap: React.FC<CampusMapProps> = ({
             coordinate={userLocation}
             onPress={handleLocationPress}
             tracksViewChanges={false}
+            zIndex={1001}
           >
             <View
               style={{
                 width: 12,
                 height: 12,
                 borderRadius: 6,
-                backgroundColor: "rgba(33, 150, 243, 0.5)",
+                backgroundColor: "#FF2D55",
               }}
             />
           </Marker>
         )}
-
-        {/* ---------------- overlays + labels ---------------- */}
-        {(Object.keys(CampusConfig) as Array<keyof typeof CampusConfig>).map(
-          (campus) => {
-            const config = CampusConfig[campus];
-
-            return (
-              <React.Fragment key={campus}>
-                <CampusPolygons
-                  campus={campus}
-                  geojson={config.geojson}
-                  metadata={config.metadata}
-                />
-                <CampusLabels
-                  campus={campus}
-                  data={config.labels}
-                  longitudeDelta={mapRegion.longitudeDelta}
-                />
-              </React.Fragment>
-            );
-          },
-        )}
-
-        {/* Render SGW campus */}
-        {renderPolygons(SGW, "SGW")}
-
-        {/* Render Loyola campus */}
-        {renderPolygons(LOY, "LOY")}
       </MapView>
 
       {/*Additional Building Info Popup*/}
