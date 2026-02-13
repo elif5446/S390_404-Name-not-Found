@@ -28,6 +28,33 @@ interface AdditionInfoPopupProps {
   onClose: () => void;
 }
 
+const BackgroundWrapper = ({ children }: { children: React.ReactNode }) => {
+    if (Platform.OS === "ios") {
+      return (
+        <BlurView
+          style={[styles.iosBlurContainer, { height: "100%" }]}
+          intensity={100}
+          tint={(useColorScheme() || "light") === "dark" ? "dark" : "light"}
+        >
+          {children}
+        </BlurView>
+      );
+    }
+    return (
+      <View
+        style={[
+          styles.iosBlurContainer,
+          {
+            height: "100%",
+            backgroundColor: (useColorScheme() || "light") === "dark" ? "#1C1C1E" : "#FFFFFF", 
+          },
+        ]}
+      >
+        {children}
+      </View>
+    );
+  };
+
 const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
   visible,
   buildingId,
@@ -291,11 +318,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
           <Animated.View
             style={[styles.iosBlurContainer, { height: currentHeight }]}
           >
-            <BlurView
-              style={[styles.iosBlurContainer, { height: "100%" }]}
-              intensity={80}
-              tint={mode === "dark" ? "dark" : "light"}
-            >
+            <BackgroundWrapper>
               <View style={styles.iosContentContainer}>
                 {/* Handle bar */}
                 <View
@@ -469,7 +492,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                   )}
                 </ScrollView>
               </View>
-            </BlurView>
+            </BackgroundWrapper>
           </Animated.View>
         </TouchableOpacity>
       </Modal>
