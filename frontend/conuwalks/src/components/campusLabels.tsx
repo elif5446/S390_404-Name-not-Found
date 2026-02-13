@@ -37,6 +37,7 @@ const CampusLabels: React.FC<Props> = ({
       {data.features.map((feature) => {
         const { id, centroid } = feature.properties;
         if (!centroid) return null;
+        if (longitudeDelta > 0.0075) return null;
 
         return (
           <Marker
@@ -47,9 +48,7 @@ const CampusLabels: React.FC<Props> = ({
             zIndex={100}
             anchor={{ x: 0.5, y: 0.5 }}
           >
-            <View style={{
-              minWidth: Platform.OS === "android" ? 1000 : 0
-            }}>
+            <View>
               <Text
                 style={{
                   fontSize: getLabelFontSize(longitudeDelta),

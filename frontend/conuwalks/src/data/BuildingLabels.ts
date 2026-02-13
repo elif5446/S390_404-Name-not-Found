@@ -68,7 +68,7 @@ export function attachCentroids(
 export const getLabelFontSize = (delta: number) => {
   const zoomFactor = 0.004 / delta;
   const size = 25 * zoomFactor;
-  return Math.min(22, Math.max(6, size));
+  return Math.min(22, size);
 };
 
 // ------------------------
