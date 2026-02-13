@@ -1,9 +1,7 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { Marker } from 'react-native-maps';
-import { View, Text } from 'react-native';
-
-import BuildingTheme from '@/src/styles/BuildingTheme';
+import { View, Text, Platform } from 'react-native';
 import { getLabelFontSize, FeatureCollection } from '@/src/data/BuildingLabels';
 import { CampusId } from '@/src/data/campus/campusConfig';
 //will only render the labels 
@@ -40,10 +38,6 @@ const CampusLabels: React.FC<Props> = ({
         const { id, centroid } = feature.properties;
         if (!centroid) return null;
 
-        const color =
-          BuildingTheme[campus][id as keyof typeof BuildingTheme[typeof campus]] ??
-          '#000';
-
         return (
           <Marker
             key={`${id}-label`}
@@ -51,14 +45,16 @@ const CampusLabels: React.FC<Props> = ({
             tracksViewChanges={tracksViewChanges}
             pointerEvents="none"
             zIndex={100}
-            anchor={{ x: 0.25, y: 0.25 }}
+            anchor={{ x: 0.5, y: 0.5 }}
           >
-            <View style={{ padding: 2 }}>
+            <View style={{
+              minWidth: Platform.OS === "android" ? 1000 : 0
+            }}>
               <Text
                 style={{
                   fontSize: getLabelFontSize(longitudeDelta),
                   fontWeight: 'bold',
-                  color,
+                  color: '#00000033'
                 }}
               >
                 {id}
