@@ -207,7 +207,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
           <Text
             style={[
               styles.sectionTitle,
-              { color: "#FF2D55" },
+              { color:  mode === "dark" ? "#FFFFFF" : "#333333" },
             ]}
           >
             Opening Hours
@@ -228,7 +228,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
           <Text
             style={[
               styles.sectionTitle,
-              { color: "#FF2D55" },
+              { color: mode === "dark" ? "#FFFFFF" : "#333333" },
             ]}
           >
             Opening Hours
@@ -238,7 +238,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
               <Text
                 style={[
                   styles.hoursLabel,
-                  { color: "#FF809899" },
+                  { color: mode === "dark" ? "#CCCCCC" : "#585858" },
                 ]}
               >
                 Weekdays:
@@ -256,7 +256,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
               <Text
                 style={[
                   styles.hoursLabel,
-                  { color: "#FF809899" },
+                  { color: mode === "dark" ? "#CCCCCC" : "#585858" },
                 ]}
               >
                 Weekend:
@@ -407,7 +407,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                     <Text
                       style={[
                         styles.sectionTitle,
-                        { color: "#FF2D55" },
+                        { color: mode === "dark" ? "#FFFFFF" : "#333333" },
                       ]}
                     >
                       Schedule
@@ -423,7 +423,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                       <Text
                         style={[
                           styles.sectionTitle,
-                          { color: "#FF2D55" },
+                          { color: mode === "dark" ? "#FFFFFF" : "#333333" },
                         ]}
                       >
                         Address
@@ -457,7 +457,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                       <Text
                         style={[
                           styles.sectionTitle,
-                          { color: "#FF2D55" },
+                          { color: mode === "dark" ? "#FFFFFF" : "#333333" },
                         ]}
                       >
                         Description
