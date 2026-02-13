@@ -8,12 +8,11 @@ import {
   Platform,
   useColorScheme,
   Dimensions,
-  Clipboard,
-  Alert,
   Animated,
   PanResponder,
   ScrollView,
 } from "react-native";
+import * as Clipboard from 'expo-clipboard';
 import { SymbolView, SFSymbol } from 'expo-symbols'; // SF Symbols (iOS)
 import MaterialIcons from '@expo/vector-icons/MaterialIcons'; // Material Design Icons (Android)
 import { BlurView } from "expo-blur";
@@ -164,11 +163,16 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
     }),
   ).current;
 
+  const [copying, setCopying] = useState(false);
+
   // Address copy functionality
   const copyAddressToClipboard = () => {
     if (buildingInfo?.address) {
+      setCopying(true);
       Clipboard.setString(buildingInfo.address);
-      Alert.alert("Address copied to clipboard.");
+      setTimeout(() => {
+        setCopying(false);
+      }, 1000);
     }
   };
 
@@ -394,7 +398,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                                 size={25}
                                 weight={"heavy"}
                                 tintColor={mode === "dark" ? "#CCCCCC" : "#585858"}
-                              /> : <MaterialIcons name={icon.material} size={25} color={mode === "dark" ? "#FFFFFF" : "#333333"}/>)
+                              /> : <MaterialIcons name={icon.material} size={25} color={mode === "dark" ? "#CCCCCC" : "#585858"}/>)
                               || <Image source={require(`../../assets/images/metro.png`)}
                                 style={{width: 25,
                                 height: 25,
@@ -460,11 +464,15 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                           style={styles.copyButton}
                         >
                           {Platform.OS === "ios" && <SymbolView 
-                            name="document.on.document"
+                            name={copying ? "document.on.document.fill" : "document.on.document"}
                             size={25}
                             weight={"regular"}
                             tintColor={mode === "dark" ? "#FFFFFF" : "#333333"} 
-                          /> || <MaterialIcons name="content-copy" size={22} color={mode === "dark" ? "#FFFFFF" : "#333333"}/>}
+                          /> || <MaterialIcons
+                            name={copying ? "task" : "content-copy"}
+                            size={22}
+                            color={mode === "dark" ? "#FFFFFF" : "#333333"}
+                          />}
                         </TouchableOpacity>
                       </View>
                     </View>
