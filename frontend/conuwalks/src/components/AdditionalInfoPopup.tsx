@@ -151,12 +151,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
       return null;
     }
 
-    const icons: {
-      key: string,
-      sf: SFSymbol,
-      material: "elevator" | "accessible" | "subway",
-      label: string
-    }[] = [];
+    const icons: {key: string, sf: SFSymbol, material: "elevator" | "accessible" | "subway", label: string}[] = [];
 
     // Check for direct metro access
     if (
@@ -166,7 +161,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
           f.toLowerCase().includes("undergound passage"),
       )
     ) {
-      icons.push({ key: "metro", sf: "tram.fill.tunnel", material: "subway",label: "Metro access" });
+      icons.push({ key: "metro", sf: "tram.fill.tunnel", material: "subway", label: "Metro access" });
     }
 
     // Check for accessible features - Wheelchair icon
@@ -321,14 +316,14 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                       style={[
                         styles.closeButtonCircle,
                         {
-                          backgroundColor: "#FF809829",
+                          backgroundColor: "#86868629",
                         },
                       ]}
                     >
                       <Text
                         style={[
                           styles.closeButtonText,
-                          { color: "#FF2D55" },
+                          { color: mode === "dark" ? "#FFFFFF" : "#333333" },
                         ]}
                       >
                         ✕
@@ -341,7 +336,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                       style={[
                         styles.buildingName,
                         {
-                          color: "#FF2D55",
+                          color: mode === "dark" ? "#FFFFFF" : "#333333",
                         },
                       ]}
                     >
@@ -355,7 +350,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                           style={[
                             styles.buildingId,
                             {
-                              color: "#FF809899",
+                              color: mode === "dark" ? "#CCCCCC" : "#585858",
                             },
                           ]}
                         >
@@ -375,12 +370,12 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                                 name={icon.sf}
                                 size={25}
                                 weight={"heavy"}
-                                tintColor="#FF809899"
-                              /> : <MaterialIcons name={icon.material} size={25} color="#FF809899"/>)
+                                tintColor={mode === "dark" ? "#CCCCCC" : "#585858"}
+                              /> : <MaterialIcons name={icon.material} size={25} color={mode === "dark" ? "#FFFFFF" : "#333333"}/>)
                               || <Image source={require(`../../assets/images/metro.png`)}
                                 style={{width: 25,
                                 height: 25,
-                                tintColor: "#FF809899"}}
+                                tintColor: mode === "dark" ? "#CCCCCC" : "#585858"}}
                               />}
                             </View>
                           ))}
@@ -445,8 +440,8 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                             name="document.on.document"
                             size={25}
                             weight={"regular"}
-                            tintColor={"#FF2D55"} 
-                          /> || <MaterialIcons name="content-copy" size={22} color="#FF2D55"/>}
+                            tintColor={mode === "dark" ? "#FFFFFF" : "#333333"} 
+                          /> || <MaterialIcons name="content-copy" size={22} color={mode === "dark" ? "#FFFFFF" : "#333333"}/>}
                         </TouchableOpacity>
                       </View>
                     </View>
