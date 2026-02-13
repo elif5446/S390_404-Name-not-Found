@@ -13,8 +13,6 @@ const additionalInfoPopupStyles = StyleSheet.create({
         overflow:"hidden",
     },
     iosContentContainer: {
-        minHeight:300,
-        flex: 1,
         paddingBottom: 8,
     },
     handleBarContainer: {
