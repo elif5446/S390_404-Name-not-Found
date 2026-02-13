@@ -149,7 +149,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
         <Polygon
           key={properties.id}
           coordinates={polygonFromGeoJSON(coordinates)}
-          fillColor={color + "50"} // semi-transparent
+          fillColor={color + "90"} // mostly opaque
           strokeColor={color}
           strokeWidth={1}
           tappable
