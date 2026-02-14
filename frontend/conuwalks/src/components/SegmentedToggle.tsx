@@ -32,7 +32,7 @@ const SegmentedToggle = ({
                     : "Loyola",
                 );
               }}
-              tintColor="#FF2D55CC"
+              tintColor="#B03060CC"
               appearance={mode}
               backgroundColor="transparent"
               activeFontStyle={{
@@ -71,7 +71,7 @@ const SegmentedToggle = ({
               ]}
               theme={{
                 colors: {
-                  secondaryContainer: "#FF2D55",
+                  secondaryContainer: "#B03060",
                   onSecondaryContainer: mode === "dark" ? "#1C1B1F" : "#FFFFFF", // Selected button
                   onSurface: mode === "dark" ? "#FFFFFF" : "#1C1B1F", // Unselected button
                   outline: "rgba(121, 116, 126, 0.3)",

@@ -216,7 +216,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
           <Circle
             center={userLocation}
             radius={circleRadius}
-            fillColor="#FF2D55BF"
+            fillColor="#B03060BF"
             strokeColor="#FFFFFF"
             strokeWidth={2}
             zIndex={9999}
@@ -235,7 +235,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
                 width: 12,
                 height: 12,
                 borderRadius: 6,
-                backgroundColor: "#FF2D55",
+                backgroundColor: "#B03060",
               }}
             />
           </Marker>
@@ -268,7 +268,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
             borderRadius: 5,
           }}
         >
-          <Text style={{ color: "#d32f2f", fontSize: 12 }}>
+          <Text style={{ color: "#B03060", fontSize: 12 }}>
             {locationError}
           </Text>
         </View>
