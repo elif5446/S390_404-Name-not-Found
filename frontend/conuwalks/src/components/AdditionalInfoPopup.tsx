@@ -28,6 +28,9 @@ export interface AdditionalInfoPopupHandle{
   collapse: () =>void;
 }
 
+//change building info animation 
+const opacity = useRef(new Animated.Value(2)).current;
+
 const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPopupProps>(({
   visible,
   buildingId,
@@ -53,6 +56,21 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
   const translateYAtGestureStart = useRef(MAX_HEIGHT);
   const scrollOffsetRef = useRef(0);
 
+  useEffect(() => {
+  if (!visible) return;
+  Animated.sequence([
+    Animated.timing(opacity, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: true,
+    }),
+    Animated.timing(opacity, {
+      toValue: 1,
+      duration: 150,
+      useNativeDriver: true,
+    }),
+  ]).start();
+}, [buildingId]);
   useEffect(() => {
     const id = translateY.addListener(({ value }) => {
       translateYRef.current = value;
@@ -407,6 +425,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
             intensity={80}
             tint={mode === "dark" ? "dark" : "light"}
           >
+            <Animated.View style={{ flex: 1, opacity }}>
             {/* panHandlers are ONLY here, so buttons below are never blocked */}
             <View
               style={styles.iosContentContainer}
@@ -585,6 +604,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
                 )}
               </ScrollView>
             </View>
+            </Animated.View>
           </BlurView>
         </Animated.View>
       </View>
