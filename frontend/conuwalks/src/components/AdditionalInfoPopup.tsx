@@ -64,7 +64,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
         campus === "SGW"
           ? SGWBuildingMetadata[buildingId]
           : LoyolaBuildingMetadata[buildingId];
-      console.log(`Looking for ${buildingId} in ${campus}:`, metadata);
+      
       if (metadata) {
         setBuildingInfo(metadata);
       } else {
