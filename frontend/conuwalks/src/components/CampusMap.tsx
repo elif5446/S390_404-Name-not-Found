@@ -25,7 +25,7 @@ import LOY from "@/src/data/campus/LOY.geojson";
 import { LoyolaBuildingMetadata } from "@/src/data/metadata/LOY.BuildingMetadata";
 import { SGWBuildingMetadata } from "@/src/data/metadata/SGW.BuildingMetaData";
 import BuildingTheme from "@/src/styles/BuildingTheme";
-import AdditionalInfoPopup from "./AdditionalInfoPopup";
+import AdditionalInfoPopup, {AdditionalInfoPopupHandle} from "./AdditionalInfoPopup";
 
 // Convert GeoJSON coordinates to LatLng
 const polygonFromGeoJSON = (coordinates: number[][]): LatLng[] =>
@@ -37,6 +37,8 @@ interface CampusMapProps {
     longitude: number;
   };
 }
+
+const popupRef = useRef<AdditionalInfoPopupHandle>(null);
 
 const CampusMap: React.FC<CampusMapProps> = ({
   initialLocation = { latitude: 45.49599, longitude: -73.57854 },
@@ -99,6 +101,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
       visible: true,
     });
 
+    
+
     // Center map on selected building
     // const buildingMetadata = campus == "SGW" ? SGWBuildingMetadata[buildingName] : LoyolaBuildingMetadata[buildingName];
     // if (buildingMetadata && mapRef.current) {
@@ -141,9 +145,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
         campus === "LOY"
           ? LoyolaBuildingMetadata[properties.id]
           : SGWBuildingMetadata[properties.id];
-      console.log(
-        `Campus: ${campus}, Building: ${properties.id}, Color: ${color}, Name: ${buildingMetadata?.name}`,
-      );
 
       return (
         <Polygon
@@ -183,6 +184,9 @@ const CampusMap: React.FC<CampusMapProps> = ({
           longitudeDelta: 0.0043,
         }}
         onRegionChange={setMapRegion}
+        //The popup will go down (to 300px view) if user interacts with the map
+        onPress={() => popupRef.current?.collapse()}
+        onPanDrag={() => selectedBuilding.visible && popupRef.current?.collapse()}
       >
 
         {/* ---------------- overlays ---------------- */}
@@ -244,6 +248,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
       {/*Additional Building Info Popup*/}
       <AdditionalInfoPopup
+        ref={popupRef}
         visible={selectedBuilding.visible}
         buildingId={selectedBuilding.name}
         campus={selectedBuilding.campus}
