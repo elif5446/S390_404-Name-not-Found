@@ -7,7 +7,6 @@ import {
   Platform,
   useColorScheme,
   Dimensions,
-  Alert,
   Animated,
   PanResponder,
   ScrollView,
@@ -29,9 +28,6 @@ interface AdditionInfoPopupProps {
 export interface AdditionalInfoPopupHandle{
   collapse: () =>void;
 }
-
-//change building info animation 
-const opacity = useRef(new Animated.Value(2)).current;
 
 const BackgroundWrapper = ({ children }: { children: React.ReactNode }) => {
     if (Platform.OS === "ios") {
@@ -84,7 +80,9 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
   const translateYRef = useRef(MAX_HEIGHT);
   const translateYAtGestureStart = useRef(MAX_HEIGHT);
   const scrollOffsetRef = useRef(0);
-
+  //change building info animation 
+  const opacity = useRef(new Animated.Value(2)).current;
+  
   useEffect(() => {
   if (!visible) return;
   Animated.sequence([
@@ -623,7 +621,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
                     <Text
                       style={[
                         styles.sectionTitle,
-                        { color: mode === "dark" ? "#FFFFFF" : "#FF2D55" },
+                        { color: mode === "dark" ? "#FFFFFF" : "#333333" },
                       ]}
                     >
                       Description
