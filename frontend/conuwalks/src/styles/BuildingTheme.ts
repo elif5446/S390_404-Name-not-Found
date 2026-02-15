@@ -1,24 +1,24 @@
 export const BuildingTheme = {
   SGW: {
-    H: "#0A84FF",
-    LB: "#34C759",
-    LS: "#AF52DE",
-    EV: "#FF9F0A",
-    MB: "#30D158",
-    FB: "#FFD60A",
-    FG: "#64D2FF",
-    CL: "#FF375F",
-    GM: "#FF375F",
-    ER: "#FFCC00"
+    H: "#FD7D7F",
+    LB: "#F4FD7D",
+    LS: "#FD7DDD",
+    EV: "#7DD2FD",
+    MB: "#FDCC7D",
+    FB: "#83FD7D",
+    FG: "#B6FF82",
+    CL: "#7D8EFD",
+    GM: "#7DFDB6",
+    ER: "#BA82FF"
   },
   LOY: {
-    VL: "#0A84FF",
-    SP: "#34C759",
-    CJ: "#AF52DE",
-    CC: "#FF9F0A",
-    AD: "#30D158",
-    FC: "#FFD60A",
-    HU: "#64D2FF"
+    VL: "#FD7DDD",
+    SP: "#F4FD7D",
+    CJ: "#FDCC7D",
+    CC: "#7DFDB6",
+    AD: "#FD7D7F",
+    FC: "#BA82FF",
+    HU: "#7DD2FD"
   }
 };
 

@@ -94,9 +94,6 @@ const additionalInfoPopupStyles = StyleSheet.create({
         marginTop: 4,
         width: "100%",
         position: "relative",},
-    accessibilityIconWrapper: {
-        marginLeft:8,
-    },
     accessibilityIcon: {
         fontSize:22,
         lineHeight:24,
@@ -155,10 +152,11 @@ const additionalInfoPopupStyles = StyleSheet.create({
     },
     hoursRow: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
+        justifyContent: 'flex-start',
         alignItems: 'center',
         marginBottom: 4,
-        paddingVertical:3
+        paddingVertical: 3,
+        gap: 10
     },
     hoursLabel: {
         fontSize: 16,

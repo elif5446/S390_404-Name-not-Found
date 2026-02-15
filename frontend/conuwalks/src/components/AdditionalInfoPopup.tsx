@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import {
+  Image,
   Modal,
   View,
   Text,
@@ -7,17 +8,17 @@ import {
   Platform,
   useColorScheme,
   Dimensions,
-  Clipboard,
-  Alert,
   Animated,
   PanResponder,
   ScrollView,
 } from "react-native";
+import * as Clipboard from 'expo-clipboard';
+import { SymbolView, SFSymbol } from 'expo-symbols'; // SF Symbols (iOS)
+import MaterialIcons from '@expo/vector-icons/MaterialIcons'; // Material Design Icons (Android)
 import { BlurView } from "expo-blur";
 import { LoyolaBuildingMetadata } from "../data/metadata/LOY.BuildingMetadata";
 import { SGWBuildingMetadata } from "../data/metadata/SGW.BuildingMetaData";
 import { styles } from "../styles/additionalInfoPopup";
-import { Ionicons } from "@expo/vector-icons";
 
 interface AdditionInfoPopupProps {
   visible: boolean;
@@ -25,6 +26,33 @@ interface AdditionInfoPopupProps {
   campus: "SGW" | "LOY";
   onClose: () => void;
 }
+
+const BackgroundWrapper = ({ children }: { children: React.ReactNode }) => {
+    if (Platform.OS === "ios") {
+      return (
+        <BlurView
+          style={[styles.iosBlurContainer, { height: "100%" }]}
+          intensity={100}
+          tint={(useColorScheme() || "light") === "dark" ? "dark" : "light"}
+        >
+          {children}
+        </BlurView>
+      );
+    }
+    return (
+      <View
+        style={[
+          styles.iosBlurContainer,
+          {
+            height: "100%",
+            backgroundColor: (useColorScheme() || "light") === "dark" ? "#1C1C1E" : "#FFFFFF", 
+          },
+        ]}
+      >
+        {children}
+      </View>
+    );
+  };
 
 const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
   visible,
@@ -62,7 +90,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
         campus === "SGW"
           ? SGWBuildingMetadata[buildingId]
           : LoyolaBuildingMetadata[buildingId];
-      console.log(`Looking for ${buildingId} in ${campus}:`, metadata);
+      
       if (metadata) {
         setBuildingInfo(metadata);
       } else {
@@ -135,11 +163,16 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
     }),
   ).current;
 
+  const [copying, setCopying] = useState(false);
+
   // Address copy functionality
   const copyAddressToClipboard = () => {
     if (buildingInfo?.address) {
+      setCopying(true);
       Clipboard.setString(buildingInfo.address);
-      Alert.alert("Address copied to clipboard.");
+      setTimeout(() => {
+        setCopying(false);
+      }, 1000);
     }
   };
 
@@ -149,17 +182,17 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
       return null;
     }
 
-    const icons = [];
+    const icons: {key: string, sf: SFSymbol, material: "elevator" | "accessible" | "subway", label: string}[] = [];
 
-    // Check for elevator - Elevator icon
+    // Check for direct metro access
     if (
       facilities.some(
         (f: string) =>
-          f.toLowerCase().includes("elevator") ||
-          f.toLowerCase().includes("lift"),
+          f.toLowerCase().includes("metro") ||
+          f.toLowerCase().includes("undergound passage"),
       )
     ) {
-      icons.push({ key: "elevator", icon: "🛗", label: "Elevator" });
+      icons.push({ key: "metro", sf: "tram.fill.tunnel", material: "subway", label: "Metro access" });
     }
 
     // Check for accessible features - Wheelchair icon
@@ -173,20 +206,21 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
     ) {
       icons.push({
         key: "wheelchair",
-        icon: "♿",
+        sf: "figure.roll",
+        material: "accessible",
         label: "Wheelchair accessible",
       });
     }
 
-    // Check for direct metro access
+    // Check for elevator - Elevator icon
     if (
       facilities.some(
         (f: string) =>
-          f.toLowerCase().includes("metro") ||
-          f.toLowerCase().includes("undergound passage"),
+          f.toLowerCase().includes("elevator") ||
+          f.toLowerCase().includes("lift"),
       )
     ) {
-      icons.push({ key: "metro", icon: "🚇", label: "Metro access" });
+      icons.push({ key: "elevator", sf: "arrow.up.arrow.down.square", material: "elevator", label: "Elevator" });
     }
 
     return icons;
@@ -199,7 +233,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
           <Text
             style={[
               styles.sectionTitle,
-              { color: mode === "dark" ? "#FFFFFF" : "#FF2D55" },
+              { color:  mode === "dark" ? "#FFFFFF" : "#333333" },
             ]}
           >
             Opening Hours
@@ -220,7 +254,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
           <Text
             style={[
               styles.sectionTitle,
-              { color: mode === "dark" ? "#FFFFFF" : "#FF2D55" },
+              { color: mode === "dark" ? "#FFFFFF" : "#333333" },
             ]}
           >
             Opening Hours
@@ -230,7 +264,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
               <Text
                 style={[
                   styles.hoursLabel,
-                  { color: mode === "dark" ? "#cccccc9b" : "#ff2d5398" },
+                  { color: mode === "dark" ? "#CCCCCC" : "#585858" },
                 ]}
               >
                 Weekdays:
@@ -248,7 +282,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
               <Text
                 style={[
                   styles.hoursLabel,
-                  { color: mode === "dark" ? "#cccccc9b" : "#ff2d5398" },
+                  { color: mode === "dark" ? "#CCCCCC" : "#585858" },
                 ]}
               >
                 Weekend:
@@ -272,7 +306,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
   const accessibilityIcons = getAccessibilityIcons(buildingInfo?.facilities);
 
   // iOS styling
-  if (isIOS) {
+  // if (isIOS) {
     return (
       <Modal
         visible={visible}
@@ -288,11 +322,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
           <Animated.View
             style={[styles.iosBlurContainer, { height: currentHeight }]}
           >
-            <BlurView
-              style={[styles.iosBlurContainer, { height: "100%" }]}
-              intensity={80}
-              tint={mode === "dark" ? "dark" : "light"}
-            >
+            <BackgroundWrapper>
               <View style={styles.iosContentContainer}>
                 {/* Handle bar */}
                 <View
@@ -313,15 +343,14 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                       style={[
                         styles.closeButtonCircle,
                         {
-                          backgroundColor:
-                            mode === "dark" ? "#00000031" : "#ff839c22",
+                          backgroundColor: "#86868629",
                         },
                       ]}
                     >
                       <Text
                         style={[
                           styles.closeButtonText,
-                          { color: mode === "dark" ? "#FFFFFF" : "#FF2D55" },
+                          { color: mode === "dark" ? "#FFFFFF" : "#333333" },
                         ]}
                       >
                         ✕
@@ -334,7 +363,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                       style={[
                         styles.buildingName,
                         {
-                          color: mode === "dark" ? "#FFFFFF" : "#FF2D55",
+                          color: mode === "dark" ? "#FFFFFF" : "#333333",
                         },
                       ]}
                     >
@@ -348,8 +377,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                           style={[
                             styles.buildingId,
                             {
-                              color:
-                                mode === "dark" ? "#ffffff7d" : "#ff80979b",
+                              color: mode === "dark" ? "#CCCCCC" : "#585858",
                             },
                           ]}
                         >
@@ -362,13 +390,20 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                           {accessibilityIcons.map((icon) => (
                             <View
                               key={icon.key}
-                              style={styles.accessibilityIconWrapper}
                               accessible={true}
                               accessibilityLabel={icon.label}
                             >
-                              <Text style={styles.accessibilityIcon}>
-                                {icon.icon}
-                              </Text>
+                              {icon.key !== "metro" && (Platform.OS === "ios" ? <SymbolView 
+                                name={icon.sf}
+                                size={25}
+                                weight={"heavy"}
+                                tintColor={mode === "dark" ? "#CCCCCC" : "#585858"}
+                              /> : <MaterialIcons name={icon.material} size={25} color={mode === "dark" ? "#CCCCCC" : "#585858"}/>)
+                              || <Image source={require(`../../assets/images/metro.png`)}
+                                style={{width: 25,
+                                height: 25,
+                                tintColor: mode === "dark" ? "#CCCCCC" : "#585858"}}
+                              />}
                             </View>
                           ))}
                         </View>
@@ -394,7 +429,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                     <Text
                       style={[
                         styles.sectionTitle,
-                        { color: mode === "dark" ? "#FFFFFF" : "#FF2D55" },
+                        { color: mode === "dark" ? "#FFFFFF" : "#333333" },
                       ]}
                     >
                       Schedule
@@ -410,18 +445,12 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                       <Text
                         style={[
                           styles.sectionTitle,
-                          { color: mode === "dark" ? "#FFFFFF" : "#FF2D55" },
+                          { color: mode === "dark" ? "#FFFFFF" : "#333333" },
                         ]}
                       >
                         Address
                       </Text>
                       <View style={styles.addressContainer}>
-                        <Ionicons
-                          name="location-outline"
-                          size={20}
-                          color={mode === "dark" ? "#FFFFFF" : "#FF2D55"}
-                          style={styles.addressIcon}
-                        />
                         <Text
                           style={[
                             styles.addressText,
@@ -434,11 +463,16 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                           onPress={copyAddressToClipboard}
                           style={styles.copyButton}
                         >
-                          <Ionicons
-                            name="copy-outline"
+                          {Platform.OS === "ios" && <SymbolView 
+                            name={copying ? "document.on.document.fill" : "document.on.document"}
+                            size={25}
+                            weight={"regular"}
+                            tintColor={mode === "dark" ? "#FFFFFF" : "#333333"} 
+                          /> || <MaterialIcons
+                            name={copying ? "task" : "content-copy"}
                             size={22}
-                            color={mode === "dark" ? "#FFFFFF" : "#FF2D55"}
-                          />
+                            color={mode === "dark" ? "#FFFFFF" : "#333333"}
+                          />}
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -449,7 +483,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                       <Text
                         style={[
                           styles.sectionTitle,
-                          { color: mode === "dark" ? "#FFFFFF" : "#FF2D55" },
+                          { color: mode === "dark" ? "#FFFFFF" : "#333333" },
                         ]}
                       >
                         Description
@@ -457,7 +491,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                       <Text
                         style={[
                           styles.descriptionText,
-                          { color: mode === "dark" ? "#CCCCCC" : "#000000" },
+                          { color: mode === "dark" ? "#FFFFFF" : "#333333" },
                         ]}
                       >
                         {buildingInfo.description}
@@ -466,15 +500,15 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                   )}
                 </ScrollView>
               </View>
-            </BlurView>
+            </BackgroundWrapper>
           </Animated.View>
         </TouchableOpacity>
       </Modal>
     );
-  } else {
+  /* } else {
     // Android (Google Maps) styling
     return null;
-  }
+  } */
 };
 
 export default AdditionalInfoPopup;
