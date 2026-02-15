@@ -1,0 +1,25 @@
+appId: ${APP_ID}
+tags:
+  - critical
+  - feature
+---
+- runFlow: ../subflows/setup.yaml
+
+- tapOn: "Sir George Williams"
+- tapOn:
+    point: 45%, 63%
+- assertVisible: "John Molson Building.*"
+- swipe:  # drag pop-up up
+    start: 50%, 70%
+    end: 50%, 30%
+
+- assertVisible: "Schedule"
+- assertVisible: "Opening Hours"
+- assertVisible: "Address"
+- assertVisible: "1450 Guy.*"
+- assertVisible: "Description"
+- assertVisible: "The JMSB building is a business.*"
+
+- tapOn:
+    point: 50%, 50%
+- assertNotVisible: "John Molson"

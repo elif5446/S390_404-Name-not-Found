@@ -16,9 +16,7 @@
         "points_label": "Points",
         "calculators" : [
             "closed",
-            "assigned",
             "created",
-            "taiga",
             "burndown"
         ]
       }
