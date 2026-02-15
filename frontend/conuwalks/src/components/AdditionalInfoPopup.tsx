@@ -17,7 +17,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons'; // Material Design
 import { BlurView } from "expo-blur";
 import { LoyolaBuildingMetadata } from "../data/metadata/LOY.BuildingMetadata";
 import { SGWBuildingMetadata } from "../data/metadata/SGW.BuildingMetaData";
-import { styles } from "../styles/additionalInfoPopup";
+import { styles,themedStyles } from "../styles/additionalInfoPopup";
 
 interface AdditionInfoPopupProps {
   visible: boolean;
@@ -362,7 +362,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
           <Text
             style={[
               styles.sectionTitle,
-              { color:  mode === "dark" ? "#FFFFFF" : "#333333" },
+              themedStyles.text(mode)
             ]}
           >
             Opening Hours
@@ -370,7 +370,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
           <Text
             style={[
               styles.sectionText,
-              { color: mode === "dark" ? "#CCCCCC" : "#333333" },
+              themedStyles.text(mode),
             ]}
           >
             {openingHours}
@@ -383,7 +383,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
           <Text
             style={[
               styles.sectionTitle,
-              { color: mode === "dark" ? "#FFFFFF" : "#333333" },
+              themedStyles.text(mode),
             ]}
           >
             Opening Hours
@@ -393,7 +393,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
               <Text
                 style={[
                   styles.hoursLabel,
-                  { color: mode === "dark" ? "#CCCCCC" : "#585858" },
+                  themedStyles.subtext(mode),
                 ]}
               >
                 Weekdays:
@@ -401,7 +401,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
               <Text
                 style={[
                   styles.hoursValue,
-                  { color: mode === "dark" ? "#FFFFFF" : "#333333" },
+                  themedStyles.text(mode),
                 ]}
               >
                 {openingHours.weekdays}
@@ -411,7 +411,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
               <Text
                 style={[
                   styles.hoursLabel,
-                  { color: mode === "dark" ? "#CCCCCC" : "#585858" },
+                  themedStyles.subtext(mode),
                 ]}
               >
                 Weekend:
@@ -419,7 +419,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
               <Text
                 style={[
                   styles.hoursValue,
-                  { color: mode === "dark" ? "#FFFFFF" : "#333333" },
+                  themedStyles.text(mode),
                 ]}
               >
                 {openingHours.weekend}
@@ -474,16 +474,13 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
                   <View
                     style={[
                       styles.closeButtonCircle,
-                      {
-                        backgroundColor:
-                          mode === "dark" ? "#00000031" : "#ff839c22",
-                      },
+                      themedStyles.closeButton(mode),
                     ]}
                   >
                     <Text
                       style={[
                         styles.closeButtonText,
-                        { color: mode === "dark" ? "#FFFFFF" : "#333333" },
+                        themedStyles.text(mode),
                       ]}
                     >
                       ✕
@@ -495,9 +492,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
                   <Text
                     style={[
                       styles.buildingName,
-                      {
-                        color: mode === "dark" ? "#FFFFFF" : "#333333",
-                      },
+                      themedStyles.text(mode),
                     ]}
                   >
                     {buildingInfo?.name || "Building"}
@@ -509,9 +504,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
                       <Text
                         style={[
                           styles.buildingId,
-                          {
-                            color: mode === "dark" ? "#CCCCCC" : "#585858",
-                          },
+                          themedStyles.subtext(mode),
                         ]}
                       >
                         {buildingId}
@@ -530,12 +523,12 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
                                 name={icon.sf}
                                 size={25}
                                 weight={"heavy"}
-                                tintColor={mode === "dark" ? "#CCCCCC" : "#585858"}
-                              /> : <MaterialIcons name={icon.material} size={25} color={mode === "dark" ? "#CCCCCC" : "#585858"}/>)
+                                tintColor={themedStyles.subtext(mode).color}
+                              /> : <MaterialIcons name={icon.material} size={25} color={themedStyles.subtext(mode).color}/>)
                               || <Image source={require(`../../assets/images/metro.png`)}
                                 style={{width: 25,
                                 height: 25,
-                                tintColor: mode === "dark" ? "#CCCCCC" : "#585858"}}
+                                tintColor: themedStyles.subtext(mode).color}}
                               />}
                           </View>
                         ))}
@@ -567,7 +560,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
                   <Text
                     style={[
                       styles.sectionTitle,
-                      { color: mode === "dark" ? "#FFFFFF" : "#333333" },
+                      themedStyles.text(mode),
                     ]}
                   >
                     Schedule
@@ -583,7 +576,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
                     <Text
                       style={[
                         styles.sectionTitle,
-                        { color: mode === "dark" ? "#FFFFFF" : "#333333" },
+                        themedStyles.text(mode),
                       ]}
                     >
                       Address
@@ -592,7 +585,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
                       <Text
                         style={[
                           styles.addressText,
-                          { color: mode === "dark" ? "#FFFFFF" : "#333333" },
+                          themedStyles.text(mode),
                         ]}
                       >
                         {buildingInfo.address}
@@ -621,7 +614,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
                     <Text
                       style={[
                         styles.sectionTitle,
-                        { color: mode === "dark" ? "#FFFFFF" : "#333333" },
+                        themedStyles.text(mode),
                       ]}
                     >
                       Description
@@ -629,7 +622,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
                     <Text
                       style={[
                         styles.descriptionText,
-                        { color: mode === "dark" ? "#CCCCCC" : "#000000" },
+                        themedStyles.mutedText(mode),
                       ]}
                     >
                       {buildingInfo.description}

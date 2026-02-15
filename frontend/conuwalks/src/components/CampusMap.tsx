@@ -100,20 +100,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
       campus,
       visible: true,
     });
-
-    
-
-    // Center map on selected building
-    // const buildingMetadata = campus == "SGW" ? SGWBuildingMetadata[buildingName] : LoyolaBuildingMetadata[buildingName];
-    // if (buildingMetadata && mapRef.current) {
-    //   mapRef.current.animateToRegion(
-    //     {
-    //       latitude: buildingMetadata.location.latitude,
-    //       longitude: buildingMetadata.location.longitude,
-    //       latitudeDelta: 0.003,
-    //       longitudeDelta: 0.003,
-    //     }, 500)
-    // };
   };
 
   // Handle close popup
