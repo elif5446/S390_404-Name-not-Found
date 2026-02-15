@@ -17,11 +17,11 @@ cd android
 chmod +x gradlew
 ./gradlew assembleDebug # or ./gradlew assembleRelease
 cd ..
-npx run android # npx expo start --dev-client
+npm run android # npx expo start --dev-client
 
 # when code changes re-run
 npx expo prebuild --platform android --clean
-npx run android
+npm run android
 ```
 
 
