@@ -128,7 +128,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
       console.log(`Long press detected inside building: ${foundId}`);
 
       if (INDOOR_DATA[foundId]) {
-        Vibration.vibrate(50); // Haptic feedback
         setIndoorBuildingId(foundId);
         setSelectedBuilding((prev) => ({ ...prev, visible: false }));
       } else {
