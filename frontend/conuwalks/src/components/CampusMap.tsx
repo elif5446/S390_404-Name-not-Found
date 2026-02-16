@@ -41,24 +41,20 @@ interface CampusMapProps {
 const CampusMap: React.FC<CampusMapProps> = ({
   initialLocation = { latitude: 45.49599, longitude: -73.57854 },
 }) => {
-  // Get user's location with permission handling
   const {
     location: userLocation,
     error: locationError,
     loading: locationLoading,
   } = useUserLocation();
 
-  // Use user location if available, otherwise use initial location
   const mapCenter = userLocation || initialLocation;
 
-  // Track map region to scale location circle based on zoom level
   const [mapRegion, setMapRegion] = useState<Region>({
     ...mapCenter,
     latitudeDelta: 0.008,
     longitudeDelta: 0.008,
   });
 
-  // State for additional building info popup
   const [selectedBuilding, setSelectedBuilding] = useState<{
     name: string;
     campus: "SGW" | "LOY";
@@ -69,50 +65,31 @@ const CampusMap: React.FC<CampusMapProps> = ({
     visible: false,
   });
 
-  // Calculate circle radius based on zoom level (longitudeDelta)
-  // Larger longitudeDelta = zoomed out = bigger circle
   const circleRadius = Math.max(2.5, mapRegion.longitudeDelta * 2000);
-
-  // Create a ref to the MapView so we can control it
   const mapRef = useRef<MapView>(null);
 
-  // Handle clicking on the location circle to zoom in
   const handleLocationPress = () => {
     if (userLocation && mapRef.current) {
       mapRef.current.animateToRegion(
         {
           latitude: userLocation.latitude,
           longitude: userLocation.longitude,
-          latitudeDelta: 0.003, // Zoom in closer
+          latitudeDelta: 0.003,
           longitudeDelta: 0.003,
         },
         500,
-      ); // 500ms animation
+      );
     }
   };
 
-  // Handle building tap to show additional info
   const handleBuildingPress = (buildingName: string, campus: "SGW" | "LOY") => {
     setSelectedBuilding({
       name: buildingName,
       campus,
       visible: true,
     });
-
-    // Center map on selected building
-    // const buildingMetadata = campus == "SGW" ? SGWBuildingMetadata[buildingName] : LoyolaBuildingMetadata[buildingName];
-    // if (buildingMetadata && mapRef.current) {
-    //   mapRef.current.animateToRegion(
-    //     {
-    //       latitude: buildingMetadata.location.latitude,
-    //       longitude: buildingMetadata.location.longitude,
-    //       latitudeDelta: 0.003,
-    //       longitudeDelta: 0.003,
-    //     }, 500)
-    // };
   };
 
-  // Handle close popup
   const handleClosePopup = () => {
     setSelectedBuilding((prev) => ({ ...prev, visible: false }));
   };
@@ -120,9 +97,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
   const mapID =
     useColorScheme() === "dark"
       ? "eb0ccd6d2f7a95e23f1ec398"
-      : "eb0ccd6d2f7a95e117328051"; // Workaround
+      : "eb0ccd6d2f7a95e117328051";
 
-  // Helper function to render polygons
   const renderPolygons = (
     geojson: typeof SGW | typeof LOY,
     campus: "SGW" | "LOY",
@@ -130,8 +106,9 @@ const CampusMap: React.FC<CampusMapProps> = ({
     geojson.features.map((feature) => {
       if (feature.geometry.type !== "Polygon") return null;
 
-      const coordinates = feature.geometry.coordinates[0];
-      const properties = feature.properties as { id: string }; // only id now
+      const coordinates = polygonFromGeoJSON(feature.geometry.coordinates[0]);
+      const buildingId = feature.properties.id;
+      const properties = feature.properties as { id: string };
 
       const color =
         BuildingTheme[campus][
@@ -141,38 +118,73 @@ const CampusMap: React.FC<CampusMapProps> = ({
         campus === "LOY"
           ? LoyolaBuildingMetadata[properties.id]
           : SGWBuildingMetadata[properties.id];
-      console.log(
-        `Campus: ${campus}, Building: ${properties.id}, Color: ${color}, Name: ${buildingMetadata?.name}`,
-      );
 
       return (
+      <React.Fragment key={`group-${buildingId}`}>
         <Polygon
           key={properties.id}
-          coordinates={polygonFromGeoJSON(coordinates)}
-          fillColor={color + "90"} // mostly opaque
+          coordinates={coordinates}
+          fillColor={color + "90"}
           strokeColor={color}
           strokeWidth={1}
           tappable
           onPress={() => handleBuildingPress(properties.id, campus)}
-          accessibilityLabel={buildingMetadata?.name || properties.id}
-          accessibilityRole="button"
+          importantForAccessibility="no-hide-descendants"
           zIndex={1}
         />
+
+        <Marker
+          coordinate={getCentroid(coordinates)}
+          onPress={() => handleBuildingPress(buildingId, campus)}
+          zIndex={200}
+          tracksViewChanges={true}
+          title={buildingMetadata?.name || buildingId}
+          importantForAccessibility="yes"
+          accessibilityLabel={buildingMetadata?.name || buildingId}
+          accessibilityRole="button"
+          accessibilityHint="Tap to view details"
+        >
+          <View
+            style={{
+              width: 0.3/mapRegion.longitudeDelta,
+              height: 0.3/mapRegion.longitudeDelta,
+              backgroundColor: 'white', 
+              opacity: 0.01 
+            }}
+            collapsable={false}
+            importantForAccessibility="yes"
+            accessible={true}
+            accessibilityLabel={buildingMetadata?.name || buildingId}
+            accessibilityRole="button"
+            accessibilityHint="Tap to view details"
+          >
+            {Platform.OS === 'android' && (
+              <Text style={{ width: 1, height: 1, opacity: 0 }}> </Text>
+            )}
+          </View>
+        </Marker>
+      </React.Fragment>
       );
     });
+
+  const getCentroid = (coords: LatLng[]): LatLng => { 
+    const lat = coords.reduce((s, c) => s + c.latitude, 0)/coords.length;
+    const lng = coords.reduce((s, c) => s + c.longitude, 0)/coords.length;
+    return { latitude: lat, longitude: lng };
+  };
 
   return (
     <View style={styles.container}>
       <MapView
-        key={mapID} // Rerender when mode (light/dark) changes
+        key={mapID}
         ref={mapRef}
         provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
-        googleMapId={Platform.OS === "android" ? mapID : undefined} // Style
+        googleMapId={Platform.OS === "android" ? mapID : undefined}
         style={styles.map}
-        pitchEnabled={false} // No 3D
+        pitchEnabled={false}
         maxDelta={0}
         mapType={Platform.OS === "ios" ? "mutedStandard" : "standard"}
-        showsPointsOfInterest={false} // takes out the information off all businesses
+        showsPointsOfInterest={false}
         showsTraffic={false}
         showsIndoors={false}
         showsBuildings={false}
@@ -184,8 +196,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
         }}
         onRegionChange={setMapRegion}
       >
-
-        {/* ---------------- overlays ---------------- */}
         {(Object.keys(CampusConfig) as Array<keyof typeof CampusConfig>).map(
           (campus) => (
             <CampusPolygons
@@ -196,13 +206,9 @@ const CampusMap: React.FC<CampusMapProps> = ({
             />
         ))}
 
-        {/* Render SGW campus */}
         {renderPolygons(SGW, "SGW")}
-
-        {/* Render Loyola campus */}
         {renderPolygons(LOY, "LOY")}
 
-        {/* ---------------- labels ---------------- */}
         {(Object.keys(CampusConfig) as Array<keyof typeof CampusConfig>).map(campus => (
           <CampusLabels
             key={`label-${campus}`}
@@ -212,14 +218,15 @@ const CampusMap: React.FC<CampusMapProps> = ({
           />
         ))}
 
-        {userLocation && ( //Show user's current location if available
+        {userLocation && (
           <Circle
             center={userLocation}
             radius={circleRadius}
             fillColor="#B03060BF"
             strokeColor="#FFFFFF"
             strokeWidth={2}
-            zIndex={9999}
+            zIndex={9998}
+            importantForAccessibility="no"
           />
         )}
 
@@ -228,21 +235,24 @@ const CampusMap: React.FC<CampusMapProps> = ({
             coordinate={userLocation}
             onPress={handleLocationPress}
             tracksViewChanges={false}
-            zIndex={1001}
+            zIndex={9999}
+            title={"Current Location"}
+            accessibilityLabel={"Current Location"}
+            importantForAccessibility="yes"
           >
             <View
               style={{
-                width: 12,
-                height: 12,
                 borderRadius: 6,
-                backgroundColor: "#B03060",
+                backgroundColor: "#B03060"
               }}
+              accessible={true}
+              accessibilityLabel={"Current Location"}
+              importantForAccessibility="yes"
             />
           </Marker>
         )}
       </MapView>
 
-      {/*Additional Building Info Popup*/}
       <AdditionalInfoPopup
         visible={selectedBuilding.visible}
         buildingId={selectedBuilding.name}
@@ -257,20 +267,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
       )}
 
       {locationError && (
-        <View
-          style={{
-            position: "absolute",
-            top: 20,
-            left: 20,
-            right: 20,
-            backgroundColor: "#fff",
-            padding: 10,
-            borderRadius: 5,
-          }}
-        >
-          <Text style={{ color: "#B03060", fontSize: 12 }}>
-            {locationError}
-          </Text>
+        <View style={{ position: "absolute", top: 20, left: 20, right: 20, backgroundColor: "#fff", padding: 10, borderRadius: 5 }}>
+          <Text style={{ color: "#B03060", fontSize: 12 }}>{locationError}</Text>
         </View>
       )}
     </View>
