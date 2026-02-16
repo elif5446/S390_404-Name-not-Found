@@ -78,7 +78,7 @@ export const useUserLocation = (): UseUserLocationReturn => {
             setError(null);
           }
         } catch (e) {
-          console.warn(
+          console.error(
             "Fresh location fetch failed, relying on last known or default.",
             e,
           );
@@ -87,7 +87,7 @@ export const useUserLocation = (): UseUserLocationReturn => {
           }
         }
       } catch (err) {
-        console.warn("Location error:", err);
+        console.error("Location error:", err);
         setError("Failed to retrieve location");
         console.error(err);
       } finally {
