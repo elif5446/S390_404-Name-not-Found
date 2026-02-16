@@ -1,22 +1,22 @@
-import CampusPolygons from "@/src/components/polygons";
 import CampusLabels from "@/src/components/campusLabels";
 import { CampusConfig } from "@/src/data/campus/campusConfig";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo, useCallback } from "react";
 import {
   View,
   Text,
   ActivityIndicator,
   Platform,
   useColorScheme,
+  Vibration,
 } from "react-native";
 import MapView, {
-  LatLng,
   Circle,
   Region,
   Marker,
   PROVIDER_GOOGLE,
   Polygon,
+  LongPressEvent,
 } from "react-native-maps";
 import styles from "@/src/styles/campusMap";
 import { useUserLocation } from "@/src/hooks/useUserLocation";
@@ -27,9 +27,9 @@ import { SGWBuildingMetadata } from "@/src/data/metadata/SGW.BuildingMetaData";
 import BuildingTheme from "@/src/styles/BuildingTheme";
 import AdditionalInfoPopup from "./AdditionalInfoPopup";
 
-// Convert GeoJSON coordinates to LatLng
-const polygonFromGeoJSON = (coordinates: number[][]): LatLng[] =>
-  coordinates.map(([longitude, latitude]) => ({ latitude, longitude }));
+import IndoorMapOverlay from "@/src/components/indoor/IndoorMapOverlay";
+import { INDOOR_DATA } from "@/src/data/indoorData";
+import { polygonFromGeoJSON, isPointInPolygon } from "@/src/utils/geo"; // Assume this moved to utils as per best practice
 
 interface CampusMapProps {
   initialLocation?: {
@@ -48,7 +48,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
     loading: locationLoading,
   } = useUserLocation();
 
-  // Use user location if available, otherwise use initial location
+  const mapRef = useRef<MapView>(null); // Create a ref to the MapView so we can control it
   const mapCenter = userLocation || initialLocation;
 
   // Track map region to scale location circle based on zoom level
@@ -58,7 +58,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
     longitudeDelta: 0.008,
   });
 
-  // State for additional building info popup
+  // State for building info popup
   const [selectedBuilding, setSelectedBuilding] = useState<{
     name: string;
     campus: "SGW" | "LOY";
@@ -69,12 +69,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
     visible: false,
   });
 
-  // Calculate circle radius based on zoom level (longitudeDelta)
-  // Larger longitudeDelta = zoomed out = bigger circle
-  const circleRadius = Math.max(2.5, mapRegion.longitudeDelta * 2000);
-
-  // Create a ref to the MapView so we can control it
-  const mapRef = useRef<MapView>(null);
+  const [indoorBuildingId, setIndoorBuildingId] = useState<string | null>(null);
 
   // Handle clicking on the location circle to zoom in
   const handleLocationPress = () => {
@@ -91,75 +86,108 @@ const CampusMap: React.FC<CampusMapProps> = ({
     }
   };
 
-  // Handle building tap to show additional info
-  const handleBuildingPress = (buildingName: string, campus: "SGW" | "LOY") => {
-    setSelectedBuilding({
-      name: buildingName,
-      campus,
-      visible: true,
-    });
+  const handlePolygonPress = useCallback(
+    (buildingId: string, campus: "SGW" | "LOY") => {
+      console.log(`Single Tap: ${buildingId}`);
+      setSelectedBuilding({
+        name: buildingId,
+        campus,
+        visible: true,
+      });
+    },
+    [],
+  );
 
-    // Center map on selected building
-    // const buildingMetadata = campus == "SGW" ? SGWBuildingMetadata[buildingName] : LoyolaBuildingMetadata[buildingName];
-    // if (buildingMetadata && mapRef.current) {
-    //   mapRef.current.animateToRegion(
-    //     {
-    //       latitude: buildingMetadata.location.latitude,
-    //       longitude: buildingMetadata.location.longitude,
-    //       latitudeDelta: 0.003,
-    //       longitudeDelta: 0.003,
-    //     }, 500)
-    // };
-  };
+  const handleMapLongPress = useCallback((e: LongPressEvent) => {
+    const coordinate = e.nativeEvent.coordinate;
+    console.log("Map Long Press:", coordinate);
 
-  // Handle close popup
-  const handleClosePopup = () => {
-    setSelectedBuilding((prev) => ({ ...prev, visible: false }));
-  };
+    const findBuildingAtPoint = (geojson: any) => {
+      for (const feature of geojson.features) {
+        if (feature.geometry.type === "Polygon") {
+          const rawCoords = feature.geometry.coordinates[0];
+          const polygonCoords = polygonFromGeoJSON(rawCoords);
+          if (isPointInPolygon(coordinate, polygonCoords)) {
+            return feature.properties.id;
+          }
+        }
+      }
+      return null;
+    };
+
+    let foundId = findBuildingAtPoint(SGW);
+    if (!foundId) foundId = findBuildingAtPoint(LOY);
+
+    if (foundId) {
+      console.log(`Long press detected inside building: ${foundId}`);
+
+      if (INDOOR_DATA[foundId]) {
+        Vibration.vibrate(50); // Haptic feedback
+        setIndoorBuildingId(foundId);
+        setSelectedBuilding((prev) => ({ ...prev, visible: false }));
+      } else {
+        console.log("No indoor data for this building.");
+      }
+    }
+  }, []);
+
+  // Center map on selected building
+  // const buildingMetadata = campus == "SGW" ? SGWBuildingMetadata[buildingName] : LoyolaBuildingMetadata[buildingName];
+  // if (buildingMetadata && mapRef.current) {
+  //   mapRef.current.animateToRegion(
+  //     {
+  //       latitude: buildingMetadata.location.latitude,
+  //       longitude: buildingMetadata.location.longitude,
+  //       latitudeDelta: 0.003,
+  //       longitudeDelta: 0.003,
+  //     }, 500)
+  // };
+
+  const renderedPolygons = useMemo(() => {
+    const render = (geojson: typeof SGW | typeof LOY, campus: "SGW" | "LOY") =>
+      geojson.features.map((feature: any) => {
+        if (feature.geometry.type !== "Polygon") return null;
+
+        const coordinates = feature.geometry.coordinates[0];
+        const properties = feature.properties as { id: string };
+        const color =
+          BuildingTheme[campus][
+            properties.id as keyof (typeof BuildingTheme)[typeof campus]
+          ] || "#888888";
+        const buildingMetadata =
+          campus === "LOY"
+            ? LoyolaBuildingMetadata[properties.id]
+            : SGWBuildingMetadata[properties.id];
+        //   console.log(
+        //     `${campus}, Building: ${properties.id}, Color: ${color}, Name: ${buildingMetadata?.name}`,
+        //   );
+
+        return (
+          <Polygon
+            key={`${campus}-${properties.id}`}
+            coordinates={polygonFromGeoJSON(coordinates)}
+            fillColor={color + "90"}
+            strokeColor={color}
+            strokeWidth={1}
+            tappable={true}
+            onPress={() => handlePolygonPress(properties.id, campus)}
+            accessibilityLabel={buildingMetadata?.name || properties.id}
+            accessibilityRole="button"
+            zIndex={1}
+          />
+        );
+      });
+
+    return {
+      sgw: render(SGW, "SGW"),
+      loy: render(LOY, "LOY"),
+    };
+  }, [handlePolygonPress]); // recreate if handles change; shouldn't
 
   const mapID =
     useColorScheme() === "dark"
       ? "eb0ccd6d2f7a95e23f1ec398"
       : "eb0ccd6d2f7a95e117328051"; // Workaround
-
-  // Helper function to render polygons
-  const renderPolygons = (
-    geojson: typeof SGW | typeof LOY,
-    campus: "SGW" | "LOY",
-  ) =>
-    geojson.features.map((feature) => {
-      if (feature.geometry.type !== "Polygon") return null;
-
-      const coordinates = feature.geometry.coordinates[0];
-      const properties = feature.properties as { id: string }; // only id now
-
-      const color =
-        BuildingTheme[campus][
-          properties.id as keyof (typeof BuildingTheme)[typeof campus]
-        ] || "#888888";
-      const buildingMetadata =
-        campus === "LOY"
-          ? LoyolaBuildingMetadata[properties.id]
-          : SGWBuildingMetadata[properties.id];
-      console.log(
-        `Campus: ${campus}, Building: ${properties.id}, Color: ${color}, Name: ${buildingMetadata?.name}`,
-      );
-
-      return (
-        <Polygon
-          key={properties.id}
-          coordinates={polygonFromGeoJSON(coordinates)}
-          fillColor={color + "90"} // mostly opaque
-          strokeColor={color}
-          strokeWidth={1}
-          tappable
-          onPress={() => handleBuildingPress(properties.id, campus)}
-          accessibilityLabel={buildingMetadata?.name || properties.id}
-          accessibilityRole="button"
-          zIndex={1}
-        />
-      );
-    });
 
   return (
     <View style={styles.container}>
@@ -176,6 +204,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
         showsTraffic={false}
         showsIndoors={false}
         showsBuildings={false}
+        showsUserLocation={false}
+        moveOnMarkerPress={false}
         tintColor="#FF2D55"
         region={{
           ...initialLocation,
@@ -183,39 +213,28 @@ const CampusMap: React.FC<CampusMapProps> = ({
           longitudeDelta: 0.0043,
         }}
         onRegionChange={setMapRegion}
+        onLongPress={handleMapLongPress}
       >
-
         {/* ---------------- overlays ---------------- */}
-        {(Object.keys(CampusConfig) as Array<keyof typeof CampusConfig>).map(
-          (campus) => (
-            <CampusPolygons
-              key={`poly-${campus}`}
-              campus={campus}
-              geojson={CampusConfig[campus].geojson}
-              metadata={CampusConfig[campus].metadata}
-            />
-        ))}
-
-        {/* Render SGW campus */}
-        {renderPolygons(SGW, "SGW")}
-
-        {/* Render Loyola campus */}
-        {renderPolygons(LOY, "LOY")}
+        {renderedPolygons.sgw}
+        {renderedPolygons.loy}
 
         {/* ---------------- labels ---------------- */}
-        {(Object.keys(CampusConfig) as Array<keyof typeof CampusConfig>).map(campus => (
-          <CampusLabels
-            key={`label-${campus}`}
-            campus={campus}
-            data={CampusConfig[campus].labels}
-            longitudeDelta={mapRegion.longitudeDelta}
-          />
-        ))}
+        {(Object.keys(CampusConfig) as (keyof typeof CampusConfig)[]).map(
+          (campus) => (
+            <CampusLabels
+              key={`label-${campus}`}
+              campus={campus}
+              data={CampusConfig[campus].labels}
+              longitudeDelta={mapRegion.longitudeDelta}
+            />
+          ),
+        )}
 
-        {userLocation && ( //Show user's current location if available
+        {userLocation && ( // Show user's current location if available
           <Circle
             center={userLocation}
-            radius={circleRadius}
+            radius={Math.max(2.5, mapRegion.longitudeDelta * 2000)}
             fillColor="#B03060BF"
             strokeColor="#FFFFFF"
             strokeWidth={2}
@@ -242,13 +261,23 @@ const CampusMap: React.FC<CampusMapProps> = ({
         )}
       </MapView>
 
-      {/*Additional Building Info Popup*/}
-      <AdditionalInfoPopup
-        visible={selectedBuilding.visible}
-        buildingId={selectedBuilding.name}
-        campus={selectedBuilding.campus}
-        onClose={handleClosePopup}
-      />
+      {/* Indoor Overlay (Conditionally Rendered) */}
+      {indoorBuildingId && INDOOR_DATA[indoorBuildingId] && (
+        <IndoorMapOverlay
+          buildingData={INDOOR_DATA[indoorBuildingId]}
+          onExit={() => setIndoorBuildingId(null)}
+        />
+      )}
+
+      {/* Existing Popup (Hide if indoors) */}
+      {!indoorBuildingId && (
+        <AdditionalInfoPopup
+          visible={selectedBuilding.visible}
+          buildingId={selectedBuilding.name}
+          campus={selectedBuilding.campus}
+          onClose={() => setSelectedBuilding((p) => ({ ...p, visible: false }))}
+        />
+      )}
 
       {locationLoading && (
         <View style={{ position: "absolute", top: 20, right: 20 }}>

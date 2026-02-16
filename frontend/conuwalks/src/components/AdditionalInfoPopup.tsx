@@ -12,9 +12,9 @@ import {
   PanResponder,
   ScrollView,
 } from "react-native";
-import * as Clipboard from 'expo-clipboard';
-import { SymbolView, SFSymbol } from 'expo-symbols'; // SF Symbols (iOS)
-import MaterialIcons from '@expo/vector-icons/MaterialIcons'; // Material Design Icons (Android)
+import * as Clipboard from "expo-clipboard";
+import { SymbolView, SFSymbol } from "expo-symbols"; // SF Symbols (iOS)
+import MaterialIcons from "@expo/vector-icons/MaterialIcons"; // Material Design Icons (Android)
 import { BlurView } from "expo-blur";
 import { LoyolaBuildingMetadata } from "../data/metadata/LOY.BuildingMetadata";
 import { SGWBuildingMetadata } from "../data/metadata/SGW.BuildingMetaData";
@@ -28,31 +28,34 @@ interface AdditionInfoPopupProps {
 }
 
 const BackgroundWrapper = ({ children }: { children: React.ReactNode }) => {
-    if (Platform.OS === "ios") {
-      return (
-        <BlurView
-          style={[styles.iosBlurContainer, { height: "100%" }]}
-          intensity={100}
-          tint={(useColorScheme() || "light") === "dark" ? "dark" : "light"}
-        >
-          {children}
-        </BlurView>
-      );
-    }
+  const colorScheme = useColorScheme();
+  const theme = colorScheme || "light";
+
+  if (Platform.OS === "ios") {
     return (
-      <View
-        style={[
-          styles.iosBlurContainer,
-          {
-            height: "100%",
-            backgroundColor: (useColorScheme() || "light") === "dark" ? "#1C1C1E" : "#FFFFFF", 
-          },
-        ]}
+      <BlurView
+        style={[styles.iosBlurContainer, { height: "100%" }]}
+        intensity={100}
+        tint={theme === "dark" ? "dark" : "light"}
       >
         {children}
-      </View>
+      </BlurView>
     );
-  };
+  }
+  return (
+    <View
+      style={[
+        styles.iosBlurContainer,
+        {
+          height: "100%",
+          backgroundColor: theme === "dark" ? "#1C1C1E" : "#FFFFFF",
+        },
+      ]}
+    >
+      {children}
+    </View>
+  );
+};
 
 const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
   visible,
@@ -81,7 +84,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
 
       panY.setValue(0);
     }
-  }, [visible]);
+  }, [panY, visible]);
 
   // Fetch building info based on buildingId and campus
   useEffect(() => {
@@ -90,7 +93,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
         campus === "SGW"
           ? SGWBuildingMetadata[buildingId]
           : LoyolaBuildingMetadata[buildingId];
-      
+
       if (metadata) {
         setBuildingInfo(metadata);
       } else {
@@ -99,8 +102,6 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
       }
     }
   }, [buildingId, campus]);
-
-  const isIOS = Platform.OS === "ios";
 
   const panResponder = useRef(
     PanResponder.create({
@@ -182,7 +183,12 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
       return null;
     }
 
-    const icons: {key: string, sf: SFSymbol, material: "elevator" | "accessible" | "subway", label: string}[] = [];
+    const icons: {
+      key: string;
+      sf: SFSymbol;
+      material: "elevator" | "accessible" | "subway";
+      label: string;
+    }[] = [];
 
     // Check for direct metro access
     if (
@@ -192,7 +198,12 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
           f.toLowerCase().includes("undergound passage"),
       )
     ) {
-      icons.push({ key: "metro", sf: "tram.fill.tunnel", material: "subway", label: "Metro access" });
+      icons.push({
+        key: "metro",
+        sf: "tram.fill.tunnel",
+        material: "subway",
+        label: "Metro access",
+      });
     }
 
     // Check for accessible features - Wheelchair icon
@@ -220,7 +231,12 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
           f.toLowerCase().includes("lift"),
       )
     ) {
-      icons.push({ key: "elevator", sf: "arrow.up.arrow.down.square", material: "elevator", label: "Elevator" });
+      icons.push({
+        key: "elevator",
+        sf: "arrow.up.arrow.down.square",
+        material: "elevator",
+        label: "Elevator",
+      });
     }
 
     return icons;
@@ -233,7 +249,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
           <Text
             style={[
               styles.sectionTitle,
-              { color:  mode === "dark" ? "#FFFFFF" : "#333333" },
+              { color: mode === "dark" ? "#FFFFFF" : "#333333" },
             ]}
           >
             Opening Hours
@@ -305,126 +321,160 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
 
   const accessibilityIcons = getAccessibilityIcons(buildingInfo?.facilities);
 
-  // iOS styling
-  // if (isIOS) {
-    return (
-      <Modal
-        visible={visible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={onClose}
+  return (
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <TouchableOpacity
+        style={styles.iosBackdrop}
+        activeOpacity={1}
+        onPress={onClose}
       >
-        <TouchableOpacity
-          style={styles.iosBackdrop}
-          activeOpacity={1}
-          onPress={onClose}
+        <Animated.View
+          style={[styles.iosBlurContainer, { height: currentHeight }]}
         >
-          <Animated.View
-            style={[styles.iosBlurContainer, { height: currentHeight }]}
-          >
-            <BackgroundWrapper>
-              <View style={styles.iosContentContainer}>
-                {/* Handle bar */}
-                <View
-                  style={styles.handleBarContainer}
-                  {...panResponder.panHandlers}
+          <BackgroundWrapper>
+            <View style={styles.iosContentContainer}>
+              {/* Handle bar */}
+              <View
+                style={styles.handleBarContainer}
+                {...panResponder.panHandlers}
+              >
+                <View style={styles.handleBar} />
+              </View>
+              {/* Header */}
+              <View style={[styles.iosHeader]}>
+                {/* Close button */}
+                <TouchableOpacity
+                  onPress={onClose}
+                  style={styles.closeButton}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                  <View style={styles.handleBar} />
-                </View>
-                {/* Header */}
-                <View style={[styles.iosHeader]}>
-                  {/* Close button */}
-                  <TouchableOpacity
-                    onPress={onClose}
-                    style={styles.closeButton}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  <View
+                    style={[
+                      styles.closeButtonCircle,
+                      {
+                        backgroundColor: "#86868629",
+                      },
+                    ]}
                   >
-                    <View
-                      style={[
-                        styles.closeButtonCircle,
-                        {
-                          backgroundColor: "#86868629",
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.closeButtonText,
-                          { color: mode === "dark" ? "#FFFFFF" : "#333333" },
-                        ]}
-                      >
-                        ✕
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                  {/* Center text container */}
-                  <View style={styles.headerTextContainer}>
                     <Text
                       style={[
-                        styles.buildingName,
-                        {
-                          color: mode === "dark" ? "#FFFFFF" : "#333333",
-                        },
+                        styles.closeButtonText,
+                        { color: mode === "dark" ? "#FFFFFF" : "#333333" },
                       ]}
                     >
-                      {buildingInfo?.name || "Building"}
+                      ✕
                     </Text>
-                    {/* Building ID and icons */}
-                    <View style={styles.buildingIdWithIconsContainer}>
-                      {/* Building ID */}
-                      <View style={styles.buildingIdContainer}>
-                        <Text
-                          style={[
-                            styles.buildingId,
-                            {
-                              color: mode === "dark" ? "#CCCCCC" : "#585858",
-                            },
-                          ]}
-                        >
-                          {buildingId}
-                        </Text>
-                      </View>
-                      {/* Accessibility icons - on the far right of this row */}
-                      {accessibilityIcons && accessibilityIcons.length > 0 && (
-                        <View style={styles.accessibilityIconsContainer}>
-                          {accessibilityIcons.map((icon) => (
-                            <View
-                              key={icon.key}
-                              accessible={true}
-                              accessibilityLabel={icon.label}
-                            >
-                              {icon.key !== "metro" && (Platform.OS === "ios" ? <SymbolView 
-                                name={icon.sf}
-                                size={25}
-                                weight={"heavy"}
-                                tintColor={mode === "dark" ? "#CCCCCC" : "#585858"}
-                              /> : <MaterialIcons name={icon.material} size={25} color={mode === "dark" ? "#CCCCCC" : "#585858"}/>)
-                              || <Image source={require(`../../assets/images/metro.png`)}
-                                style={{width: 25,
-                                height: 25,
-                                tintColor: mode === "dark" ? "#CCCCCC" : "#585858"}}
-                              />}
-                            </View>
-                          ))}
-                        </View>
-                      )}
-                    </View>
                   </View>
-                  <View style={styles.rightSpacer} />
+                </TouchableOpacity>
+                {/* Center text container */}
+                <View style={styles.headerTextContainer}>
+                  <Text
+                    style={[
+                      styles.buildingName,
+                      {
+                        color: mode === "dark" ? "#FFFFFF" : "#333333",
+                      },
+                    ]}
+                  >
+                    {buildingInfo?.name || "Building"}
+                  </Text>
+                  {/* Building ID and icons */}
+                  <View style={styles.buildingIdWithIconsContainer}>
+                    {/* Building ID */}
+                    <View style={styles.buildingIdContainer}>
+                      <Text
+                        style={[
+                          styles.buildingId,
+                          {
+                            color: mode === "dark" ? "#CCCCCC" : "#585858",
+                          },
+                        ]}
+                      >
+                        {buildingId}
+                      </Text>
+                    </View>
+                    {/* Accessibility icons - on the far right of this row */}
+                    {accessibilityIcons && accessibilityIcons.length > 0 && (
+                      <View style={styles.accessibilityIconsContainer}>
+                        {accessibilityIcons.map((icon) => (
+                          <View
+                            key={icon.key}
+                            accessible={true}
+                            accessibilityLabel={icon.label}
+                          >
+                            {(icon.key !== "metro" &&
+                              (Platform.OS === "ios" ? (
+                                <SymbolView
+                                  name={icon.sf}
+                                  size={25}
+                                  weight={"heavy"}
+                                  tintColor={
+                                    mode === "dark" ? "#CCCCCC" : "#585858"
+                                  }
+                                />
+                              ) : (
+                                <MaterialIcons
+                                  name={icon.material}
+                                  size={25}
+                                  color={
+                                    mode === "dark" ? "#CCCCCC" : "#585858"
+                                  }
+                                />
+                              ))) || (
+                              <Image
+                                source={require(
+                                  `../../assets/images/metro.png`,
+                                )}
+                                style={{
+                                  width: 25,
+                                  height: 25,
+                                  tintColor:
+                                    mode === "dark" ? "#CCCCCC" : "#585858",
+                                }}
+                              />
+                            )}
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                  </View>
                 </View>
-                {/* Scrollable content area */}
-                <ScrollView
-                  ref={scrollViewRef}
-                  style={[styles.contentArea, { flex: 1 }]}
-                  scrollEnabled={isExpanded || currentHeight >= MAX_HEIGHT}
-                  showsVerticalScrollIndicator={
-                    isExpanded || currentHeight >= MAX_HEIGHT
-                  }
-                  bounces={isExpanded || currentHeight >= MAX_HEIGHT}
-                  nestedScrollEnabled={true}
-                  contentContainerStyle={{ flexGrow: 1, paddingBottom: 24 }}
-                >
-                  {/* Schedule section */}
+                <View style={styles.rightSpacer} />
+              </View>
+              {/* Scrollable content area */}
+              <ScrollView
+                ref={scrollViewRef}
+                style={[styles.contentArea, { flex: 1 }]}
+                scrollEnabled={isExpanded || currentHeight >= MAX_HEIGHT}
+                showsVerticalScrollIndicator={
+                  isExpanded || currentHeight >= MAX_HEIGHT
+                }
+                bounces={isExpanded || currentHeight >= MAX_HEIGHT}
+                nestedScrollEnabled={true}
+                contentContainerStyle={{ flexGrow: 1, paddingBottom: 24 }}
+              >
+                {/* Schedule section */}
+                <View style={styles.section}>
+                  <Text
+                    style={[
+                      styles.sectionTitle,
+                      { color: mode === "dark" ? "#FFFFFF" : "#333333" },
+                    ]}
+                  >
+                    Schedule
+                  </Text>
+                  {/* Schedule information will be here in future versions */}
+                </View>
+                {/* Opening hours section */}
+                {buildingInfo?.openingHours &&
+                  renderOpeningHours(buildingInfo.openingHours)}
+                {/* Address section */}
+                {buildingInfo?.address && (
                   <View style={styles.section}>
                     <Text
                       style={[
@@ -432,83 +482,71 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                         { color: mode === "dark" ? "#FFFFFF" : "#333333" },
                       ]}
                     >
-                      Schedule
+                      Address
                     </Text>
-                    {/* Schedule information will be here in future versions */}
-                  </View>
-                  {/* Opening hours section */}
-                  {buildingInfo?.openingHours &&
-                    renderOpeningHours(buildingInfo.openingHours)}
-                  {/* Address section */}
-                  {buildingInfo?.address && (
-                    <View style={styles.section}>
+                    <View style={styles.addressContainer}>
                       <Text
                         style={[
-                          styles.sectionTitle,
+                          styles.addressText,
                           { color: mode === "dark" ? "#FFFFFF" : "#333333" },
                         ]}
                       >
-                        Address
+                        {buildingInfo.address}
                       </Text>
-                      <View style={styles.addressContainer}>
-                        <Text
-                          style={[
-                            styles.addressText,
-                            { color: mode === "dark" ? "#FFFFFF" : "#333333" },
-                          ]}
-                        >
-                          {buildingInfo.address}
-                        </Text>
-                        <TouchableOpacity
-                          onPress={copyAddressToClipboard}
-                          style={styles.copyButton}
-                        >
-                          {Platform.OS === "ios" && <SymbolView 
-                            name={copying ? "document.on.document.fill" : "document.on.document"}
+                      <TouchableOpacity
+                        onPress={copyAddressToClipboard}
+                        style={styles.copyButton}
+                      >
+                        {(Platform.OS === "ios" && (
+                          <SymbolView
+                            name={
+                              copying
+                                ? "document.on.document.fill"
+                                : "document.on.document"
+                            }
                             size={25}
                             weight={"regular"}
-                            tintColor={mode === "dark" ? "#FFFFFF" : "#333333"} 
-                          /> || <MaterialIcons
+                            tintColor={mode === "dark" ? "#FFFFFF" : "#333333"}
+                          />
+                        )) || (
+                          <MaterialIcons
                             name={copying ? "task" : "content-copy"}
                             size={22}
                             color={mode === "dark" ? "#FFFFFF" : "#333333"}
-                          />}
-                        </TouchableOpacity>
-                      </View>
+                          />
+                        )}
+                      </TouchableOpacity>
                     </View>
-                  )}
-                  {/* Description section */}
-                  {buildingInfo?.description && (
-                    <View style={styles.section}>
-                      <Text
-                        style={[
-                          styles.sectionTitle,
-                          { color: mode === "dark" ? "#FFFFFF" : "#333333" },
-                        ]}
-                      >
-                        Description
-                      </Text>
-                      <Text
-                        style={[
-                          styles.descriptionText,
-                          { color: mode === "dark" ? "#FFFFFF" : "#333333" },
-                        ]}
-                      >
-                        {buildingInfo.description}
-                      </Text>
-                    </View>
-                  )}
-                </ScrollView>
-              </View>
-            </BackgroundWrapper>
-          </Animated.View>
-        </TouchableOpacity>
-      </Modal>
-    );
-  /* } else {
-    // Android (Google Maps) styling
-    return null;
-  } */
+                  </View>
+                )}
+                {/* Description section */}
+                {buildingInfo?.description && (
+                  <View style={styles.section}>
+                    <Text
+                      style={[
+                        styles.sectionTitle,
+                        { color: mode === "dark" ? "#FFFFFF" : "#333333" },
+                      ]}
+                    >
+                      Description
+                    </Text>
+                    <Text
+                      style={[
+                        styles.descriptionText,
+                        { color: mode === "dark" ? "#FFFFFF" : "#333333" },
+                      ]}
+                    >
+                      {buildingInfo.description}
+                    </Text>
+                  </View>
+                )}
+              </ScrollView>
+            </View>
+          </BackgroundWrapper>
+        </Animated.View>
+      </TouchableOpacity>
+    </Modal>
+  );
 };
 
 export default AdditionalInfoPopup;
