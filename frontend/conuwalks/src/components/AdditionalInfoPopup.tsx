@@ -24,6 +24,8 @@ interface AdditionInfoPopupProps {
   buildingId: string;
   campus: "SGW" | "LOY";
   onClose: () => void;
+  onDirectionsTrigger: () => void;
+  directionsEtaLabel: string;
 }
 export interface AdditionalInfoPopupHandle{
   collapse: () =>void;
@@ -61,7 +63,10 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
   buildingId,
   campus,
   onClose,
+  onDirectionsTrigger,
+  directionsEtaLabel,
 }, ref) => {
+  const campusPink = "#B03060";
   const mode = useColorScheme() || "light";
   const [buildingInfo, setBuildingInfo] = useState<any>(null);
   const scrollViewRef = useRef<ScrollView>(null);
@@ -434,6 +439,10 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
 
   const accessibilityIcons = getAccessibilityIcons(buildingInfo?.facilities);
 
+  if (!visible) {
+    return null;
+  }
+
     return (
       <View
         style={{
@@ -536,7 +545,36 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
                     )}
                   </View>
                 </View>
-                <View style={styles.rightSpacer} />
+                <View style={{ alignItems: "flex-end", gap: 8 }}>
+                  <TouchableOpacity
+                    onPress={onDirectionsTrigger}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      borderRadius: 999,
+                      backgroundColor: campusPink,
+                      paddingVertical: 4,
+                      paddingHorizontal: 7,
+                      gap: 5,
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: 18,
+                        height: 18,
+                        borderRadius: 9,
+                        backgroundColor: "#FFFFFF",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <MaterialIcons name="subdirectory-arrow-right" size={12} color={campusPink} />
+                    </View>
+                    <Text style={{ color: "#FFFFFF", fontWeight: "700", fontSize: 12, lineHeight: 14 }}>
+                      {directionsEtaLabel}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
 
@@ -565,7 +603,53 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
                   >
                     Schedule
                   </Text>
-                  {/* Schedule information will be here in future versions */}
+                  <View
+                    style={{
+                      marginTop: 8,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <Text style={{ color: mode === "dark" ? "#CCCCCC" : "#585858" }}>
+                      Next class • 5 min walk
+                    </Text>
+                    <TouchableOpacity
+                      onPress={onDirectionsTrigger}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        borderRadius: 999,
+                        backgroundColor: campusPink,
+                        paddingVertical: 4,
+                        paddingHorizontal: 7,
+                        gap: 5,
+                      }}
+                    >
+                      <View
+                        style={{
+                          width: 18,
+                          height: 18,
+                          borderRadius: 9,
+                          backgroundColor: "#FFFFFF",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <MaterialIcons name="subdirectory-arrow-right" size={12} color={campusPink} />
+                      </View>
+                      <Text
+                        style={{
+                          color: "#FFFFFF",
+                          fontWeight: "700",
+                          fontSize: 12,
+                          lineHeight: 14,
+                        }}
+                      >
+                        {directionsEtaLabel}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 </View>
                 {/* Opening hours section */}
                 {buildingInfo?.openingHours &&

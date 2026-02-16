@@ -32,6 +32,7 @@ export const useUserLocation = (): UseUserLocationReturn => {
 
   useEffect(() => {
     let isMounted = true;
+    let locationSubscription: Location.LocationSubscription | null = null;
     const requestLocationPermission = async () => {
       let canUseLocation = false;
       try {
@@ -86,6 +87,26 @@ export const useUserLocation = (): UseUserLocationReturn => {
             setError("Failed to retrieve location");
           }
         }
+
+        if (isMounted) {
+          locationSubscription = await Location.watchPositionAsync(
+            {
+              accuracy: Location.Accuracy.Balanced,
+              timeInterval: 3000,
+              distanceInterval: 8,
+            },
+            (updatedPosition) => {
+              if (!isMounted) {
+                return;
+              }
+
+              setLocation({
+                latitude: updatedPosition.coords.latitude,
+                longitude: updatedPosition.coords.longitude,
+              });
+            }
+          );
+        }
       } catch (err) {
         console.error("Location error:", err);
         setError("Failed to retrieve location");
@@ -109,6 +130,7 @@ export const useUserLocation = (): UseUserLocationReturn => {
 
     return () => {
       isMounted = false;
+      locationSubscription?.remove();
     };
   }, []);
 

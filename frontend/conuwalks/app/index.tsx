@@ -3,9 +3,12 @@ import React, { useState } from 'react';
 import CampusMap from "@/src/components/CampusMap";
 import StatusGradient from "@/src/components/StatusGradient";
 import SegmentedToggle from "@/src/components/SegmentedToggle";
+import { useDirections } from "@/src/context/DirectionsContext";
 
 export default function HomeScreen() {
   const [campus, setCampus] = useState<'SGW' | 'Loyola'>('SGW');
+  const { isNavigationActive } = useDirections();
+
   return (
     <View style={styles.container}>
       <View key={campus} style={styles.mapWrapper}>
@@ -13,7 +16,7 @@ export default function HomeScreen() {
         campus === 'Loyola' && <CampusMap initialLocation={{ latitude: 45.45846, longitude: -73.63999 }} />}
       </View>
       <StatusGradient/>
-      <SegmentedToggle campus={campus} setCampus={setCampus}/>
+      {!isNavigationActive && <SegmentedToggle campus={campus} setCampus={setCampus}/>}
       <StatusBar barStyle="dark-content" translucent backgroundColor="transparent" />
     </View>
   );
