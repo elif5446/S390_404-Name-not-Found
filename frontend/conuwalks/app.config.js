@@ -17,7 +17,8 @@ export default {
     "android": {
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.conuwalks",
+      "package": "com.conuwalks.app",
+      "googleServicesFile": "./google-services.json",
       "config": {
         "googleMaps": {
           "apiKey": process.env.GOOGLE_MAPS_API_KEY
@@ -36,6 +37,12 @@ export default {
     },
     "plugins": [
       "expo-router",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.340257679752-6mrlm3n1q8fhplnoj08dvd7fil8a547n"
+        }
+      ],
       [
         "expo-splash-screen",
         {
