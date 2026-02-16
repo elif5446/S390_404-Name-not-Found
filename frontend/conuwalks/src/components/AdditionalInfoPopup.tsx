@@ -1,7 +1,6 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useImperativeHandle, forwardRef } from "react";
 import {
   Image,
-  Modal,
   View,
   Text,
   TouchableOpacity,
@@ -18,13 +17,16 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { BlurView } from "expo-blur";
 import { LoyolaBuildingMetadata } from "../data/metadata/LOY.BuildingMetadata";
 import { SGWBuildingMetadata } from "../data/metadata/SGW.BuildingMetaData";
-import { styles } from "../styles/additionalInfoPopup";
+import { styles,themedStyles } from "../styles/additionalInfoPopup";
 
 interface AdditionInfoPopupProps {
   visible: boolean;
   buildingId: string;
   campus: "SGW" | "LOY";
   onClose: () => void;
+}
+export interface AdditionalInfoPopupHandle{
+  collapse: () =>void;
 }
 
 const BackgroundWrapper = ({ children }: { children: React.ReactNode }) => {
@@ -54,29 +56,73 @@ const BackgroundWrapper = ({ children }: { children: React.ReactNode }) => {
     );
   };
 
-const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
+const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPopupProps>(({
   visible,
   buildingId,
   campus,
   onClose,
-}) => {
+}, ref) => {
   const mode = useColorScheme() || "light";
   const [buildingInfo, setBuildingInfo] = useState<any>(null);
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  const panY = useRef(new Animated.Value(0)).current;
   const scrollViewRef = useRef<ScrollView>(null);
-  const screenHeight = Dimensions.get("window").height;
 
-  const MIN_HEIGHT = 300;
-  const MAX_HEIGHT = screenHeight * 0.8;
-  const [currentHeight, setCurrentHeight] = useState(MIN_HEIGHT);
+  // Default heights
+  const screenHeight = Dimensions.get("window").height;
+  const MIN_HEIGHT = 300; //initial popup view
+  const MAX_HEIGHT = screenHeight * 0.8; //full popup will be around 80% of the screen
+
+  // How far down the popup must sit so that only 300px is visible.
+  const SNAP_OFFSET = MAX_HEIGHT - MIN_HEIGHT;
+
+  // An animated value that controls vertical movement (is initially off screen)
+  const translateY = useRef(new Animated.Value(MAX_HEIGHT)).current;
+
+  const translateYRef = useRef(MAX_HEIGHT);
+  const translateYAtGestureStart = useRef(MAX_HEIGHT);
+  const scrollOffsetRef = useRef(0);
+  //change building info animation 
+  const opacity = useRef(new Animated.Value(2)).current;
+  
+  useEffect(() => {
+  if (!visible) return;
+  Animated.sequence([
+    Animated.timing(opacity, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: true,
+    }),
+    Animated.timing(opacity, {
+      toValue: 1,
+      duration: 150,
+      useNativeDriver: true,
+    }),
+  ]).start();
+}, [buildingId]);
+  useEffect(() => {
+    const id = translateY.addListener(({ value }) => {
+      translateYRef.current = value;
+    });
+    return () => translateY.removeListener(id);
+  }, []); //runs only on first render
 
   useEffect(() => {
     if (visible) {
-      setCurrentHeight(MIN_HEIGHT);
-      setIsExpanded(false);
-      panY.setValue(0);
+      //controls the content in the popup
+      scrollOffsetRef.current = 0;
+      scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+
+      translateY.setValue(MAX_HEIGHT);
+      translateYRef.current = MAX_HEIGHT;
+
+      // Start off-screen, spring up to collapsed position
+      Animated.spring(translateY, {
+        toValue: SNAP_OFFSET,
+        useNativeDriver: true, // native driver works on translateY
+        tension: 70,
+        friction: 12,
+      }).start(() => {
+        translateYRef.current = SNAP_OFFSET;
+      });
     }
   }, [visible]);
 
@@ -95,53 +141,159 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
     }
   }, [buildingId, campus]);
 
-  const panResponder = useRef(
+  useImperativeHandle(ref, () => ({
+    collapse: () => snapTo(SNAP_OFFSET),
+  }));
+
+  //this will allow us to smoothly move the popup up and down
+  const snapTo = (toValue: number, onDone?: () => void) => {
+    Animated.spring(translateY, {
+      toValue,
+      useNativeDriver: true,
+      tension: 68,
+      friction: 12,
+      overshootClamping: true,
+    }).start(({ finished }) => {
+      if (finished) {
+        translateYRef.current = toValue;
+        onDone?.();
+      }
+    });
+  };
+
+  const dismiss = () => {
+    Animated.timing(translateY, {
+      toValue: MAX_HEIGHT,
+      duration: 240,
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished) onClose();
+    });
+  };
+
+  const isIOS = Platform.OS === "ios";
+
+  // PanResponder for the DRAG HANDLE ONLY — does not intercept button taps
+  const handlePanResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onMoveShouldSetPanResponder: (_, gestureState) => {
-        return Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
+      onStartShouldSetPanResponderCapture: () => false, // ← don't capture, just respond
+
+      onMoveShouldSetPanResponder: (_, g) => {
+        return Math.abs(g.dy) > Math.abs(g.dx) * 1.2;
       },
-      onPanResponderMove: (_, gestureState) => {
-        if (isExpanded && scrollViewRef.current) return;
-        const sensitivity = 0.2;
-        const newHeight = MIN_HEIGHT - gestureState.dy * sensitivity;
-        const clampedHeight = Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, newHeight));
-        setCurrentHeight(clampedHeight);
-        setIsExpanded(clampedHeight > MIN_HEIGHT + 20);
+      onMoveShouldSetPanResponderCapture: (_, g) => {
+        return Math.abs(g.dy) > 5;
       },
-      onPanResponderRelease: (_, gestureState) => {
-        if (isExpanded && Math.abs(gestureState.dy) < 10) return;
-        let targetHeight = currentHeight;
-        if (gestureState.dy < -50) {
-          targetHeight = MAX_HEIGHT;
-          setIsExpanded(true);
-        } else if (gestureState.dy > 50) {
-          if (currentHeight > MIN_HEIGHT + 100) {
-            targetHeight = MIN_HEIGHT;
-            setIsExpanded(false);
-          } else {
-            onClose();
-            return;
-          }
-        } else {
-          const threshold = MIN_HEIGHT + (MAX_HEIGHT - MIN_HEIGHT) * 0.3;
-          if (currentHeight > threshold) {
-            targetHeight = MAX_HEIGHT;
-            setIsExpanded(true);
-          } else {
-            targetHeight = MIN_HEIGHT;
-            setIsExpanded(false);
-          }
+
+      onPanResponderGrant: () => {
+        translateY.stopAnimation((value) => {
+          translateYAtGestureStart.current = value;
+          translateYRef.current = value;
+        });
+        translateYAtGestureStart.current = translateYRef.current;
+      },
+
+      onPanResponderMove: (_, g) => {
+        const newY = translateYAtGestureStart.current + g.dy;
+        const clamped = Math.max(0, Math.min(MAX_HEIGHT * 0.92, newY));
+        translateY.setValue(clamped);
+      },
+
+      onPanResponderRelease: (_, g) => {
+        const currentY = translateYRef.current;
+        const velocity = g.vy;
+
+        if (velocity > 1.5 && currentY > SNAP_OFFSET - 60) {
+          dismiss();
+          return;
         }
-        setCurrentHeight(targetHeight);
-        setIsExpanded(targetHeight > MIN_HEIGHT + 20);
+        if (velocity > 1.0) {
+          snapTo(SNAP_OFFSET);
+          return;
+        }
+        if (velocity < -1.0) {
+          snapTo(0);
+          return;
+        }
+        if (currentY > MAX_HEIGHT * 0.75) {
+          dismiss();
+          return;
+        }
+        const mid = SNAP_OFFSET * 0.5;
+        snapTo(currentY < mid ? 0 : SNAP_OFFSET);
+      },
+    }),
+  ).current;
+
+  // PanResponder for the SCROLL AREA — only collapses when scrolled to top and dragging down
+  const scrollAreaPanResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onStartShouldSetPanResponderCapture: () => false,
+
+      onMoveShouldSetPanResponder: (_, g) => {
+        const isVertical = Math.abs(g.dy) > Math.abs(g.dx) * 1.2;
+        if (!isVertical) return false;
+
+        const isExpanded = translateYRef.current < SNAP_OFFSET - 20;
+
+        // Collapsed: intercept all downward drags
+        if (!isExpanded) return g.dy > 0;
+
+        // Expanded + dragging up: let ScrollView scroll
+        if (g.dy < 0) return false;
+
+        // Expanded + dragging down + at top: collapse the sheet
+        return scrollOffsetRef.current <= 0;
+      },
+
+      onMoveShouldSetPanResponderCapture: () => false, // ← never capture, so taps always reach children
+
+      onPanResponderGrant: () => {
+        translateY.stopAnimation((value) => {
+          translateYAtGestureStart.current = value;
+          translateYRef.current = value;
+        });
+        translateYAtGestureStart.current = translateYRef.current;
+      },
+
+      onPanResponderMove: (_, g) => {
+        const newY = translateYAtGestureStart.current + g.dy;
+        const clamped = Math.max(0, Math.min(MAX_HEIGHT * 0.92, newY));
+        translateY.setValue(clamped);
+      },
+
+      onPanResponderRelease: (_, g) => {
+        const currentY = translateYRef.current;
+        const velocity = g.vy;
+
+        if (velocity > 1.5 && currentY > SNAP_OFFSET - 60) {
+          dismiss();
+          return;
+        }
+        if (velocity > 1.0) {
+          snapTo(SNAP_OFFSET);
+          return;
+        }
+        if (velocity < -1.0) {
+          snapTo(0);
+          return;
+        }
+        if (currentY > MAX_HEIGHT * 0.75) {
+          dismiss();
+          return;
+        }
+        const mid = SNAP_OFFSET * 0.5;
+        snapTo(currentY < mid ? 0 : SNAP_OFFSET);
       },
     }),
   ).current;
 
   const [copying, setCopying] = useState(false);
 
-  const copyAddressToClipboard = () => {
+  // Address copy functionality
+  const copyAddressToClipboard = async () => {
     if (buildingInfo?.address) {
       setCopying(true);
       Clipboard.setString(buildingInfo.address);
@@ -171,22 +323,75 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
     if (typeof openingHours === "string") {
       return (
         <View style={styles.section} accessible={true}>
-          <Text style={[styles.sectionTitle, { color: mode === "dark" ? "#FFFFFF" : "#333333" }]} accessible={true} accessibilityRole="header">Opening Hours</Text>
-          <Text style={[styles.sectionText, { color: mode === "dark" ? "#CCCCCC" : "#333333" }]}>{openingHours}</Text>
+          <Text
+            style={[
+              styles.sectionTitle,
+              themedStyles.text(mode)
+            ]}
+            accessible={true}
+            accessibilityRole="header"
+          >
+            Opening Hours
+          </Text>
+          <Text
+            style={[
+              styles.sectionText,
+              themedStyles.text(mode),
+            ]}
+          >
+            {openingHours}
+          </Text>
         </View>
       );
     } else if (openingHours && typeof openingHours === "object") {
       return (
         <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: mode === "dark" ? "#FFFFFF" : "#333333" }]} accessible={true} accessibilityRole="header">Opening Hours</Text>
+          <Text
+            style={[
+              styles.sectionTitle,
+              themedStyles.text(mode),
+            ]}
+            accessible={true}
+            accessibilityRole="header"
+          >
+            Opening Hours
+          </Text>
           <View style={styles.hoursContainer}>
             <View style={styles.hoursRow} accessible={true}>
-              <Text style={[styles.hoursLabel, { color: mode === "dark" ? "#CCCCCC" : "#585858" }]}>Weekdays:</Text>
-              <Text style={[styles.hoursValue, { color: mode === "dark" ? "#FFFFFF" : "#333333" }]}>{openingHours.weekdays}</Text>
+              <Text
+                style={[
+                  styles.hoursLabel,
+                  themedStyles.subtext(mode),
+                ]}
+              >
+                Weekdays:
+              </Text>
+              <Text
+                style={[
+                  styles.hoursValue,
+                  themedStyles.text(mode),
+                ]}
+              >
+                {openingHours.weekdays}
+              </Text>
             </View>
             <View style={styles.hoursRow} accessible={true}>
-              <Text style={[styles.hoursLabel, { color: mode === "dark" ? "#CCCCCC" : "#585858" }]}>Weekend:</Text>
-              <Text style={[styles.hoursValue, { color: mode === "dark" ? "#FFFFFF" : "#333333" }]}>{openingHours.weekend}</Text>
+              <Text
+                style={[
+                  styles.hoursLabel,
+                  themedStyles.subtext(mode),
+                ]}
+              >
+                Weekend:
+              </Text>
+              <Text
+                style={[
+                  styles.hoursValue,
+                  themedStyles.text(mode),
+                ]}
+              >
+                {openingHours.weekend}
+              </Text>
             </View>
           </View>
         </View>
@@ -197,33 +402,112 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
 
   const accessibilityIcons = getAccessibilityIcons(buildingInfo?.facilities);
 
-  return (
-    <Modal visible={visible} transparent={true} animationType="slide" onRequestClose={onClose}>
-      <TouchableOpacity style={styles.iosBackdrop} activeOpacity={1} onPress={onClose} accessible={false}>
-        <Animated.View style={[styles.iosBlurContainer, { height: currentHeight }]}>
+    return (
+      <View
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: MAX_HEIGHT,
+          zIndex: 999,
+        }}
+        pointerEvents="box-none"
+      >
+        <Animated.View
+          style={[
+            styles.iosBlurContainer,
+            { height: MAX_HEIGHT, transform: [{ translateY: translateY }] },
+          ]}
+        >
           <BackgroundWrapper>
-            <View style={styles.iosContentContainer}>
-              <View style={styles.handleBarContainer} {...panResponder.panHandlers} accessible={true} accessibilityLabel="Drag handle" accessibilityHint="Swipe up to expand building details or down to collapse" accessibilityRole="adjustable">
+            <Animated.View style={{ flex: 1, opacity }}>
+            {/* panHandlers are ONLY here, so buttons below are never blocked */}
+            <View
+              style={styles.iosContentContainer}
+              {...handlePanResponder.panHandlers}
+            >
+              {/* Handle bar */}
+              <View style={styles.handleBarContainer} accessible={true} accessibilityLabel="Drag handle" accessibilityHint="Swipe up to expand building details or down to collapse" accessibilityRole="adjustable">
                 <View style={styles.handleBar} />
               </View>
+              {/* Header */}
               <View style={[styles.iosHeader]}>
-                <TouchableOpacity onPress={onClose} style={styles.closeButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessible={true} accessibilityLabel="Close" accessibilityRole="button">
-                  <View style={[styles.closeButtonCircle, { backgroundColor: "#86868629" }]}>
-                    <Text style={[styles.closeButtonText, { color: mode === "dark" ? "#FFFFFF" : "#333333" }]}>✕</Text>
+                {/* Close button */}
+                <TouchableOpacity
+                  onPress={dismiss}
+                  style={styles.closeButton}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  accessible={true}
+                  accessibilityLabel="Close"
+                  accessibilityRole="button"
+                >
+                  <View
+                    style={[
+                      styles.closeButtonCircle,
+                      themedStyles.closeButton(mode),
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.closeButtonText,
+                        themedStyles.text(mode),
+                      ]}
+                    >
+                      ✕
+                    </Text>
                   </View>
                 </TouchableOpacity>
+                {/* Center text container */}
                 <View style={styles.headerTextContainer}>
-                  <Text style={[styles.buildingName, { color: mode === "dark" ? "#FFFFFF" : "#333333" }]} accessible={true} accessibilityLabel={`Name: ${buildingInfo?.name}`} accessibilityRole="header">{buildingInfo?.name || "Building"}</Text>
-                  <View style={styles.buildingIdWithIconsContainer}>
+                  <Text
+                    style={[
+                      styles.buildingName,
+                      themedStyles.text(mode),
+                    ]}
+                    accessible={true}
+                    accessibilityLabel={`Name: ${buildingInfo?.name}`}
+                    accessibilityRole="header">{buildingInfo?.name || "Building"}
+                  >
+                    {buildingInfo?.name || "Building"}
+                  </Text>
+                  {/* Building ID and icons */}
+                  <View style={styles.buildingIdWithIconsContainer} accessible={true} accessibilityLabel="Building facilities">
+                    {/* Building ID */}
                     <View style={styles.buildingIdContainer}>
-                      <Text style={[styles.buildingId, { color: mode === "dark" ? "#CCCCCC" : "#585858" }]} accessible={true} accessibilityLabel={`Building Name Abbreviation: ${buildingId}`}>{buildingId}</Text>
+                      <Text
+                        style={[
+                          styles.buildingId,
+                          themedStyles.subtext(mode),
+                        ]}
+                        accessible={true}
+                        accessibilityLabel={`Name Abbreviation: ${buildingId}`
+                      >
+                        {buildingId}
+                      </Text>
                     </View>
+                    {/* Accessibility icons - on the far right of this row */}
                     {accessibilityIcons && accessibilityIcons.length > 0 && (
                       <View style={styles.accessibilityIconsContainer} accessible={true} accessibilityLabel="Building facilities">
                         {accessibilityIcons.map((icon) => (
-                          <View key={icon.key} accessible={true} accessibilityLabel={icon.label} accessibilityRole="image">
-                            {icon.key !== "metro" && (Platform.OS === "ios" ? <SymbolView name={icon.sf} size={25} weight={"heavy"} tintColor={mode === "dark" ? "#CCCCCC" : "#585858"} /> : <MaterialIcons name={icon.material} size={25} color={mode === "dark" ? "#CCCCCC" : "#585858"}/>)
-                            || <Image source={require(`../../assets/images/metro.png`)} style={{width: 25, height: 25, tintColor: mode === "dark" ? "#CCCCCC" : "#585858"}} accessibilityLabel={icon.label} />}
+                          <View
+                            key={icon.key}
+                            accessible={true}
+                            accessibilityLabel={icon.label}
+                            accessibilityRole="image"
+                          >
+                            {icon.key !== "metro" && (Platform.OS === "ios" ? <SymbolView 
+                                name={icon.sf}
+                                size={25}
+                                weight={"heavy"}
+                                tintColor={themedStyles.subtext(mode).color}
+                              /> : <MaterialIcons name={icon.material} size={25} color={themedStyles.subtext(mode).color}/>)
+                              || <Image source={require(`../../assets/images/metro.png`)}
+                                style={{width: 25,
+                                height: 25,
+                                tintColor: themedStyles.subtext(mode).color}}
+                                accessibilityLabel={icon.label}
+                              />}
                           </View>
                         ))}
                       </View>
@@ -232,35 +516,115 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                 </View>
                 <View style={styles.rightSpacer} />
               </View>
-              <ScrollView ref={scrollViewRef} style={[styles.contentArea, { flex: 1 }]} scrollEnabled={isExpanded || currentHeight >= MAX_HEIGHT} showsVerticalScrollIndicator={isExpanded || currentHeight >= MAX_HEIGHT} bounces={isExpanded || currentHeight >= MAX_HEIGHT} nestedScrollEnabled={true} contentContainerStyle={{ flexGrow: 1, paddingBottom: 24 }}>
+            </View>
+
+            {/* Scrollable content area (separate from drag zone)*/}
+            <View style={{ flex: 1 }} {...scrollAreaPanResponder.panHandlers}>
+              <ScrollView
+                ref={scrollViewRef}
+                style={[styles.contentArea, { flex: 1 }]}
+                scrollEnabled={true}
+                showsVerticalScrollIndicator={true}
+                bounces={true}
+                nestedScrollEnabled={true}
+                onScroll={(e) => {
+                  scrollOffsetRef.current = e.nativeEvent.contentOffset.y;
+                }}
+                contentContainerStyle={{ flexGrow: 1, paddingBottom: 24 }}
+                scrollEventThrottle={16}
+              >
+                {/* Schedule section */}
                 <View style={styles.section}>
-                  <Text style={[styles.sectionTitle, { color: mode === "dark" ? "#FFFFFF" : "#333333" }]} accessible={true} accessibilityRole="header">Schedule</Text>
+                  <Text
+                    style={[
+                      styles.sectionTitle,
+                      themedStyles.text(mode),
+                    ]}
+                    accessible={true}
+                    accessibilityRole="header"
+                  >
+                    Schedule
+                  </Text>
+                  {/* Schedule information will be here in future versions */}
                 </View>
-                {buildingInfo?.openingHours && renderOpeningHours(buildingInfo.openingHours)}
+                {/* Opening hours section */}
+                {buildingInfo?.openingHours &&
+                  renderOpeningHours(buildingInfo.openingHours)}
+                {/* Address section */}
                 {buildingInfo?.address && (
                   <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: mode === "dark" ? "#FFFFFF" : "#333333" }]} accessible={true} accessibilityRole="header">Address</Text>
+                    <Text
+                      style={[
+                        styles.sectionTitle,
+                        themedStyles.text(mode),
+                      ]}
+                      accessible={true}
+                      accessibilityRole="header"
+                    >
+                      Address
+                    </Text>
                     <View style={styles.addressContainer}>
-                      <Text style={[styles.addressText, { color: mode === "dark" ? "#FFFFFF" : "#333333" }]} accessible={true}>{buildingInfo.address}</Text>
-                      <TouchableOpacity onPress={copyAddressToClipboard} style={styles.copyButton} accessible={true} accessibilityLabel={copying ? "Address copied" : "Copy address"} accessibilityRole="button">
-                        {Platform.OS === "ios" ? <SymbolView name={copying ? "document.on.document.fill" : "document.on.document"} size={25} weight={"regular"} tintColor={mode === "dark" ? "#FFFFFF" : "#333333"} /> : <MaterialIcons name={copying ? "task" : "content-copy"} size={22} color={mode === "dark" ? "#FFFFFF" : "#333333"} />}
+                      <Text
+                        style={[
+                          styles.addressText,
+                          themedStyles.text(mode),
+                        ]}
+                        accessible={true}
+                      >
+                        {buildingInfo.address}
+                      </Text>
+                      <TouchableOpacity
+                        onPress={copyAddressToClipboard}
+                        style={styles.copyButton}
+                        style={styles.copyButton} accessible={true}
+                        accessibilityLabel={copying ? "Address copied" : "Copy address"}
+                        accessibilityRole="button"
+                      >
+                        {Platform.OS === "ios" && <SymbolView 
+                            name={copying ? "document.on.document.fill" : "document.on.document"}
+                            size={25}
+                            weight={"regular"}
+                            tintColor={mode === "dark" ? "#FFFFFF" : "#333333"} 
+                          /> || <MaterialIcons
+                            name={copying ? "task" : "content-copy"}
+                            size={22}
+                            color={mode === "dark" ? "#FFFFFF" : "#333333"}
+                          />}
                       </TouchableOpacity>
                     </View>
                   </View>
                 )}
+                {/* Description section */}
                 {buildingInfo?.description && (
                   <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, { color: mode === "dark" ? "#FFFFFF" : "#333333" }]} accessible={true} accessibilityRole="header">Description</Text>
-                    <Text style={[styles.descriptionText, { color: mode === "dark" ? "#FFFFFF" : "#333333" }]} accessible={true}>{buildingInfo.description}</Text>
+                    <Text
+                      style={[
+                        styles.sectionTitle,
+                        themedStyles.text(mode),
+                      ]}
+                      accessible={true}
+                      accessibilityRole="header"
+                    >
+                      Description
+                    </Text>
+                    <Text
+                      style={[
+                        styles.descriptionText,
+                        themedStyles.mutedText(mode),
+                      ]}
+                      accessible={true}
+                    >
+                      {buildingInfo.description}
+                    </Text>
                   </View>
                 )}
               </ScrollView>
             </View>
+            </Animated.View>
           </BackgroundWrapper>
         </Animated.View>
-      </TouchableOpacity>
-    </Modal>
-  );
-};
+      </View>
+    );
+});
 
 export default AdditionalInfoPopup;
