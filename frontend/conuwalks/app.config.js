@@ -4,7 +4,7 @@ export default {
     "slug": "conuwalks",
     "version": "1.0.0",
     "orientation": "portrait",
-    "scheme": "conuwalks",
+    "scheme": "com.conuwalks.app",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -28,6 +28,11 @@ export default {
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
+    },
+    extra: {
+      eas: {
+        projectId: "e74d6318-8d99-4f3d-889b-e5e1187a76d5"
+      }
     },
     "plugins": [
       "expo-router",

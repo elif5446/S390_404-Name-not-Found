@@ -11,14 +11,20 @@ import {
   Animated,
   PanResponder,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
-import * as Clipboard from 'expo-clipboard';
-import { SymbolView, SFSymbol } from 'expo-symbols'; // SF Symbols (iOS)
-import MaterialIcons from '@expo/vector-icons/MaterialIcons'; // Material Design Icons (Android)
+import * as Clipboard from "expo-clipboard";
+import { SymbolView, SFSymbol } from "expo-symbols";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { BlurView } from "expo-blur";
+
 import { LoyolaBuildingMetadata } from "../data/metadata/LOY.BuildingMetadata";
 import { SGWBuildingMetadata } from "../data/metadata/SGW.BuildingMetaData";
 import { styles } from "../styles/additionalInfoPopup";
+import {
+  useBuildingEvents,
+  BuildingEvent,
+} from "@/src/hooks/useBuildingEvents";
 
 interface AdditionInfoPopupProps {
   visible: boolean;
@@ -27,32 +33,38 @@ interface AdditionInfoPopupProps {
   onClose: () => void;
 }
 
-const BackgroundWrapper = ({ children }: { children: React.ReactNode }) => {
-    if (Platform.OS === "ios") {
-      return (
-        <BlurView
-          style={[styles.iosBlurContainer, { height: "100%" }]}
-          intensity={100}
-          tint={(useColorScheme() || "light") === "dark" ? "dark" : "light"}
-        >
-          {children}
-        </BlurView>
-      );
-    }
+const BackgroundWrapper = ({
+  children,
+  mode,
+}: {
+  children: React.ReactNode;
+  mode: "light" | "dark";
+}) => {
+  if (Platform.OS === "ios") {
     return (
-      <View
-        style={[
-          styles.iosBlurContainer,
-          {
-            height: "100%",
-            backgroundColor: (useColorScheme() || "light") === "dark" ? "#1C1C1E" : "#FFFFFF", 
-          },
-        ]}
+      <BlurView
+        style={[styles.iosBlurContainer, { height: "100%" }]}
+        intensity={100}
+        tint={mode === "dark" ? "dark" : "light"}
       >
         {children}
-      </View>
+      </BlurView>
     );
-  };
+  }
+  return (
+    <View
+      style={[
+        styles.iosBlurContainer,
+        {
+          height: "100%",
+          backgroundColor: mode === "dark" ? "#1C1C1E" : "#FFFFFF",
+        },
+      ]}
+    >
+      {children}
+    </View>
+  );
+};
 
 const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
   visible,
@@ -60,9 +72,17 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
   campus,
   onClose,
 }) => {
+  // Call all hooks at the top level
   const mode = useColorScheme() || "light";
   const [buildingInfo, setBuildingInfo] = useState<any>(null);
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // Calendar hook
+  const {
+    todayEvents,
+    nextEvent,
+    loading: eventsLoading,
+  } = useBuildingEvents(buildingId, campus);
 
   // Animation values
   const panY = useRef(new Animated.Value(0)).current;
@@ -78,7 +98,6 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
     if (visible) {
       setCurrentHeight(MIN_HEIGHT);
       setIsExpanded(false);
-
       panY.setValue(0);
     }
   }, [visible]);
@@ -90,17 +109,15 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
         campus === "SGW"
           ? SGWBuildingMetadata[buildingId]
           : LoyolaBuildingMetadata[buildingId];
-      
+
       if (metadata) {
         setBuildingInfo(metadata);
       } else {
-        // Fallback- Create a basic info object if metadata not found
+        // Fallback
         setBuildingInfo({ name: buildingId });
       }
     }
   }, [buildingId, campus]);
-
-  const isIOS = Platform.OS === "ios";
 
   const panResponder = useRef(
     PanResponder.create({
@@ -109,7 +126,6 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
         return Math.abs(gestureState.dy) > Math.abs(gestureState.dx);
       },
       onPanResponderMove: (_, gestureState) => {
-        // Don't adjust if scrolling in expanded view
         if (isExpanded && scrollViewRef.current) {
           return;
         }
@@ -121,7 +137,6 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
           Math.min(MAX_HEIGHT, newHeight),
         );
         setCurrentHeight(clampedHeight);
-
         setIsExpanded(clampedHeight > MIN_HEIGHT + 20);
       },
       onPanResponderRelease: (_, gestureState) => {
@@ -131,13 +146,10 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
 
         let targetHeight = currentHeight;
 
-        // If dragged up significantly, expand
         if (gestureState.dy < -50) {
           targetHeight = MAX_HEIGHT;
           setIsExpanded(true);
-        }
-        // If dragged down significantly from expanded, collapse
-        else if (gestureState.dy > 50) {
+        } else if (gestureState.dy > 50) {
           if (currentHeight > MIN_HEIGHT + 100) {
             targetHeight = MIN_HEIGHT;
             setIsExpanded(false);
@@ -156,7 +168,6 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
           }
         }
 
-        // Update height immediately so the UI matches the user's gesture
         setCurrentHeight(targetHeight);
         setIsExpanded(targetHeight > MIN_HEIGHT + 20);
       },
@@ -165,7 +176,6 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
 
   const [copying, setCopying] = useState(false);
 
-  // Address copy functionality
   const copyAddressToClipboard = () => {
     if (buildingInfo?.address) {
       setCopying(true);
@@ -176,15 +186,18 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
     }
   };
 
-  // Fetching accessibility info from metadata (facilities) and rendering in popup as icons (emojis for now)
   const getAccessibilityIcons = (facilities: any) => {
     if (!buildingInfo?.facilities) {
-      return null;
+      return [];
     }
 
-    const icons: {key: string, sf: SFSymbol, material: "elevator" | "accessible" | "subway", label: string}[] = [];
+    const icons: {
+      key: string;
+      sf: SFSymbol;
+      material: "elevator" | "accessible" | "subway";
+      label: string;
+    }[] = [];
 
-    // Check for direct metro access
     if (
       facilities.some(
         (f: string) =>
@@ -192,10 +205,14 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
           f.toLowerCase().includes("undergound passage"),
       )
     ) {
-      icons.push({ key: "metro", sf: "tram.fill.tunnel", material: "subway", label: "Metro access" });
+      icons.push({
+        key: "metro",
+        sf: "tram.fill.tunnel",
+        material: "subway",
+        label: "Metro access",
+      });
     }
 
-    // Check for accessible features - Wheelchair icon
     if (
       facilities.some(
         (f: string) =>
@@ -212,7 +229,6 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
       });
     }
 
-    // Check for elevator - Elevator icon
     if (
       facilities.some(
         (f: string) =>
@@ -220,7 +236,12 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
           f.toLowerCase().includes("lift"),
       )
     ) {
-      icons.push({ key: "elevator", sf: "arrow.up.arrow.down.square", material: "elevator", label: "Elevator" });
+      icons.push({
+        key: "elevator",
+        sf: "arrow.up.arrow.down.square",
+        material: "elevator",
+        label: "Elevator",
+      });
     }
 
     return icons;
@@ -233,7 +254,7 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
           <Text
             style={[
               styles.sectionTitle,
-              { color:  mode === "dark" ? "#FFFFFF" : "#333333" },
+              { color: mode === "dark" ? "#FFFFFF" : "#333333" },
             ]}
           >
             Opening Hours
@@ -305,127 +326,148 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
 
   const accessibilityIcons = getAccessibilityIcons(buildingInfo?.facilities);
 
-  // iOS styling
-  // if (isIOS) {
-    return (
-      <Modal
-        visible={visible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={onClose}
+  return (
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <TouchableOpacity
+        style={styles.iosBackdrop}
+        activeOpacity={1}
+        onPress={onClose}
       >
-        <TouchableOpacity
-          style={styles.iosBackdrop}
-          activeOpacity={1}
-          onPress={onClose}
+        <Animated.View
+          style={[styles.iosBlurContainer, { height: currentHeight }]}
         >
-          <Animated.View
-            style={[styles.iosBlurContainer, { height: currentHeight }]}
-          >
-            <BackgroundWrapper>
-              <View style={styles.iosContentContainer}>
-                {/* Handle bar */}
-                <View
-                  style={styles.handleBarContainer}
-                  {...panResponder.panHandlers}
+          {/* Pass mode as a prop to BackgroundWrapper */}
+          <BackgroundWrapper mode={mode}>
+            <View style={styles.iosContentContainer}>
+              {/* Handle bar */}
+              <View
+                style={styles.handleBarContainer}
+                {...panResponder.panHandlers}
+              >
+                <View style={styles.handleBar} />
+              </View>
+
+              {/* Header */}
+              <View style={[styles.iosHeader]}>
+                <TouchableOpacity
+                  onPress={onClose}
+                  style={styles.closeButton}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                  <View style={styles.handleBar} />
-                </View>
-                {/* Header */}
-                <View style={[styles.iosHeader]}>
-                  {/* Close button */}
-                  <TouchableOpacity
-                    onPress={onClose}
-                    style={styles.closeButton}
-                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  <View
+                    style={[
+                      styles.closeButtonCircle,
+                      {
+                        backgroundColor: "#86868629",
+                      },
+                    ]}
                   >
-                    <View
-                      style={[
-                        styles.closeButtonCircle,
-                        {
-                          backgroundColor: "#86868629",
-                        },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.closeButtonText,
-                          { color: mode === "dark" ? "#FFFFFF" : "#333333" },
-                        ]}
-                      >
-                        ✕
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                  {/* Center text container */}
-                  <View style={styles.headerTextContainer}>
                     <Text
                       style={[
-                        styles.buildingName,
-                        {
-                          color: mode === "dark" ? "#FFFFFF" : "#333333",
-                        },
+                        styles.closeButtonText,
+                        { color: mode === "dark" ? "#FFFFFF" : "#333333" },
                       ]}
                     >
-                      {buildingInfo?.name || "Building"}
+                      ✕
                     </Text>
-                    {/* Building ID and icons */}
-                    <View style={styles.buildingIdWithIconsContainer}>
-                      {/* Building ID */}
-                      <View style={styles.buildingIdContainer}>
-                        <Text
-                          style={[
-                            styles.buildingId,
-                            {
-                              color: mode === "dark" ? "#CCCCCC" : "#585858",
-                            },
-                          ]}
-                        >
-                          {buildingId}
-                        </Text>
-                      </View>
-                      {/* Accessibility icons - on the far right of this row */}
-                      {accessibilityIcons && accessibilityIcons.length > 0 && (
-                        <View style={styles.accessibilityIconsContainer}>
-                          {accessibilityIcons.map((icon) => (
-                            <View
-                              key={icon.key}
-                              accessible={true}
-                              accessibilityLabel={icon.label}
-                            >
-                              {icon.key !== "metro" && (Platform.OS === "ios" ? <SymbolView 
-                                name={icon.sf}
-                                size={25}
-                                weight={"heavy"}
-                                tintColor={mode === "dark" ? "#CCCCCC" : "#585858"}
-                              /> : <MaterialIcons name={icon.material} size={25} color={mode === "dark" ? "#CCCCCC" : "#585858"}/>)
-                              || <Image source={require(`../../assets/images/metro.png`)}
-                                style={{width: 25,
-                                height: 25,
-                                tintColor: mode === "dark" ? "#CCCCCC" : "#585858"}}
-                              />}
-                            </View>
-                          ))}
-                        </View>
-                      )}
-                    </View>
                   </View>
-                  <View style={styles.rightSpacer} />
+                </TouchableOpacity>
+
+                <View style={styles.headerTextContainer}>
+                  <Text
+                    style={[
+                      styles.buildingName,
+                      {
+                        color: mode === "dark" ? "#FFFFFF" : "#333333",
+                      },
+                    ]}
+                  >
+                    {buildingInfo?.name || "Building"}
+                  </Text>
+
+                  <View style={styles.buildingIdWithIconsContainer}>
+                    <View style={styles.buildingIdContainer}>
+                      <Text
+                        style={[
+                          styles.buildingId,
+                          {
+                            color: mode === "dark" ? "#CCCCCC" : "#585858",
+                          },
+                        ]}
+                      >
+                        {buildingId}
+                      </Text>
+                    </View>
+
+                    {accessibilityIcons && accessibilityIcons.length > 0 && (
+                      <View style={styles.accessibilityIconsContainer}>
+                        {accessibilityIcons.map((icon) => (
+                          <View
+                            key={icon.key}
+                            accessible={true}
+                            accessibilityLabel={icon.label}
+                          >
+                            {icon.key !== "metro" ? (
+                              Platform.OS === "ios" ? (
+                                <SymbolView
+                                  name={icon.sf}
+                                  size={25}
+                                  weight={"heavy"}
+                                  tintColor={
+                                    mode === "dark" ? "#CCCCCC" : "#585858"
+                                  }
+                                />
+                              ) : (
+                                <MaterialIcons
+                                  name={icon.material}
+                                  size={25}
+                                  color={
+                                    mode === "dark" ? "#CCCCCC" : "#585858"
+                                  }
+                                />
+                              )
+                            ) : (
+                              <Image
+                                source={require(
+                                  `../../assets/images/metro.png`,
+                                )}
+                                style={{
+                                  width: 25,
+                                  height: 25,
+                                  tintColor:
+                                    mode === "dark" ? "#CCCCCC" : "#585858",
+                                }}
+                              />
+                            )}
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                  </View>
                 </View>
-                {/* Scrollable content area */}
-                <ScrollView
-                  ref={scrollViewRef}
-                  style={[styles.contentArea, { flex: 1 }]}
-                  scrollEnabled={isExpanded || currentHeight >= MAX_HEIGHT}
-                  showsVerticalScrollIndicator={
-                    isExpanded || currentHeight >= MAX_HEIGHT
-                  }
-                  bounces={isExpanded || currentHeight >= MAX_HEIGHT}
-                  nestedScrollEnabled={true}
-                  contentContainerStyle={{ flexGrow: 1, paddingBottom: 24 }}
-                >
-                  {/* Schedule section */}
-                  <View style={styles.section}>
+                <View style={styles.rightSpacer} />
+              </View>
+
+              {/* Scrollable content area */}
+              <ScrollView
+                ref={scrollViewRef}
+                style={[styles.contentArea, { flex: 1 }]}
+                scrollEnabled={isExpanded || currentHeight >= MAX_HEIGHT}
+                showsVerticalScrollIndicator={
+                  isExpanded || currentHeight >= MAX_HEIGHT
+                }
+                bounces={isExpanded || currentHeight >= MAX_HEIGHT}
+                nestedScrollEnabled={true}
+                contentContainerStyle={{ flexGrow: 1, paddingBottom: 24 }}
+              >
+                {/* Schedule section with calendar events */}
+                <View style={styles.section}>
+                  <View style={styles.scheduleHeader}>
                     <Text
                       style={[
                         styles.sectionTitle,
@@ -434,81 +476,229 @@ const AdditionalInfoPopup: React.FC<AdditionInfoPopupProps> = ({
                     >
                       Schedule
                     </Text>
-                    {/* Schedule information will be here in future versions */}
+                    {eventsLoading && (
+                      <ActivityIndicator size="small" color="#666666" />
+                    )}
                   </View>
-                  {/* Opening hours section */}
-                  {buildingInfo?.openingHours &&
-                    renderOpeningHours(buildingInfo.openingHours)}
-                  {/* Address section */}
-                  {buildingInfo?.address && (
-                    <View style={styles.section}>
+
+                  {!eventsLoading && todayEvents.length === 0 ? (
+                    <View style={styles.noEventsContainer}>
                       <Text
                         style={[
-                          styles.sectionTitle,
+                          styles.noEventsText,
+                          { color: mode === "dark" ? "#999999" : "#666666" },
+                        ]}
+                      >
+                        No classes scheduled in this building today
+                      </Text>
+                      {nextEvent && (
+                        <>
+                          <Text
+                            style={[
+                              styles.nextEventLabel,
+                              {
+                                color: mode === "dark" ? "#CCCCCC" : "#585858",
+                                marginTop: 12,
+                              },
+                            ]}
+                          >
+                            Next class in this building:
+                          </Text>
+                          <View style={styles.eventItem}>
+                            <Text
+                              style={[
+                                styles.eventTitle,
+                                {
+                                  color:
+                                    mode === "dark" ? "#FFFFFF" : "#333333",
+                                },
+                              ]}
+                            >
+                              {nextEvent.courseName}
+                            </Text>
+                            <View style={styles.eventDetailsRow}>
+                              <Text
+                                style={[
+                                  styles.eventTime,
+                                  {
+                                    color:
+                                      mode === "dark" ? "#CCCCCC" : "#585858",
+                                  },
+                                ]}
+                              >
+                                {nextEvent.start.toLocaleDateString([], {
+                                  month: "short",
+                                  day: "numeric",
+                                })}{" "}
+                                at{" "}
+                                {nextEvent.start.toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </Text>
+                              {nextEvent.roomNumber && (
+                                <Text
+                                  style={[
+                                    styles.eventRoom,
+                                    {
+                                      color:
+                                        mode === "dark" ? "#CCCCCC" : "#585858",
+                                    },
+                                  ]}
+                                >
+                                  Room {nextEvent.roomNumber}
+                                </Text>
+                              )}
+                            </View>
+                          </View>
+                        </>
+                      )}
+                    </View>
+                  ) : (
+                    <View style={styles.eventsList}>
+                      {todayEvents.map(
+                        (event: BuildingEvent, index: number) => (
+                          <View
+                            key={event.id}
+                            style={[
+                              styles.eventItem,
+                              index < todayEvents.length - 1 &&
+                                styles.eventItemBorder,
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.eventTitle,
+                                {
+                                  color:
+                                    mode === "dark" ? "#FFFFFF" : "#333333",
+                                },
+                              ]}
+                            >
+                              {event.courseName}
+                            </Text>
+
+                            <View style={styles.eventDetailsRow}>
+                              <Text
+                                style={[
+                                  styles.eventTime,
+                                  {
+                                    color:
+                                      mode === "dark" ? "#CCCCCC" : "#585858",
+                                  },
+                                ]}
+                              >
+                                {event.start.toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}{" "}
+                                -{" "}
+                                {event.end.toLocaleTimeString([], {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </Text>
+
+                              {event.roomNumber && (
+                                <Text
+                                  style={[
+                                    styles.eventRoom,
+                                    {
+                                      color:
+                                        mode === "dark" ? "#CCCCCC" : "#585858",
+                                    },
+                                  ]}
+                                >
+                                  Room {event.roomNumber}
+                                </Text>
+                              )}
+                            </View>
+                          </View>
+                        ),
+                      )}
+                    </View>
+                  )}
+                </View>
+
+                {/* Opening hours section */}
+                {buildingInfo?.openingHours &&
+                  renderOpeningHours(buildingInfo.openingHours)}
+
+                {/* Address section */}
+                {buildingInfo?.address && (
+                  <View style={styles.section}>
+                    <Text
+                      style={[
+                        styles.sectionTitle,
+                        { color: mode === "dark" ? "#FFFFFF" : "#333333" },
+                      ]}
+                    >
+                      Address
+                    </Text>
+                    <View style={styles.addressContainer}>
+                      <Text
+                        style={[
+                          styles.addressText,
                           { color: mode === "dark" ? "#FFFFFF" : "#333333" },
                         ]}
                       >
-                        Address
+                        {buildingInfo.address}
                       </Text>
-                      <View style={styles.addressContainer}>
-                        <Text
-                          style={[
-                            styles.addressText,
-                            { color: mode === "dark" ? "#FFFFFF" : "#333333" },
-                          ]}
-                        >
-                          {buildingInfo.address}
-                        </Text>
-                        <TouchableOpacity
-                          onPress={copyAddressToClipboard}
-                          style={styles.copyButton}
-                        >
-                          {Platform.OS === "ios" && <SymbolView 
-                            name={copying ? "document.on.document.fill" : "document.on.document"}
+                      <TouchableOpacity
+                        onPress={copyAddressToClipboard}
+                        style={styles.copyButton}
+                      >
+                        {Platform.OS === "ios" ? (
+                          <SymbolView
+                            name={
+                              copying
+                                ? "document.on.document.fill"
+                                : "document.on.document"
+                            }
                             size={25}
                             weight={"regular"}
-                            tintColor={mode === "dark" ? "#FFFFFF" : "#333333"} 
-                          /> || <MaterialIcons
+                            tintColor={mode === "dark" ? "#FFFFFF" : "#333333"}
+                          />
+                        ) : (
+                          <MaterialIcons
                             name={copying ? "task" : "content-copy"}
                             size={22}
                             color={mode === "dark" ? "#FFFFFF" : "#333333"}
-                          />}
-                        </TouchableOpacity>
-                      </View>
+                          />
+                        )}
+                      </TouchableOpacity>
                     </View>
-                  )}
-                  {/* Description section */}
-                  {buildingInfo?.description && (
-                    <View style={styles.section}>
-                      <Text
-                        style={[
-                          styles.sectionTitle,
-                          { color: mode === "dark" ? "#FFFFFF" : "#333333" },
-                        ]}
-                      >
-                        Description
-                      </Text>
-                      <Text
-                        style={[
-                          styles.descriptionText,
-                          { color: mode === "dark" ? "#FFFFFF" : "#333333" },
-                        ]}
-                      >
-                        {buildingInfo.description}
-                      </Text>
-                    </View>
-                  )}
-                </ScrollView>
-              </View>
-            </BackgroundWrapper>
-          </Animated.View>
-        </TouchableOpacity>
-      </Modal>
-    );
-  /* } else {
-    // Android (Google Maps) styling
-    return null;
-  } */
+                  </View>
+                )}
+
+                {/* Description section */}
+                {buildingInfo?.description && (
+                  <View style={styles.section}>
+                    <Text
+                      style={[
+                        styles.sectionTitle,
+                        { color: mode === "dark" ? "#FFFFFF" : "#333333" },
+                      ]}
+                    >
+                      Description
+                    </Text>
+                    <Text
+                      style={[
+                        styles.descriptionText,
+                        { color: mode === "dark" ? "#FFFFFF" : "#333333" },
+                      ]}
+                    >
+                      {buildingInfo.description}
+                    </Text>
+                  </View>
+                )}
+              </ScrollView>
+            </View>
+          </BackgroundWrapper>
+        </Animated.View>
+      </TouchableOpacity>
+    </Modal>
+  );
 };
 
 export default AdditionalInfoPopup;
