@@ -48,7 +48,10 @@ const BackgroundWrapper = ({ children }: { children: React.ReactNode }) => {
           styles.iosBlurContainer,
           {
             height: "100%",
-            backgroundColor: (useColorScheme() || "light") === "dark" ? "#1C1C1E" : "#FFFFFF", 
+            backgroundColor: (useColorScheme() || "light") === "dark" ? "#1C1C1E" : "#FFFFFF",
+            elevation: 8,
+            borderTopLeftRadius: 28,
+            borderTopRightRadius: 28
           },
         ]}
       >
@@ -69,8 +72,8 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
 
   // Default heights
   const screenHeight = Dimensions.get("window").height;
-  const MIN_HEIGHT = 300; //initial popup view
-  const MAX_HEIGHT = screenHeight * 0.8; //full popup will be around 80% of the screen
+  const MIN_HEIGHT = Platform.OS === 'ios' ? 360 : 340; //initial popup view
+  const MAX_HEIGHT = screenHeight*(Platform.OS === 'ios' ? 0.92 : 0.9); //full popup will be around 90% of the screen
 
   // How far down the popup must sit so that only 300px is visible.
   const SNAP_OFFSET = MAX_HEIGHT - MIN_HEIGHT;
@@ -83,6 +86,18 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
   const scrollOffsetRef = useRef(0);
   //change building info animation 
   const opacity = useRef(new Animated.Value(2)).current;
+
+  const backdropOpacity = translateY.interpolate({
+    inputRange: [0, SNAP_OFFSET],
+    outputRange: [0.5, 0], // Shadow Backdrop Opacity -- Expanded: 0.5; Collapsed: 0
+    extrapolate: 'clamp',
+  });
+
+  const sheetSolidOpacity = translateY.interpolate({ // Liquid Glass Effect When Collapsed, Opaque When Pulled Up
+    inputRange: [0, 50],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
   
   useEffect(() => {
   if (!visible) return;
@@ -447,6 +462,17 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
         ]}
     >
         <BackgroundWrapper>
+        <Animated.View 
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: mode === 'dark' ? '#1C1C1E' : '#FFFFFF', 
+            opacity: sheetSolidOpacity 
+          }} 
+        />
         <Animated.View style={{ flex: 1, opacity }}>
         {/* panHandlers are ONLY here, so buttons below are never blocked */}
         <View
@@ -458,7 +484,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
             <View style={styles.handleBar} />
             </View>
             {/* Header */}
-            <View style={[styles.iosHeader]}>
+            <View style={[styles.iosHeader, Platform.OS === 'android' ? { justifyContent: 'center', paddingHorizontal: 0 } : {}]}>
             {/* Close button */}
             <TouchableOpacity
                 onPress={dismiss}
@@ -468,6 +494,9 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
                 accessibilityLabel="Close"
                 accessibilityRole="button"
             >
+              {Platform.OS === "android" ? (
+                  <MaterialIcons name="close" size={24} color={themedStyles.text(mode).color} />
+                ) : (
                 <View
                 style={[
                     styles.closeButtonCircle,
@@ -483,13 +512,14 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
                     ✕
                 </Text>
                 </View>
+                )}
             </TouchableOpacity>
             {/* Center text container */}
-            <View style={styles.headerTextContainer}>
+            <View style={[styles.headerTextContainer, Platform.OS === 'android' && { alignItems: 'center', width: '100%' }]}>
                 <Text
                 style={[
                     styles.buildingName,
-                    themedStyles.text(mode),
+                    themedStyles.text(mode)
                 ]}
                 accessible={true}
                 accessibilityLabel={`Name: ${buildingInfo?.name}`}
@@ -498,7 +528,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
                 {buildingInfo?.name || "Building"}
                 </Text>
                 {/* Building ID and icons */}
-                <View style={styles.buildingIdWithIconsContainer}>
+                <View style={[styles.buildingIdWithIconsContainer, Platform.OS === 'android' && { justifyContent: 'center', position: 'relative' }]}>
                 {/* Building ID */}
                 <View style={styles.buildingIdContainer}>
                     <Text
@@ -514,7 +544,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
                 </View>
                 {/* Accessibility icons - on the far right of this row */}
                 {accessibilityIcons && accessibilityIcons.length > 0 && (
-                    <View style={styles.accessibilityIconsContainer}>
+                    <View style={[styles.accessibilityIconsContainer, { marginLeft: 15, paddingRight: Platform.OS === "ios" ? 40 : 60}]}>
                     {accessibilityIcons.map((icon) => (
                         <View
                         key={icon.key}
@@ -542,7 +572,6 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
                 )}
                 </View>
             </View>
-            <View style={styles.rightSpacer} />
             </View>
         </View>
 
@@ -668,6 +697,18 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
                     justifyContent: 'flex-end'
                 }}
             >
+              <Animated.View 
+                  style={{ 
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'black', 
+                    opacity: backdropOpacity 
+                  }} 
+                  pointerEvents="none"
+                />
                 {Content}
             </View>
         </Modal>
@@ -682,13 +723,26 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
         bottom: 0,
         left: 0,
         right: 0,
-        height: MAX_HEIGHT,
+        height: screenHeight,
         zIndex: 999,
+        justifyContent: 'flex-end'
       }}
       pointerEvents="box-none"
       importantForAccessibility={visible ? "yes" : "no-hide-descendants"}
       accessibilityViewIsModal={visible}
     >
+      <Animated.View 
+        style={{ 
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'black',
+          opacity: backdropOpacity 
+        }} 
+        pointerEvents="none"
+      />
         {Content}
     </View>
   );
