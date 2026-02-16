@@ -8,7 +8,6 @@ import {
   ActivityIndicator,
   Platform,
   useColorScheme,
-  Vibration,
 } from "react-native";
 import MapView, {
   Circle,
@@ -103,7 +102,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
   const handleClosePopup = () => {
     setSelectedBuilding((prev) => ({ ...prev, visible: false }));
   };
-
   const handleMapLongPress = useCallback((e: LongPressEvent) => {
     const coordinate = e.nativeEvent.coordinate;
     console.log("Map Long Press:", coordinate);
@@ -135,6 +133,18 @@ const CampusMap: React.FC<CampusMapProps> = ({
       }
     }
   }, []);
+
+  // Center map on selected building
+  // const buildingMetadata = campus == "SGW" ? SGWBuildingMetadata[buildingName] : LoyolaBuildingMetadata[buildingName];
+  // if (buildingMetadata && mapRef.current) {
+  //   mapRef.current.animateToRegion(
+  //     {
+  //       latitude: buildingMetadata.location.latitude,
+  //       longitude: buildingMetadata.location.longitude,
+  //       latitudeDelta: 0.003,
+  //       longitudeDelta: 0.003,
+  //     }, 500)
+  // };
 
   const renderedPolygons = useMemo(() => {
     const render = (geojson: typeof SGW | typeof LOY, campus: "SGW" | "LOY") =>
@@ -176,6 +186,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
       loy: render(LOY, "LOY"),
     };
   }, [handlePolygonPress]); // recreate if handles change; shouldn't
+
 
   const mapID =
     useColorScheme() === "dark"
