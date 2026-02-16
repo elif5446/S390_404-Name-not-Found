@@ -8,19 +8,23 @@ import * as geo from '@/src/utils/geo';
 describe('SGW Campus Building Overlays', () => {
   const { geojson, metadata, buildingIds } = testData.SGW;
 
+    const renderCampusPolygons = () => {
+    return render(
+      <CampusPolygons
+        campus="SGW"
+        geojson={geojson}
+        metadata={metadata}
+      />
+    );
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   describe('Rendering All Buildings', () => {
     it('should render one polygon per SGW campus building', () => {
-      render(
-        <CampusPolygons
-          campus="SGW"
-          geojson={geojson}
-          metadata={metadata}
-        />
-      );
+      renderCampusPolygons();
 
       const polygons = screen.getAllByTestId('polygon');
       expect(polygons.length).toBe(buildingIds.length);
@@ -30,9 +34,7 @@ describe('SGW Campus Building Overlays', () => {
 
 describe('Building Colors', () => {
   it('should apply correct colors to all themed buildings', () => {
-    render(
-      <CampusPolygons campus="SGW" geojson={geojson} metadata={metadata} />
-    );
+    renderCampusPolygons();
 
     buildingIds.forEach((buildingId) => {
       const expectedColor = BuildingTheme.SGW[buildingId as keyof typeof BuildingTheme.SGW] ?? '#888888';
@@ -47,13 +49,7 @@ describe('Building Colors', () => {
 
   describe('Accessibility', () => {
     it('all buildings should have accessibility labels matching their names', () => {
-      render(
-        <CampusPolygons
-          campus="SGW"
-          geojson={geojson}
-          metadata={metadata}
-        />
-      );
+     renderCampusPolygons();
 
       const polygons = screen.getAllByTestId('polygon');
 
@@ -81,14 +77,7 @@ describe('Building Colors', () => {
     it('should call polygonFromGeoJSON for each building', () => {
       const polygonFromGeoJSONSpy = jest.spyOn(geo, 'polygonFromGeoJSON');
 
-      render(
-        <CampusPolygons
-          campus="SGW"
-          geojson={geojson}
-          metadata={metadata}
-        />
-      );
-
+      renderCampusPolygons();
       expect(polygonFromGeoJSONSpy).toHaveBeenCalledTimes(buildingIds.length);
       
       polygonFromGeoJSONSpy.mockRestore();
