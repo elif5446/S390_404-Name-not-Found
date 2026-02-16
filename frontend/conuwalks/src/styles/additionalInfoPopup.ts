@@ -195,7 +195,7 @@ const themedStyles = {
     text: (mode: string) => ({ color: mode === "dark" ? "#FFFFFF" : "#333333" }),
     subtext: (mode: string) => ({ color: mode === "dark" ? "#CCCCCC" : "#585858" }),
     mutedText: (mode: string) => ({ color: mode === "dark" ? "#CCCCCC" : "#000000" }),
-    closeButton: (mode: string) => ({ backgroundColor: mode === "dark" ? "#00000031" : "#ff839c22" }),
+    closeButton: (mode: string) => ({ backgroundColor: mode === "dark" ? "#00000031" : "#85858522" }),
 };
 
 export {additionalInfoPopupStyles as styles, themedStyles};

@@ -10,10 +10,11 @@ import {
   Animated,
   PanResponder,
   ScrollView,
+  Modal
 } from "react-native";
 import * as Clipboard from 'expo-clipboard';
-import { SymbolView, SFSymbol } from 'expo-symbols'; // SF Symbols (iOS)
-import MaterialIcons from '@expo/vector-icons/MaterialIcons'; // Material Design Icons (Android)
+import { SymbolView, SFSymbol } from 'expo-symbols';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { BlurView } from "expo-blur";
 import { LoyolaBuildingMetadata } from "../data/metadata/LOY.BuildingMetadata";
 import { SGWBuildingMetadata } from "../data/metadata/SGW.BuildingMetaData";
@@ -438,231 +439,259 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
 
   const accessibilityIcons = getAccessibilityIcons(buildingInfo?.facilities);
 
-    return (
-      <View
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: MAX_HEIGHT,
-          zIndex: 999,
-        }}
-        pointerEvents="box-none"
-      >
-        <Animated.View
-          style={[
-            styles.iosBlurContainer,
-            { height: MAX_HEIGHT, transform: [{ translateY: translateY }] },
-          ]}
+  const Content = (
+    <Animated.View
+        style={[
+        styles.iosBlurContainer,
+        { height: MAX_HEIGHT, transform: [{ translateY: translateY }] },
+        ]}
+    >
+        <BackgroundWrapper>
+        <Animated.View style={{ flex: 1, opacity }}>
+        {/* panHandlers are ONLY here, so buttons below are never blocked */}
+        <View
+            style={styles.iosContentContainer}
+            {...handlePanResponder.panHandlers}
         >
-          <BackgroundWrapper>
-            <Animated.View style={{ flex: 1, opacity }}>
-            {/* panHandlers are ONLY here, so buttons below are never blocked */}
-            <View
-              style={styles.iosContentContainer}
-              {...handlePanResponder.panHandlers}
+            {/* Handle bar */}
+            <View style={styles.handleBarContainer} accessible={true} accessibilityLabel="Drag handle" accessibilityHint="Swipe up to expand building details or down to collapse" accessibilityRole="adjustable">
+            <View style={styles.handleBar} />
+            </View>
+            {/* Header */}
+            <View style={[styles.iosHeader]}>
+            {/* Close button */}
+            <TouchableOpacity
+                onPress={dismiss}
+                style={styles.closeButton}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessible={true}
+                accessibilityLabel="Close"
+                accessibilityRole="button"
             >
-              {/* Handle bar */}
-              <View style={styles.handleBarContainer} accessible={true} accessibilityLabel="Drag handle" accessibilityHint="Swipe up to expand building details or down to collapse" accessibilityRole="adjustable">
-                <View style={styles.handleBar} />
-              </View>
-              {/* Header */}
-              <View style={[styles.iosHeader]}>
-                {/* Close button */}
-                <TouchableOpacity
-                  onPress={dismiss}
-                  style={styles.closeButton}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  accessible={true}
-                  accessibilityLabel="Close"
-                  accessibilityRole="button"
+                <View
+                style={[
+                    styles.closeButtonCircle,
+                    themedStyles.closeButton(mode),
+                ]}
                 >
-                  <View
+                <Text
                     style={[
-                      styles.closeButtonCircle,
-                      themedStyles.closeButton(mode),
+                    styles.closeButtonText,
+                    themedStyles.text(mode),
                     ]}
-                  >
+                >
+                    ✕
+                </Text>
+                </View>
+            </TouchableOpacity>
+            {/* Center text container */}
+            <View style={styles.headerTextContainer}>
+                <Text
+                style={[
+                    styles.buildingName,
+                    themedStyles.text(mode),
+                ]}
+                accessible={true}
+                accessibilityLabel={`Name: ${buildingInfo?.name}`}
+                accessibilityRole="header"
+                >
+                {buildingInfo?.name || "Building"}
+                </Text>
+                {/* Building ID and icons */}
+                <View style={styles.buildingIdWithIconsContainer}>
+                {/* Building ID */}
+                <View style={styles.buildingIdContainer}>
                     <Text
-                      style={[
-                        styles.closeButtonText,
-                        themedStyles.text(mode),
-                      ]}
-                    >
-                      ✕
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-                {/* Center text container */}
-                <View style={styles.headerTextContainer}>
-                  <Text
                     style={[
-                      styles.buildingName,
-                      themedStyles.text(mode),
+                        styles.buildingId,
+                        themedStyles.subtext(mode),
                     ]}
                     accessible={true}
-                    accessibilityLabel={`Name: ${buildingInfo?.name}`}
-                    accessibilityRole="header"
-                  >
-                    {buildingInfo?.name || "Building"}
-                  </Text>
-                  {/* Building ID and icons */}
-                  <View style={styles.buildingIdWithIconsContainer} accessible={true} accessibilityLabel="Building facilities">
-                    {/* Building ID */}
-                    <View style={styles.buildingIdContainer}>
-                      <Text
-                        style={[
-                          styles.buildingId,
-                          themedStyles.subtext(mode),
-                        ]}
+                    accessibilityLabel={`Name Abbreviation: ${buildingId}`}
+                    >
+                    {buildingId}
+                    </Text>
+                </View>
+                {/* Accessibility icons - on the far right of this row */}
+                {accessibilityIcons && accessibilityIcons.length > 0 && (
+                    <View style={styles.accessibilityIconsContainer}>
+                    {accessibilityIcons.map((icon) => (
+                        <View
+                        key={icon.key}
                         accessible={true}
-                        accessibilityLabel={`Name Abbreviation: ${buildingId}`}
-                      >
-                        {buildingId}
-                      </Text>
-                    </View>
-                    {/* Accessibility icons - on the far right of this row */}
-                    {accessibilityIcons && accessibilityIcons.length > 0 && (
-                      <View style={styles.accessibilityIconsContainer}>
-                        {accessibilityIcons.map((icon) => (
-                          <View
-                            key={icon.key}
+                        accessibilityLabel={icon.label}
+                        accessibilityRole="image"
+                        >
+                        {icon.key !== "metro" && (Platform.OS === "ios" ? <SymbolView 
+                            name={icon.sf}
                             accessible={true}
                             accessibilityLabel={icon.label}
-                            accessibilityRole="image"
-                          >
-                            {icon.key !== "metro" && (Platform.OS === "ios" ? <SymbolView 
-                                name={icon.sf}
-                                accessible={true}
-                                accessibilityLabel={icon.label}
-                                size={25}
-                                weight={"heavy"}
-                                tintColor={themedStyles.subtext(mode).color}
-                              /> : <MaterialIcons name={icon.material} size={25} color={themedStyles.subtext(mode).color}/>)
-                              || <Image source={require(`../../assets/images/metro.png`)}
-                                style={{width: 25,
-                                height: 25,
-                                tintColor: themedStyles.subtext(mode).color}}
-                                accessibilityLabel={icon.label}
-                              />}
-                          </View>
-                        ))}
-                      </View>
-                    )}
-                  </View>
+                            size={25}
+                            weight={"heavy"}
+                            tintColor={themedStyles.subtext(mode).color}
+                            /> : <MaterialIcons name={icon.material} size={25} color={themedStyles.subtext(mode).color}/>)
+                            || <Image source={require(`../../assets/images/metro.png`)}
+                            style={{width: 25,
+                            height: 25,
+                            tintColor: themedStyles.subtext(mode).color}}
+                            accessibilityLabel={icon.label}
+                            />}
+                        </View>
+                    ))}
+                    </View>
+                )}
                 </View>
-                <View style={styles.rightSpacer} />
-              </View>
             </View>
+            <View style={styles.rightSpacer} />
+            </View>
+        </View>
 
-            {/* Scrollable content area (separate from drag zone)*/}
-            <View style={{ flex: 1 }} {...scrollAreaPanResponder.panHandlers}>
-              <ScrollView
-                ref={scrollViewRef}
-                style={[styles.contentArea, { flex: 1 }]}
-                scrollEnabled={true}
-                showsVerticalScrollIndicator={true}
-                bounces={true}
-                nestedScrollEnabled={true}
-                onScroll={(e) => {
-                  scrollOffsetRef.current = e.nativeEvent.contentOffset.y;
-                }}
-                contentContainerStyle={{ flexGrow: 1, paddingBottom: 24 }}
-                scrollEventThrottle={16}
-              >
-                {/* Schedule section */}
+        {/* Scrollable content area (separate from drag zone)*/}
+        <View style={{ flex: 1 }} {...scrollAreaPanResponder.panHandlers}>
+            <ScrollView
+            ref={scrollViewRef}
+            style={[styles.contentArea, { flex: 1 }]}
+            scrollEnabled={true}
+            showsVerticalScrollIndicator={true}
+            bounces={true}
+            nestedScrollEnabled={true}
+            onScroll={(e) => {
+                scrollOffsetRef.current = e.nativeEvent.contentOffset.y;
+            }}
+            contentContainerStyle={{ flexGrow: 1, paddingBottom: 24 }}
+            scrollEventThrottle={16}
+            >
+            {/* Schedule section */}
+            <View style={styles.section}>
+                <Text
+                style={[
+                    styles.sectionTitle,
+                    themedStyles.text(mode),
+                ]}
+                accessible={true}
+                accessibilityRole="header"
+                >
+                Schedule
+                </Text>
+                {/* Schedule information will be here in future versions */}
+            </View>
+            {/* Opening hours section */}
+            {buildingInfo?.openingHours &&
+                renderOpeningHours(buildingInfo.openingHours)}
+            {/* Address section */}
+            {buildingInfo?.address && (
                 <View style={styles.section}>
-                  <Text
+                <Text
                     style={[
-                      styles.sectionTitle,
-                      themedStyles.text(mode),
+                    styles.sectionTitle,
+                    themedStyles.text(mode),
                     ]}
                     accessible={true}
                     accessibilityRole="header"
-                  >
-                    Schedule
-                  </Text>
-                  {/* Schedule information will be here in future versions */}
+                >
+                    Address
+                </Text>
+                <View style={styles.addressContainer}>
+                    <Text
+                    style={[
+                        styles.addressText,
+                        themedStyles.text(mode),
+                    ]}
+                    accessible={true}
+                    >
+                    {buildingInfo.address}
+                    </Text>
+                    <TouchableOpacity
+                    onPress={copyAddressToClipboard}
+                    style={styles.copyButton}
+                    accessible={true}
+                    accessibilityLabel={copying ? "Address copied" : "Copy address"}
+                    accessibilityRole="button"
+                    >
+                    {Platform.OS === "ios" && <SymbolView 
+                        name={copying ? "document.on.document.fill" : "document.on.document"}
+                        size={25}
+                        weight={"regular"}
+                        tintColor={mode === "dark" ? "#FFFFFF" : "#333333"} 
+                        /> || <MaterialIcons
+                        name={copying ? "task" : "content-copy"}
+                        size={22}
+                        color={mode === "dark" ? "#FFFFFF" : "#333333"}
+                        />}
+                    </TouchableOpacity>
                 </View>
-                {/* Opening hours section */}
-                {buildingInfo?.openingHours &&
-                  renderOpeningHours(buildingInfo.openingHours)}
-                {/* Address section */}
-                {buildingInfo?.address && (
-                  <View style={styles.section}>
-                    <Text
-                      style={[
-                        styles.sectionTitle,
-                        themedStyles.text(mode),
-                      ]}
-                      accessible={true}
-                      accessibilityRole="header"
-                    >
-                      Address
-                    </Text>
-                    <View style={styles.addressContainer}>
-                      <Text
-                        style={[
-                          styles.addressText,
-                          themedStyles.text(mode),
-                        ]}
-                        accessible={true}
-                      >
-                        {buildingInfo.address}
-                      </Text>
-                      <TouchableOpacity
-                        onPress={copyAddressToClipboard}
-                        style={styles.copyButton}
-                        accessible={true}
-                        accessibilityLabel={copying ? "Address copied" : "Copy address"}
-                        accessibilityRole="button"
-                      >
-                        {Platform.OS === "ios" && <SymbolView 
-                            name={copying ? "document.on.document.fill" : "document.on.document"}
-                            size={25}
-                            weight={"regular"}
-                            tintColor={mode === "dark" ? "#FFFFFF" : "#333333"} 
-                          /> || <MaterialIcons
-                            name={copying ? "task" : "content-copy"}
-                            size={22}
-                            color={mode === "dark" ? "#FFFFFF" : "#333333"}
-                          />}
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                )}
-                {/* Description section */}
-                {buildingInfo?.description && (
-                  <View style={styles.section}>
-                    <Text
-                      style={[
-                        styles.sectionTitle,
-                        themedStyles.text(mode),
-                      ]}
-                      accessible={true}
-                      accessibilityRole="header"
-                    >
-                      Description
-                    </Text>
-                    <Text
-                      style={[
-                        styles.descriptionText,
-                        themedStyles.mutedText(mode),
-                      ]}
-                      accessible={true}
-                    >
-                      {buildingInfo.description}
-                    </Text>
-                  </View>
-                )}
-              </ScrollView>
-            </View>
-            </Animated.View>
-          </BackgroundWrapper>
+                </View>
+            )}
+            {/* Description section */}
+            {buildingInfo?.description && (
+                <View style={styles.section}>
+                <Text
+                    style={[
+                    styles.sectionTitle,
+                    themedStyles.text(mode),
+                    ]}
+                    accessible={true}
+                    accessibilityRole="header"
+                >
+                    Description
+                </Text>
+                <Text
+                    style={[
+                    styles.descriptionText,
+                    themedStyles.mutedText(mode),
+                    ]}
+                    accessible={true}
+                >
+                    {buildingInfo.description}
+                </Text>
+                </View>
+            )}
+            </ScrollView>
+        </View>
         </Animated.View>
-      </View>
+        </BackgroundWrapper>
+    </Animated.View>
+  );
+
+  // Android
+  if (Platform.OS === 'android') {
+    return (
+        <Modal
+            transparent={true}
+            visible={visible}
+            animationType="none"
+            onRequestClose={dismiss}
+        >
+            <View
+                 style={{
+                    flex: 1,
+                    justifyContent: 'flex-end'
+                }}
+            >
+                {Content}
+            </View>
+        </Modal>
     );
+  }
+
+  // iOS
+  return (
+    <View
+      style={{
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: MAX_HEIGHT,
+        zIndex: 999,
+      }}
+      pointerEvents="box-none"
+      importantForAccessibility={visible ? "yes" : "no-hide-descendants"}
+      accessibilityViewIsModal={visible}
+    >
+        {Content}
+    </View>
+  );
 });
 
 export default AdditionalInfoPopup;
