@@ -12,8 +12,8 @@ import {
   ScrollView,
 } from "react-native";
 import * as Clipboard from 'expo-clipboard';
-import { SymbolView, SFSymbol } from 'expo-symbols'; 
-import MaterialIcons from '@expo/vector-icons/MaterialIcons'; 
+import { SymbolView, SFSymbol } from 'expo-symbols'; // SF Symbols (iOS)
+import MaterialIcons from '@expo/vector-icons/MaterialIcons'; // Material Design Icons (Android)
 import { BlurView } from "expo-blur";
 import { LoyolaBuildingMetadata } from "../data/metadata/LOY.BuildingMetadata";
 import { SGWBuildingMetadata } from "../data/metadata/SGW.BuildingMetaData";
@@ -126,6 +126,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
     }
   }, [visible]);
 
+  // Fetch building info based on buildingId and campus
   useEffect(() => {
     if (buildingId) {
       const metadata =
@@ -136,6 +137,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
       if (metadata) {
         setBuildingInfo(metadata);
       } else {
+        // Fallback- Create a basic info object if metadata not found
         setBuildingInfo({ name: buildingId });
       }
     }
@@ -303,19 +305,53 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
     }
   };
 
+  // Fetching accessibility info from metadata (facilities) and rendering in popup as icons (emojis for now)
   const getAccessibilityIcons = (facilities: any) => {
-    if (!buildingInfo?.facilities) return null;
+    if (!buildingInfo?.facilities) {
+      return null;
+    }
+
     const icons: {key: string, sf: SFSymbol, material: "elevator" | "accessible" | "subway", label: string}[] = [];
 
-    if (facilities.some((f: string) => f.toLowerCase().includes("metro") || f.toLowerCase().includes("undergound passage"))) {
+    // Check for direct metro access
+    if (
+      facilities.some(
+        (f: string) =>
+          f.toLowerCase().includes("metro") ||
+          f.toLowerCase().includes("undergound passage"),
+      )
+    ) {
       icons.push({ key: "metro", sf: "tram.fill.tunnel", material: "subway", label: "Access to the Concordia Underground Passage and the Metro" });
     }
-    if (facilities.some((f: string) => f.toLowerCase().includes("accessible") || f.toLowerCase().includes("accessibility") || f.toLowerCase().includes("wheelchair"))) {
-      icons.push({ key: "wheelchair", sf: "figure.roll", material: "accessible", label: "First Floor is Wheelchair Accessible" });
+
+    // Check for accessible features - Wheelchair icon
+    if (
+      facilities.some(
+        (f: string) =>
+          f.toLowerCase().includes("accessible") ||
+          f.toLowerCase().includes("accessibility") ||
+          f.toLowerCase().includes("wheelchair"),
+      )
+    ) {
+      icons.push({
+        key: "wheelchair",
+        sf: "figure.roll",
+        material: "accessible",
+        label: "First Floor is Wheelchair Accessible",
+      });
     }
-    if (facilities.some((f: string) => f.toLowerCase().includes("elevator") || f.toLowerCase().includes("lift"))) {
+
+    // Check for elevator - Elevator icon
+    if (
+      facilities.some(
+        (f: string) =>
+          f.toLowerCase().includes("elevator") ||
+          f.toLowerCase().includes("lift"),
+      )
+    ) {
       icons.push({ key: "elevator", sf: "arrow.up.arrow.down.square", material: "elevator", label: "Elevators Are Available" });
     }
+
     return icons;
   };
 
@@ -488,7 +524,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
                     </View>
                     {/* Accessibility icons - on the far right of this row */}
                     {accessibilityIcons && accessibilityIcons.length > 0 && (
-                      <View style={styles.accessibilityIconsContainer} accessible={true} accessibilityLabel="Building facilities">
+                      <View style={styles.accessibilityIconsContainer}>
                         {accessibilityIcons.map((icon) => (
                           <View
                             key={icon.key}
@@ -498,6 +534,8 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
                           >
                             {icon.key !== "metro" && (Platform.OS === "ios" ? <SymbolView 
                                 name={icon.sf}
+                                accessible={true}
+                                accessibilityLabel={icon.label}
                                 size={25}
                                 weight={"heavy"}
                                 tintColor={themedStyles.subtext(mode).color}
