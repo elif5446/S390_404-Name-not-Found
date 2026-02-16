@@ -1,0 +1,8 @@
+appId: ${APP_ID}
+tags:
+  - smoke
+---
+- runFlow: ../subflows/setup.yaml
+
+- assertVisible: "Sir George Williams"
+- assertVisible: "Loyola"
