@@ -467,7 +467,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
                     ]}
                     accessible={true}
                     accessibilityLabel={`Name: ${buildingInfo?.name}`}
-                    accessibilityRole="header">{buildingInfo?.name || "Building"}
+                    accessibilityRole="header"
                   >
                     {buildingInfo?.name || "Building"}
                   </Text>
@@ -481,7 +481,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
                           themedStyles.subtext(mode),
                         ]}
                         accessible={true}
-                        accessibilityLabel={`Name Abbreviation: ${buildingId}`
+                        accessibilityLabel={`Name Abbreviation: ${buildingId}`}
                       >
                         {buildingId}
                       </Text>
@@ -576,7 +576,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
                       <TouchableOpacity
                         onPress={copyAddressToClipboard}
                         style={styles.copyButton}
-                        style={styles.copyButton} accessible={true}
+                        accessible={true}
                         accessibilityLabel={copying ? "Address copied" : "Copy address"}
                         accessibilityRole="button"
                       >
