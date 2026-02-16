@@ -29,6 +29,7 @@ yarn-error.*
 # macOS
 .DS_Store
 *.pem
+**/.DS_Store
 
 # local env files
 .env*
@@ -42,3 +43,15 @@ app-example
 # generated native folders
 /ios
 /android
+
+# General build artifacts
+build/
+bin/
+obj/
+**/ModuleCache.noindex/
+**/*.pcm
+frontend/conuwalks/build/
+**/ModuleCache.noindex/
+
+# Node modules
+node_modules/

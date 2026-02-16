@@ -1,8 +1,7 @@
-import React from 'react';
+import React, { useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Marker } from 'react-native-maps';
-import { View, Text } from 'react-native';
-
-import BuildingTheme from '@/src/styles/BuildingTheme';
+import { View, Text, Platform } from 'react-native';
 import { getLabelFontSize, FeatureCollection } from '@/src/data/BuildingLabels';
 import { CampusId } from '@/src/data/campus/campusConfig';
 //will only render the labels 
@@ -18,32 +17,34 @@ const CampusLabels: React.FC<Props> = ({
   data,
   longitudeDelta,
 }) => {
+  const isVisible = longitudeDelta <= 0.0075;
   return (
     <>
       {data.features.map((feature) => {
         const { id, centroid } = feature.properties;
         if (!centroid) return null;
 
-        const color =
-          BuildingTheme[campus][id as keyof typeof BuildingTheme[typeof campus]] ??
-          '#000';
-
         return (
           <Marker
             key={`${id}-label`}
             coordinate={centroid}
-            tracksViewChanges={false}
+            tracksViewChanges={true}
+            opacity={isVisible ? 1 : 0}
             pointerEvents="none"
+            zIndex={100}
+            anchor={{ x: 0.5, y: 0.5 }}
           >
-            <Text
-              style={{
-                fontSize: getLabelFontSize(longitudeDelta),
-                fontWeight: 'bold',
-                color,
-              }}
-            >
-              {id}
-            </Text>
+            <View>
+              <Text
+                style={{
+                  fontSize: getLabelFontSize(longitudeDelta),
+                  fontWeight: 'bold',
+                  color: '#00000033'
+                }}
+              >
+                {id}
+              </Text>
+            </View>
           </Marker>
         );
       })}
