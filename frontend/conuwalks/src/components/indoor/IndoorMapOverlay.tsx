@@ -29,9 +29,11 @@ interface Props {
 const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
   const { width, height } = useWindowDimensions();
   const [currentLevel, setCurrentLevel] = useState(buildingData.defaultFloor);
+  const [isSwitching, setIsSwitching] = useState(false);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const zoomRef = useRef<ReactNativeZoomableView>(null);
+  const isMounted = useRef(true);
 
   const activeFloor = useMemo(
     () => buildingData.floors.find((f) => f.level === currentLevel),
@@ -60,11 +62,18 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
 
   // inital fade in
   useEffect(() => {
+    isMounted.current = true;
+
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 400,
       useNativeDriver: true,
     }).start();
+
+    return () => {
+      isMounted.current = false;
+      fadeAnim.stopAnimation();
+    };
   }, [fadeAnim]);
 
   // floor transtion
@@ -72,20 +81,29 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
     (level: number) => {
       if (level === currentLevel) return;
 
+      fadeAnim.stopAnimation();
+      setIsSwitching(true);
+
       Animated.timing(fadeAnim, {
         toValue: 0,
         duration: 150,
         useNativeDriver: true,
       }).start(({ finished }) => {
-        if (!finished) return;
+        if (!finished || !isMounted.current) return;
         setCurrentLevel(level);
+
         requestAnimationFrame(() => {
+          if (!isMounted.current) return;
           zoomRef.current?.zoomTo(1);
           Animated.timing(fadeAnim, {
             toValue: 1,
             duration: 250,
             useNativeDriver: true,
-          }).start();
+          }).start(({ finished: fadeInFinished }) => {
+            if (fadeInFinished && isMounted.current) {
+              setIsSwitching(false);
+            }
+          });
         });
       });
     },
