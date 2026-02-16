@@ -3,6 +3,7 @@ import { SvgProps } from "react-native-svg";
 import { LatLng } from "react-native-maps";
 
 interface FloorBase {
+  id: string;
   level: number;
   label: string;
   bounds: {
@@ -12,12 +13,12 @@ interface FloorBase {
 }
 
 interface FloorPng extends FloorBase {
-  type: 'png';
+  type: "png";
   image: ImageSourcePropType;
 }
 
 interface FloorSvg extends FloorBase {
-  type: 'svg';
+  type: "svg";
   image: React.FC<SvgProps>;
   viewBox?: string;
 }
