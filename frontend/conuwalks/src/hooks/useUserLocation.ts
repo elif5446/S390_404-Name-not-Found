@@ -20,7 +20,7 @@ const createTimeoutPromise = (ms: number): Promise<never> => {
 const isEmulatorLocation = (coords: Location.LocationObject["coords"]) => {
   return (
     Math.abs(coords.latitude - 37.42) < 0.1 &&
-    Math.abs(coords.longitude - (-122.08)) < 0.1
+    Math.abs(coords.longitude - -122.08) < 0.1
   );
 };
 
@@ -53,7 +53,7 @@ export const useUserLocation = (): UseUserLocationReturn => {
 
         let lastKnown = await Location.getLastKnownPositionAsync();
         if (lastKnown && __DEV__ && isEmulatorLocation(lastKnown.coords)) {
-            lastKnown = null; 
+          lastKnown = null;
         }
         if (lastKnown && isMounted) {
           setLocation({
@@ -63,12 +63,12 @@ export const useUserLocation = (): UseUserLocationReturn => {
         }
 
         try {
-          const freshLocation = (await Promise.race([
+          const freshLocation = await Promise.race([
             Location.getCurrentPositionAsync({
               accuracy: Location.Accuracy.Balanced,
             }),
             createTimeoutPromise(5000),
-          ]));
+          ]);
 
           if (freshLocation && isMounted) {
             setLocation({
@@ -78,7 +78,13 @@ export const useUserLocation = (): UseUserLocationReturn => {
             setError(null);
           }
         } catch (e) {
-          console.warn("Fresh location fetch failed, relying on last known or default.", e);
+          console.warn(
+            "Fresh location fetch failed, relying on last known or default.",
+            e,
+          );
+          if (isMounted) {
+            setError("Failed to retrieve location");
+          }
         }
       } catch (err) {
         console.warn("Location error:", err);
@@ -89,10 +95,10 @@ export const useUserLocation = (): UseUserLocationReturn => {
           setLoading(false);
           if (canUseLocation) {
             setLocation((prev) => {
-                if (!prev && __DEV__) {
+              if (!prev && __DEV__) {
                 return DEFAULT_LOCATION;
-                }
-                return prev;
+              }
+              return prev;
             });
           }
         }
@@ -101,7 +107,9 @@ export const useUserLocation = (): UseUserLocationReturn => {
 
     requestLocationPermission();
 
-    return () => {isMounted = false;};
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return { location, error, loading, hasPermission };
