@@ -40,10 +40,12 @@ export default function GoogleCalendarAuth({ onAuthSuccess }: Props) {
 
   const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
   const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+  const androidClientId = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID;
 
   const [request, response, promptAsync] = Google.useAuthRequest({
     clientId: webClientId,
     iosClientId: iosClientId,
+    androidClientId: androidClientId,
     redirectUri,
     scopes: [
       "openid",
