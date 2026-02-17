@@ -84,7 +84,7 @@ export const useUserLocation = (): UseUserLocationReturn => {
           },
         );
       } catch (err) {
-        if (!isMounted) {
+        if (isMounted) {
           console.warn("Location service error:", err);
           // fallback to default if we actually hit an error
           setError("Could not fetch location");
