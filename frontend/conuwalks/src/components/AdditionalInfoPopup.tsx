@@ -19,7 +19,7 @@ import { LoyolaBuildingMetadata } from "../data/metadata/LOY.BuildingMetadata";
 import { SGWBuildingMetadata } from "../data/metadata/SGW.BuildingMetaData";
 import { styles,themedStyles } from "../styles/additionalInfoPopup";
 
-interface AdditionInfoPopupProps {
+interface AdditionalInfoPopupProps {
   visible: boolean;
   buildingId: string;
   campus: "SGW" | "LOY";
@@ -58,7 +58,7 @@ const BackgroundWrapper = ({ children }: { children: React.ReactNode }) => {
     );
   };
 
-const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPopupProps>(({
+const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfoPopupProps>(({ 
   visible,
   buildingId,
   campus,

@@ -1,4 +1,4 @@
-export const BuildingTheme = {
+const BuildingTheme = {
   SGW: {
     H: "#FD7D7F",
     LB: "#F4FD7D",

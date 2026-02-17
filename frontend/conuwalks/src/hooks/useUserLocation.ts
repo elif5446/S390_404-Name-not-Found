@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import * as Location from "expo-location";
 import { LatLng } from "react-native-maps";
 
@@ -19,8 +19,10 @@ const createTimeoutPromise = (ms: number): Promise<never> => {
 
 const isEmulatorLocation = (coords: Location.LocationObject["coords"]) => {
   return (
-    Math.abs(coords.latitude - 37.42) < 0.1 &&
-    Math.abs(coords.longitude - -122.08) < 0.1
+    (Math.abs(coords.latitude - 37.42) < 0.1 &&
+      Math.abs(coords.longitude - -122.08) < 0.1) ||
+    (Math.abs(coords.latitude - 37.33) < 0.1 &&
+      Math.abs(coords.longitude - -122.03) < 0.1)
   );
 };
 
@@ -29,10 +31,11 @@ export const useUserLocation = (): UseUserLocationReturn => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasPermission, setHasPermission] = useState(false);
+  const locationSubscription = useRef<Location.LocationSubscription | null>(null);
 
   useEffect(() => {
     let isMounted = true;
-    let locationSubscription: Location.LocationSubscription | null = null;
+
     const requestLocationPermission = async () => {
       let canUseLocation = false;
       try {
@@ -89,7 +92,7 @@ export const useUserLocation = (): UseUserLocationReturn => {
         }
 
         if (isMounted) {
-          locationSubscription = await Location.watchPositionAsync(
+          locationSubscription.current = await Location.watchPositionAsync(
             {
               accuracy: Location.Accuracy.Balanced,
               timeInterval: 3000,
@@ -130,7 +133,10 @@ export const useUserLocation = (): UseUserLocationReturn => {
 
     return () => {
       isMounted = false;
-      locationSubscription?.remove();
+      if (locationSubscription.current) {
+        locationSubscription.current.remove();
+        locationSubscription.current = null;
+      }
     };
   }, []);
 

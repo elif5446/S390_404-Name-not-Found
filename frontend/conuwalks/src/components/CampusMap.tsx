@@ -28,13 +28,16 @@ import styles from "@/src/styles/campusMap";
 import { useUserLocation } from "@/src/hooks/useUserLocation";
 import { useDirections } from "@/src/context/DirectionsContext";
 import { calculatePolygonCenter } from "@/src/utils/geometry";
+import { isPointInPolygon } from "@/src/utils/geo";
 import SGW from "@/src/data/campus/SGW.geojson";
 import LOY from "@/src/data/campus/LOY.geojson";
+import { INDOOR_DATA } from "@/src/data/indoorData";
 import { LoyolaBuildingMetadata } from "@/src/data/metadata/LOY.BuildingMetadata";
 import { SGWBuildingMetadata } from "@/src/data/metadata/SGW.BuildingMetaData";
 import BuildingTheme from "@/src/styles/BuildingTheme";
 import AdditionalInfoPopup from "./AdditionalInfoPopup";
 import DestinationPopup from "./DestinationPopup";
+import IndoorMapOverlay from "./indoor/IndoorMapOverlay";
 
 // Convert GeoJSON coordinates to LatLng
 const polygonFromGeoJSON = (coordinates: number[][]): LatLng[] =>
@@ -72,6 +75,18 @@ interface TransitStopMarker {
   description: string;
   pinColor: string;
   iconName: "directions-bus" | "subway";
+}
+
+interface GeoJsonFeature {
+  type: string;
+  properties: {
+    id: string;
+    [key: string]: any;
+  };
+  geometry: {
+    type: string;
+    coordinates: any[];
+  };
 }
 
 const CampusMap: React.FC<CampusMapProps> = ({
@@ -127,6 +142,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
   });
   const [navigationStepIndex, setNavigationStepIndex] = useState(0);
   const [selectedTransitStopKey, setSelectedTransitStopKey] = useState<string | null>(null);
+  const [indoorBuildingId, setIndoorBuildingId] = useState<string | null>(null);
 
   // Calculate circle radius based on zoom level (longitudeDelta)
   // Larger longitudeDelta = zoomed out = bigger circle
@@ -158,6 +174,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
     campus: "SGW" | "LOY",
     coordinates: LatLng
   ) => {
+    setIndoorBuildingId(null);
     setIsNavigationActive(false);
 
     if (showDirections) {
@@ -186,6 +203,41 @@ const CampusMap: React.FC<CampusMapProps> = ({
   // Handle close popup
   const handleClosePopup = () => {
     setSelectedBuilding((prev) => ({ ...prev, visible: false }));
+  };
+
+  const handleMapLongPress = (coordinate: LatLng) => {
+    const findBuildingId = (geojson: typeof SGW | typeof LOY) => {
+      const feature = geojson.features.find((item) => {
+        const currentFeature = item as GeoJsonFeature;
+        if (currentFeature.geometry.type !== "Polygon") {
+          return false;
+        }
+
+        const polygonCoords = polygonFromGeoJSON(currentFeature.geometry.coordinates[0]);
+        return isPointInPolygon(coordinate, polygonCoords);
+      });
+
+      return (feature?.properties as { id?: string } | undefined)?.id ?? null;
+    };
+
+    const foundId = findBuildingId(SGW) || findBuildingId(LOY);
+
+    if (foundId && INDOOR_DATA[foundId]) {
+      setIndoorBuildingId(foundId);
+      setSelectedBuilding((prev) => ({ ...prev, visible: false }));
+    }
+  };
+
+  const handleMapPress = () => {
+    if (ignoreNextMapPressRef.current) {
+      ignoreNextMapPressRef.current = false;
+      return;
+    }
+
+    setSelectedTransitStopKey(null);
+    if (selectedBuilding.visible) {
+      setSelectedBuilding((prev) => ({ ...prev, visible: false }));
+    }
   };
 
   const directionsEtaLabel = (() => {
@@ -542,13 +594,13 @@ const CampusMap: React.FC<CampusMapProps> = ({
         tintColor="#FF2D55"
         initialRegion={mapRegion}
         onRegionChangeComplete={setMapRegion}
-        onPress={() => {
-          if (ignoreNextMapPressRef.current) {
-            ignoreNextMapPressRef.current = false;
-            return;
-          }
-          setSelectedTransitStopKey(null);
-        }}
+        onLongPress={(event) => handleMapLongPress(event.nativeEvent.coordinate)}
+        onPress={handleMapPress}
+        showsUserLocation={false}
+        moveOnMarkerPress={false}
+        toolbarEnabled={false}
+        loadingEnabled
+        rotateEnabled={false}
       >
 
         {/* ---------------- overlays ---------------- */}
@@ -833,15 +885,23 @@ const CampusMap: React.FC<CampusMapProps> = ({
         </View>
       )}
 
-      {/*Additional Building Info Popup*/}
-      <AdditionalInfoPopup
-        visible={selectedBuilding.visible && !showDirections}
-        buildingId={selectedBuilding.name}
-        campus={selectedBuilding.campus}
-        onClose={handleClosePopup}
-        onDirectionsTrigger={handleDirectionsTrigger}
-        directionsEtaLabel={directionsEtaLabel}
-      />
+      {indoorBuildingId && INDOOR_DATA[indoorBuildingId] && (
+        <IndoorMapOverlay
+          buildingData={INDOOR_DATA[indoorBuildingId]}
+          onExit={() => setIndoorBuildingId(null)}
+        />
+      )}
+
+      {!indoorBuildingId && (
+        <AdditionalInfoPopup
+          visible={selectedBuilding.visible && !showDirections}
+          buildingId={selectedBuilding.name}
+          campus={selectedBuilding.campus}
+          onClose={handleClosePopup}
+          onDirectionsTrigger={handleDirectionsTrigger}
+          directionsEtaLabel={directionsEtaLabel}
+        />
+      )}
 
       <DestinationPopup
         visible={showDirections}
