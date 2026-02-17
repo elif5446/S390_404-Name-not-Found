@@ -1,0 +1,40 @@
+# Maestro cannot "see" text inside the Google Maps view
+# must interact with the map using screen coordinates
+# then assert the Native UI Bottom Sheet appears
+
+
+appId: ${APP_ID}
+tags:
+  - regression
+---
+- runFlow: ../subflows/setup.yaml
+
+# Start at SGW
+- tapOn: "Sir George Williams"
+- tapOn:
+    point: 42%, 50%
+- assertVisible: "Guy-De Maisonneuve.*"
+- assertVisible: "GM"
+
+- tapOn:
+    id: "close-button" # needs testID="close-button"
+    optional: true     # Fallback: tap X coordinate if ID missing
+- tapOn:  # close the pop-up
+    point: 10%, 65%
+    optional: true
+
+# Switch to Loyola
+- tapOn: "Loyola"
+- assertNotVisible: "Guy-De Maisonneuve.*"
+
+- tapOn:
+    point: 47%, 56%
+- assertVisible: "Central Building"
+- assertVisible: "CC"
+- tapOn:
+    point: 10%, 10%
+- tapOn: "Sir George Williams"
+- tapOn:
+    point: 45%, 63%
+- assertVisible: "John Molson Building.*"
+- assertVisible: "MB"
