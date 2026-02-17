@@ -23,13 +23,19 @@ const isEmulatorLocation = (coords: Location.LocationObject["coords"]) => {
   );
 };
 
+// helper to clean coordinates
+const processCoords = (coords: Location.LocationObjectCoords): LatLng => {
+  if (__DEV__ && isEmulatorLocation(coords)) {
+    return DEFAULT_LOCATION;
+  }
+  return { latitude: coords.latitude, longitude: coords.longitude };
+};
+
 export const useUserLocation = (): UseUserLocationReturn => {
   const [location, setLocation] = useState<LatLng | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasPermission, setHasPermission] = useState(false);
-
-  // ref to store the subscription for cleanup
   const locationSubscription = useRef<Location.LocationSubscription | null>(
     null,
   );
@@ -56,11 +62,7 @@ export const useUserLocation = (): UseUserLocationReturn => {
         // get cached location immediately
         const lastKnown = await Location.getLastKnownPositionAsync();
         if (isMounted && lastKnown) {
-          if (__DEV__ && isEmulatorLocation(lastKnown.coords)) {
-            setLocation(DEFAULT_LOCATION);
-          } else {
-            setLocation(lastKnown.coords);
-          }
+          setLocation(processCoords(lastKnown.coords));
           // we have data, so stop loading spinner immediately
           setLoading(false);
         }
@@ -74,30 +76,19 @@ export const useUserLocation = (): UseUserLocationReturn => {
             distanceInterval: 10, // update every 10 meters
           },
           (newLocation) => {
-            if (!isMounted) return;
-
-            // check if we are on a simulator broadcasting fake GPS
-            if (__DEV__ && isEmulatorLocation(newLocation.coords)) {
-              setLocation(DEFAULT_LOCATION);
-            } else {
-              setLocation(newLocation.coords);
+            if (isMounted) {
+              setLocation(processCoords(newLocation.coords));
+              setLoading(false);
+              setError(null);
             }
-
-            setLoading(false);
-            setError(null);
           },
         );
       } catch (err) {
-        if (isMounted) {
+        if (!isMounted) {
           console.warn("Location service error:", err);
           // fallback to default if we actually hit an error
-          if (__DEV__) {
-            setLocation(DEFAULT_LOCATION);
-            setLoading(false);
-          } else {
-            setError("Could not fetch location");
-            setLoading(false);
-          }
+          setError("Could not fetch location");
+          setLoading(false);
         }
       }
     };
@@ -107,10 +98,7 @@ export const useUserLocation = (): UseUserLocationReturn => {
     // cleanup: Unsubscribe when component unmounts
     return () => {
       isMounted = false;
-      if (locationSubscription.current) {
-        locationSubscription.current.remove();
-        locationSubscription.current = null;
-      }
+      locationSubscription.current?.remove();
     };
   }, []);
 
