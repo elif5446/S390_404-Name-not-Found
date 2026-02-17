@@ -14,7 +14,7 @@ const indexStyles = StyleSheet.create({
   },
   userContainer: {
     position: "absolute",
-    bottom: 50,
+    top: 120,
     right: 20,
     zIndex: 1000,
     backgroundColor: "white",
