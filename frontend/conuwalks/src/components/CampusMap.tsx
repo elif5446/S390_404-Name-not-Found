@@ -57,6 +57,13 @@ interface GeoJsonFeature {
   };
 }
 
+// helper; define here so it's not calculated on every frame update
+const getCentroid = (coords: LatLng[]): LatLng => {
+  const lat = coords.reduce((s, c) => s + c.latitude, 0) / coords.length;
+  const lng = coords.reduce((s, c) => s + c.longitude, 0) / coords.length;
+  return { latitude: lat, longitude: lng };
+};
+
 const CampusMap: React.FC<CampusMapProps> = ({
   initialLocation = { latitude: 45.49599, longitude: -73.57854 },
 }) => {
@@ -159,74 +166,76 @@ const CampusMap: React.FC<CampusMapProps> = ({
     const generatePolygons = (geojson: any, campus: "SGW" | "LOY") => {
       return geojson.features
         .filter((f: GeoJsonFeature) => f.geometry.type === "Polygon")
-        .map((feature: GeoJsonFeature) => {
-          const { id } = feature.properties;
-          const coordinates = polygonFromGeoJSON(feature.geometry.coordinates[0]);
+        .map((feature: GeoJsonFeature, index: number) => {
+          const { id: buildingId } = feature.properties;
+          const coordinates = polygonFromGeoJSON(
+            feature.geometry.coordinates[0],
+          );
 
           const themeColor =
             BuildingTheme[campus][
-              id as keyof (typeof BuildingTheme)[typeof campus]
+              buildingId as keyof (typeof BuildingTheme)[typeof campus]
             ];
           const color = themeColor || "#888888";
 
           // metadata for accessibility
           const meta =
             campus === "LOY"
-              ? LoyolaBuildingMetadata[id]
-              : SGWBuildingMetadata[id];
-          const name = meta?.name || id;
+              ? LoyolaBuildingMetadata[buildingId]
+              : SGWBuildingMetadata[buildingId];
+          const name = meta?.name || buildingId;
 
           //   console.log(
-          //     `${campus}, Building: ${properties.id}, Color: ${color}, Name: ${buildingMetadata?.name}`,
+          //     `${campus}, Building: ${buildingId}, Color: ${color}, Name: ${buildingMetadata?.name}`,
           //   );
 
           return (
             <React.Fragment key={`group-${buildingId}`}>
-            <Polygon
-            key={`${campus}-${buildingId}`}
-              coordinates={coordinates}
-              fillColor={color + "90"} // add transparency
-              strokeColor={color}
-              strokeWidth={1}
-              tappable={true}
-              onPress={() => handlePolygonPress(buildingId, campus)}
-              importantForAccessibility="no-hide-descendants"
-              accessibilityLabel={name}
-              accessibilityRole="button"
-              zIndex={1}
-            />
+              <Polygon
+                key={`${campus}-${buildingId}`}
+                coordinates={coordinates}
+                fillColor={color + "90"} // add transparency
+                strokeColor={color}
+                strokeWidth={1}
+                tappable={true}
+                onPress={() => handlePolygonPress(buildingId, campus)}
+                importantForAccessibility="no-hide-descendants"
+                accessibilityLabel={name}
+                accessibilityRole="button"
+                zIndex={1}
+              />
 
-            <Marker
-            coordinate={getCentroid(coordinates)}
-            onPress={() => handlePolygonPress(buildingId, campus)}
-            zIndex={200}
-            tracksViewChanges={true}
-            title={name || buildingId}
-            importantForAccessibility="yes"
-            accessibilityLabel={name || buildingId}
-            accessibilityRole="button"
-            accessibilityHint="Tap to view details"
-            >
-            <View
-                style={{
-                width: 0.3/regionData.longitudeDelta,
-                height: 0.3/regionData.longitudeDelta,
-                backgroundColor: 'white', 
-                opacity: 0.01 
-                }}
-                collapsable={false}
+              <Marker
+                coordinate={getCentroid(coordinates)}
+                onPress={() => handlePolygonPress(buildingId, campus)}
+                zIndex={200}
+                tracksViewChanges={true}
+                title={name || buildingId}
                 importantForAccessibility="yes"
-                accessible={true}
                 accessibilityLabel={name || buildingId}
                 accessibilityRole="button"
                 accessibilityHint="Tap to view details"
-            >
-                {Platform.OS === 'android' && (
-                <Text style={{ width: 1, height: 1, opacity: 0 }}> </Text>
-                )}
-            </View>
-            </Marker>
-          </React.Fragment>
+              >
+                <View
+                  style={{
+                    width: 0.3 / regionData.longitudeDelta,
+                    height: 0.3 / regionData.longitudeDelta,
+                    backgroundColor: "white",
+                    opacity: 0.01,
+                  }}
+                  collapsable={false}
+                  importantForAccessibility="yes"
+                  accessible={true}
+                  accessibilityLabel={name || buildingId}
+                  accessibilityRole="button"
+                  accessibilityHint="Tap to view details"
+                >
+                  {Platform.OS === "android" && (
+                    <Text style={{ width: 1, height: 1, opacity: 0 }}> </Text>
+                  )}
+                </View>
+              </Marker>
+            </React.Fragment>
           );
         });
     };
@@ -235,19 +244,13 @@ const CampusMap: React.FC<CampusMapProps> = ({
       sgwPolygons: generatePolygons(SGW, "SGW"),
       loyPolygons: generatePolygons(LOY, "LOY"),
     };
-  }, [handlePolygonPress]);
+  }, [handlePolygonPress, regionData.longitudeDelta]);
 
   const mapID = useMemo(() => {
     return colorScheme === "dark"
       ? "eb0ccd6d2f7a95e23f1ec398"
       : "eb0ccd6d2f7a95e117328051";
   }, [colorScheme]);
-
-  const getCentroid = (coords: LatLng[]): LatLng => { 
-    const lat = coords.reduce((s, c) => s + c.latitude, 0)/coords.length;
-    const lng = coords.reduce((s, c) => s + c.longitude, 0)/coords.length;
-    return { latitude: lat, longitude: lng };
-  };
 
   return (
     <View style={styles.container}>
@@ -299,7 +302,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
         {/* ---------------- user location ---------------- */}
         {userLocation && (
-          <Circle
+          <>
+            <Circle
               center={userLocation}
               // scale radius based on zoom level
               radius={Math.max(5, regionData.longitudeDelta * 2000)}
@@ -308,24 +312,25 @@ const CampusMap: React.FC<CampusMapProps> = ({
               strokeWidth={2}
               zIndex={9999}
             />
-          <Marker
-            coordinate={userLocation}
-            onPress={handleLocationPress}
-            tracksViewChanges={false}
-            zIndex={9999}
-            title={"Current Location"}
-            accessibilityLabel={"Current Location"}
-            importantForAccessibility="yes"
-          >
-            <View
-              style={{
-                borderRadius: 6,
-                backgroundColor: "#B03060"
-              }}
-              accessible={true}
+            <Marker
+              coordinate={userLocation}
+              onPress={handleLocationPress}
+              tracksViewChanges={false}
+              zIndex={9999}
+              title={"Current Location"}
               accessibilityLabel={"Current Location"}
               importantForAccessibility="yes"
-            />
+            >
+              <View
+                style={{
+                  borderRadius: 6,
+                  backgroundColor: "#B03060",
+                }}
+                accessible={true}
+                accessibilityLabel={"Current Location"}
+                importantForAccessibility="yes"
+              />
+            </Marker>
             <Marker
               coordinate={userLocation}
               onPress={handleLocationPress}
