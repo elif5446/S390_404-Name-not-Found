@@ -55,9 +55,12 @@ const mockWatchError = (error: Error) => {
 describe("useUserLocation Hook - Unit Tests", () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.useFakeTimers();
   });
 
   afterEach(() => {
+    jest.runOnlyPendingTimers();
+    jest.useRealTimers();
     jest.restoreAllMocks();
   });
 

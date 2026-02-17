@@ -5,7 +5,6 @@ import {
   ActivityIndicator,
   Platform,
   useColorScheme,
-  Vibration,
   StyleSheet,
 } from "react-native";
 import MapView, {
@@ -26,6 +25,7 @@ import { INDOOR_DATA } from "@/src/data/indoorData";
 import { LoyolaBuildingMetadata } from "@/src/data/metadata/LOY.BuildingMetadata";
 import { SGWBuildingMetadata } from "@/src/data/metadata/SGW.BuildingMetaData";
 import BuildingTheme from "@/src/styles/BuildingTheme";
+import AdditionalInfoPopup, {AdditionalInfoPopupHandle} from "./AdditionalInfoPopup";
 
 // components
 import CampusLabels from "@/src/components/campusLabels";
@@ -129,6 +129,9 @@ const CampusMap: React.FC<CampusMapProps> = ({
     [],
   );
 
+  const handleClosePopup = () => {
+    setSelectedBuilding((prev) => ({ ...prev, visible: false }));
+  };
   const handleMapLongPress = useCallback((e: LongPressEvent) => {
     const coordinate = e.nativeEvent.coordinate;
     console.log("Map Long Press:", coordinate);
@@ -153,7 +156,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
     if (foundId) {
       console.log(`Long press on building: ${foundId}`);
       if (INDOOR_DATA[foundId]) {
-        Vibration.vibrate(50);
         setIndoorBuildingId(foundId);
         setSelectedBuilding((prev) => ({ ...prev, visible: false }));
       }
@@ -289,6 +291,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
       </MapView>
 
       {/* ---------------- ui overlay ---------------- */}
+      {/* Indoor Overlay (Conditionally Rendered) */}
       {indoorBuildingId && INDOOR_DATA[indoorBuildingId] && (
         <IndoorMapOverlay
           buildingData={INDOOR_DATA[indoorBuildingId]}
