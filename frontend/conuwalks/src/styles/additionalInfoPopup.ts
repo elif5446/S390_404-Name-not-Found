@@ -39,7 +39,7 @@ const additionalInfoPopupStyles = StyleSheet.create({
         minHeight:80,
     },
     headerTextContainer: {
-        flex:1,
+        flex:0.67,
         backgroundColor:"transparent",
         alignItems:"center",
         justifyContent:"center",

@@ -16,7 +16,7 @@ import {
   Animated,
   PanResponder,
   ScrollView,
-  Modal
+  BackHandler
 } from "react-native";
 import * as Clipboard from 'expo-clipboard';
 import { SymbolView, SFSymbol } from 'expo-symbols';
@@ -79,16 +79,16 @@ const AdditionalInfoPopup = forwardRef<
 
   // Default heights
   const screenHeight = Dimensions.get("window").height;
-  const MIN_HEIGHT = Platform.OS === 'ios' ? 360 : 340; //initial popup view
-  const MAX_HEIGHT = screenHeight*(Platform.OS === 'ios' ? 0.92 : 0.9); //full popup will be around 90% of the screen
+  const MIN_HEIGHT = Platform.OS === 'ios' ? 380 : 340; 
+  const MAX_HEIGHT = screenHeight * (Platform.OS === 'ios' ? 0.92 : 0.9);
 
   // How far down the popup must sit so that only 300px is visible.
   const SNAP_OFFSET = MAX_HEIGHT - MIN_HEIGHT;
 
   // An animated value that controls vertical movement (is initially off screen)
-  const translateY = useRef(new Animated.Value(MAX_HEIGHT)).current;
-  const translateYRef = useRef(MAX_HEIGHT);
-  const translateYAtGestureStart = useRef(MAX_HEIGHT);
+  const translateY = useRef(new Animated.Value(screenHeight)).current;
+  const translateYRef = useRef(screenHeight);
+  const translateYAtGestureStart = useRef(screenHeight);
   const scrollOffsetRef = useRef(0);
   //change building info animation
   const opacity = useRef(new Animated.Value(2)).current;
@@ -134,8 +134,8 @@ const AdditionalInfoPopup = forwardRef<
       scrollOffsetRef.current = 0;
       scrollViewRef.current?.scrollTo({ y: 0, animated: false });
 
-      translateY.setValue(MAX_HEIGHT);
-      translateYRef.current = MAX_HEIGHT;
+      translateY.setValue(screenHeight);
+      translateYRef.current = screenHeight;
 
       // Start off-screen, spring up to collapsed position
       Animated.spring(translateY, {
@@ -147,7 +147,7 @@ const AdditionalInfoPopup = forwardRef<
         translateYRef.current = SNAP_OFFSET;
       });
     }
-  }, [visible, translateY, MAX_HEIGHT, SNAP_OFFSET]);
+  }, [visible, translateY, screenHeight, SNAP_OFFSET]);
 
   // Fetch building info based on buildingId and campus
   useEffect(() => {
@@ -188,13 +188,32 @@ const AdditionalInfoPopup = forwardRef<
 
   const dismiss = () => {
     Animated.timing(translateY, {
-      toValue: MAX_HEIGHT,
+      toValue: screenHeight,
       duration: 240,
       useNativeDriver: true,
     }).start(({ finished }) => {
       if (finished) onClose();
     });
   };
+
+  useEffect(() => {
+    if (Platform.OS === "android") {
+      const backAction = () => {
+        if (visible) {
+          dismiss();
+          return true;
+        }
+        return false;
+      };
+
+      const backHandler = BackHandler.addEventListener(
+        "hardwareBackPress",
+        backAction
+      );
+
+      return () => backHandler.remove();
+    }
+  }, [visible]);
 
   // PanResponder for the DRAG HANDLE ONLY — does not intercept button taps
   const handlePanResponder = useRef(
@@ -440,6 +459,8 @@ const AdditionalInfoPopup = forwardRef<
         styles.iosBlurContainer,
         { height: MAX_HEIGHT, transform: [{ translateY: translateY }] },
         ]}
+        importantForAccessibility="yes"
+        focusable={true}
     >
         <BackgroundWrapper>
         <Animated.View 
@@ -464,11 +485,11 @@ const AdditionalInfoPopup = forwardRef<
             <View style={styles.handleBar} />
             </View>
             {/* Header */}
-            <View style={[styles.iosHeader, Platform.OS === 'android' ? { justifyContent: 'center', paddingHorizontal: 0 } : {}]}>
+            <View style={[styles.iosHeader, { justifyContent: 'center', paddingHorizontal: 0 }]}>
             {/* Close button */}
             <TouchableOpacity
                 onPress={dismiss}
-                style={styles.closeButton}
+                style={[styles.closeButton, Platform.OS === 'android' && { width: 'auto', padding: 4 }]}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 accessible={true}
                 accessibilityLabel="Close"
@@ -495,7 +516,7 @@ const AdditionalInfoPopup = forwardRef<
                 )}
             </TouchableOpacity>
             {/* Center text container */}
-            <View style={[styles.headerTextContainer, Platform.OS === 'android' && { alignItems: 'center', width: '100%' }]}>
+            <View style={[styles.headerTextContainer, { alignItems: 'center', width: '100%', marginHorizontal: 0 }]}>
                 <Text
                 style={[
                     styles.buildingName,
@@ -508,7 +529,7 @@ const AdditionalInfoPopup = forwardRef<
                 {buildingInfo?.name || "Building"}
                 </Text>
                 {/* Building ID and icons */}
-                <View style={[styles.buildingIdWithIconsContainer, Platform.OS === 'android' && { justifyContent: 'center', position: 'relative' }]}>
+                <View style={[styles.buildingIdWithIconsContainer, { justifyContent: 'center', position: 'relative' }]}>
                 {/* Building ID */}
                 <View style={styles.buildingIdContainer}>
                     <Text
@@ -522,9 +543,9 @@ const AdditionalInfoPopup = forwardRef<
                     {buildingId}
                     </Text>
                 </View>
-                {/* Accessibility icons - on the far right of this row */}
+                {/* Accessibility icons */}
                 {accessibilityIcons && accessibilityIcons.length > 0 && (
-                    <View style={[styles.accessibilityIconsContainer, { marginLeft: 15, paddingRight: Platform.OS === "ios" ? 40 : 60}]}>
+                    <View style={[styles.accessibilityIconsContainer, { position: 'absolute', paddingRight: 40, flexDirection: 'row', alignItems: 'center', top: 0, bottom: 0 }]}>
                     {accessibilityIcons.map((icon) => (
                         <View
                         key={icon.key}
@@ -662,40 +683,6 @@ const AdditionalInfoPopup = forwardRef<
     </Animated.View>
   );
 
-  // Android
-  if (Platform.OS === 'android') {
-    return (
-        <Modal
-            transparent={true}
-            visible={visible}
-            animationType="none"
-            onRequestClose={dismiss}
-        >
-            <View
-                 style={{
-                    flex: 1,
-                    justifyContent: 'flex-end'
-                }}
-            >
-              <Animated.View 
-                  style={{ 
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    backgroundColor: 'black', 
-                    opacity: backdropOpacity 
-                  }} 
-                  pointerEvents="none"
-                />
-                {Content}
-            </View>
-        </Modal>
-    );
-  }
-
-  // iOS
   return (
     <View
       style={{
@@ -708,7 +695,6 @@ const AdditionalInfoPopup = forwardRef<
         justifyContent: 'flex-end'
       }}
       pointerEvents="box-none"
-      importantForAccessibility={visible ? "yes" : "no-hide-descendants"}
       accessibilityViewIsModal={visible}
     >
       <Animated.View 
