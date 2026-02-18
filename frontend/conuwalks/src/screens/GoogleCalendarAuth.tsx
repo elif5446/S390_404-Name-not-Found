@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Image,
   StyleSheet,
+  Linking,
 } from "react-native";
 import React, { useEffect, useState, useRef } from "react";
 import {
@@ -296,6 +297,7 @@ export default function GoogleCalendarAuth({
 
   return (
     <View style={styles.container}>
+      <Image source={require("@/assets/images/icon.png")} style={styles.logo} />
       <Text style={styles.title}>CONUWALKS</Text>
 
       <View
@@ -315,7 +317,7 @@ export default function GoogleCalendarAuth({
           color={"#feeded"}
         />
       </View>
-      <Image source={require("@/assets/images/icon.png")} style={styles.logo} />
+
       <Text
         style={{
           fontSize: 16,
@@ -331,8 +333,26 @@ export default function GoogleCalendarAuth({
           1. Connect your Google account to the app.
         </Text>
         <Text style={styles.text}>
-          2. Enter your classes and their times and location (Building code -
-          Room number) on your Google Calendar as events.
+          2. Enter your classes on your Google Calendar as events.{" "}
+        </Text>
+        <Text style={styles.nestedText}>
+          2.1 Manually: Enter courses and their location (Building code - Room
+          number) as events.
+        </Text>
+        <Text style={styles.nestedText}>
+          2.2. Automatically: Export your class schedule from your student
+          portal using this {""}
+          <Text
+            style={styles.link}
+            onPress={() => {
+              Linking.openURL(
+                "https://chromewebstore.google.com/detail/visual-schedule-builder-e/nbapggbchldhdjckbhdhkhlodokjdoha?pli=1",
+              );
+            }}
+          >
+            Chrome extension
+          </Text>
+          .
         </Text>
         <Text style={styles.text}>
           3. Once you login, you can see which classes you take in each

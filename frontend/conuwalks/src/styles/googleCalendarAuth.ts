@@ -22,10 +22,21 @@ const googleCalendarAuthStyles = StyleSheet.create({
     width: 150,
     height: 150,
     marginTop: 20,
+    marginBottom:20
   },
   text: {
     fontSize: 16, 
-    paddingBottom:3},
+    paddingBottom:3
+},
+nestedText: {
+    fontSize: 16, 
+    paddingBottom:3,
+    paddingLeft:20
+  },
+  link: {
+    color: "#B03060CC",
+    textDecorationLine:"underline"
+  },
   loadingText: {
     marginTop: 10,
     color: "#666",
