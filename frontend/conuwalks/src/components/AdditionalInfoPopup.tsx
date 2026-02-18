@@ -16,7 +16,8 @@ import {
   Animated,
   PanResponder,
   ScrollView,
-  BackHandler
+  BackHandler,
+  AccessibilityInfo
 } from "react-native";
 import * as Clipboard from 'expo-clipboard';
 import { SymbolView, SFSymbol } from 'expo-symbols';
@@ -327,8 +328,11 @@ const AdditionalInfoPopup = forwardRef<
       setCopying(true);
       Clipboard.setString(buildingInfo.address);
       setTimeout(() => {
-        setCopying(false);
-      }, 1000);
+        AccessibilityInfo.announceForAccessibility("Address copied")
+        setTimeout(() => {
+          setCopying(false);
+        }, 500);
+      }, 500);
     }
   };
 
