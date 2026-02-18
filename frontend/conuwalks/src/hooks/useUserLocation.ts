@@ -26,15 +26,11 @@ const isEmulatorLocation = (coords: Location.LocationObject["coords"]) => {
   );
 };
 
-const normalizeCoords = (coords: Location.LocationObject["coords"]): LatLng => {
+const processCoords = (coords: Location.LocationObjectCoords): LatLng => {
   if (__DEV__ && isEmulatorLocation(coords)) {
     return DEFAULT_LOCATION;
   }
-
-  return {
-    latitude: coords.latitude,
-    longitude: coords.longitude,
-  };
+  return { latitude: coords.latitude, longitude: coords.longitude };
 };
 
 export const useUserLocation = (): UseUserLocationReturn => {
@@ -42,7 +38,9 @@ export const useUserLocation = (): UseUserLocationReturn => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasPermission, setHasPermission] = useState(false);
-  const locationSubscription = useRef<Location.LocationSubscription | null>(null);
+  const locationSubscription = useRef<Location.LocationSubscription | null>(
+    null,
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -61,17 +59,16 @@ export const useUserLocation = (): UseUserLocationReturn => {
           }
           return;
         }
+
         if (isMounted) {
           setHasPermission(true);
           canUseLocation = true; // Mark as safe to fallback later
         }
 
-        let lastKnown = await Location.getLastKnownPositionAsync();
-        if (lastKnown && __DEV__ && isEmulatorLocation(lastKnown.coords)) {
-          lastKnown = null;
-        }
+        const lastKnown = await Location.getLastKnownPositionAsync();
         if (lastKnown && isMounted) {
-          setLocation(normalizeCoords(lastKnown.coords));
+          setLocation(processCoords(lastKnown.coords));
+          setLoading(false);
         }
 
         try {
@@ -83,7 +80,7 @@ export const useUserLocation = (): UseUserLocationReturn => {
           ]);
 
           if (freshLocation && isMounted) {
-            setLocation(normalizeCoords(freshLocation.coords));
+            setLocation(processCoords(freshLocation.coords));
             setError(null);
           }
         } catch (e) {
@@ -108,7 +105,9 @@ export const useUserLocation = (): UseUserLocationReturn => {
                 return;
               }
 
-              setLocation(normalizeCoords(updatedPosition.coords));
+              setLocation(processCoords(updatedPosition.coords));
+              setLoading(false);
+              setError(null);
             }
           );
         }
@@ -135,10 +134,7 @@ export const useUserLocation = (): UseUserLocationReturn => {
 
     return () => {
       isMounted = false;
-      if (locationSubscription.current) {
-        locationSubscription.current.remove();
-        locationSubscription.current = null;
-      }
+      locationSubscription.current?.remove();
     };
   }, []);
 

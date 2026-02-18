@@ -11,9 +11,9 @@ import {
   PanResponder,
   ScrollView,
 } from "react-native";
-import * as Clipboard from 'expo-clipboard';
-import { SymbolView, SFSymbol } from 'expo-symbols'; // SF Symbols (iOS)
-import MaterialIcons from '@expo/vector-icons/MaterialIcons'; // Material Design Icons (Android)
+import { setStringAsync } from "expo-clipboard";
+import { SymbolView, SFSymbol } from "expo-symbols"; // SF Symbols (iOS)
+import MaterialIcons from "@expo/vector-icons/MaterialIcons"; // Material Design Icons (Android)
 import { BlurView } from "expo-blur";
 import { LoyolaBuildingMetadata } from "../data/metadata/LOY.BuildingMetadata";
 import { SGWBuildingMetadata } from "../data/metadata/SGW.BuildingMetaData";
@@ -303,7 +303,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfo
   const copyAddressToClipboard = async () => {
     if (buildingInfo?.address) {
       setCopying(true);
-      Clipboard.setString(buildingInfo.address);
+      await setStringAsync(buildingInfo.address);
       setTimeout(() => {
         setCopying(false);
       }, 1000);
@@ -487,10 +487,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfo
                     ]}
                   >
                     <Text
-                      style={[
-                        styles.closeButtonText,
-                        themedStyles.text(mode),
-                      ]}
+                      style={[styles.closeButtonText, themedStyles.text(mode)]}
                     >
                       ✕
                     </Text>
@@ -511,10 +508,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfo
                     {/* Building ID */}
                     <View style={styles.buildingIdContainer}>
                       <Text
-                        style={[
-                          styles.buildingId,
-                          themedStyles.subtext(mode),
-                        ]}
+                        style={[styles.buildingId, themedStyles.subtext(mode)]}
                       >
                         {buildingId}
                       </Text>
@@ -658,19 +652,13 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfo
                 {buildingInfo?.address && (
                   <View style={styles.section}>
                     <Text
-                      style={[
-                        styles.sectionTitle,
-                        themedStyles.text(mode),
-                      ]}
+                      style={[styles.sectionTitle, themedStyles.text(mode)]}
                     >
                       Address
                     </Text>
                     <View style={styles.addressContainer}>
                       <Text
-                        style={[
-                          styles.addressText,
-                          themedStyles.text(mode),
-                        ]}
+                        style={[styles.addressText, themedStyles.text(mode)]}
                       >
                         {buildingInfo.address}
                       </Text>
@@ -696,10 +684,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfo
                 {buildingInfo?.description && (
                   <View style={styles.section}>
                     <Text
-                      style={[
-                        styles.sectionTitle,
-                        themedStyles.text(mode),
-                      ]}
+                      style={[styles.sectionTitle, themedStyles.text(mode)]}
                     >
                       Description
                     </Text>

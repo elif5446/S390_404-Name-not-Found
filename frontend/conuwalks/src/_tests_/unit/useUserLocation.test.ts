@@ -1,8 +1,8 @@
 /**
  * Unit Tests for useUserLocation Hook
-*
-* These tests verify the hook's logic in isolation by mocking expo-location
-*/
+ *
+ * These tests verify the hook's logic in isolation by mocking expo-location
+ */
 
 import { renderHook, waitFor, act } from "@testing-library/react-native";
 import { useUserLocation } from "@/src/hooks/useUserLocation";
@@ -10,15 +10,14 @@ import * as Location from "expo-location";
 
 // IMPORTANT: Mock expo-location BEFORE any imports
 jest.mock("expo-location", () => ({
-    requestForegroundPermissionsAsync: jest.fn(),
-    getCurrentPositionAsync: jest.fn(),
-    getLastKnownPositionAsync: jest.fn(),
-    watchPositionAsync: jest.fn(),
-    Accuracy: {
-        Balanced: 3, // mocking the enum value
-    },
+  requestForegroundPermissionsAsync: jest.fn(),
+  getCurrentPositionAsync: jest.fn(),
+  getLastKnownPositionAsync: jest.fn(),
+  watchPositionAsync: jest.fn(),
+  Accuracy: {
+    Balanced: 3, // mocking the enum value
+  },
 }));
-
 
 // Types for Mocks
 type WatchPositionCallback = (location: { coords: any }) => void;
@@ -50,7 +49,6 @@ const mockWatchPosition = () => {
 const mockWatchError = (error: Error) => {
   (Location.watchPositionAsync as jest.Mock).mockRejectedValue(error);
 };
-
 
 describe("useUserLocation Hook - Unit Tests", () => {
   beforeEach(() => {
@@ -206,6 +204,7 @@ describe("useUserLocation Hook - Unit Tests", () => {
       // Based on provided code: if __DEV__ fallback logic triggers inside catch
       await waitFor(() => {
         expect(result.current.loading).toBe(false);
+        expect(result.current.error).toBe("Could not fetch location");
       });
 
       // Restore console mocks
