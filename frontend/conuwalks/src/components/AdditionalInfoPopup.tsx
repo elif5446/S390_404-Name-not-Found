@@ -326,7 +326,7 @@ const AdditionalInfoPopup = forwardRef<
   const copyAddressToClipboard = async () => {
     if (buildingInfo?.address) {
       setCopying(true);
-      await setStringAsync(buildingInfo.address);
+      await Clipboard.setStringAsync(buildingInfo.address);
       setTimeout(() => {
         AccessibilityInfo.announceForAccessibility("Address copied")
         setTimeout(() => {
