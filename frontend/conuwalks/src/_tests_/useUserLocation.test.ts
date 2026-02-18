@@ -124,8 +124,8 @@ describe("useUserLocation Hook - Unit Tests", () => {
         expect(Location.watchPositionAsync).toHaveBeenCalledWith(
           expect.objectContaining({
             accuracy: Location.Accuracy.Balanced,
-            timeInterval: 5000,
-            distanceInterval: 10,
+            timeInterval: 3000,
+            distanceInterval: 8,
           }),
           expect.any(Function), // The callback
         );

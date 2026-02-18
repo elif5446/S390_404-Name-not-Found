@@ -26,6 +26,17 @@ const isEmulatorLocation = (coords: Location.LocationObject["coords"]) => {
   );
 };
 
+const normalizeCoords = (coords: Location.LocationObject["coords"]): LatLng => {
+  if (__DEV__ && isEmulatorLocation(coords)) {
+    return DEFAULT_LOCATION;
+  }
+
+  return {
+    latitude: coords.latitude,
+    longitude: coords.longitude,
+  };
+};
+
 export const useUserLocation = (): UseUserLocationReturn => {
   const [location, setLocation] = useState<LatLng | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -60,10 +71,7 @@ export const useUserLocation = (): UseUserLocationReturn => {
           lastKnown = null;
         }
         if (lastKnown && isMounted) {
-          setLocation({
-            latitude: lastKnown.coords.latitude,
-            longitude: lastKnown.coords.longitude,
-          });
+          setLocation(normalizeCoords(lastKnown.coords));
         }
 
         try {
@@ -75,10 +83,7 @@ export const useUserLocation = (): UseUserLocationReturn => {
           ]);
 
           if (freshLocation && isMounted) {
-            setLocation({
-              latitude: freshLocation.coords.latitude,
-              longitude: freshLocation.coords.longitude,
-            });
+            setLocation(normalizeCoords(freshLocation.coords));
             setError(null);
           }
         } catch (e) {
@@ -103,10 +108,7 @@ export const useUserLocation = (): UseUserLocationReturn => {
                 return;
               }
 
-              setLocation({
-                latitude: updatedPosition.coords.latitude,
-                longitude: updatedPosition.coords.longitude,
-              });
+              setLocation(normalizeCoords(updatedPosition.coords));
             }
           );
         }
