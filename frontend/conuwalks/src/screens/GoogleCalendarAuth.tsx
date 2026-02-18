@@ -310,7 +310,7 @@ export default function GoogleCalendarAuth({
           title={
             isSigninInProgress
               ? "Signing in..."
-              : "Connect Google Calendar to see the map and your classes!"
+              : "Connect Google Calendar to get started."
           }
           disabled={isSigninInProgress}
           onPress={signIn}
