@@ -105,7 +105,14 @@ export default function HomeScreen() {
               {userInfo.name}
             </Text>
           )}
-          <Button title="Sign Out" onPress={handleSignOut} color="#ff4444" />
+          <View
+            style={{
+              backgroundColor: "#B03060CC",
+              borderRadius: 20,
+            }}
+          >
+            <Button title="Sign Out" onPress={handleSignOut} color="white" />
+          </View>
         </View>
       </View>
 

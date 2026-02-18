@@ -23,6 +23,9 @@ const googleCalendarAuthStyles = StyleSheet.create({
     height: 150,
     marginTop: 20,
   },
+  text: {
+    fontSize: 16, 
+    paddingBottom:3},
   loadingText: {
     marginTop: 10,
     color: "#666",

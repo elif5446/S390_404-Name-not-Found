@@ -20,7 +20,7 @@ const indexStyles = StyleSheet.create({
     backgroundColor: "white",
     borderRadius: 40,
     padding: 8,
-    paddingRight: 15,
+    paddingRight: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
@@ -28,7 +28,7 @@ const indexStyles = StyleSheet.create({
     elevation: 5,
     flexDirection: "row",
     alignItems: "center",
-    maxWidth: 250,
+    maxWidth: 400,
   },
   profileImage: {
     width: 40,

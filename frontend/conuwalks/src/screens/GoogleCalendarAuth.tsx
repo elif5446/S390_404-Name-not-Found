@@ -20,6 +20,7 @@ import {
   clearTokens,
 } from "../utils/tokenStorage";
 import { styles } from "../styles/googleCalendarAuth";
+import { white } from "react-native-paper/lib/typescript/styles/themes/v2/colors";
 
 // Global flag to prevent multiple instances from initializing
 let globalInitializationStarted = false;
@@ -297,16 +298,47 @@ export default function GoogleCalendarAuth({
     <View style={styles.container}>
       <Text style={styles.title}>CONUWALKS</Text>
 
-      <Button
-        title={
-          isSigninInProgress
-            ? "Signing in..."
-            : "Connect Google Calendar to see the map and your classes!"
-        }
-        disabled={isSigninInProgress}
-        onPress={signIn}
-      />
+      <View
+        style={{
+          backgroundColor: "#B03060CC",
+          borderRadius: 20,
+        }}
+      >
+        <Button
+          title={
+            isSigninInProgress
+              ? "Signing in..."
+              : "Connect Google Calendar to see the map and your classes!"
+          }
+          disabled={isSigninInProgress}
+          onPress={signIn}
+          color={"#feeded"}
+        />
+      </View>
       <Image source={require("@/assets/images/icon.png")} style={styles.logo} />
+      <Text
+        style={{
+          fontSize: 16,
+          paddingTop: 16,
+          paddingBottom: 6,
+          fontWeight: "bold",
+        }}
+      >
+        Steps to use Conuwalks:
+      </Text>
+      <View>
+        <Text style={styles.text}>
+          1. Connect your Google account to the app.
+        </Text>
+        <Text style={styles.text}>
+          2. Enter your classes and their times and location (Building code -
+          Room number) on your Google Calendar as events.
+        </Text>
+        <Text style={styles.text}>
+          3. Once you login, you can see which classes you take in each
+          building, as well as directions to each class!
+        </Text>
+      </View>
     </View>
   );
 }
