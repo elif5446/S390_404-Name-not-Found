@@ -20,8 +20,8 @@ import {
   AccessibilityInfo
 } from "react-native";
 import * as Clipboard from 'expo-clipboard';
-import { SymbolView, SFSymbol } from 'expo-symbols';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { SymbolView, SFSymbol } from 'expo-symbols'; // SF Symbols (iOS)
+import MaterialIcons from '@expo/vector-icons/MaterialIcons'; // Material Design Icons (Android)
 import { BlurView } from "expo-blur";
 import { LoyolaBuildingMetadata } from "../data/metadata/LOY.BuildingMetadata";
 import { SGWBuildingMetadata } from "../data/metadata/SGW.BuildingMetaData";
@@ -326,7 +326,7 @@ const AdditionalInfoPopup = forwardRef<
   const copyAddressToClipboard = async () => {
     if (buildingInfo?.address) {
       setCopying(true);
-      Clipboard.setString(buildingInfo.address);
+      await setStringAsync(buildingInfo.address);
       setTimeout(() => {
         AccessibilityInfo.announceForAccessibility("Address copied")
         setTimeout(() => {
