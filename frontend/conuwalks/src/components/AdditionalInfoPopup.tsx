@@ -17,7 +17,7 @@ import {
   PanResponder,
   ScrollView,
 } from "react-native";
-import * as Clipboard from "expo-clipboard";
+import { setStringAsync } from "expo-clipboard";
 import { SymbolView, SFSymbol } from "expo-symbols"; // SF Symbols (iOS)
 import MaterialIcons from "@expo/vector-icons/MaterialIcons"; // Material Design Icons (Android)
 import { BlurView } from "expo-blur";
@@ -290,7 +290,7 @@ const AdditionalInfoPopup = forwardRef<
   const copyAddressToClipboard = async () => {
     if (buildingInfo?.address) {
       setCopying(true);
-      Clipboard.setString(buildingInfo.address);
+      await setStringAsync(buildingInfo.address);
       setTimeout(() => {
         setCopying(false);
       }, 1000);
@@ -447,7 +447,9 @@ const AdditionalInfoPopup = forwardRef<
                       themedStyles.closeButton(mode),
                     ]}
                   >
-                    <Text style={[styles.closeButtonText, themedStyles.text(mode)]}>
+                    <Text
+                      style={[styles.closeButtonText, themedStyles.text(mode)]}
+                    >
                       ✕
                     </Text>
                   </View>
@@ -462,7 +464,9 @@ const AdditionalInfoPopup = forwardRef<
                   {/* Building ID and icons */}
                   <View style={styles.buildingIdWithIconsContainer}>
                     <View style={styles.buildingIdContainer}>
-                      <Text style={[styles.buildingId, themedStyles.subtext(mode)]}>
+                      <Text
+                        style={[styles.buildingId, themedStyles.subtext(mode)]}
+                      >
                         {buildingId}
                       </Text>
                     </View>
@@ -539,11 +543,15 @@ const AdditionalInfoPopup = forwardRef<
                 {/* Address section */}
                 {buildingInfo?.address && (
                   <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, themedStyles.text(mode)]}>
+                    <Text
+                      style={[styles.sectionTitle, themedStyles.text(mode)]}
+                    >
                       Address
                     </Text>
                     <View style={styles.addressContainer}>
-                      <Text style={[styles.addressText, themedStyles.text(mode)]}>
+                      <Text
+                        style={[styles.addressText, themedStyles.text(mode)]}
+                      >
                         {buildingInfo.address}
                       </Text>
                       <TouchableOpacity
@@ -576,7 +584,9 @@ const AdditionalInfoPopup = forwardRef<
                 {/* Description section */}
                 {buildingInfo?.description && (
                   <View style={styles.section}>
-                    <Text style={[styles.sectionTitle, themedStyles.text(mode)]}>
+                    <Text
+                      style={[styles.sectionTitle, themedStyles.text(mode)]}
+                    >
                       Description
                     </Text>
                     <Text
