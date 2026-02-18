@@ -1,0 +1,28 @@
+appId: ${APP_ID}
+---
+- launchApp:
+    clearState: true
+    permissions:
+      all: allow
+      # "allow" usually handles system permissions automatically on launch
+      # but we add manual handling below for edge cases (like "While Using App" popups)
+
+# Handle Android/iOS Location Popup if it slips past launchApp
+- runFlow:
+    when:
+      visible:
+        text: "Allow.*"
+    commands:
+      - tapOn:
+          text: "Allow.*"
+          optional: true # Don't fail if it disappears
+
+# Handle "Notifications" popup (common on iOS)
+- runFlow:
+    when:
+      visible:
+        text: ".*Notification.*"
+    commands:
+      - tapOn:
+          text: "Allow|OK"
+          optional: true

@@ -1,4 +1,10 @@
-import React, { useEffect, useRef, useState, useImperativeHandle, forwardRef } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useImperativeHandle,
+  forwardRef,
+} from "react";
 import {
   Image,
   View,
@@ -10,102 +16,118 @@ import {
   Animated,
   PanResponder,
   ScrollView,
-  Modal,
+  BackHandler,
   AccessibilityInfo
 } from "react-native";
 import * as Clipboard from 'expo-clipboard';
-import { SymbolView, SFSymbol } from 'expo-symbols';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { SymbolView, SFSymbol } from 'expo-symbols'; // SF Symbols (iOS)
+import MaterialIcons from '@expo/vector-icons/MaterialIcons'; // Material Design Icons (Android)
 import { BlurView } from "expo-blur";
 import { LoyolaBuildingMetadata } from "../data/metadata/LOY.BuildingMetadata";
 import { SGWBuildingMetadata } from "../data/metadata/SGW.BuildingMetaData";
-import { styles,themedStyles } from "../styles/additionalInfoPopup";
+import { styles, themedStyles } from "../styles/additionalInfoPopup";
 
-interface AdditionInfoPopupProps {
+interface AdditionalInfoPopupProps {
   visible: boolean;
   buildingId: string;
   campus: "SGW" | "LOY";
   onClose: () => void;
 }
-export interface AdditionalInfoPopupHandle{
-  collapse: () =>void;
+export interface AdditionalInfoPopupHandle {
+  collapse: () => void;
 }
 
 const BackgroundWrapper = ({ children }: { children: React.ReactNode }) => {
-    if (Platform.OS === "ios") {
-      return (
-        <BlurView
-          style={[styles.iosBlurContainer, { height: "100%" }]}
-          intensity={100}
-          tint={(useColorScheme() || "light") === "dark" ? "dark" : "light"}
-        >
-          {children}
-        </BlurView>
-      );
-    }
+  const colorScheme = useColorScheme();
+  const theme = colorScheme || "light";
+
+  if (Platform.OS === "ios") {
     return (
-      <View
-        style={[
-          styles.iosBlurContainer,
-          {
-            height: "100%",
-            backgroundColor: (useColorScheme() || "light") === "dark" ? "#1C1C1E" : "#FFFFFF", 
-          },
-        ]}
+      <BlurView
+        style={[styles.iosBlurContainer, { height: "100%" }]}
+        intensity={100}
+        tint={theme === "dark" ? "dark" : "light"}
       >
         {children}
-      </View>
+      </BlurView>
     );
-  };
+  }
+  return (
+    <View
+      style={[
+        styles.iosBlurContainer,
+        {
+          height: "100%",
+          backgroundColor: theme === "dark" ? "#1C1C1E" : "#FFFFFF",
+          elevation: 8,
+          borderTopLeftRadius: 28,
+          borderTopRightRadius: 28
+        },
+      ]}
+    >
+      {children}
+    </View>
+  );
+};
 
-const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPopupProps>(({
-  visible,
-  buildingId,
-  campus,
-  onClose,
-}, ref) => {
+const AdditionalInfoPopup = forwardRef<
+  AdditionalInfoPopupHandle,
+  AdditionalInfoPopupProps
+>(({ visible, buildingId, campus, onClose }, ref) => {
   const mode = useColorScheme() || "light";
   const [buildingInfo, setBuildingInfo] = useState<any>(null);
   const scrollViewRef = useRef<ScrollView>(null);
 
   // Default heights
   const screenHeight = Dimensions.get("window").height;
-  const MIN_HEIGHT = 300; //initial popup view
-  const MAX_HEIGHT = screenHeight * 0.8; //full popup will be around 80% of the screen
+  const MIN_HEIGHT = Platform.OS === 'ios' ? 380 : 340; 
+  const MAX_HEIGHT = screenHeight * (Platform.OS === 'ios' ? 0.92 : 0.9);
 
   // How far down the popup must sit so that only 300px is visible.
   const SNAP_OFFSET = MAX_HEIGHT - MIN_HEIGHT;
 
   // An animated value that controls vertical movement (is initially off screen)
-  const translateY = useRef(new Animated.Value(MAX_HEIGHT)).current;
-
-  const translateYRef = useRef(MAX_HEIGHT);
-  const translateYAtGestureStart = useRef(MAX_HEIGHT);
+  const translateY = useRef(new Animated.Value(screenHeight)).current;
+  const translateYRef = useRef(screenHeight);
+  const translateYAtGestureStart = useRef(screenHeight);
   const scrollOffsetRef = useRef(0);
-  //change building info animation 
+  //change building info animation
   const opacity = useRef(new Animated.Value(2)).current;
+
+  const backdropOpacity = translateY.interpolate({
+    inputRange: [0, SNAP_OFFSET],
+    outputRange: [0.5, 0], // Shadow Backdrop Opacity -- Expanded: 0.5; Collapsed: 0
+    extrapolate: 'clamp',
+  });
+
+  const sheetSolidOpacity = translateY.interpolate({ // Liquid Glass Effect When Collapsed, Opaque When Pulled Up
+    inputRange: [0, 50],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
   
   useEffect(() => {
-  if (!visible) return;
-  Animated.sequence([
-    Animated.timing(opacity, {
-      toValue: 0,
-      duration: 150,
-      useNativeDriver: true,
-    }),
-    Animated.timing(opacity, {
-      toValue: 1,
-      duration: 150,
-      useNativeDriver: true,
-    }),
-  ]).start();
-}, [buildingId]);
+    if (!visible) return;
+    Animated.sequence([
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [buildingId, visible, opacity]);
+
   useEffect(() => {
     const id = translateY.addListener(({ value }) => {
       translateYRef.current = value;
     });
     return () => translateY.removeListener(id);
-  }, []); //runs only on first render
+  }, [translateY]); //runs only on first render
 
   useEffect(() => {
     if (visible) {
@@ -113,8 +135,8 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
       scrollOffsetRef.current = 0;
       scrollViewRef.current?.scrollTo({ y: 0, animated: false });
 
-      translateY.setValue(MAX_HEIGHT);
-      translateYRef.current = MAX_HEIGHT;
+      translateY.setValue(screenHeight);
+      translateYRef.current = screenHeight;
 
       // Start off-screen, spring up to collapsed position
       Animated.spring(translateY, {
@@ -126,7 +148,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
         translateYRef.current = SNAP_OFFSET;
       });
     }
-  }, [visible]);
+  }, [visible, translateY, screenHeight, SNAP_OFFSET]);
 
   // Fetch building info based on buildingId and campus
   useEffect(() => {
@@ -135,7 +157,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
         campus === "SGW"
           ? SGWBuildingMetadata[buildingId]
           : LoyolaBuildingMetadata[buildingId];
-      
+
       if (metadata) {
         setBuildingInfo(metadata);
       } else {
@@ -167,7 +189,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
 
   const dismiss = () => {
     Animated.timing(translateY, {
-      toValue: MAX_HEIGHT,
+      toValue: screenHeight,
       duration: 240,
       useNativeDriver: true,
     }).start(({ finished }) => {
@@ -175,14 +197,30 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
     });
   };
 
-  const isIOS = Platform.OS === "ios";
+  useEffect(() => {
+    if (Platform.OS === "android") {
+      const backAction = () => {
+        if (visible) {
+          dismiss();
+          return true;
+        }
+        return false;
+      };
+
+      const backHandler = BackHandler.addEventListener(
+        "hardwareBackPress",
+        backAction
+      );
+
+      return () => backHandler.remove();
+    }
+  }, [visible]);
 
   // PanResponder for the DRAG HANDLE ONLY — does not intercept button taps
   const handlePanResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onStartShouldSetPanResponderCapture: () => false, // ← don't capture, just respond
-
       onMoveShouldSetPanResponder: (_, g) => {
         return Math.abs(g.dy) > Math.abs(g.dx) * 1.2;
       },
@@ -210,22 +248,16 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
 
         if (velocity > 1.5 && currentY > SNAP_OFFSET - 60) {
           dismiss();
-          return;
-        }
-        if (velocity > 1.0) {
+        } else if (velocity > 1.0) {
           snapTo(SNAP_OFFSET);
-          return;
-        }
-        if (velocity < -1.0) {
+        } else if (velocity < -1.0) {
           snapTo(0);
-          return;
-        }
-        if (currentY > MAX_HEIGHT * 0.75) {
+        } else if (currentY > MAX_HEIGHT * 0.75) {
           dismiss();
-          return;
+        } else {
+          const mid = SNAP_OFFSET * 0.5;
+          snapTo(currentY < mid ? 0 : SNAP_OFFSET);
         }
-        const mid = SNAP_OFFSET * 0.5;
-        snapTo(currentY < mid ? 0 : SNAP_OFFSET);
       },
     }),
   ).current;
@@ -274,22 +306,16 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
 
         if (velocity > 1.5 && currentY > SNAP_OFFSET - 60) {
           dismiss();
-          return;
-        }
-        if (velocity > 1.0) {
+        } else if (velocity > 1.0) {
           snapTo(SNAP_OFFSET);
-          return;
-        }
-        if (velocity < -1.0) {
+        } else if (velocity < -1.0) {
           snapTo(0);
-          return;
-        }
-        if (currentY > MAX_HEIGHT * 0.75) {
+        } else if (currentY > MAX_HEIGHT * 0.75) {
           dismiss();
-          return;
+        } else {
+          const mid = SNAP_OFFSET * 0.5;
+          snapTo(currentY < mid ? 0 : SNAP_OFFSET);
         }
-        const mid = SNAP_OFFSET * 0.5;
-        snapTo(currentY < mid ? 0 : SNAP_OFFSET);
       },
     }),
   ).current;
@@ -300,7 +326,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
   const copyAddressToClipboard = async () => {
     if (buildingInfo?.address) {
       setCopying(true);
-      Clipboard.setString(buildingInfo.address);
+      await Clipboard.setStringAsync(buildingInfo.address);
       setTimeout(() => {
         AccessibilityInfo.announceForAccessibility("Address copied")
         setTimeout(() => {
@@ -312,11 +338,14 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
 
   // Fetching accessibility info from metadata (facilities) and rendering in popup as icons (emojis for now)
   const getAccessibilityIcons = (facilities: any) => {
-    if (!buildingInfo?.facilities) {
-      return null;
-    }
+    if (!facilities) return null;
 
-    const icons: {key: string, sf: SFSymbol, material: "elevator" | "accessible" | "subway", label: string}[] = [];
+    const icons: {
+      key: string;
+      sf: SFSymbol;
+      material: "elevator" | "accessible" | "subway";
+      label: string;
+    }[] = [];
 
     // Check for direct metro access
     if (
@@ -374,12 +403,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
           >
             Opening Hours
           </Text>
-          <Text
-            style={[
-              styles.sectionText,
-              themedStyles.text(mode),
-            ]}
-          >
+          <Text style={[styles.sectionText, themedStyles.text(mode)]}>
             {openingHours}
           </Text>
         </View>
@@ -407,12 +431,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
               >
                 Weekdays:
               </Text>
-              <Text
-                style={[
-                  styles.hoursValue,
-                  themedStyles.text(mode),
-                ]}
-              >
+              <Text style={[styles.hoursValue, themedStyles.text(mode)]}>
                 {openingHours.weekdays}
               </Text>
             </View>
@@ -425,12 +444,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
               >
                 Weekend:
               </Text>
-              <Text
-                style={[
-                  styles.hoursValue,
-                  themedStyles.text(mode),
-                ]}
-              >
+              <Text style={[styles.hoursValue, themedStyles.text(mode)]}>
                 {openingHours.weekend}
               </Text>
             </View>
@@ -449,8 +463,21 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
         styles.iosBlurContainer,
         { height: MAX_HEIGHT, transform: [{ translateY: translateY }] },
         ]}
+        importantForAccessibility="yes"
+        focusable={true}
     >
         <BackgroundWrapper>
+        <Animated.View 
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: mode === 'dark' ? '#1C1C1E' : '#FFFFFF', 
+            opacity: sheetSolidOpacity 
+          }} 
+        />
         <Animated.View style={{ flex: 1, opacity }}>
         {/* panHandlers are ONLY here, so buttons below are never blocked */}
         <View
@@ -462,16 +489,19 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
             <View style={styles.handleBar} />
             </View>
             {/* Header */}
-            <View style={[styles.iosHeader]}>
+            <View style={[styles.iosHeader, { justifyContent: 'center', paddingHorizontal: 0 }]}>
             {/* Close button */}
             <TouchableOpacity
                 onPress={dismiss}
-                style={styles.closeButton}
+                style={[styles.closeButton, Platform.OS === 'android' && { width: 'auto', padding: 4 }]}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 accessible={true}
                 accessibilityLabel="Close"
                 accessibilityRole="button"
             >
+              {Platform.OS === "android" ? (
+                  <MaterialIcons name="close" size={24} color={themedStyles.text(mode).color} />
+                ) : (
                 <View
                 style={[
                     styles.closeButtonCircle,
@@ -487,13 +517,14 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
                     ✕
                 </Text>
                 </View>
+                )}
             </TouchableOpacity>
             {/* Center text container */}
-            <View style={styles.headerTextContainer}>
+            <View style={[styles.headerTextContainer, { alignItems: 'center', width: '100%', marginHorizontal: 0 }]}>
                 <Text
                 style={[
                     styles.buildingName,
-                    themedStyles.text(mode),
+                    themedStyles.text(mode)
                 ]}
                 accessible={true}
                 accessibilityLabel={`Name: ${buildingInfo?.name}`}
@@ -502,7 +533,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
                 {buildingInfo?.name || "Building"}
                 </Text>
                 {/* Building ID and icons */}
-                <View style={styles.buildingIdWithIconsContainer}>
+                <View style={[styles.buildingIdWithIconsContainer, { justifyContent: 'center', position: 'relative' }]}>
                 {/* Building ID */}
                 <View style={styles.buildingIdContainer}>
                     <Text
@@ -516,9 +547,9 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
                     {buildingId}
                     </Text>
                 </View>
-                {/* Accessibility icons - on the far right of this row */}
+                {/* Accessibility icons */}
                 {accessibilityIcons && accessibilityIcons.length > 0 && (
-                    <View style={styles.accessibilityIconsContainer}>
+                    <View style={[styles.accessibilityIconsContainer, { position: 'absolute', paddingRight: 40, flexDirection: 'row', alignItems: 'center', top: 0, bottom: 0 }]}>
                     {accessibilityIcons.map((icon) => (
                         <View
                         key={icon.key}
@@ -546,7 +577,6 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
                 )}
                 </View>
             </View>
-            <View style={styles.rightSpacer} />
             </View>
         </View>
 
@@ -657,28 +687,6 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
     </Animated.View>
   );
 
-  // Android
-  if (Platform.OS === 'android') {
-    return (
-        <Modal
-            transparent={true}
-            visible={visible}
-            animationType="none"
-            onRequestClose={dismiss}
-        >
-            <View
-                 style={{
-                    flex: 1,
-                    justifyContent: 'flex-end'
-                }}
-            >
-                {Content}
-            </View>
-        </Modal>
-    );
-  }
-
-  // iOS
   return (
     <View
       style={{
@@ -686,16 +694,30 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionInfoPo
         bottom: 0,
         left: 0,
         right: 0,
-        height: MAX_HEIGHT,
+        height: screenHeight,
         zIndex: 999,
+        justifyContent: 'flex-end'
       }}
       pointerEvents="box-none"
-      importantForAccessibility={visible ? "yes" : "no-hide-descendants"}
       accessibilityViewIsModal={visible}
     >
+      <Animated.View 
+        style={{ 
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'black',
+          opacity: backdropOpacity 
+        }} 
+        pointerEvents="none"
+      />
         {Content}
     </View>
   );
 });
+
+AdditionalInfoPopup.displayName = "AdditionalInfoPopup";
 
 export default AdditionalInfoPopup;

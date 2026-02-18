@@ -39,7 +39,7 @@ const additionalInfoPopupStyles = StyleSheet.create({
         minHeight:80,
     },
     headerTextContainer: {
-        flex:1,
+        flex:0.67,
         backgroundColor:"transparent",
         alignItems:"center",
         justifyContent:"center",
@@ -101,6 +101,9 @@ const additionalInfoPopupStyles = StyleSheet.create({
         height: 44,
         justifyContent: 'center',
         alignItems: 'center',
+        position: 'absolute',
+        left: 20,
+        padding: 4,
         zIndex: 10,
         marginTop: -5,
     },
