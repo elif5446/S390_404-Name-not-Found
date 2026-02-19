@@ -9,8 +9,8 @@ import {
   Alert,
   ActivityIndicator,
   Image,
-  StyleSheet,
   Linking,
+  Platform
 } from "react-native";
 import React, { useEffect, useState, useRef } from "react";
 import {
@@ -21,7 +21,6 @@ import {
   clearTokens,
 } from "../utils/tokenStorage";
 import { styles } from "../styles/googleCalendarAuth";
-import { white } from "react-native-paper/lib/typescript/styles/themes/v2/colors";
 
 // Global flag to prevent multiple instances from initializing
 let globalInitializationStarted = false;
@@ -302,7 +301,7 @@ export default function GoogleCalendarAuth({
 
       <View
         style={{
-          backgroundColor: "#B03060CC",
+          backgroundColor: Platform.OS === 'ios' ? "#B03060CC" : "#feeded",
           borderRadius: 20,
         }}
       >
@@ -310,11 +309,11 @@ export default function GoogleCalendarAuth({
           title={
             isSigninInProgress
               ? "Signing in..."
-              : "Connect Google Calendar to get started."
+              : "Get Started with Google Calendar"
           }
           disabled={isSigninInProgress}
           onPress={signIn}
-          color={"#feeded"}
+          color={Platform.OS === 'ios' ? "#feeded" : "#B03060CC"}
         />
       </View>
 

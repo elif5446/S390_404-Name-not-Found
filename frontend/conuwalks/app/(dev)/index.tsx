@@ -1,12 +1,12 @@
 import {
   View,
-  StyleSheet,
   StatusBar,
   Button,
   Alert,
   Image,
   Text,
   ActivityIndicator,
+  Platform
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
@@ -15,6 +15,7 @@ import StatusGradient from "@/src/components/StatusGradient";
 import SegmentedToggle from "@/src/components/SegmentedToggle";
 import { clearTokens, getUserInfo } from "@/src/utils/tokenStorage";
 import { styles } from "@/src/styles/index";
+import { BlurView } from "expo-blur";
 
 export default function HomeScreen() {
   const [campus, setCampus] = useState<"SGW" | "Loyola">("SGW");
@@ -60,6 +61,38 @@ export default function HomeScreen() {
     ]);
   };
 
+  const content = <View style={styles.userContainer}>
+    {userInfo?.photo ? (
+      <Image source={{ uri: userInfo.photo }} style={styles.profileImage} />
+    ) : (
+      <View style={[styles.profileImage, styles.placeholderImage]}>
+        <Text style={styles.placeholderText}>
+          {userInfo?.name?.charAt(0) || "U"}
+        </Text>
+      </View>
+    )}
+    
+    <View style={styles.userInfo}>
+      {userInfo?.name && (
+        <Text style={styles.userName} numberOfLines={1}>
+          {userInfo.name}
+        </Text>
+      )}
+      <View
+        style={{
+          backgroundColor: Platform.OS === 'ios' ? "#B03060CC" : "#feeded",
+          borderRadius: 20,
+        }}
+      >
+        <Button 
+          title="Sign Out" 
+          onPress={handleSignOut} 
+          color={Platform.OS === 'ios' ? "#feeded" : "#B03060CC"} 
+        />
+      </View>
+    </View>
+  </View>
+
   if (isLoading) {
     return (
       <View style={styles.container}>
@@ -89,32 +122,18 @@ export default function HomeScreen() {
       <SegmentedToggle campus={campus} setCampus={setCampus} />
 
       {/* User profile and sign out button */}
-      <View style={styles.userContainer}>
-        {userInfo?.photo ? (
-          <Image source={{ uri: userInfo.photo }} style={styles.profileImage} />
-        ) : (
-          <View style={[styles.profileImage, styles.placeholderImage]}>
-            <Text style={styles.placeholderText}>
-              {userInfo?.name?.charAt(0) || "U"}
-            </Text>
-          </View>
-        )}
-        <View style={styles.userInfo}>
-          {userInfo?.name && (
-            <Text style={styles.userName} numberOfLines={1}>
-              {userInfo.name}
-            </Text>
-          )}
-          <View
-            style={{
-              backgroundColor: "#B03060CC",
-              borderRadius: 20,
-            }}
+      <View style={styles.glassWrapper}>
+        {Platform.OS === 'ios' && 
+          <BlurView 
+            intensity={60}
+            tint="extraLight" 
+            style={styles.blurContainer}
           >
-            <Button title="Sign Out" onPress={handleSignOut} color="white" />
-          </View>
+            {content}
+          </BlurView>
+        ||
+        content}
         </View>
-      </View>
 
       <StatusBar
         barStyle="dark-content"
