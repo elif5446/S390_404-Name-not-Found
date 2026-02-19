@@ -1,7 +1,9 @@
-import { Marker } from "react-native-maps";
-import { View, Text } from "react-native";
-import { getLabelFontSize, FeatureCollection } from "@/src/data/BuildingLabels";
-import { CampusId } from "@/src/data/campus/campusConfig";
+import React, { useRef } from 'react';
+import { useState, useEffect } from 'react';
+import { Marker } from 'react-native-maps';
+import { View, Text, Platform } from 'react-native';
+import { getLabelFontSize, FeatureCollection } from '@/src/data/BuildingLabels';
+import { CampusId } from '@/src/data/campus/campusConfig';
 //will only render the labels
 
 interface Props {
@@ -27,6 +29,8 @@ const CampusLabels: React.FC<Props> = ({ campus, data, longitudeDelta }) => {
             pointerEvents="none"
             zIndex={100}
             anchor={{ x: 0.5, y: 0.5 }}
+            importantForAccessibility="no"
+            accessible={false}
           >
             <View>
               <Text
@@ -35,6 +39,8 @@ const CampusLabels: React.FC<Props> = ({ campus, data, longitudeDelta }) => {
                   fontWeight: "bold",
                   color: "#00000033",
                 }}
+                importantForAccessibility="no"
+                accessible={false}
               >
                 {id}
               </Text>
