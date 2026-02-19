@@ -13,6 +13,7 @@ import {
   useColorScheme,
 } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { SymbolView, SFSymbol } from "expo-symbols";
 import { BlurView } from "expo-blur";
 import { DirectionStep, useDirections } from "@/src/context/DirectionsContext";
 import { getDirections } from "@/src/api/directions";
@@ -22,6 +23,13 @@ interface DestinationPopupProps {
   onClose: () => void;
 }
 
+interface PlatformIconProps {
+  materialName: React.ComponentProps<typeof MaterialIcons>["name"];
+  iosName: SFSymbol;
+  size: number;
+  color: string;
+}
+
 const DestinationPopup: React.FC<DestinationPopupProps> = ({
   visible,
   onClose,
@@ -29,6 +37,21 @@ const DestinationPopup: React.FC<DestinationPopupProps> = ({
   const campusPink = "#B03060";
   const mode = useColorScheme() || "light";
   const isDark = mode === "dark";
+
+  const PlatformIcon = ({ materialName, iosName, size, color }: PlatformIconProps) => {
+    if (Platform.OS === "ios") {
+      return (
+        <SymbolView
+          name={iosName}
+          size={size}
+          weight="medium"
+          tintColor={color}
+        />
+      );
+    }
+
+    return <MaterialIcons name={materialName} size={size} color={color} />;
+  };
 
   const {
     routes,
@@ -350,12 +373,14 @@ const DestinationPopup: React.FC<DestinationPopupProps> = ({
 
           <View style={styles.header}>
             <View style={[styles.headerSide, styles.headerSideLeft]}>
-              <TouchableOpacity onPress={handleClose} style={styles.iconButton}>
-                <MaterialIcons
-                  name="close"
-                  size={22}
-                  color={campusPink}
-                />
+              <TouchableOpacity
+                onPress={handleClose}
+                style={styles.iconButton}
+                accessibilityRole="button"
+                accessibilityLabel="Close directions"
+                accessibilityHint="Closes the directions panel"
+              >
+                <PlatformIcon materialName="close" iosName="xmark" size={22} color={campusPink} />
               </TouchableOpacity>
             </View>
 
@@ -387,9 +412,21 @@ const DestinationPopup: React.FC<DestinationPopupProps> = ({
                     },
                   ]}
                   onPress={() => setTravelMode(option.mode)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Select ${option.mode} mode`}
+                  accessibilityHint={`Updates routes for ${option.mode} transportation`}
                 >
-                  <MaterialIcons
-                    name={option.icon}
+                  <PlatformIcon
+                    materialName={option.icon}
+                    iosName={
+                      option.mode === "walking"
+                        ? "figure.walk"
+                        : option.mode === "transit"
+                          ? "tram.fill"
+                          : option.mode === "bicycling"
+                            ? "bicycle"
+                            : "car.fill"
+                    }
                     size={15}
                     color={active ? "#FFFFFF" : isDark ? "#F5F5F5" : "#202020"}
                   />
@@ -431,6 +468,8 @@ const DestinationPopup: React.FC<DestinationPopupProps> = ({
                         borderColor: selected ? "#C48BA1" : isDark ? "#3F3F42" : "#ECECEF",
                       },
                     ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Route ${index + 1}. ${route.duration}, ${route.distance}, arrives ${route.eta}`}
                   >
                     <View style={{ flex: 1 }}>
                       <Text style={styles.durationText}>
@@ -456,8 +495,16 @@ const DestinationPopup: React.FC<DestinationPopupProps> = ({
                         styles.startButton,
                         navigationRouteId === route.id && { opacity: 0.8 },
                       ]}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Start navigation for route ${index + 1}`}
+                      accessibilityHint="Begins turn by turn navigation with this route"
                     >
-                      <MaterialIcons name="subdirectory-arrow-right" size={14} color="#FFFFFF" />
+                      <PlatformIcon
+                        materialName="subdirectory-arrow-right"
+                        iosName="arrow.turn.up.right"
+                        size={14}
+                        color="#FFFFFF"
+                      />
                     </TouchableOpacity>
                   </TouchableOpacity>
                 );

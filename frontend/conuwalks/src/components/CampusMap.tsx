@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { BlurView } from "expo-blur";
+import { SymbolView, SFSymbol } from "expo-symbols";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MapView, {
   LatLng,
@@ -77,6 +78,13 @@ interface TransitStopMarker {
   iconName: "directions-bus" | "subway";
 }
 
+interface PlatformIconProps {
+  materialName: React.ComponentProps<typeof MaterialIcons>["name"];
+  iosName: SFSymbol;
+  size: number;
+  color: string;
+}
+
 interface GeoJsonFeature {
   type: string;
   properties: {
@@ -94,6 +102,21 @@ const CampusMap: React.FC<CampusMapProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme() || "light";
+
+  const PlatformIcon = ({ materialName, iosName, size, color }: PlatformIconProps) => {
+    if (Platform.OS === "ios") {
+      return (
+        <SymbolView
+          name={iosName}
+          size={size}
+          weight="medium"
+          tintColor={color}
+        />
+      );
+    }
+
+    return <MaterialIcons name={materialName} size={size} color={color} />;
+  };
 
   // Get user's location with permission handling
   const {
@@ -674,6 +697,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
             }}
             tracksViewChanges={false}
             zIndex={1002}
+            accessibilityLabel={stop.title}
+            accessibilityHint={stop.description}
           >
             <View
               style={{
@@ -687,7 +712,12 @@ const CampusMap: React.FC<CampusMapProps> = ({
                 borderColor: selectedTransitStopKey === stop.key ? "#FFFFFF" : "#F2F2F7",
               }}
             >
-              <MaterialIcons name={stop.iconName} size={16} color="#FFFFFF" />
+              <PlatformIcon
+                materialName={stop.iconName}
+                iosName={stop.iconName === "subway" ? "tram.fill" : "bus.fill"}
+                size={16}
+                color="#FFFFFF"
+              />
             </View>
           </Marker>
         ))}
@@ -759,15 +789,34 @@ const CampusMap: React.FC<CampusMapProps> = ({
             borderRadius: 16,
             paddingHorizontal: 12,
             paddingVertical: 10,
-            backgroundColor: colorScheme === "dark" ? "#2C2C2E" : "#FFFFFF",
+            backgroundColor:
+              Platform.OS === "ios"
+                ? "transparent"
+                : colorScheme === "dark"
+                  ? "#2C2C2E"
+                  : "#FFFFFF",
+            borderWidth: Platform.OS === "ios" ? 1 : 0,
+            borderColor:
+              colorScheme === "dark" ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)",
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: Platform.OS === "ios" ? 0.16 : 0.2,
             shadowRadius: 4,
             elevation: Platform.OS === "ios" ? 0 : 4,
             zIndex: 10002,
+            overflow: "hidden",
           }}
+          accessible
+          accessibilityRole="summary"
+          accessibilityLabel={`${modeLabelMap[travelMode]} navigation. ${routeData.duration}, ${routeData.distance}. ${activeInstruction?.instruction || "Continue on current route"}`}
         >
+          {Platform.OS === "ios" && (
+            <BlurView
+              intensity={35}
+              tint={colorScheme === "dark" ? "dark" : "light"}
+              style={StyleSheet.absoluteFill}
+            />
+          )}
           <Text
             style={{
               color: "#B03060",
@@ -814,7 +863,15 @@ const CampusMap: React.FC<CampusMapProps> = ({
             borderRadius: 18,
             paddingHorizontal: 12,
             paddingVertical: 10,
-            backgroundColor: colorScheme === "dark" ? "#2C2C2E" : "#FFFFFF",
+            backgroundColor:
+              Platform.OS === "ios"
+                ? "transparent"
+                : colorScheme === "dark"
+                  ? "#2C2C2E"
+                  : "#FFFFFF",
+            borderWidth: Platform.OS === "ios" ? 1 : 0,
+            borderColor:
+              colorScheme === "dark" ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)",
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: Platform.OS === "ios" ? 0.16 : 0.2,
@@ -824,12 +881,23 @@ const CampusMap: React.FC<CampusMapProps> = ({
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
+            overflow: "hidden",
           }}
+          accessible
+          accessibilityRole="summary"
+          accessibilityLabel={`Trip progress. Duration ${routeData.duration}. Distance ${routeData.distance}. Arrival ${routeData.eta}.`}
         >
+          {Platform.OS === "ios" && (
+            <BlurView
+              intensity={35}
+              tint={colorScheme === "dark" ? "dark" : "light"}
+              style={StyleSheet.absoluteFill}
+            />
+          )}
           <View>
             <Text
               style={{
-                color: "#2E8B57",
+                color: "#B03060",
                 fontWeight: "700",
                 fontSize: 26,
                 lineHeight: 28,
@@ -851,22 +919,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
           <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
             <TouchableOpacity
-              onPress={handleLocationPress}
-              style={{
-                width: 38,
-                height: 38,
-                borderRadius: 19,
-                backgroundColor: colorScheme === "dark" ? "#3A3A3C" : "#F2F2F7",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-              accessibilityRole="button"
-              accessibilityLabel="Recenter navigation"
-            >
-              <MaterialIcons name="my-location" size={18} color="#5F5F63" />
-            </TouchableOpacity>
-
-            <TouchableOpacity
               onPress={handleEndNavigation}
               style={{
                 width: 38,
@@ -878,8 +930,9 @@ const CampusMap: React.FC<CampusMapProps> = ({
               }}
               accessibilityRole="button"
               accessibilityLabel="End trip"
+              accessibilityHint="Ends active navigation and closes route guidance"
             >
-              <MaterialIcons name="close" size={18} color="#FFFFFF" />
+              <PlatformIcon materialName="close" iosName="xmark" size={18} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
         </View>
@@ -908,7 +961,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
         onClose={handleCloseDestinationPopup}
       />
 
-      {userLocation && (
+      {userLocation && !indoorBuildingId && (
         <TouchableOpacity
           onPress={handleLocationPress}
           activeOpacity={0.85}
@@ -937,6 +990,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
           }}
           accessibilityRole="button"
           accessibilityLabel="Recenter to your location"
+          accessibilityHint="Moves the map camera back to your current location"
         >
           {Platform.OS === "ios" && (
             <BlurView
@@ -945,7 +999,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
               style={StyleSheet.absoluteFill}
             />
           )}
-          <MaterialIcons name="navigation" size={20} color="#B03060" />
+          <PlatformIcon materialName="navigation" iosName="location.north.fill" size={20} color="#B03060" />
         </TouchableOpacity>
       )}
 
