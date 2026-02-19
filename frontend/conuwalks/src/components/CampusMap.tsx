@@ -8,6 +8,7 @@ import {
   StyleSheet,
 } from "react-native";
 import MapView, {
+  LatLng,
   Circle,
   Region,
   Marker,
@@ -56,6 +57,13 @@ interface GeoJsonFeature {
   };
 }
 
+// helper; define here so it's not calculated on every frame update
+const getCentroid = (coords: LatLng[]): LatLng => {
+  const lat = coords.reduce((s, c) => s + c.latitude, 0) / coords.length;
+  const lng = coords.reduce((s, c) => s + c.longitude, 0) / coords.length;
+  return { latitude: lat, longitude: lng };
+};
+
 const CampusMap: React.FC<CampusMapProps> = ({
   initialLocation = { latitude: 45.49599, longitude: -73.57854 },
 }) => {
@@ -90,7 +98,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
   const [indoorBuildingId, setIndoorBuildingId] = useState<string | null>(null);
 
-  // handle clicking on the location circle to zoom in
   const handleLocationPress = useCallback(() => {
     if (userLocation && mapRef.current) {
       mapRef.current.animateToRegion(
@@ -100,7 +107,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
           latitudeDelta: 0.003,
           longitudeDelta: 0.003,
         },
-        500, // ms
+        500,
       );
     }
   }, [userLocation]);
@@ -117,7 +124,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
   const handlePolygonPress = useCallback(
     (buildingId: string, campus: "SGW" | "LOY") => {
-      // prevent event bubbling if necessary (though MapView usually handles this distinct from MapPress)
       console.log(`Single Tap Building: ${buildingId}`);
       setSelectedBuilding({
         name: buildingId,
@@ -132,13 +138,10 @@ const CampusMap: React.FC<CampusMapProps> = ({
     const coordinate = e.nativeEvent.coordinate;
     console.log("Map Long Press:", coordinate);
 
-    // Helper to search a specific GeoJSON dataset
     const findBuildingId = (geojson: any) => {
       const feature = geojson.features.find((f: GeoJsonFeature) => {
         if (f.geometry.type === "Polygon") {
           const rawCoords = f.geometry.coordinates[0];
-          // ensure polygonFromGeoJSON is efficient
-          // or memoize the parsed polygons if datasets are huge
           const polygonCoords = polygonFromGeoJSON(rawCoords);
           return isPointInPolygon(coordinate, polygonCoords);
         }
@@ -163,40 +166,76 @@ const CampusMap: React.FC<CampusMapProps> = ({
     const generatePolygons = (geojson: any, campus: "SGW" | "LOY") => {
       return geojson.features
         .filter((f: GeoJsonFeature) => f.geometry.type === "Polygon")
-        .map((feature: GeoJsonFeature) => {
-          const { id } = feature.properties;
-          const coordinates = feature.geometry.coordinates[0];
+        .map((feature: GeoJsonFeature, index: number) => {
+          const { id: buildingId } = feature.properties;
+          const coordinates = polygonFromGeoJSON(
+            feature.geometry.coordinates[0],
+          );
 
           const themeColor =
             BuildingTheme[campus][
-              id as keyof (typeof BuildingTheme)[typeof campus]
+              buildingId as keyof (typeof BuildingTheme)[typeof campus]
             ];
           const color = themeColor || "#888888";
 
           // metadata for accessibility
           const meta =
             campus === "LOY"
-              ? LoyolaBuildingMetadata[id]
-              : SGWBuildingMetadata[id];
-          const name = meta?.name || id;
+              ? LoyolaBuildingMetadata[buildingId]
+              : SGWBuildingMetadata[buildingId];
+          const name = meta?.name || buildingId;
 
           //   console.log(
-          //     `${campus}, Building: ${properties.id}, Color: ${color}, Name: ${buildingMetadata?.name}`,
+          //     `${campus}, Building: ${buildingId}, Color: ${color}, Name: ${buildingMetadata?.name}`,
           //   );
 
           return (
-            <Polygon
-              key={`${campus}-${id}`}
-              coordinates={polygonFromGeoJSON(coordinates)}
-              fillColor={color + "90"} // add transparency
-              strokeColor={color}
-              strokeWidth={1}
-              tappable={true}
-              onPress={() => handlePolygonPress(id, campus)}
-              accessibilityLabel={name}
-              accessibilityRole="button"
-              zIndex={1}
-            />
+            <React.Fragment key={`group-${buildingId}`}>
+              <Polygon
+                key={`${campus}-${buildingId}`}
+                coordinates={coordinates}
+                fillColor={color + "90"} // add transparency
+                strokeColor={color}
+                strokeWidth={1}
+                tappable={true}
+                onPress={() => handlePolygonPress(buildingId, campus)}
+                importantForAccessibility="no-hide-descendants"
+                accessibilityLabel={name}
+                accessibilityRole="button"
+                zIndex={1}
+              />
+
+              <Marker
+                coordinate={getCentroid(coordinates)}
+                onPress={() => handlePolygonPress(buildingId, campus)}
+                zIndex={200}
+                tracksViewChanges={true}
+                title={name || buildingId}
+                importantForAccessibility="yes"
+                accessibilityLabel={name || buildingId}
+                accessibilityRole="button"
+                accessibilityHint="Tap to view details"
+              >
+                <View
+                  style={{
+                    width: 0.3 / regionData.longitudeDelta,
+                    height: 0.3 / regionData.longitudeDelta,
+                    backgroundColor: "white",
+                    opacity: 0.01,
+                  }}
+                  collapsable={false}
+                  importantForAccessibility="yes"
+                  accessible={true}
+                  accessibilityLabel={name || buildingId}
+                  accessibilityRole="button"
+                  accessibilityHint="Tap to view details"
+                >
+                  {Platform.OS === "android" && (
+                    <Text style={{ width: 1, height: 1, opacity: 0 }}> </Text>
+                  )}
+                </View>
+              </Marker>
+            </React.Fragment>
           );
         });
     };
@@ -205,21 +244,21 @@ const CampusMap: React.FC<CampusMapProps> = ({
       sgwPolygons: generatePolygons(SGW, "SGW"),
       loyPolygons: generatePolygons(LOY, "LOY"),
     };
-  }, [handlePolygonPress]);
+  }, [handlePolygonPress, regionData.longitudeDelta]);
 
   const mapID = useMemo(() => {
     return colorScheme === "dark"
       ? "eb0ccd6d2f7a95e23f1ec398"
-      : "eb0ccd6d2f7a95e117328051"; // Workaround
+      : "eb0ccd6d2f7a95e117328051";
   }, [colorScheme]);
 
   return (
     <View style={styles.container}>
       <MapView
-        key={mapID} // Rerender when mode (light/dark) changes
+        key={mapID}
         ref={mapRef}
         provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
-        googleMapId={Platform.OS === "android" ? mapID : undefined} // Style
+        googleMapId={Platform.OS === "android" ? mapID : undefined}
         style={styles.map}
         // uncontrolled Map Props
         initialRegion={{
@@ -235,7 +274,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
         tintColor="#FF2D55"
         pitchEnabled={false} // no 3d
         mapType={Platform.OS === "ios" ? "mutedStandard" : "standard"}
-        showsPointsOfInterest={false} // takes out the information off all businesses
+        showsPointsOfInterest={false}
         showsTraffic={false}
         showsIndoors={false}
         showsBuildings={false}
@@ -273,6 +312,25 @@ const CampusMap: React.FC<CampusMapProps> = ({
               strokeWidth={2}
               zIndex={9999}
             />
+            <Marker
+              coordinate={userLocation}
+              onPress={handleLocationPress}
+              tracksViewChanges={false}
+              zIndex={9999}
+              title={"Current Location"}
+              accessibilityLabel={"Current Location"}
+              importantForAccessibility="yes"
+            >
+              <View
+                style={{
+                  borderRadius: 6,
+                  backgroundColor: "#B03060",
+                }}
+                accessible={true}
+                accessibilityLabel={"Current Location"}
+                importantForAccessibility="yes"
+              />
+            </Marker>
             <Marker
               coordinate={userLocation}
               onPress={handleLocationPress}
