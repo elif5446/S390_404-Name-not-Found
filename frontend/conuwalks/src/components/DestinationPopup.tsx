@@ -461,6 +461,7 @@ const DestinationPopup: React.FC<DestinationPopupProps> = ({
                   <TouchableOpacity
                     key={route.id}
                     onPress={() => handleSelectRoute(index)}
+                    accessible={false}
                     style={[
                       styles.routeCard,
                       {
@@ -468,8 +469,6 @@ const DestinationPopup: React.FC<DestinationPopupProps> = ({
                         borderColor: selected ? "#C48BA1" : isDark ? "#3F3F42" : "#ECECEF",
                       },
                     ]}
-                    accessibilityRole="button"
-                    accessibilityLabel={`Route ${index + 1}. ${route.duration}, ${route.distance}, arrives ${route.eta}`}
                   >
                     <View style={{ flex: 1 }}>
                       <Text style={styles.durationText}>
@@ -495,6 +494,7 @@ const DestinationPopup: React.FC<DestinationPopupProps> = ({
                         styles.startButton,
                         navigationRouteId === route.id && { opacity: 0.8 },
                       ]}
+                      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                       accessibilityRole="button"
                       accessibilityLabel={`Start navigation for route ${index + 1}`}
                       accessibilityHint="Begins turn by turn navigation with this route"

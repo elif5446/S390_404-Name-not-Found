@@ -1,5 +1,12 @@
-import React, { useEffect, useRef, useState, useImperativeHandle, forwardRef } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+  useImperativeHandle,
+  forwardRef,
+} from "react";
 import {
+  AccessibilityActionEvent,
   Image,
   View,
   Text,
@@ -10,64 +17,67 @@ import {
   Animated,
   PanResponder,
   ScrollView,
+  BackHandler,
+  AccessibilityInfo
 } from "react-native";
-import { setStringAsync } from "expo-clipboard";
-import { SymbolView, SFSymbol } from "expo-symbols"; // SF Symbols (iOS)
-import MaterialIcons from "@expo/vector-icons/MaterialIcons"; // Material Design Icons (Android)
+import * as Clipboard from 'expo-clipboard';
+import { SymbolView, SFSymbol } from 'expo-symbols'; // SF Symbols (iOS)
+import MaterialIcons from '@expo/vector-icons/MaterialIcons'; // Material Design Icons (Android)
 import { BlurView } from "expo-blur";
 import { LoyolaBuildingMetadata } from "../data/metadata/LOY.BuildingMetadata";
 import { SGWBuildingMetadata } from "../data/metadata/SGW.BuildingMetaData";
-import { styles,themedStyles } from "../styles/additionalInfoPopup";
+import { styles, themedStyles } from "../styles/additionalInfoPopup";
 
 interface AdditionalInfoPopupProps {
   visible: boolean;
   buildingId: string;
   campus: "SGW" | "LOY";
   onClose: () => void;
-  onDirectionsTrigger: () => void;
-  directionsEtaLabel: string;
+  onDirectionsTrigger?: () => void;
+  directionsEtaLabel?: string;
   onExpansionChange?: (isExpanded: boolean) => void;
 }
-export interface AdditionalInfoPopupHandle{
-  collapse: () =>void;
+export interface AdditionalInfoPopupHandle {
+  collapse: () => void;
 }
 
 const BackgroundWrapper = ({ children }: { children: React.ReactNode }) => {
-    if (Platform.OS === "ios") {
-      return (
-        <BlurView
-          style={[styles.iosBlurContainer, { height: "100%" }]}
-          intensity={100}
-          tint={(useColorScheme() || "light") === "dark" ? "dark" : "light"}
-        >
-          {children}
-        </BlurView>
-      );
-    }
+  const colorScheme = useColorScheme();
+  const theme = colorScheme || "light";
+
+  if (Platform.OS === "ios") {
     return (
-      <View
-        style={[
-          styles.iosBlurContainer,
-          {
-            height: "100%",
-            backgroundColor: (useColorScheme() || "light") === "dark" ? "#1C1C1E" : "#FFFFFF", 
-          },
-        ]}
+      <BlurView
+        style={[styles.iosBlurContainer, { height: "100%" }]}
+        intensity={100}
+        tint={theme === "dark" ? "dark" : "light"}
       >
         {children}
-      </View>
+      </BlurView>
     );
-  };
+  }
+  return (
+    <View
+      style={[
+        styles.iosBlurContainer,
+        {
+          height: "100%",
+          backgroundColor: theme === "dark" ? "#1C1C1E" : "#FFFFFF",
+          elevation: 8,
+          borderTopLeftRadius: 28,
+          borderTopRightRadius: 28
+        },
+      ]}
+    >
+      {children}
+    </View>
+  );
+};
 
-const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfoPopupProps>(({ 
-  visible,
-  buildingId,
-  campus,
-  onClose,
-  onDirectionsTrigger,
-  directionsEtaLabel,
-  onExpansionChange,
-}, ref) => {
+const AdditionalInfoPopup = forwardRef<
+  AdditionalInfoPopupHandle,
+  AdditionalInfoPopupProps
+>(({ visible, buildingId, campus, onClose, onDirectionsTrigger, directionsEtaLabel, onExpansionChange }, ref) => {
   const campusPink = "#B03060";
   const mode = useColorScheme() || "light";
   const [buildingInfo, setBuildingInfo] = useState<any>(null);
@@ -75,21 +85,32 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfo
 
   // Default heights
   const screenHeight = Dimensions.get("window").height;
-  const MIN_HEIGHT = 300; //initial popup view
-  const MAX_HEIGHT = screenHeight * 0.92; //full popup can expand close to full screen
+  const MIN_HEIGHT = Platform.OS === 'ios' ? 380 : 340; 
+  const MAX_HEIGHT = screenHeight * (Platform.OS === 'ios' ? 0.92 : 0.9);
 
   // How far down the popup must sit so that only 300px is visible.
   const SNAP_OFFSET = MAX_HEIGHT - MIN_HEIGHT;
 
   // An animated value that controls vertical movement (is initially off screen)
-  const translateY = useRef(new Animated.Value(MAX_HEIGHT)).current;
-
-  const translateYRef = useRef(MAX_HEIGHT);
-  const translateYAtGestureStart = useRef(MAX_HEIGHT);
+  const translateY = useRef(new Animated.Value(screenHeight)).current;
+  const translateYRef = useRef(screenHeight);
+  const translateYAtGestureStart = useRef(screenHeight);
   const expandedStateRef = useRef(false);
   const scrollOffsetRef = useRef(0);
-  //change building info animation 
-  const opacity = useRef(new Animated.Value(1)).current;
+  //change building info animation
+  const opacity = useRef(new Animated.Value(2)).current;
+
+  const backdropOpacity = translateY.interpolate({
+    inputRange: [0, SNAP_OFFSET],
+    outputRange: [0.5, 0], // Shadow Backdrop Opacity -- Expanded: 0.5; Collapsed: 0
+    extrapolate: 'clamp',
+  });
+
+  const sheetSolidOpacity = translateY.interpolate({ // Liquid Glass Effect When Collapsed, Opaque When Pulled Up
+    inputRange: [0, 50],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
   const reportExpandedState = (isExpanded: boolean) => {
     if (expandedStateRef.current === isExpanded) {
       return;
@@ -97,12 +118,29 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfo
     expandedStateRef.current = isExpanded;
     onExpansionChange?.(isExpanded);
   };
+  
+  useEffect(() => {
+    if (!visible) return;
+    Animated.sequence([
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [buildingId, visible, opacity]);
+
   useEffect(() => {
     const id = translateY.addListener(({ value }) => {
       translateYRef.current = value;
     });
     return () => translateY.removeListener(id);
-  }, []); //runs only on first render
+  }, [translateY]); //runs only on first render
 
   useEffect(() => {
     if (visible) {
@@ -110,16 +148,23 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfo
       scrollOffsetRef.current = 0;
       scrollViewRef.current?.scrollTo({ y: 0, animated: false });
 
-      translateY.setValue(MAX_HEIGHT);
-      translateYRef.current = MAX_HEIGHT;
+      translateY.setValue(screenHeight);
+      translateYRef.current = screenHeight;
 
-      translateY.setValue(SNAP_OFFSET);
-      translateYRef.current = SNAP_OFFSET;
-      reportExpandedState(false);
+      // Start off-screen, spring up to collapsed position
+      Animated.spring(translateY, {
+        toValue: SNAP_OFFSET,
+        useNativeDriver: true, // native driver works on translateY
+        tension: 70,
+        friction: 12,
+      }).start(() => {
+        translateYRef.current = SNAP_OFFSET;
+        reportExpandedState(false);
+      });
     } else {
       reportExpandedState(false);
     }
-  }, [visible, onExpansionChange]);
+  }, [visible, translateY, screenHeight, SNAP_OFFSET, onExpansionChange]);
 
   // Fetch building info based on buildingId and campus
   useEffect(() => {
@@ -128,7 +173,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfo
         campus === "SGW"
           ? SGWBuildingMetadata[buildingId]
           : LoyolaBuildingMetadata[buildingId];
-      
+
       if (metadata) {
         setBuildingInfo(metadata);
       } else {
@@ -160,21 +205,61 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfo
     });
   };
 
-  const dismiss = () => {
-    translateY.setValue(MAX_HEIGHT);
-    translateYRef.current = MAX_HEIGHT;
+  const dismiss = (onDone?: () => void) => {
     reportExpandedState(false);
-    onClose();
+    Animated.timing(translateY, {
+      toValue: screenHeight,
+      duration: 240,
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished) {
+        onClose();
+        onDone?.();
+      }
+    });
   };
 
-  const isIOS = Platform.OS === "ios";
+  const handleDirectionsPress = () => {
+    dismiss(() => {
+      onDirectionsTrigger?.();
+    });
+  };
+
+  const handleDragHandleAccessibilityAction = (event: AccessibilityActionEvent) => {
+    const actionName = event.nativeEvent.actionName;
+    if (actionName === "increment") {
+      snapTo(0);
+      return;
+    }
+    if (actionName === "decrement") {
+      snapTo(SNAP_OFFSET);
+    }
+  };
+
+  useEffect(() => {
+    if (Platform.OS === "android") {
+      const backAction = () => {
+        if (visible) {
+          dismiss();
+          return true;
+        }
+        return false;
+      };
+
+      const backHandler = BackHandler.addEventListener(
+        "hardwareBackPress",
+        backAction
+      );
+
+      return () => backHandler.remove();
+    }
+  }, [visible]);
 
   // PanResponder for the DRAG HANDLE ONLY — does not intercept button taps
   const handlePanResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onStartShouldSetPanResponderCapture: () => false, // ← don't capture, just respond
-
       onMoveShouldSetPanResponder: (_, g) => {
         return Math.abs(g.dy) > Math.abs(g.dx) * 1.2;
       },
@@ -203,22 +288,16 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfo
 
         if (velocity > 1.5 && currentY > SNAP_OFFSET - 60) {
           dismiss();
-          return;
-        }
-        if (velocity > 1.0) {
+        } else if (velocity > 1.0) {
           snapTo(SNAP_OFFSET);
-          return;
-        }
-        if (velocity < -1.0) {
+        } else if (velocity < -1.0) {
           snapTo(0);
-          return;
-        }
-        if (currentY > MAX_HEIGHT * 0.75) {
+        } else if (currentY > MAX_HEIGHT * 0.75) {
           dismiss();
-          return;
+        } else {
+          const mid = SNAP_OFFSET * 0.5;
+          snapTo(currentY < mid ? 0 : SNAP_OFFSET);
         }
-        const mid = SNAP_OFFSET * 0.5;
-        snapTo(currentY < mid ? 0 : SNAP_OFFSET);
       },
     }),
   ).current;
@@ -235,8 +314,8 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfo
 
         const isExpanded = translateYRef.current < SNAP_OFFSET - 20;
 
-        // Collapsed: allow dragging both up (expand) and down
-        if (!isExpanded) return Math.abs(g.dy) > 5;
+        // Collapsed: intercept all downward drags
+        if (!isExpanded) return g.dy > 0;
 
         // Expanded + dragging up: let ScrollView scroll
         if (g.dy < 0) return false;
@@ -268,22 +347,16 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfo
 
         if (velocity > 1.5 && currentY > SNAP_OFFSET - 60) {
           dismiss();
-          return;
-        }
-        if (velocity > 1.0) {
+        } else if (velocity > 1.0) {
           snapTo(SNAP_OFFSET);
-          return;
-        }
-        if (velocity < -1.0) {
+        } else if (velocity < -1.0) {
           snapTo(0);
-          return;
-        }
-        if (currentY > MAX_HEIGHT * 0.75) {
+        } else if (currentY > MAX_HEIGHT * 0.75) {
           dismiss();
-          return;
+        } else {
+          const mid = SNAP_OFFSET * 0.5;
+          snapTo(currentY < mid ? 0 : SNAP_OFFSET);
         }
-        const mid = SNAP_OFFSET * 0.5;
-        snapTo(currentY < mid ? 0 : SNAP_OFFSET);
       },
     }),
   ).current;
@@ -294,20 +367,26 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfo
   const copyAddressToClipboard = async () => {
     if (buildingInfo?.address) {
       setCopying(true);
-      await setStringAsync(buildingInfo.address);
+      await Clipboard.setStringAsync(buildingInfo.address);
       setTimeout(() => {
-        setCopying(false);
-      }, 1000);
+        AccessibilityInfo.announceForAccessibility("Address copied")
+        setTimeout(() => {
+          setCopying(false);
+        }, 500);
+      }, 500);
     }
   };
 
   // Fetching accessibility info from metadata (facilities) and rendering in popup as icons (emojis for now)
   const getAccessibilityIcons = (facilities: any) => {
-    if (!buildingInfo?.facilities) {
-      return null;
-    }
+    if (!facilities) return null;
 
-    const icons: {key: string, sf: SFSymbol, material: "elevator" | "accessible" | "subway", label: string}[] = [];
+    const icons: {
+      key: string;
+      sf: SFSymbol;
+      material: "elevator" | "accessible" | "subway";
+      label: string;
+    }[] = [];
 
     // Check for direct metro access
     if (
@@ -317,7 +396,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfo
           f.toLowerCase().includes("undergound passage"),
       )
     ) {
-      icons.push({ key: "metro", sf: "tram.fill.tunnel", material: "subway", label: "Metro access" });
+      icons.push({ key: "metro", sf: "tram.fill.tunnel", material: "subway", label: "Access to the Concordia Underground Passage and the Metro" });
     }
 
     // Check for accessible features - Wheelchair icon
@@ -333,7 +412,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfo
         key: "wheelchair",
         sf: "figure.roll",
         material: "accessible",
-        label: "Wheelchair accessible",
+        label: "First Floor is Wheelchair Accessible",
       });
     }
 
@@ -345,7 +424,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfo
           f.toLowerCase().includes("lift"),
       )
     ) {
-      icons.push({ key: "elevator", sf: "arrow.up.arrow.down.square", material: "elevator", label: "Elevator" });
+      icons.push({ key: "elevator", sf: "arrow.up.arrow.down.square", material: "elevator", label: "Elevators Are Available" });
     }
 
     return icons;
@@ -354,21 +433,18 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfo
   const renderOpeningHours = (openingHours: any) => {
     if (typeof openingHours === "string") {
       return (
-        <View style={styles.section}>
+        <View style={styles.section} accessible={true}>
           <Text
             style={[
               styles.sectionTitle,
               themedStyles.text(mode)
             ]}
+            accessible={true}
+            accessibilityRole="header"
           >
             Opening Hours
           </Text>
-          <Text
-            style={[
-              styles.sectionText,
-              themedStyles.text(mode),
-            ]}
-          >
+          <Text style={[styles.sectionText, themedStyles.text(mode)]}>
             {openingHours}
           </Text>
         </View>
@@ -381,11 +457,13 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfo
               styles.sectionTitle,
               themedStyles.text(mode),
             ]}
+            accessible={true}
+            accessibilityRole="header"
           >
             Opening Hours
           </Text>
           <View style={styles.hoursContainer}>
-            <View style={styles.hoursRow}>
+            <View style={styles.hoursRow} accessible={true}>
               <Text
                 style={[
                   styles.hoursLabel,
@@ -394,16 +472,11 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfo
               >
                 Weekdays:
               </Text>
-              <Text
-                style={[
-                  styles.hoursValue,
-                  themedStyles.text(mode),
-                ]}
-              >
+              <Text style={[styles.hoursValue, themedStyles.text(mode)]}>
                 {openingHours.weekdays}
               </Text>
             </View>
-            <View style={styles.hoursRow}>
+            <View style={styles.hoursRow} accessible={true}>
               <Text
                 style={[
                   styles.hoursLabel,
@@ -412,12 +485,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfo
               >
                 Weekend:
               </Text>
-              <Text
-                style={[
-                  styles.hoursValue,
-                  themedStyles.text(mode),
-                ]}
-              >
+              <Text style={[styles.hoursValue, themedStyles.text(mode)]}>
                 {openingHours.weekend}
               </Text>
             </View>
@@ -430,257 +498,344 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfo
 
   const accessibilityIcons = getAccessibilityIcons(buildingInfo?.facilities);
 
-  if (!visible) {
-    return null;
-  }
-
-    return (
-      <View
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: MAX_HEIGHT,
-          zIndex: 999,
-        }}
-        pointerEvents="box-none"
-      >
-        <Animated.View
-          style={[
-            styles.iosBlurContainer,
-            { height: MAX_HEIGHT, transform: [{ translateY: translateY }] },
-          ]}
+  const Content = (
+    <Animated.View
+        style={[
+        styles.iosBlurContainer,
+        { height: MAX_HEIGHT, transform: [{ translateY: translateY }] },
+        ]}
+        importantForAccessibility="yes"
+        focusable={true}
+    >
+        <BackgroundWrapper>
+        <Animated.View 
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: mode === 'dark' ? '#1C1C1E' : '#FFFFFF', 
+            opacity: sheetSolidOpacity 
+          }} 
+        />
+        <Animated.View style={{ flex: 1, opacity }}>
+        {/* panHandlers are ONLY here, so buttons below are never blocked */}
+        <View
+          style={styles.iosContentContainer}
+          {...handlePanResponder.panHandlers}
         >
-          <BackgroundWrapper>
-            <Animated.View style={{ flex: 1, opacity }}>
-            {/* panHandlers are ONLY here, so buttons below are never blocked */}
-            <View
-              style={styles.iosContentContainer}
-              {...handlePanResponder.panHandlers}
+            {/* Handle bar */}
+          <View
+            style={styles.handleBarContainer}
+            accessible={true}
+            accessibilityLabel="Drag handle"
+            accessibilityHint="Swipe up with one finger to expand, or swipe down to collapse"
+            accessibilityRole="adjustable"
+            accessibilityActions={[
+              { name: "increment", label: "Expand" },
+              { name: "decrement", label: "Collapse" },
+            ]}
+            onAccessibilityAction={handleDragHandleAccessibilityAction}
+          >
+            <View style={styles.handleBar} />
+            </View>
+            {/* Header */}
+            <View style={styles.iosHeader}>
+            {/* Close button */}
+            <TouchableOpacity
+              onPress={() => dismiss()}
+                style={[styles.closeButton, Platform.OS === 'android' && { width: 'auto', padding: 4 }]}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                accessible={true}
+                accessibilityLabel="Close"
+                accessibilityRole="button"
             >
-              {/* Handle bar */}
-              <View style={styles.handleBarContainer}>
-                <View style={styles.handleBar} />
-              </View>
-              {/* Header */}
-              <View style={[styles.iosHeader]}>
-                {/* Close button */}
-                <TouchableOpacity
-                  onPress={dismiss}
-                  style={styles.closeButton}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              {Platform.OS === "android" ? (
+                  <MaterialIcons name="close" size={24} color={themedStyles.text(mode).color} />
+                ) : (
+                <View
+                style={[
+                    styles.closeButtonCircle,
+                    themedStyles.closeButton(mode),
+                ]}
                 >
-                  <View
+                <Text
                     style={[
-                      styles.closeButtonCircle,
-                      themedStyles.closeButton(mode),
+                    styles.closeButtonText,
+                    themedStyles.text(mode),
                     ]}
-                  >
-                    <Text
-                      style={[styles.closeButtonText, themedStyles.text(mode)]}
-                    >
-                      ✕
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-                {/* Center text container */}
-                <View style={styles.headerTextContainer}>
-                  <Text
-                    numberOfLines={3}
-                    ellipsizeMode="tail"
-                    style={[
-                      styles.buildingName,
-                      themedStyles.text(mode),
-                    ]}
-                  >
-                    {buildingInfo?.name || "Building"}
-                  </Text>
-                  {/* Building ID and icons */}
-                  <View style={styles.buildingIdWithIconsContainer}>
-                    {/* Building ID */}
-                    <View style={styles.buildingIdContainer}>
-                      <Text
-                        style={[styles.buildingId, themedStyles.subtext(mode)]}
-                      >
-                        {buildingId}
-                      </Text>
-                    </View>
-                  </View>
+                >
+                    ✕
+                </Text>
                 </View>
-                <View style={styles.rightHeaderActions}>
-                  <TouchableOpacity
-                    onPress={onDirectionsTrigger}
-                    style={styles.directionsButton}
-                  >
-                    <View style={styles.directionsArrowCircle}>
-                      <MaterialIcons name="subdirectory-arrow-right" size={12} color={campusPink} />
-                    </View>
-                    <Text style={styles.directionsEtaText}>
-                      {directionsEtaLabel}
+                )}
+            </TouchableOpacity>
+            {/* Center text container */}
+            <View style={styles.headerTextContainer}>
+                <Text
+                style={[
+                    styles.buildingName,
+                    themedStyles.text(mode)
+                ]}
+                accessible={true}
+                accessibilityLabel={`Name: ${buildingInfo?.name}`}
+                accessibilityRole="header"
+                >
+                {buildingInfo?.name || "Building"}
+                </Text>
+                {/* Building ID and icons */}
+                <View style={[styles.buildingIdWithIconsContainer, { justifyContent: 'center', position: 'relative' }]}>
+                {/* Building ID */}
+                <View style={styles.buildingIdContainer}>
+                    <Text
+                    style={[
+                        styles.buildingId,
+                        themedStyles.subtext(mode),
+                    ]}
+                    accessible={true}
+                    accessibilityLabel={`Name Abbreviation: ${buildingId}`}
+                    >
+                    {buildingId}
                     </Text>
-                  </TouchableOpacity>
+                </View>
+                </View>
+            </View>
+            <View style={styles.rightHeaderActions}>
+              <TouchableOpacity
+                onPress={handleDirectionsPress}
+                style={styles.directionsButton}
+                accessibilityRole="button"
+                accessibilityLabel={`Directions, ${directionsEtaLabel || "--"}`}
+                accessibilityHint="Opens directions panel"
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <View style={styles.directionsArrowCircle}>
+                  <MaterialIcons name="subdirectory-arrow-right" size={12} color={campusPink} />
+                </View>
+                <Text style={styles.directionsEtaText}>
+                  {directionsEtaLabel || "--"}
+                </Text>
+              </TouchableOpacity>
 
-                  {accessibilityIcons && accessibilityIcons.length > 0 && (
-                    <View style={[styles.accessibilityIconsContainer, styles.rightAccessibilityRow]}>
-                      {accessibilityIcons.map((icon) => (
-                        <View
-                          key={icon.key}
+              {accessibilityIcons && accessibilityIcons.length > 0 && (
+                <View style={[styles.accessibilityIconsContainer, styles.rightAccessibilityRow]}>
+                  {accessibilityIcons.map((icon) => (
+                    <View
+                      key={icon.key}
+                      accessible={true}
+                      accessibilityLabel={icon.label}
+                      accessibilityRole="image"
+                    >
+                      {icon.key !== "metro" && (Platform.OS === "ios" ? <SymbolView 
+                          name={icon.sf}
                           accessible={true}
                           accessibilityLabel={icon.label}
-                        >
-                          {icon.key !== "metro" && (Platform.OS === "ios" ? <SymbolView 
-                              name={icon.sf}
-                              size={25}
-                              weight={"heavy"}
-                              tintColor={themedStyles.subtext(mode).color}
-                            /> : <MaterialIcons name={icon.material} size={25} color={themedStyles.subtext(mode).color}/>)
-                            || <Image source={require(`../../assets/images/metro.png`)}
-                              style={{width: 25,
-                              height: 25,
-                              tintColor: themedStyles.subtext(mode).color}}
-                            />}
-                        </View>
-                      ))}
+                          size={25}
+                          weight={"heavy"}
+                          tintColor={themedStyles.subtext(mode).color}
+                        /> : <MaterialIcons name={icon.material} size={25} color={themedStyles.subtext(mode).color}/>)
+                        || <Image source={require(`../../assets/images/metro.png`)}
+                          style={{width: 25,
+                          height: 25,
+                          tintColor: themedStyles.subtext(mode).color}}
+                          accessibilityLabel={icon.label}
+                        />}
                     </View>
-                  )}
+                  ))}
                 </View>
-              </View>
+              )}
             </View>
+            </View>
+        </View>
 
-            {/* Scrollable content area (separate from drag zone)*/}
-            <View style={{ flex: 1 }} {...scrollAreaPanResponder.panHandlers}>
-              <ScrollView
-                ref={scrollViewRef}
-                style={[styles.contentArea, { flex: 1 }]}
-                scrollEnabled={true}
-                showsVerticalScrollIndicator={true}
-                bounces={true}
-                nestedScrollEnabled={true}
-                onScroll={(e) => {
-                  scrollOffsetRef.current = e.nativeEvent.contentOffset.y;
-                }}
-                contentContainerStyle={{ flexGrow: 1, paddingBottom: 24 }}
-                scrollEventThrottle={16}
-              >
-                {/* Schedule section */}
-                <View style={styles.section}>
-                  <Text
-                    style={[
-                      styles.sectionTitle,
-                      themedStyles.text(mode),
-                    ]}
-                  >
-                    Schedule
+        {/* Scrollable content area (separate from drag zone)*/}
+        <View style={{ flex: 1 }} {...scrollAreaPanResponder.panHandlers}>
+            <ScrollView
+            ref={scrollViewRef}
+            style={[styles.contentArea, { flex: 1 }]}
+            scrollEnabled={true}
+            showsVerticalScrollIndicator={true}
+            bounces={true}
+            nestedScrollEnabled={true}
+            onScroll={(e) => {
+                scrollOffsetRef.current = e.nativeEvent.contentOffset.y;
+            }}
+            contentContainerStyle={{ flexGrow: 1, paddingBottom: 24 }}
+            scrollEventThrottle={16}
+            >
+            {/* Schedule section */}
+            <View style={styles.section}>
+                <Text
+                style={[
+                    styles.sectionTitle,
+                    themedStyles.text(mode),
+                ]}
+                accessible={true}
+                accessibilityRole="header"
+                >
+                Schedule
+                </Text>
+                <View
+                  style={{
+                    marginTop: 8,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Text style={{ color: mode === "dark" ? "#CCCCCC" : "#585858" }}>
+                    Next class • 5 min walk
                   </Text>
-                  <View
+                  <TouchableOpacity
+                    onPress={handleDirectionsPress}
                     style={{
-                      marginTop: 8,
                       flexDirection: "row",
                       alignItems: "center",
-                      justifyContent: "space-between",
+                      borderRadius: 999,
+                      backgroundColor: campusPink,
+                      paddingVertical: 4,
+                      paddingHorizontal: 7,
+                      gap: 5,
                     }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Directions, ${directionsEtaLabel || "--"}`}
+                    accessibilityHint="Opens directions panel"
                   >
-                    <Text style={{ color: mode === "dark" ? "#CCCCCC" : "#585858" }}>
-                      Next class • 5 min walk
-                    </Text>
-                    <TouchableOpacity
-                      onPress={onDirectionsTrigger}
+                    <View
                       style={{
-                        flexDirection: "row",
+                        width: 18,
+                        height: 18,
+                        borderRadius: 9,
+                        backgroundColor: "#FFFFFF",
                         alignItems: "center",
-                        borderRadius: 999,
-                        backgroundColor: campusPink,
-                        paddingVertical: 4,
-                        paddingHorizontal: 7,
-                        gap: 5,
+                        justifyContent: "center",
                       }}
                     >
-                      <View
-                        style={{
-                          width: 18,
-                          height: 18,
-                          borderRadius: 9,
-                          backgroundColor: "#FFFFFF",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        <MaterialIcons name="subdirectory-arrow-right" size={12} color={campusPink} />
-                      </View>
-                      <Text
-                        style={{
-                          color: "#FFFFFF",
-                          fontWeight: "700",
-                          fontSize: 12,
-                          lineHeight: 14,
-                        }}
-                      >
-                        {directionsEtaLabel}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-                {/* Opening hours section */}
-                {buildingInfo?.openingHours &&
-                  renderOpeningHours(buildingInfo.openingHours)}
-                {/* Address section */}
-                {buildingInfo?.address && (
-                  <View style={styles.section}>
-                    <Text
-                      style={[styles.sectionTitle, themedStyles.text(mode)]}
-                    >
-                      Address
-                    </Text>
-                    <View style={styles.addressContainer}>
-                      <Text
-                        style={[styles.addressText, themedStyles.text(mode)]}
-                      >
-                        {buildingInfo.address}
-                      </Text>
-                      <TouchableOpacity
-                        onPress={copyAddressToClipboard}
-                        style={styles.copyButton}
-                      >
-                        {Platform.OS === "ios" && <SymbolView 
-                            name={copying ? "document.on.document.fill" : "document.on.document"}
-                            size={25}
-                            weight={"regular"}
-                            tintColor={mode === "dark" ? "#FFFFFF" : "#333333"} 
-                          /> || <MaterialIcons
-                            name={copying ? "task" : "content-copy"}
-                            size={22}
-                            color={mode === "dark" ? "#FFFFFF" : "#333333"}
-                          />}
-                      </TouchableOpacity>
+                      <MaterialIcons name="subdirectory-arrow-right" size={12} color={campusPink} />
                     </View>
-                  </View>
-                )}
-                {/* Description section */}
-                {buildingInfo?.description && (
-                  <View style={styles.section}>
                     <Text
-                      style={[styles.sectionTitle, themedStyles.text(mode)]}
+                      style={{
+                        color: "#FFFFFF",
+                        fontWeight: "700",
+                        fontSize: 12,
+                        lineHeight: 14,
+                      }}
                     >
-                      Description
+                      {directionsEtaLabel || "--"}
                     </Text>
-                    <Text
-                      style={[
-                        styles.descriptionText,
-                        themedStyles.mutedText(mode),
-                      ]}
-                    >
-                      {buildingInfo.description}
-                    </Text>
-                  </View>
-                )}
-              </ScrollView>
+                  </TouchableOpacity>
+                </View>
             </View>
-            </Animated.View>
-          </BackgroundWrapper>
+            {/* Opening hours section */}
+            {buildingInfo?.openingHours &&
+                renderOpeningHours(buildingInfo.openingHours)}
+            {/* Address section */}
+            {buildingInfo?.address && (
+                <View style={styles.section}>
+                <Text
+                    style={[
+                    styles.sectionTitle,
+                    themedStyles.text(mode),
+                    ]}
+                    accessible={true}
+                    accessibilityRole="header"
+                >
+                    Address
+                </Text>
+                <View style={styles.addressContainer}>
+                    <Text
+                    style={[
+                        styles.addressText,
+                        themedStyles.text(mode),
+                    ]}
+                    accessible={true}
+                    >
+                    {buildingInfo.address}
+                    </Text>
+                    <TouchableOpacity
+                    onPress={copyAddressToClipboard}
+                    style={styles.copyButton}
+                    accessible={true}
+                    accessibilityLabel={copying ? "Address copied" : "Copy address"}
+                    accessibilityRole="button"
+                    >
+                    {Platform.OS === "ios" && <SymbolView 
+                        name={copying ? "document.on.document.fill" : "document.on.document"}
+                        size={25}
+                        weight={"regular"}
+                        tintColor={mode === "dark" ? "#FFFFFF" : "#333333"} 
+                        /> || <MaterialIcons
+                        name={copying ? "task" : "content-copy"}
+                        size={22}
+                        color={mode === "dark" ? "#FFFFFF" : "#333333"}
+                        />}
+                    </TouchableOpacity>
+                </View>
+                </View>
+            )}
+            {/* Description section */}
+            {buildingInfo?.description && (
+                <View style={styles.section}>
+                <Text
+                    style={[
+                    styles.sectionTitle,
+                    themedStyles.text(mode),
+                    ]}
+                    accessible={true}
+                    accessibilityRole="header"
+                >
+                    Description
+                </Text>
+                <Text
+                    style={[
+                    styles.descriptionText,
+                    themedStyles.mutedText(mode),
+                    ]}
+                    accessible={true}
+                >
+                    {buildingInfo.description}
+                </Text>
+                </View>
+            )}
+            </ScrollView>
+        </View>
         </Animated.View>
-      </View>
-    );
+        </BackgroundWrapper>
+    </Animated.View>
+  );
+
+  return (
+    <View
+      style={{
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: screenHeight,
+        zIndex: 999,
+        justifyContent: 'flex-end'
+      }}
+      pointerEvents="box-none"
+      accessibilityViewIsModal={visible}
+    >
+      <Animated.View 
+        style={{ 
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'black',
+          opacity: backdropOpacity 
+        }} 
+        pointerEvents="none"
+      />
+        {Content}
+    </View>
+  );
 });
+
+AdditionalInfoPopup.displayName = "AdditionalInfoPopup";
 
 export default AdditionalInfoPopup;

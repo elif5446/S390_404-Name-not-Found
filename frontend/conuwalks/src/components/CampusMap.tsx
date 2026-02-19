@@ -66,6 +66,7 @@ interface CampusMapProps {
     latitude: number;
     longitude: number;
   };
+  onInfoPopupExpansionChange?: (isExpanded: boolean) => void;
 }
 
 interface TransitStopMarker {
@@ -99,6 +100,7 @@ interface GeoJsonFeature {
 
 const CampusMap: React.FC<CampusMapProps> = ({
   initialLocation = { latitude: 45.49599, longitude: -73.57854 },
+  onInfoPopupExpansionChange,
 }) => {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme() || "light";
@@ -168,12 +170,18 @@ const CampusMap: React.FC<CampusMapProps> = ({
   const [indoorBuildingId, setIndoorBuildingId] = useState<string | null>(null);
   const [isInfoPopupExpanded, setIsInfoPopupExpanded] = useState(false);
 
+  const handleInfoPopupExpansionChange = (isExpanded: boolean) => {
+    setIsInfoPopupExpanded(isExpanded);
+    onInfoPopupExpansionChange?.(isExpanded);
+  };
+
   // Calculate circle radius based on zoom level (longitudeDelta)
   // Larger longitudeDelta = zoomed out = bigger circle
   const circleRadius = Math.max(2.5, mapRegion.longitudeDelta * 2000);
 
   // Create a ref to the MapView so we can control it
   const mapRef = useRef<MapView>(null);
+  const buildingMarkerRefs = useRef<Record<string, { showCallout?: () => void } | null>>({});
   const lastCameraUpdateAtRef = useRef(0);
   const ignoreNextMapPressRef = useRef(false);
   const lastBuildingPressAtRef = useRef(0);
@@ -214,6 +222,11 @@ const CampusMap: React.FC<CampusMapProps> = ({
       campus,
       coords: coordinates,
       visible: true,
+    });
+
+    const markerKey = `${campus}-${buildingName}`;
+    requestAnimationFrame(() => {
+      buildingMarkerRefs.current[markerKey]?.showCallout?.();
     });
 
     // Get building name from metadata for display
@@ -560,6 +573,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
       // Calculate center point of building for directions
       const centerCoordinates = calculatePolygonCenter(coordinates);
+      const markerKey = `${campus}-${properties.id}`;
 
       return (
         <React.Fragment key={properties.id}>
@@ -604,6 +618,40 @@ const CampusMap: React.FC<CampusMapProps> = ({
             accessibilityRole="button"
             zIndex={3}
           />
+
+          <Marker
+            ref={(markerRef) => {
+              buildingMarkerRefs.current[markerKey] = markerRef as { showCallout?: () => void } | null;
+            }}
+            coordinate={centerCoordinates}
+            onPress={() => handleBuildingPress(properties.id, campus, centerCoordinates)}
+            zIndex={200}
+            tracksViewChanges={true}
+            title={buildingMetadata?.name || properties.id}
+            importantForAccessibility="yes"
+            accessibilityLabel={buildingMetadata?.name || properties.id}
+            accessibilityRole="button"
+            accessibilityHint="Tap to view details"
+          >
+            <View
+              style={{
+                width: 0.3 / mapRegion.longitudeDelta,
+                height: 0.3 / mapRegion.longitudeDelta,
+                backgroundColor: "#FFFFFF",
+                opacity: 0.01,
+              }}
+              collapsable={false}
+              importantForAccessibility="yes"
+              accessible={true}
+              accessibilityLabel={buildingMetadata?.name || properties.id}
+              accessibilityRole="button"
+              accessibilityHint="Tap to view details"
+            >
+              {Platform.OS === "android" && (
+                <Text style={{ width: 1, height: 1, opacity: 0 }}> </Text>
+              )}
+            </View>
+          </Marker>
         </React.Fragment>
       );
     });
@@ -892,9 +940,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
             justifyContent: "space-between",
             overflow: "hidden",
           }}
-          accessible
-          accessibilityRole="summary"
-          accessibilityLabel={`Trip progress. Duration ${routeData.duration}. Distance ${routeData.distance}. Arrival ${routeData.eta}.`}
+          accessible={false}
         >
           {Platform.OS === "ios" && (
             <BlurView
@@ -937,6 +983,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
                 alignItems: "center",
                 justifyContent: "center",
               }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               accessibilityRole="button"
               accessibilityLabel="End trip"
               accessibilityHint="Ends active navigation and closes route guidance"
@@ -962,7 +1009,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
           onClose={handleClosePopup}
           onDirectionsTrigger={handleDirectionsTrigger}
           directionsEtaLabel={directionsEtaLabel}
-          onExpansionChange={setIsInfoPopupExpanded}
+          onExpansionChange={handleInfoPopupExpansionChange}
         />
       )}
 
