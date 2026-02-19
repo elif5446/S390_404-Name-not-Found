@@ -373,6 +373,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
   const recenterButtonTop =
     insets.top + (isNavigationActive && routeData ? 118 : 84);
+  const isSheetVisibleForAccessibility = (selectedBuilding.visible && !showDirections) || showDirections;
 
   const modeLabelMap: Record<"walking" | "driving" | "transit" | "bicycling", string> = {
     walking: "Walking",
@@ -681,6 +682,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
         toolbarEnabled={false}
         loadingEnabled
         rotateEnabled={false}
+        accessibilityElementsHidden={isSheetVisibleForAccessibility}
+        importantForAccessibility={isSheetVisibleForAccessibility ? "no-hide-descendants" : "yes"}
       >
 
         {/* ---------------- overlays ---------------- */}

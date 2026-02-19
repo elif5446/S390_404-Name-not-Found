@@ -526,9 +526,12 @@ const AdditionalInfoPopup = forwardRef<
           {...handlePanResponder.panHandlers}
         >
             {/* Handle bar */}
-          <View
+          <TouchableOpacity
             style={styles.handleBarContainer}
+            onPress={() => snapTo(expandedStateRef.current ? SNAP_OFFSET : 0)}
+            activeOpacity={1}
             accessible={true}
+            focusable={true}
             accessibilityLabel="Drag handle"
             accessibilityHint="Swipe up with one finger to expand, or swipe down to collapse"
             accessibilityRole="adjustable"
@@ -539,7 +542,7 @@ const AdditionalInfoPopup = forwardRef<
             onAccessibilityAction={handleDragHandleAccessibilityAction}
           >
             <View style={styles.handleBar} />
-            </View>
+            </TouchableOpacity>
             {/* Header */}
             <View style={styles.iosHeader}>
             {/* Close button */}

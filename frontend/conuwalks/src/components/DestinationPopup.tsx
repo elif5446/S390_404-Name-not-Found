@@ -380,7 +380,25 @@ const DestinationPopup: React.FC<DestinationPopupProps> = ({
                 accessibilityLabel="Close directions"
                 accessibilityHint="Closes the directions panel"
               >
-                <PlatformIcon materialName="close" iosName="xmark" size={22} color={campusPink} />
+                {Platform.OS === "ios" ? (
+                  <View
+                    style={[
+                      styles.closeButtonCircle,
+                      { backgroundColor: isDark ? "#00000031" : "#85858522" },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.closeButtonText,
+                        { color: isDark ? "#FFFFFF" : "#333333" },
+                      ]}
+                    >
+                      ✕
+                    </Text>
+                  </View>
+                ) : (
+                  <PlatformIcon materialName="close" iosName="xmark" size={22} color={campusPink} />
+                )}
               </TouchableOpacity>
             </View>
 
@@ -640,12 +658,26 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#ECECEF",
+    backgroundColor: "transparent",
+  },
+  closeButtonCircle: {
+    width: 35,
+    height: 35,
+    borderRadius: 80,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  closeButtonText: {
+    fontSize: 24,
+    fontWeight: "300",
+    lineHeight: 24,
+    includeFontPadding: false,
+    textAlign: "center",
   },
   transportRow: {
     flexDirection: "row",
