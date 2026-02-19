@@ -97,13 +97,6 @@ interface GeoJsonFeature {
   };
 }
 
-// helper; define here so it's not calculated on every frame update
-const getCentroid = (coords: LatLng[]): LatLng => {
-  const lat = coords.reduce((s, c) => s + c.latitude, 0) / coords.length;
-  const lng = coords.reduce((s, c) => s + c.longitude, 0) / coords.length;
-  return { latitude: lat, longitude: lng };
-};
-
 const CampusMap: React.FC<CampusMapProps> = ({
   initialLocation = { latitude: 45.49599, longitude: -73.57854 },
 }) => {
@@ -182,10 +175,10 @@ const CampusMap: React.FC<CampusMapProps> = ({
   const mapRef = useRef<MapView>(null);
   const lastCameraUpdateAtRef = useRef(0);
   const ignoreNextMapPressRef = useRef(false);
+  const lastBuildingPressAtRef = useRef(0);
 
   // Handle clicking on the location circle to zoom in
   const handleLocationPress = () => {
-  const handleLocationPress = useCallback(() => {
     if (userLocation && mapRef.current) {
       mapRef.current.animateToRegion(
         {
@@ -195,7 +188,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
           longitudeDelta: 0.003,
         },
         500,
-      );
+      ); // 500ms animation
     }
   };
 
@@ -205,6 +198,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
     campus: "SGW" | "LOY",
     coordinates: LatLng
   ) => {
+    ignoreNextMapPressRef.current = true;
+    lastBuildingPressAtRef.current = Date.now();
     setIndoorBuildingId(null);
     setIsNavigationActive(false);
 
@@ -242,28 +237,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
         const currentFeature = item as GeoJsonFeature;
         if (currentFeature.geometry.type !== "Polygon") {
           return false;
-  const handlePolygonPress = useCallback(
-    (buildingId: string, campus: "SGW" | "LOY") => {
-      console.log(`Single Tap Building: ${buildingId}`);
-      setSelectedBuilding({
-        name: buildingId,
-        campus,
-        visible: true,
-      });
-    },
-    [],
-  );
-
-  const handleMapLongPress = useCallback((e: LongPressEvent) => {
-    const coordinate = e.nativeEvent.coordinate;
-    console.log("Map Long Press:", coordinate);
-
-    const findBuildingId = (geojson: any) => {
-      const feature = geojson.features.find((f: GeoJsonFeature) => {
-        if (f.geometry.type === "Polygon") {
-          const rawCoords = f.geometry.coordinates[0];
-          const polygonCoords = polygonFromGeoJSON(rawCoords);
-          return isPointInPolygon(coordinate, polygonCoords);
         }
 
         const polygonCoords = polygonFromGeoJSON(currentFeature.geometry.coordinates[0]);
@@ -282,6 +255,10 @@ const CampusMap: React.FC<CampusMapProps> = ({
   };
 
   const handleMapPress = () => {
+    if (Date.now() - lastBuildingPressAtRef.current < 250) {
+      return;
+    }
+
     if (ignoreNextMapPressRef.current) {
       ignoreNextMapPressRef.current = false;
       return;
@@ -628,111 +605,19 @@ const CampusMap: React.FC<CampusMapProps> = ({
         </React.Fragment>
       );
     });
-  }, []);
-
-  // memoize the polygon lists so they don't re-calculate on every render
-  const { sgwPolygons, loyPolygons } = useMemo(() => {
-    const generatePolygons = (geojson: any, campus: "SGW" | "LOY") => {
-      return geojson.features
-        .filter((f: GeoJsonFeature) => f.geometry.type === "Polygon")
-        .map((feature: GeoJsonFeature, index: number) => {
-          const { id: buildingId } = feature.properties;
-          const coordinates = polygonFromGeoJSON(
-            feature.geometry.coordinates[0],
-          );
-
-          const themeColor =
-            BuildingTheme[campus][
-              buildingId as keyof (typeof BuildingTheme)[typeof campus]
-            ];
-          const color = themeColor || "#888888";
-
-          // metadata for accessibility
-          const meta =
-            campus === "LOY"
-              ? LoyolaBuildingMetadata[buildingId]
-              : SGWBuildingMetadata[buildingId];
-          const name = meta?.name || buildingId;
-
-          //   console.log(
-          //     `${campus}, Building: ${buildingId}, Color: ${color}, Name: ${buildingMetadata?.name}`,
-          //   );
-
-          return (
-            <React.Fragment key={`group-${buildingId}`}>
-              <Polygon
-                key={`${campus}-${buildingId}`}
-                coordinates={coordinates}
-                fillColor={color + "90"} // add transparency
-                strokeColor={color}
-                strokeWidth={1}
-                tappable={true}
-                onPress={() => handlePolygonPress(buildingId, campus)}
-                importantForAccessibility="no-hide-descendants"
-                accessibilityLabel={name}
-                accessibilityRole="button"
-                zIndex={1}
-              />
-
-              <Marker
-                coordinate={getCentroid(coordinates)}
-                onPress={() => handlePolygonPress(buildingId, campus)}
-                zIndex={200}
-                tracksViewChanges={true}
-                title={name || buildingId}
-                importantForAccessibility="yes"
-                accessibilityLabel={name || buildingId}
-                accessibilityRole="button"
-                accessibilityHint="Tap to view details"
-              >
-                <View
-                  style={{
-                    width: 0.3 / regionData.longitudeDelta,
-                    height: 0.3 / regionData.longitudeDelta,
-                    backgroundColor: "white",
-                    opacity: 0.01,
-                  }}
-                  collapsable={false}
-                  importantForAccessibility="yes"
-                  accessible={true}
-                  accessibilityLabel={name || buildingId}
-                  accessibilityRole="button"
-                  accessibilityHint="Tap to view details"
-                >
-                  {Platform.OS === "android" && (
-                    <Text style={{ width: 1, height: 1, opacity: 0 }}> </Text>
-                  )}
-                </View>
-              </Marker>
-            </React.Fragment>
-          );
-        });
-    };
-
-    return {
-      sgwPolygons: generatePolygons(SGW, "SGW"),
-      loyPolygons: generatePolygons(LOY, "LOY"),
-    };
-  }, [handlePolygonPress, regionData.longitudeDelta]);
-
-  const mapID = useMemo(() => {
-    return colorScheme === "dark"
-      ? "eb0ccd6d2f7a95e23f1ec398"
-      : "eb0ccd6d2f7a95e117328051";
-  }, [colorScheme]);
 
   return (
     <View style={styles.container}>
       <MapView
-        key={mapID}
+        key={mapID} // Rerender when mode (light/dark) changes
         ref={mapRef}
         provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
-        googleMapId={Platform.OS === "android" ? mapID : undefined}
+        googleMapId={Platform.OS === "android" ? mapID : undefined} // Style
         style={styles.map}
         pitchEnabled={false} // No 3D
         maxDelta={0}
         mapType={Platform.OS === "ios" ? "mutedStandard" : "standard"}
-        showsPointsOfInterest={false}
+        showsPointsOfInterest={false} // takes out the information off all businesses
         showsTraffic={false}
         showsIndoors={false}
         showsBuildings={false}
@@ -803,35 +688,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
               }}
             />
           </Marker>
-            <Marker
-              coordinate={userLocation}
-              onPress={handleLocationPress}
-              tracksViewChanges={false}
-              zIndex={9999}
-              title={"Current Location"}
-              accessibilityLabel={"Current Location"}
-              importantForAccessibility="yes"
-            >
-              <View
-                style={{
-                  borderRadius: 6,
-                  backgroundColor: "#B03060",
-                }}
-                accessible={true}
-                accessibilityLabel={"Current Location"}
-                importantForAccessibility="yes"
-              />
-            </Marker>
-            <Marker
-              coordinate={userLocation}
-              onPress={handleLocationPress}
-              tracksViewChanges={false} // Optimization: static image doesn't need tracking
-              zIndex={1001}
-              anchor={{ x: 0.5, y: 0.5 }}
-            >
-              <View style={localStyles.userMarker} />
-            </Marker>
-          </>
         )}
 
         <RoutePolyline startLocation={routeStartLocation} />
