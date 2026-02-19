@@ -13,8 +13,8 @@ import { styles } from "@/src/styles/login";
 export default function LoginScreen() {
   const router = useRouter();
   const [isNavigating, setIsNavigating] = useState(false);
-  const navigationTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMounted = useRef(true);
+  const navigationLock = useRef(false);
   const hasNavigated = useRef(false);
 
   useEffect(() => {
@@ -22,53 +22,54 @@ export default function LoginScreen() {
     isMounted.current = true;
 
     // Check authentication immediately on mount
-    (async () => {
-      const tokens = await getTokens();
-      if (tokens && isTokenValid(tokens)) {
-        console.log("Already authenticated, redirecting to map");
-        setIsNavigating(true);
-        hasNavigated.current = true;
-        router.replace("/(dev)");
-      }
-    })();
+    checkAndHandleAuth();
 
     return () => {
       console.log("LoginScreen UNMOUNTED");
       isMounted.current = false;
-      if (navigationTimeout.current) {
-        clearTimeout(navigationTimeout.current);
-      }
     };
   }, []);
 
-  const handleAuthSuccess = () => {
-    // Prevent multiple navigations
-    if (isNavigating || hasNavigated.current) {
-      console.log("Already navigating or navigated, skipping");
+  const checkAndHandleAuth = async () => {
+    if (navigationLock.current) {
+      console.log("Navigation already in progress, skipping auth check");
       return;
     }
 
-    console.log("Auth success, preparing to navigate");
-    setIsNavigating(true);
-    hasNavigated.current = true;
+    try {
+      const tokens = await getTokens();
+      if (tokens && isTokenValid(tokens)) {
+        console.log("Already authenticated, redirecting to map");
 
-    // Clear any existing timeout
-    if (navigationTimeout.current) {
-      clearTimeout(navigationTimeout.current);
+        // Lock immediately
+        navigationLock.current = true;
+        setIsNavigating(true);
+
+        if (isMounted.current) {
+          router.replace("/(dev)");
+        }
+      }
+    } catch (error) {
+      console.error("Error checking auth:", error);
+    }
+  };
+
+  const handleAuthSuccess = () => {
+    // Lock check
+    if (navigationLock.current) {
+      console.log("Navigation already in progress, skipping");
+      return;
     }
 
-    // Small delay
-    navigationTimeout.current = setTimeout(() => {
-      if (isMounted.current) {
-        console.log("Navigating to map with root replace");
-        router.replace("/(dev)");
-        setTimeout(() => {
-          if (isMounted.current) {
-            console.log("Ensuring login screen is gone");
-          }
-        }, 100);
-      }
-    }, 500);
+    console.log("Auth success, navigating immediately");
+
+    // Set lock
+    navigationLock.current = true;
+    setIsNavigating(true);
+
+    if (isMounted.current) {
+      router.replace("/(dev)");
+    }
   };
 
   if (isNavigating) {

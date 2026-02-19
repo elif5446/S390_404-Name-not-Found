@@ -84,6 +84,10 @@ In the output, you'll find options to open the app in a
 
    5.4 Make sure that the file 'google.services.json' is in your project root directory. Contact the team if it is not there.
 
+   5.5 To log in via Google, you must use these credentials since only one account has been added as a tester email:
+   Email: testerjohn602@gmail.com
+   Password: JohnTester5446
+
 ## Run E2E Maestro tests
 
 Note: APP_ID is the android/ios appID; see app.config.js.
