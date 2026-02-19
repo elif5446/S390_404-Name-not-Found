@@ -166,6 +166,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
   const [navigationStepIndex, setNavigationStepIndex] = useState(0);
   const [selectedTransitStopKey, setSelectedTransitStopKey] = useState<string | null>(null);
   const [indoorBuildingId, setIndoorBuildingId] = useState<string | null>(null);
+  const [isInfoPopupExpanded, setIsInfoPopupExpanded] = useState(false);
 
   // Calculate circle radius based on zoom level (longitudeDelta)
   // Larger longitudeDelta = zoomed out = bigger circle
@@ -228,6 +229,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
   // Handle close popup
   const handleClosePopup = () => {
+    setIsInfoPopupExpanded(false);
     setSelectedBuilding((prev) => ({ ...prev, visible: false }));
   };
 
@@ -960,6 +962,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
           onClose={handleClosePopup}
           onDirectionsTrigger={handleDirectionsTrigger}
           directionsEtaLabel={directionsEtaLabel}
+          onExpansionChange={setIsInfoPopupExpanded}
         />
       )}
 
@@ -968,7 +971,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
         onClose={handleCloseDestinationPopup}
       />
 
-      {userLocation && !indoorBuildingId && (
+      {userLocation && !indoorBuildingId && !isInfoPopupExpanded && (
         <TouchableOpacity
           onPress={handleLocationPress}
           activeOpacity={0.85}

@@ -26,6 +26,7 @@ interface AdditionalInfoPopupProps {
   onClose: () => void;
   onDirectionsTrigger: () => void;
   directionsEtaLabel: string;
+  onExpansionChange?: (isExpanded: boolean) => void;
 }
 export interface AdditionalInfoPopupHandle{
   collapse: () =>void;
@@ -65,6 +66,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfo
   onClose,
   onDirectionsTrigger,
   directionsEtaLabel,
+  onExpansionChange,
 }, ref) => {
   const campusPink = "#B03060";
   const mode = useColorScheme() || "light";
@@ -74,7 +76,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfo
   // Default heights
   const screenHeight = Dimensions.get("window").height;
   const MIN_HEIGHT = 300; //initial popup view
-  const MAX_HEIGHT = screenHeight * 0.8; //full popup will be around 80% of the screen
+  const MAX_HEIGHT = screenHeight * 0.92; //full popup can expand close to full screen
 
   // How far down the popup must sit so that only 300px is visible.
   const SNAP_OFFSET = MAX_HEIGHT - MIN_HEIGHT;
@@ -84,25 +86,17 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfo
 
   const translateYRef = useRef(MAX_HEIGHT);
   const translateYAtGestureStart = useRef(MAX_HEIGHT);
+  const expandedStateRef = useRef(false);
   const scrollOffsetRef = useRef(0);
   //change building info animation 
-  const opacity = useRef(new Animated.Value(2)).current;
-  
-  useEffect(() => {
-  if (!visible) return;
-  Animated.sequence([
-    Animated.timing(opacity, {
-      toValue: 0,
-      duration: 150,
-      useNativeDriver: true,
-    }),
-    Animated.timing(opacity, {
-      toValue: 1,
-      duration: 150,
-      useNativeDriver: true,
-    }),
-  ]).start();
-}, [buildingId]);
+  const opacity = useRef(new Animated.Value(1)).current;
+  const reportExpandedState = (isExpanded: boolean) => {
+    if (expandedStateRef.current === isExpanded) {
+      return;
+    }
+    expandedStateRef.current = isExpanded;
+    onExpansionChange?.(isExpanded);
+  };
   useEffect(() => {
     const id = translateY.addListener(({ value }) => {
       translateYRef.current = value;
@@ -119,17 +113,13 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfo
       translateY.setValue(MAX_HEIGHT);
       translateYRef.current = MAX_HEIGHT;
 
-      // Start off-screen, spring up to collapsed position
-      Animated.spring(translateY, {
-        toValue: SNAP_OFFSET,
-        useNativeDriver: true, // native driver works on translateY
-        tension: 70,
-        friction: 12,
-      }).start(() => {
-        translateYRef.current = SNAP_OFFSET;
-      });
+      translateY.setValue(SNAP_OFFSET);
+      translateYRef.current = SNAP_OFFSET;
+      reportExpandedState(false);
+    } else {
+      reportExpandedState(false);
     }
-  }, [visible]);
+  }, [visible, onExpansionChange]);
 
   // Fetch building info based on buildingId and campus
   useEffect(() => {
@@ -154,6 +144,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfo
 
   //this will allow us to smoothly move the popup up and down
   const snapTo = (toValue: number, onDone?: () => void) => {
+    reportExpandedState(toValue <= 1);
     Animated.spring(translateY, {
       toValue,
       useNativeDriver: true,
@@ -163,19 +154,17 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfo
     }).start(({ finished }) => {
       if (finished) {
         translateYRef.current = toValue;
+        reportExpandedState(toValue <= 1);
         onDone?.();
       }
     });
   };
 
   const dismiss = () => {
-    Animated.timing(translateY, {
-      toValue: MAX_HEIGHT,
-      duration: 240,
-      useNativeDriver: true,
-    }).start(({ finished }) => {
-      if (finished) onClose();
-    });
+    translateY.setValue(MAX_HEIGHT);
+    translateYRef.current = MAX_HEIGHT;
+    reportExpandedState(false);
+    onClose();
   };
 
   const isIOS = Platform.OS === "ios";
@@ -205,6 +194,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfo
         const newY = translateYAtGestureStart.current + g.dy;
         const clamped = Math.max(0, Math.min(MAX_HEIGHT * 0.92, newY));
         translateY.setValue(clamped);
+        reportExpandedState(clamped <= 12);
       },
 
       onPanResponderRelease: (_, g) => {
@@ -245,8 +235,8 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfo
 
         const isExpanded = translateYRef.current < SNAP_OFFSET - 20;
 
-        // Collapsed: intercept all downward drags
-        if (!isExpanded) return g.dy > 0;
+        // Collapsed: allow dragging both up (expand) and down
+        if (!isExpanded) return Math.abs(g.dy) > 5;
 
         // Expanded + dragging up: let ScrollView scroll
         if (g.dy < 0) return false;
@@ -269,6 +259,7 @@ const AdditionalInfoPopup = forwardRef<AdditionalInfoPopupHandle, AdditionalInfo
         const newY = translateYAtGestureStart.current + g.dy;
         const clamped = Math.max(0, Math.min(MAX_HEIGHT * 0.92, newY));
         translateY.setValue(clamped);
+        reportExpandedState(clamped <= 12);
       },
 
       onPanResponderRelease: (_, g) => {
