@@ -6,6 +6,7 @@ import React, {
   forwardRef,
 } from "react";
 import {
+  AccessibilityActionEvent,
   Image,
   View,
   Text,
@@ -32,6 +33,9 @@ interface AdditionalInfoPopupProps {
   buildingId: string;
   campus: "SGW" | "LOY";
   onClose: () => void;
+  onDirectionsTrigger?: () => void;
+  directionsEtaLabel?: string;
+  onExpansionChange?: (isExpanded: boolean) => void;
 }
 export interface AdditionalInfoPopupHandle {
   collapse: () => void;
@@ -73,7 +77,8 @@ const BackgroundWrapper = ({ children }: { children: React.ReactNode }) => {
 const AdditionalInfoPopup = forwardRef<
   AdditionalInfoPopupHandle,
   AdditionalInfoPopupProps
->(({ visible, buildingId, campus, onClose }, ref) => {
+>(({ visible, buildingId, campus, onClose, onDirectionsTrigger, directionsEtaLabel, onExpansionChange }, ref) => {
+  const campusPink = "#B03060";
   const mode = useColorScheme() || "light";
   const [buildingInfo, setBuildingInfo] = useState<any>(null);
   const scrollViewRef = useRef<ScrollView>(null);
@@ -90,6 +95,7 @@ const AdditionalInfoPopup = forwardRef<
   const translateY = useRef(new Animated.Value(screenHeight)).current;
   const translateYRef = useRef(screenHeight);
   const translateYAtGestureStart = useRef(screenHeight);
+  const expandedStateRef = useRef(false);
   const scrollOffsetRef = useRef(0);
   //change building info animation
   const opacity = useRef(new Animated.Value(2)).current;
@@ -105,6 +111,13 @@ const AdditionalInfoPopup = forwardRef<
     outputRange: [1, 0],
     extrapolate: 'clamp',
   });
+  const reportExpandedState = (isExpanded: boolean) => {
+    if (expandedStateRef.current === isExpanded) {
+      return;
+    }
+    expandedStateRef.current = isExpanded;
+    onExpansionChange?.(isExpanded);
+  };
   
   useEffect(() => {
     if (!visible) return;
@@ -146,9 +159,12 @@ const AdditionalInfoPopup = forwardRef<
         friction: 12,
       }).start(() => {
         translateYRef.current = SNAP_OFFSET;
+        reportExpandedState(false);
       });
+    } else {
+      reportExpandedState(false);
     }
-  }, [visible, translateY, screenHeight, SNAP_OFFSET]);
+  }, [visible, translateY, screenHeight, SNAP_OFFSET, onExpansionChange]);
 
   // Fetch building info based on buildingId and campus
   useEffect(() => {
@@ -173,6 +189,7 @@ const AdditionalInfoPopup = forwardRef<
 
   //this will allow us to smoothly move the popup up and down
   const snapTo = (toValue: number, onDone?: () => void) => {
+    reportExpandedState(toValue <= 1);
     Animated.spring(translateY, {
       toValue,
       useNativeDriver: true,
@@ -182,19 +199,41 @@ const AdditionalInfoPopup = forwardRef<
     }).start(({ finished }) => {
       if (finished) {
         translateYRef.current = toValue;
+        reportExpandedState(toValue <= 1);
         onDone?.();
       }
     });
   };
 
-  const dismiss = () => {
+  const dismiss = (onDone?: () => void) => {
+    reportExpandedState(false);
     Animated.timing(translateY, {
       toValue: screenHeight,
       duration: 240,
       useNativeDriver: true,
     }).start(({ finished }) => {
-      if (finished) onClose();
+      if (finished) {
+        onClose();
+        onDone?.();
+      }
     });
+  };
+
+  const handleDirectionsPress = () => {
+    dismiss(() => {
+      onDirectionsTrigger?.();
+    });
+  };
+
+  const handleDragHandleAccessibilityAction = (event: AccessibilityActionEvent) => {
+    const actionName = event.nativeEvent.actionName;
+    if (actionName === "increment") {
+      snapTo(0);
+      return;
+    }
+    if (actionName === "decrement") {
+      snapTo(SNAP_OFFSET);
+    }
   };
 
   useEffect(() => {
@@ -240,6 +279,7 @@ const AdditionalInfoPopup = forwardRef<
         const newY = translateYAtGestureStart.current + g.dy;
         const clamped = Math.max(0, Math.min(MAX_HEIGHT * 0.92, newY));
         translateY.setValue(clamped);
+        reportExpandedState(clamped <= 12);
       },
 
       onPanResponderRelease: (_, g) => {
@@ -298,6 +338,7 @@ const AdditionalInfoPopup = forwardRef<
         const newY = translateYAtGestureStart.current + g.dy;
         const clamped = Math.max(0, Math.min(MAX_HEIGHT * 0.92, newY));
         translateY.setValue(clamped);
+        reportExpandedState(clamped <= 12);
       },
 
       onPanResponderRelease: (_, g) => {
@@ -481,18 +522,32 @@ const AdditionalInfoPopup = forwardRef<
         <Animated.View style={{ flex: 1, opacity }}>
         {/* panHandlers are ONLY here, so buttons below are never blocked */}
         <View
-            style={styles.iosContentContainer}
-            {...handlePanResponder.panHandlers}
+          style={styles.iosContentContainer}
+          {...handlePanResponder.panHandlers}
         >
             {/* Handle bar */}
-            <View style={styles.handleBarContainer} accessible={true} accessibilityLabel="Drag handle" accessibilityHint="Swipe up to expand building details or down to collapse" accessibilityRole="adjustable">
+          <TouchableOpacity
+            style={styles.handleBarContainer}
+            onPress={() => snapTo(expandedStateRef.current ? SNAP_OFFSET : 0)}
+            activeOpacity={1}
+            accessible={true}
+            focusable={true}
+            accessibilityLabel="Drag handle"
+            accessibilityHint="Swipe up with one finger to expand, or swipe down to collapse"
+            accessibilityRole="adjustable"
+            accessibilityActions={[
+              { name: "increment", label: "Expand" },
+              { name: "decrement", label: "Collapse" },
+            ]}
+            onAccessibilityAction={handleDragHandleAccessibilityAction}
+          >
             <View style={styles.handleBar} />
-            </View>
+            </TouchableOpacity>
             {/* Header */}
-            <View style={[styles.iosHeader, { justifyContent: 'center', paddingHorizontal: 0 }]}>
+            <View style={styles.iosHeader}>
             {/* Close button */}
             <TouchableOpacity
-                onPress={dismiss}
+              onPress={() => dismiss()}
                 style={[styles.closeButton, Platform.OS === 'android' && { width: 'auto', padding: 4 }]}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 accessible={true}
@@ -520,7 +575,7 @@ const AdditionalInfoPopup = forwardRef<
                 )}
             </TouchableOpacity>
             {/* Center text container */}
-            <View style={[styles.headerTextContainer, { alignItems: 'center', width: '100%', marginHorizontal: 0 }]}>
+            <View style={styles.headerTextContainer}>
                 <Text
                 style={[
                     styles.buildingName,
@@ -547,35 +602,52 @@ const AdditionalInfoPopup = forwardRef<
                     {buildingId}
                     </Text>
                 </View>
-                {/* Accessibility icons */}
-                {accessibilityIcons && accessibilityIcons.length > 0 && (
-                    <View style={[styles.accessibilityIconsContainer, { position: 'absolute', paddingRight: 40, flexDirection: 'row', alignItems: 'center', top: 0, bottom: 0 }]}>
-                    {accessibilityIcons.map((icon) => (
-                        <View
-                        key={icon.key}
-                        accessible={true}
-                        accessibilityLabel={icon.label}
-                        accessibilityRole="image"
-                        >
-                        {icon.key !== "metro" && (Platform.OS === "ios" ? <SymbolView 
-                            name={icon.sf}
-                            accessible={true}
-                            accessibilityLabel={icon.label}
-                            size={25}
-                            weight={"heavy"}
-                            tintColor={themedStyles.subtext(mode).color}
-                            /> : <MaterialIcons name={icon.material} size={25} color={themedStyles.subtext(mode).color}/>)
-                            || <Image source={require(`../../assets/images/metro.png`)}
-                            style={{width: 25,
-                            height: 25,
-                            tintColor: themedStyles.subtext(mode).color}}
-                            accessibilityLabel={icon.label}
-                            />}
-                        </View>
-                    ))}
-                    </View>
-                )}
                 </View>
+            </View>
+            <View style={styles.rightHeaderActions}>
+              <TouchableOpacity
+                onPress={handleDirectionsPress}
+                style={styles.directionsButton}
+                accessibilityRole="button"
+                accessibilityLabel={`Directions, ${directionsEtaLabel || "--"}`}
+                accessibilityHint="Opens directions panel"
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <View style={styles.directionsArrowCircle}>
+                  <MaterialIcons name="subdirectory-arrow-right" size={12} color={campusPink} />
+                </View>
+                <Text style={styles.directionsEtaText}>
+                  {directionsEtaLabel || "--"}
+                </Text>
+              </TouchableOpacity>
+
+              {accessibilityIcons && accessibilityIcons.length > 0 && (
+                <View style={[styles.accessibilityIconsContainer, styles.rightAccessibilityRow]}>
+                  {accessibilityIcons.map((icon) => (
+                    <View
+                      key={icon.key}
+                      accessible={true}
+                      accessibilityLabel={icon.label}
+                      accessibilityRole="image"
+                    >
+                      {icon.key !== "metro" && (Platform.OS === "ios" ? <SymbolView 
+                          name={icon.sf}
+                          accessible={true}
+                          accessibilityLabel={icon.label}
+                          size={25}
+                          weight={"heavy"}
+                          tintColor={themedStyles.subtext(mode).color}
+                        /> : <MaterialIcons name={icon.material} size={25} color={themedStyles.subtext(mode).color}/>)
+                        || <Image source={require(`../../assets/images/metro.png`)}
+                          style={{width: 25,
+                          height: 25,
+                          tintColor: themedStyles.subtext(mode).color}}
+                          accessibilityLabel={icon.label}
+                        />}
+                    </View>
+                  ))}
+                </View>
+              )}
             </View>
             </View>
         </View>
@@ -607,7 +679,56 @@ const AdditionalInfoPopup = forwardRef<
                 >
                 Schedule
                 </Text>
-                {/* Schedule information will be here in future versions */}
+                <View
+                  style={{
+                    marginTop: 8,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Text style={{ color: mode === "dark" ? "#CCCCCC" : "#585858" }}>
+                    Next class • 5 min walk
+                  </Text>
+                  <TouchableOpacity
+                    onPress={handleDirectionsPress}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      borderRadius: 999,
+                      backgroundColor: campusPink,
+                      paddingVertical: 4,
+                      paddingHorizontal: 7,
+                      gap: 5,
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Directions, ${directionsEtaLabel || "--"}`}
+                    accessibilityHint="Opens directions panel"
+                  >
+                    <View
+                      style={{
+                        width: 18,
+                        height: 18,
+                        borderRadius: 9,
+                        backgroundColor: "#FFFFFF",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <MaterialIcons name="subdirectory-arrow-right" size={12} color={campusPink} />
+                    </View>
+                    <Text
+                      style={{
+                        color: "#FFFFFF",
+                        fontWeight: "700",
+                        fontSize: 12,
+                        lineHeight: 14,
+                      }}
+                    >
+                      {directionsEtaLabel || "--"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
             </View>
             {/* Opening hours section */}
             {buildingInfo?.openingHours &&

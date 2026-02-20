@@ -1,7 +1,10 @@
 
 ## Dependencies
 
-Setup .env with GOOGLE_MAPS_API_KEY
+Setup `.env.local` with:
+
+- `GOOGLE_MAPS_API_KEY`
+- `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY`
 
 ## How to Build for Android
 
