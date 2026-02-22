@@ -190,7 +190,51 @@ const additionalInfoPopupStyles = StyleSheet.create({
         fontSize: 15,
         lineHeight: 22,
         fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',},
-
+    scheduleHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 4,
+        paddingVertical: 3,
+},
+    noEventsContainer: {
+    },
+    noEventsText: {
+        fontSize: 14,
+        fontStyle: 'italic',
+        textAlign: 'center',
+    },
+    nextEventLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+        paddingBottom:4,
+    },
+    eventsList: {  
+    },
+    eventItem: {
+    },
+    eventItemBorder: {
+        borderBottomWidth: 1,
+        borderBottomColor: '#E0E0E0',
+    },
+    eventTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        marginBottom: 6,
+    },
+    eventDetailsRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    eventTime: {
+        fontSize: 16,
+        color: '#666',
+    },
+    eventRoom: {
+        fontSize: 16,
+        fontWeight: '500',
+    },
     // Android styles
 });
 
