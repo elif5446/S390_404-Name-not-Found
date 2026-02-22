@@ -18,9 +18,9 @@ import {
   ScrollView,
   ActivityIndicator,
 } from "react-native";
-import * as Clipboard from 'expo-clipboard';
-import { SymbolView, SFSymbol } from 'expo-symbols'; // SF Symbols (iOS)
-import MaterialIcons from '@expo/vector-icons/MaterialIcons'; // Material Design Icons (Android)
+import * as Clipboard from "expo-clipboard";
+import { SymbolView, SFSymbol } from "expo-symbols"; // SF Symbols (iOS)
+import MaterialIcons from "@expo/vector-icons/MaterialIcons"; // Material Design Icons (Android)
 import { BlurView } from "expo-blur";
 
 import { LoyolaBuildingMetadata } from "../data/metadata/LOY.BuildingMetadata";
@@ -63,9 +63,6 @@ const BackgroundWrapper = ({ children }: { children: React.ReactNode }) => {
         {
           height: "100%",
           backgroundColor: theme === "dark" ? "#1C1C1E" : "#FFFFFF",
-          elevation: 8,
-          borderTopLeftRadius: 28,
-          borderTopRightRadius: 28
         },
       ]}
     >
@@ -95,32 +92,20 @@ const AdditionalInfoPopup = forwardRef<
 
   // Default heights
   const screenHeight = Dimensions.get("window").height;
-  const MIN_HEIGHT = Platform.OS === 'ios' ? 380 : 340; 
-  const MAX_HEIGHT = screenHeight * (Platform.OS === 'ios' ? 0.92 : 0.9);
+  const MIN_HEIGHT = 300; //initial popup view
+  const MAX_HEIGHT = screenHeight * 0.8; //full popup will be around 80% of the screen
 
   // How far down the popup must sit so that only 300px is visible.
   const SNAP_OFFSET = MAX_HEIGHT - MIN_HEIGHT;
 
   // An animated value that controls vertical movement (is initially off screen)
-  const translateY = useRef(new Animated.Value(screenHeight)).current;
-  const translateYRef = useRef(screenHeight);
-  const translateYAtGestureStart = useRef(screenHeight);
+  const translateY = useRef(new Animated.Value(MAX_HEIGHT)).current;
+  const translateYRef = useRef(MAX_HEIGHT);
+  const translateYAtGestureStart = useRef(MAX_HEIGHT);
   const scrollOffsetRef = useRef(0);
   //change building info animation
   const opacity = useRef(new Animated.Value(2)).current;
 
-  const backdropOpacity = translateY.interpolate({
-    inputRange: [0, SNAP_OFFSET],
-    outputRange: [0.5, 0], // Shadow Backdrop Opacity -- Expanded: 0.5; Collapsed: 0
-    extrapolate: 'clamp',
-  });
-
-  const sheetSolidOpacity = translateY.interpolate({ // Liquid Glass Effect When Collapsed, Opaque When Pulled Up
-    inputRange: [0, 50],
-    outputRange: [1, 0],
-    extrapolate: 'clamp',
-  });
-  
   useEffect(() => {
     if (!visible) return;
     Animated.sequence([
@@ -150,8 +135,8 @@ const AdditionalInfoPopup = forwardRef<
       scrollOffsetRef.current = 0;
       scrollViewRef.current?.scrollTo({ y: 0, animated: false });
 
-      translateY.setValue(screenHeight);
-      translateYRef.current = screenHeight;
+      translateY.setValue(MAX_HEIGHT);
+      translateYRef.current = MAX_HEIGHT;
 
       // Start off-screen, spring up to collapsed position
       Animated.spring(translateY, {
@@ -163,7 +148,7 @@ const AdditionalInfoPopup = forwardRef<
         translateYRef.current = SNAP_OFFSET;
       });
     }
-  }, [visible, translateY, screenHeight, SNAP_OFFSET]);
+  }, [visible, translateY, MAX_HEIGHT, SNAP_OFFSET]);
 
   // Fetch building info based on buildingId and campus
   useEffect(() => {
@@ -204,32 +189,13 @@ const AdditionalInfoPopup = forwardRef<
 
   const dismiss = () => {
     Animated.timing(translateY, {
-      toValue: screenHeight,
+      toValue: MAX_HEIGHT,
       duration: 240,
       useNativeDriver: true,
     }).start(({ finished }) => {
       if (finished) onClose();
     });
   };
-
-  useEffect(() => {
-    if (Platform.OS === "android") {
-      const backAction = () => {
-        if (visible) {
-          dismiss();
-          return true;
-        }
-        return false;
-      };
-
-      const backHandler = BackHandler.addEventListener(
-        "hardwareBackPress",
-        backAction
-      );
-
-      return () => backHandler.remove();
-    }
-  }, [visible]);
 
   // PanResponder for the DRAG HANDLE ONLY — does not intercept button taps
   const handlePanResponder = useRef(
@@ -341,13 +307,10 @@ const AdditionalInfoPopup = forwardRef<
   const copyAddressToClipboard = async () => {
     if (buildingInfo?.address) {
       setCopying(true);
-      await Clipboard.setStringAsync(buildingInfo.address);
+      Clipboard.setString(buildingInfo.address);
       setTimeout(() => {
-        AccessibilityInfo.announceForAccessibility("Address copied")
-        setTimeout(() => {
-          setCopying(false);
-        }, 500);
-      }, 500);
+        setCopying(false);
+      }, 1000);
     }
   };
 
@@ -368,7 +331,12 @@ const AdditionalInfoPopup = forwardRef<
           f.toLowerCase().includes("undergound passage"),
       )
     ) {
-      icons.push({ key: "metro", sf: "tram.fill.tunnel", material: "subway", label: "Access to the Concordia Underground Passage and the Metro" });
+      icons.push({
+        key: "metro",
+        sf: "tram.fill.tunnel",
+        material: "subway",
+        label: "Metro access",
+      });
     }
 
     if (
@@ -383,7 +351,7 @@ const AdditionalInfoPopup = forwardRef<
         key: "wheelchair",
         sf: "figure.roll",
         material: "accessible",
-        label: "First Floor is Wheelchair Accessible",
+        label: "Wheelchair accessible",
       });
     }
 
@@ -394,7 +362,12 @@ const AdditionalInfoPopup = forwardRef<
           f.toLowerCase().includes("lift"),
       )
     ) {
-      icons.push({ key: "elevator", sf: "arrow.up.arrow.down.square", material: "elevator", label: "Elevators Are Available" });
+      icons.push({
+        key: "elevator",
+        sf: "arrow.up.arrow.down.square",
+        material: "elevator",
+        label: "Elevator",
+      });
     }
 
     return icons;
@@ -403,15 +376,8 @@ const AdditionalInfoPopup = forwardRef<
   const renderOpeningHours = (openingHours: any) => {
     if (typeof openingHours === "string") {
       return (
-        <View style={styles.section} accessible={true}>
-          <Text
-            style={[
-              styles.sectionTitle,
-              themedStyles.text(mode)
-            ]}
-            accessible={true}
-            accessibilityRole="header"
-          >
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, themedStyles.text(mode)]}>
             Opening Hours
           </Text>
           <Text style={[styles.sectionText, themedStyles.text(mode)]}>
@@ -422,37 +388,20 @@ const AdditionalInfoPopup = forwardRef<
     } else if (openingHours && typeof openingHours === "object") {
       return (
         <View style={styles.section}>
-          <Text
-            style={[
-              styles.sectionTitle,
-              themedStyles.text(mode),
-            ]}
-            accessible={true}
-            accessibilityRole="header"
-          >
+          <Text style={[styles.sectionTitle, themedStyles.text(mode)]}>
             Opening Hours
           </Text>
           <View style={styles.hoursContainer}>
-            <View style={styles.hoursRow} accessible={true}>
-              <Text
-                style={[
-                  styles.hoursLabel,
-                  themedStyles.subtext(mode),
-                ]}
-              >
+            <View style={styles.hoursRow}>
+              <Text style={[styles.hoursLabel, themedStyles.subtext(mode)]}>
                 Weekdays:
               </Text>
               <Text style={[styles.hoursValue, themedStyles.text(mode)]}>
                 {openingHours.weekdays}
               </Text>
             </View>
-            <View style={styles.hoursRow} accessible={true}>
-              <Text
-                style={[
-                  styles.hoursLabel,
-                  themedStyles.subtext(mode),
-                ]}
-              >
+            <View style={styles.hoursRow}>
+              <Text style={[styles.hoursLabel, themedStyles.subtext(mode)]}>
                 Weekend:
               </Text>
               <Text style={[styles.hoursValue, themedStyles.text(mode)]}>
@@ -468,61 +417,47 @@ const AdditionalInfoPopup = forwardRef<
 
   const accessibilityIcons = getAccessibilityIcons(buildingInfo?.facilities);
 
-  const Content = (
-    <Animated.View
-        style={[
-        styles.iosBlurContainer,
-        { height: MAX_HEIGHT, transform: [{ translateY: translateY }] },
-        ]}
-        importantForAccessibility="yes"
-        focusable={true}
+  return (
+    <View
+      style={{
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: MAX_HEIGHT,
+        zIndex: 999,
+      }}
+      pointerEvents="box-none"
     >
+      <Animated.View
+        style={[
+          styles.iosBlurContainer,
+          { height: MAX_HEIGHT, transform: [{ translateY: translateY }] },
+        ]}
+      >
         <BackgroundWrapper>
-        <Animated.View 
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: mode === 'dark' ? '#1C1C1E' : '#FFFFFF', 
-            opacity: sheetSolidOpacity 
-          }} 
-        />
-        <Animated.View style={{ flex: 1, opacity }}>
-        {/* panHandlers are ONLY here, so buttons below are never blocked */}
-        <View
-            style={styles.iosContentContainer}
-            {...handlePanResponder.panHandlers}
-        >
-            {/* Handle bar */}
-            <View style={styles.handleBarContainer} accessible={true} accessibilityLabel="Drag handle" accessibilityHint="Swipe up to expand building details or down to collapse" accessibilityRole="adjustable">
-            <View style={styles.handleBar} />
-            </View>
-            {/* Header */}
-            <View style={[styles.iosHeader, { justifyContent: 'center', paddingHorizontal: 0 }]}>
-            {/* Close button */}
-            <TouchableOpacity
-                onPress={dismiss}
-                style={[styles.closeButton, Platform.OS === 'android' && { width: 'auto', padding: 4 }]}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                accessible={true}
-                accessibilityLabel="Close"
-                accessibilityRole="button"
+          <Animated.View style={{ flex: 1, opacity }}>
+            {/* panHandlers are ONLY here, so buttons below are never blocked */}
+            <View
+              style={styles.iosContentContainer}
+              {...handlePanResponder.panHandlers}
             >
-              {Platform.OS === "android" ? (
-                  <MaterialIcons name="close" size={24} color={themedStyles.text(mode).color} />
-                ) : (
-                <View
-                style={[
-                    styles.closeButtonCircle,
-                    themedStyles.closeButton(mode),
-                ]}
+              {/* Handle bar */}
+              <View style={styles.handleBarContainer}>
+                <View style={styles.handleBar} />
+              </View>
+              {/* Header */}
+              <View style={[styles.iosHeader]}>
+                {/* Close button */}
+                <TouchableOpacity
+                  onPress={dismiss}
+                  style={styles.closeButton}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                <Text
+                  <View
                     style={[
-                    styles.closeButtonText,
-                    themedStyles.text(mode),
+                      styles.closeButtonCircle,
+                      themedStyles.closeButton(mode),
                     ]}
                   >
                     <Text
@@ -791,23 +726,20 @@ const AdditionalInfoPopup = forwardRef<
                                 : "document.on.document"
                             }
                             size={25}
-                            weight={"heavy"}
-                            tintColor={themedStyles.subtext(mode).color}
-                            /> : <MaterialIcons name={icon.material} size={25} color={themedStyles.subtext(mode).color}/>)
-                            || <Image source={require(`../../assets/images/metro.png`)}
-                            style={{width: 25,
-                            height: 25,
-                            tintColor: themedStyles.subtext(mode).color}}
-                            accessibilityLabel={icon.label}
-                            />}
-                        </View>
-                    ))}
+                            weight={"regular"}
+                            tintColor={mode === "dark" ? "#FFFFFF" : "#333333"}
+                          />
+                        ) : (
+                          <MaterialIcons
+                            name={copying ? "task" : "content-copy"}
+                            size={22}
+                            color={mode === "dark" ? "#FFFFFF" : "#333333"}
+                          />
+                        )}
+                      </TouchableOpacity>
                     </View>
+                  </View>
                 )}
-                </View>
-            </View>
-            </View>
-        </View>
 
                 {/* Description section */}
                 {buildingInfo?.description && (
@@ -818,93 +750,20 @@ const AdditionalInfoPopup = forwardRef<
                       Description
                     </Text>
                     <Text
-                    style={[
-                        styles.addressText,
-                        themedStyles.text(mode),
-                    ]}
-                    accessible={true}
+                      style={[
+                        styles.descriptionText,
+                        themedStyles.mutedText(mode),
+                      ]}
                     >
-                    {buildingInfo.address}
+                      {buildingInfo.description}
                     </Text>
-                    <TouchableOpacity
-                    onPress={copyAddressToClipboard}
-                    style={styles.copyButton}
-                    accessible={true}
-                    accessibilityLabel={copying ? "Address copied" : "Copy address"}
-                    accessibilityRole="button"
-                    >
-                    {Platform.OS === "ios" && <SymbolView 
-                        name={copying ? "document.on.document.fill" : "document.on.document"}
-                        size={25}
-                        weight={"regular"}
-                        tintColor={mode === "dark" ? "#FFFFFF" : "#333333"} 
-                        /> || <MaterialIcons
-                        name={copying ? "task" : "content-copy"}
-                        size={22}
-                        color={mode === "dark" ? "#FFFFFF" : "#333333"}
-                        />}
-                    </TouchableOpacity>
-                </View>
-                </View>
-            )}
-            {/* Description section */}
-            {buildingInfo?.description && (
-                <View style={styles.section}>
-                <Text
-                    style={[
-                    styles.sectionTitle,
-                    themedStyles.text(mode),
-                    ]}
-                    accessible={true}
-                    accessibilityRole="header"
-                >
-                    Description
-                </Text>
-                <Text
-                    style={[
-                    styles.descriptionText,
-                    themedStyles.mutedText(mode),
-                    ]}
-                    accessible={true}
-                >
-                    {buildingInfo.description}
-                </Text>
-                </View>
-            )}
-            </ScrollView>
-        </View>
-        </Animated.View>
+                  </View>
+                )}
+              </ScrollView>
+            </View>
+          </Animated.View>
         </BackgroundWrapper>
-    </Animated.View>
-  );
-
-  return (
-    <View
-      style={{
-        position: "absolute",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: screenHeight,
-        zIndex: 999,
-        justifyContent: 'flex-end'
-      }}
-      pointerEvents="box-none"
-      accessibilityViewIsModal={visible}
-    >
-      <Animated.View 
-        style={{ 
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'black',
-          opacity: backdropOpacity 
-        }} 
-        pointerEvents="none"
-      />
-        {Content}
+      </Animated.View>
     </View>
   );
 });

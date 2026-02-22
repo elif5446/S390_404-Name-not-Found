@@ -39,7 +39,7 @@ const additionalInfoPopupStyles = StyleSheet.create({
         minHeight:80,
     },
     headerTextContainer: {
-        flex:0.67,
+        flex:1,
         backgroundColor:"transparent",
         alignItems:"center",
         justifyContent:"center",
@@ -101,9 +101,6 @@ const additionalInfoPopupStyles = StyleSheet.create({
         height: 44,
         justifyContent: 'center',
         alignItems: 'center',
-        position: 'absolute',
-        left: 20,
-        padding: 4,
         zIndex: 10,
         marginTop: -5,
     },
@@ -242,7 +239,7 @@ const themedStyles = {
     text: (mode: string) => ({ color: mode === "dark" ? "#FFFFFF" : "#333333" }),
     subtext: (mode: string) => ({ color: mode === "dark" ? "#CCCCCC" : "#585858" }),
     mutedText: (mode: string) => ({ color: mode === "dark" ? "#CCCCCC" : "#000000" }),
-    closeButton: (mode: string) => ({ backgroundColor: mode === "dark" ? "#00000031" : "#85858522" }),
+    closeButton: (mode: string) => ({ backgroundColor: mode === "dark" ? "#00000031" : "#ff839c22" }),
 };
 
 export {additionalInfoPopupStyles as styles, themedStyles};

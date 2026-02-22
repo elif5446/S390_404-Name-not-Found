@@ -2,11 +2,10 @@ import { Platform } from "react-native";
 import Constants from "expo-constants";
 
 const PORT = process.env.EXPO_PUBLIC_API_PORT ?? "8000";
-const ANDROID_HOST = process.env.EXPO_PUBLIC_ANDROID_DEV_HOST ?? "10.0.2.2";
 
 function getHost(): string {
   if (Platform.OS === "android") {
-    return ANDROID_HOST;
+    return "10.0.2.2";
   }
 
   const hostUri = Constants.expoConfig?.hostUri;
