@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/6</span>
+                <span class='fraction'>6/6</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">50% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/22</span>
+                <span class='fraction'>11/22</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/4</span>
+                <span class='fraction'>4/4</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/6</span>
+                <span class='fraction'>6/6</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -305,7 +305,7 @@
 <a name='L240'></a><a href='#L240'>240</a>
 <a name='L241'></a><a href='#L241'>241</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -536,16 +536,16 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">36x</span>
+<span class="cline-any cline-yes">8x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import {StyleSheet, Platform} from "react-native";
 &nbsp;
-const additionalInfoPopupStyles = <span class="cstat-no" title="statement not covered" >StyleSheet.create({</span>
+const additionalInfoPopupStyles = StyleSheet.create({
     // iOS styles
     iosBackdrop: {
         flex: 1,
@@ -599,7 +599,7 @@ const additionalInfoPopupStyles = <span class="cstat-no" title="statement not co
         fontSize: 18,
         fontWeight: "600" as const,
         textAlign:"center",
-        fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
+        fontFamily: Platform.OS === 'ios' ? 'System' : <span class="branch-1 cbranch-no" title="branch not covered" >'Roboto',</span>
         marginBottom:4,
         flexWrap:"wrap",
         flexShrink:0,
@@ -624,7 +624,7 @@ const additionalInfoPopupStyles = <span class="cstat-no" title="statement not co
         textAlign: "center",
         lineHeight: 24,
         paddingTop: 3,
-        fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
+        fontFamily: Platform.OS === 'ios' ? 'System' : <span class="branch-1 cbranch-no" title="branch not covered" >'Roboto',</span>
     },
     accessibilityIconsContainer: {
         flexDirection: "row",
@@ -659,7 +659,7 @@ const additionalInfoPopupStyles = <span class="cstat-no" title="statement not co
     closeButtonText: {
         fontSize: 24,
         fontWeight: "300" as const,
-        fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
+        fontFamily: Platform.OS === 'ios' ? 'System' : <span class="branch-1 cbranch-no" title="branch not covered" >'Roboto',</span>
         includeFontPadding: false,
         textAlign:"center",
         lineHeight:24,
@@ -721,14 +721,14 @@ const additionalInfoPopupStyles = <span class="cstat-no" title="statement not co
         fontWeight: '600' as const,
         marginBottom: 5,
         paddingBottom:5,
-        fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
+        fontFamily: Platform.OS === 'ios' ? 'System' : <span class="branch-1 cbranch-no" title="branch not covered" >'Roboto',</span>
         borderBottomWidth: 1.5,
         borderBottomColor: 'rgba(0, 0, 0, 0.1)',
     },
     sectionText: {
         fontSize: 18,
         lineHeight: 22,
-        fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
+        fontFamily: Platform.OS === 'ios' ? 'System' : <span class="branch-1 cbranch-no" title="branch not covered" >'Roboto',</span>
     },
     hoursContainer: {
         gap: 8,
@@ -767,20 +767,20 @@ const additionalInfoPopupStyles = <span class="cstat-no" title="statement not co
         fontSize: 16,
         lineHeight: 22,
         flex: 1,
-        fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',},
+        fontFamily: Platform.OS === 'ios' ? 'System' : <span class="branch-1 cbranch-no" title="branch not covered" >'Roboto',</span>},
     descriptionText: {  
         fontSize: 15,
         lineHeight: 22,
-        fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',},
+        fontFamily: Platform.OS === 'ios' ? 'System' : <span class="branch-1 cbranch-no" title="branch not covered" >'Roboto',</span>},
 &nbsp;
     // Android styles
 });
 &nbsp;
-const themedStyles = <span class="cstat-no" title="statement not covered" >{</span>
-    text: <span class="fstat-no" title="function not covered" >(m</span>ode: string) =&gt; (<span class="cstat-no" title="statement not covered" >{ color: mode === "dark" ? "#FFFFFF" : "#333333" })</span>,
-    subtext: <span class="fstat-no" title="function not covered" >(m</span>ode: string) =&gt; (<span class="cstat-no" title="statement not covered" >{ color: mode === "dark" ? "#CCCCCC" : "#585858" })</span>,
-    mutedText: <span class="fstat-no" title="function not covered" >(m</span>ode: string) =&gt; (<span class="cstat-no" title="statement not covered" >{ color: mode === "dark" ? "#CCCCCC" : "#000000" })</span>,
-    closeButton: <span class="fstat-no" title="function not covered" >(m</span>ode: string) =&gt; (<span class="cstat-no" title="statement not covered" >{ backgroundColor: mode === "dark" ? "#00000031" : "#85858522" })</span>,
+const themedStyles = {
+    text: (mode: string) =&gt; ({ color: mode === "dark" ? <span class="branch-0 cbranch-no" title="branch not covered" >"#FFFFFF" </span>: "#333333" }),
+    subtext: (mode: string) =&gt; ({ color: mode === "dark" ? <span class="branch-0 cbranch-no" title="branch not covered" >"#CCCCCC" </span>: "#585858" }),
+    mutedText: (mode: string) =&gt; ({ color: mode === "dark" ? <span class="branch-0 cbranch-no" title="branch not covered" >"#CCCCCC" </span>: "#000000" }),
+    closeButton: (mode: string) =&gt; ({ backgroundColor: mode === "dark" ? <span class="branch-0 cbranch-no" title="branch not covered" >"#00000031" </span>: "#85858522" }),
 };
 &nbsp;
 export {additionalInfoPopupStyles as styles, themedStyles};</pre></td></tr></table></pre>
@@ -790,7 +790,7 @@ export {additionalInfoPopupStyles as styles, themedStyles};</pre></td></tr></tab
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-02-19T19:54:35.981Z
+                at 2026-02-19T20:22:34.253Z
             </div>
         <script src="../prettify.js"></script>
         <script>
