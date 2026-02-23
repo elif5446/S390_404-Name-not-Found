@@ -30,7 +30,6 @@ cd frontend/conuwalks
 # Install dependencies
 npm install
 
-# old method before Google integration
 npx expo start
 # If running expo go at school you need to either
 npx expo start --tunnel
@@ -88,14 +87,22 @@ Make sure that the file 'google.services.json' is in your project root directory
 ```bash
 cd frontend/conuwalks
 # run all tests
-maestro test .maestro/flows/
+maestro test .maestro/flows/ -e PASSWORD=JohnTester5446 -e USERNAME=testerjohn602@gmail.com -e PASSWORD=JohnTester5446
 # run specific
-maestro test .maestro/flows/feature-building-details.yaml
+maestro test .maestro/flows/feature-building-details.yaml -e USERNAME=testerjohn602@gmail.com -e PASSWORD=JohnTester5446
 # record
-maestro record --local .maestro/flows/smoke-launch.yaml
+maestro record --local .maestro/flows/smoke-launch.yaml -e USERNAME=testerjohn602@gmail.com -e PASSWORD=JohnTester5446
 ```
 
-## Learn more
+## Run local tests with Mock Data
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```sh
+# Build and Install the app on your simulator<br>
+# Close the app<br>
+# Restart with env var in another terminal ex:<br>
+EXPO_PUBLIC_MOCK_CALENDAR=true npx expo start
+
+# or pass the flag to the app 
+android: adb shell am start -n com.conuwals.app/.MainActivity --ez isMockCalendarEnabled true
+iOS: xcrun simctl launch booted com.your.campusapp -isMockCalendarEnabled true
+```

@@ -1,13 +1,13 @@
 # Maestro cannot "see" text inside the Google Maps view
 # must interact with the map using screen coordinates
 # then assert the Native UI Bottom Sheet appears
-
-
 appId: com.conuwalks.app
-tags:
-  - regression
 ---
-- runFlow: ../subflows/setup.yaml
+- runFlow: 
+    file: ../subflows/launch.yaml
+    env:
+        USERNAME: "${USERNAME}"
+        PASSWORD: "${PASSWORD}"
 
 # Start at SGW
 - tapOn: "Sir George Williams"

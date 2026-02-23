@@ -156,7 +156,11 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
       </View>
 
       <SafeAreaView style={styles.headerWrapper} edges={["top"]}>
-        <View style={styles.headerContent}>
+        <View
+          style={styles.headerContent}
+          accessible={true}
+          accessibilityLabel={`${buildingData.name} Floor ${activeFloor.label}`}
+        >
           <Text
             style={styles.buildingTitle}
             numberOfLines={1}

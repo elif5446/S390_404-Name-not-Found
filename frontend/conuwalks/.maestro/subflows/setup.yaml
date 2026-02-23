@@ -1,10 +1,5 @@
 appId: com.conuwalks.app
 ---
-- launchApp:
-    clearState: true
-    permissions:
-      all: allow
-
 # Select the Development Server
 - runFlow:
     when:
@@ -83,21 +78,17 @@ appId: com.conuwalks.app
     commands:
       - tapOn: "Add another account"
 
-      # Wait for the Google webview to load
       - extendedWaitUntil:
           visible: "Sign in"
           timeout: 15000
 
-      # Enter Email
-      - tapOn: "Email or phone" # Optional: Focuses the input
+      - tapOn: "Email or phone"
       - inputText: "testerjohn602@gmail.com"
       - tapOn: "Next"
 
-      # Wait for the password field to render
       - extendedWaitUntil:
           visible: "Enter your password"
           timeout: 10000
 
-      # Enter Password (Tip: Use environment variables for passwords in Maestro)
       - inputText: "${PASSWORD}"
       - tapOn: "Next"
