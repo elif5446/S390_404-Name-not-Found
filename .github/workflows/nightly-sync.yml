@@ -32,35 +32,46 @@ jobs:
       - name: Ensure GitHub CLI is available
         run: gh --version
 
-      - name: Guard - skip if dev has nothing new vs main
+      - name: Check branch states
         id: guard
         run: |
           set -euo pipefail
           git fetch origin main dev
 
-          counts="$(git rev-list --left-right --count origin/main...origin/dev)"
-          behind="$(echo "$counts" | awk '{print $1}')"  # commits in main not in dev
-          ahead="$(echo "$counts"  | awk '{print $2}')"  # commits in dev not in main
+          DEV_AHEAD=$(git rev-list --count origin/main..origin/dev)
+          MAIN_AHEAD=$(git rev-list --count origin/dev..origin/main)
 
-          echo "dev ahead of main by: $ahead commit(s)"
-          echo "dev behind main by: $behind commit(s)"
+          echo "Dev is ahead of main by: $DEV_AHEAD commits"
+          echo "Main is ahead of dev by: $MAIN_AHEAD commits"
 
-          if [ "$ahead" -eq 0 ]; then
-            echo "No new commits on dev to merge into main. Exiting."
-            echo "should_merge=false" >> "$GITHUB_OUTPUT"
+          echo "dev_ahead=$DEV_AHEAD" >> "$GITHUB_OUTPUT"
+          echo "main_ahead=$MAIN_AHEAD" >> "$GITHUB_OUTPUT"
+
+          if [ "$DEV_AHEAD" -eq 0 ] && [ "$MAIN_AHEAD" -eq 0 ]; then
+            echo "Branches are perfectly in sync. Exiting."
+            echo "sync_needed=false" >> "$GITHUB_OUTPUT"
           else
-            echo "should_merge=true" >> "$GITHUB_OUTPUT"
+            echo "sync_needed=true" >> "$GITHUB_OUTPUT"
           fi
+      
+      - name: Fast-forward dev if it is strictly behind main
+        if: steps.guard.outputs.sync_needed == 'true' && steps.guard.outputs.dev_ahead == '0' && steps.guard.outputs.main_ahead != '0'
+        run: |
+          set -euo pipefail
+          echo "Dev has no new code, but main has advanced. Fast-forwarding dev to match main."
+          git checkout dev
+          git merge origin/main --ff-only
+          git push origin dev
 
       - name: Create or find PR from dev to main
-        if: steps.guard.outputs.should_merge == 'true'
+        if: steps.guard.outputs.dev_ahead != '0'
         id: pr
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           existing="$(gh pr list --base main --head dev --state open --json number -q '.[0].number')"
-          if [ -n "$existing" ]; then
+          if [ -n "$existing" ] && [ "$existing" != "null" ]; then
             echo "PR already exists: $existing"
             echo "number=$existing" >> "$GITHUB_OUTPUT"
             exit 0
@@ -73,25 +84,47 @@ jobs:
             --body "Automated nightly sync from dev to main." \
             --label "nightly-sync")"
 
-          pr_number="$(echo "$pr_url" | sed -E 's#.*/pull/([0-9]+).*#\1#')"
+          pr_number="$(gh pr view "$pr_url" --json number -q '.number')"
           echo "Created PR: $pr_number"
           echo "number=$pr_number" >> "$GITHUB_OUTPUT"
 
-      - name: Update PR branch to be up to date with main
-        if: steps.guard.outputs.should_merge == 'true'
+      - name: Update PR branch (Sync main into dev)
+        if: steps.guard.outputs.dev_ahead != '0' && steps.guard.outputs.main_ahead != '0'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPO: ${{ github.repository }}
           PR: ${{ steps.pr.outputs.number }}
         run: |
           set -euo pipefail
           echo "Updating PR branch for PR #$PR to include latest main."
 
-          gh api -X PUT "repos/${REPO}/pulls/${PR}/update-branch" \
-            -f expected_head_sha="$(gh pr view "$PR" --json headRefOid -q .headRefOid)"
+          OLD_SHA=$(gh pr view "$PR" --json headRefOid -q '.headRefOid')
+
+          # using the native CLI command is safer than a raw API call
+          gh pr update-branch "$PR"
+
+          echo "Polling for update completion..."
+          MAX_RETRIES=15
+          COUNT=0
+          while [ "$COUNT" -lt "$MAX_RETRIES" ]; do
+            NEW_SHA=$(gh pr view "$PR" --json headRefOid -q '.headRefOid')
+            
+            if [ "$NEW_SHA" != "$OLD_SHA" ]; then
+              echo "Branch successfully updated! (New SHA: $NEW_SHA)"
+              break
+            fi
+            
+            echo "Waiting for GitHub backend to process the update... ($COUNT/$MAX_RETRIES)"
+            sleep 2
+            COUNT=$((COUNT + 1))
+          done
+          
+          if [ "$COUNT" -eq "$MAX_RETRIES" ]; then
+            echo "Error: Timed out waiting for branch update."
+            exit 1
+          fi
 
       - name: Merge PR (no auto merge)
-        if: steps.guard.outputs.should_merge == 'true'
+        if: steps.guard.outputs.dev_ahead != '0'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR: ${{ steps.pr.outputs.number }}
@@ -100,29 +133,8 @@ jobs:
           echo "Merging PR: $PR"
           gh pr merge "$PR" --merge --admin
 
-      - name: Sync dev to main after merge (keep branches aligned)
-        if: steps.guard.outputs.should_merge == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          set -euo pipefail
-          git fetch origin main dev
-
-          git checkout -B dev origin/dev
-
-          # bring main into dev 
-          git merge origin/main --no-edit || true
-
-          # push only if dev actually changed
-          if git diff --quiet origin/dev..dev; then
-            echo "dev already matches main (no sync needed)."
-          else
-            echo "Pushing dev to include latest main..."
-            git push origin dev
-          fi
-
       - name: Tag nightly version v0.x.0
-        if: steps.guard.outputs.should_merge == 'true'
+        if: steps.guard.outputs.dev_ahead != '0'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -139,8 +151,6 @@ jobs:
 
           echo "Next nightly tag: $next"
 
-          git checkout main
-          git pull origin main
-
-          git tag "$next"
+          git fetch origin main
+          git tag "$next" origin/main
           git push origin "$next"
