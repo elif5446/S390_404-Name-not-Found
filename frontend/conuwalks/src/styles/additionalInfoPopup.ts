@@ -39,7 +39,7 @@ const additionalInfoPopupStyles = StyleSheet.create({
         minHeight:80,
     },
     headerTextContainer: {
-        flex:1,
+        flex:0.67,
         backgroundColor:"transparent",
         alignItems:"center",
         justifyContent:"center",
@@ -101,6 +101,9 @@ const additionalInfoPopupStyles = StyleSheet.create({
         height: 44,
         justifyContent: 'center',
         alignItems: 'center',
+        position: 'absolute',
+        left: 20,
+        padding: 4,
         zIndex: 10,
         marginTop: -5,
     },
@@ -187,51 +190,7 @@ const additionalInfoPopupStyles = StyleSheet.create({
         fontSize: 15,
         lineHeight: 22,
         fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',},
-    scheduleHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 4,
-        paddingVertical: 3,
-},
-    noEventsContainer: {
-    },
-    noEventsText: {
-        fontSize: 14,
-        fontStyle: 'italic',
-        textAlign: 'center',
-    },
-    nextEventLabel: {
-        fontSize: 14,
-        fontWeight: '600',
-        paddingBottom:4,
-    },
-    eventsList: {  
-    },
-    eventItem: {
-    },
-    eventItemBorder: {
-        borderBottomWidth: 1,
-        borderBottomColor: '#E0E0E0',
-    },
-    eventTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        marginBottom: 6,
-    },
-    eventDetailsRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    eventTime: {
-        fontSize: 16,
-        color: '#666',
-    },
-    eventRoom: {
-        fontSize: 16,
-        fontWeight: '500',
-    },
+
     // Android styles
 });
 
@@ -239,7 +198,7 @@ const themedStyles = {
     text: (mode: string) => ({ color: mode === "dark" ? "#FFFFFF" : "#333333" }),
     subtext: (mode: string) => ({ color: mode === "dark" ? "#CCCCCC" : "#585858" }),
     mutedText: (mode: string) => ({ color: mode === "dark" ? "#CCCCCC" : "#000000" }),
-    closeButton: (mode: string) => ({ backgroundColor: mode === "dark" ? "#00000031" : "#ff839c22" }),
+    closeButton: (mode: string) => ({ backgroundColor: mode === "dark" ? "#00000031" : "#85858522" }),
 };
 
 export {additionalInfoPopupStyles as styles, themedStyles};

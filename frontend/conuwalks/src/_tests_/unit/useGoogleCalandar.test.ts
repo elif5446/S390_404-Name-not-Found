@@ -1,16 +1,16 @@
 
 import { renderHook, waitFor, act } from '@testing-library/react';
-import { useGoogleCalendar } from '../../hooks/useGoogleCalendar';
-import { getTokens, isTokenValid } from '../../utils/tokenStorage';
-import { GoogleCalendarApi } from '../../api/calendarApi';
+import { useGoogleCalendar } from '../hooks/useGoogleCalendar';
+import { getTokens, isTokenValid } from '../utils/tokenStorage';
+import { GoogleCalendarApi } from '../api/calendarApi';
 // Mock dependencies
-jest.mock('../../utils/tokenStorage', () => ({
+jest.mock('../utils/tokenStorage', () => ({
   getTokens: jest.fn(),
   isTokenValid: jest.fn(),
   saveTokens: jest.fn(),
 }));
 
-jest.mock('../../api/calendarApi', () => ({
+jest.mock('../api/calendarApi', () => ({
   GoogleCalendarApi: jest.fn(),
 }));
 
