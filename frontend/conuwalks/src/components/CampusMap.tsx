@@ -1,9 +1,10 @@
-import CampusPolygons from "@/src/components/polygons";
-import CampusLabels from "@/src/components/campusLabels";
-import RoutePolyline from "@/src/components/RoutePolyline";
-import { CampusConfig } from "@/src/data/campus/campusConfig";
-
-import React, { useState, useRef, useEffect } from "react";
+import React, {
+  useState,
+  useRef,
+  useMemo,
+  useCallback,
+  useEffect,
+} from "react";
 import {
   StyleSheet,
   View,
@@ -13,10 +14,6 @@ import {
   TouchableOpacity,
   useColorScheme,
 } from "react-native";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { BlurView } from "expo-blur";
-import { SymbolView, SFSymbol } from "expo-symbols";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MapView, {
   LatLng,
   Circle,
@@ -24,8 +21,19 @@ import MapView, {
   Marker,
   PROVIDER_GOOGLE,
   Polygon,
+  LongPressEvent,
 } from "react-native-maps";
-import styles from "@/src/styles/campusMap";
+
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { BlurView } from "expo-blur";
+import { SymbolView, SFSymbol } from "expo-symbols";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import CampusLabels from "@/src/components/campusLabels";
+import RoutePolyline from "@/src/components/RoutePolyline";
+import { CampusConfig } from "@/src/data/campus/campusConfig";
+import AdditionalInfoPopup from "./AdditionalInfoPopup";
+
 import { useUserLocation } from "@/src/hooks/useUserLocation";
 import { useDirections } from "@/src/context/DirectionsContext";
 import { calculatePolygonCenter } from "@/src/utils/geometry";
@@ -36,9 +44,9 @@ import { INDOOR_DATA } from "@/src/data/indoorData";
 import { LoyolaBuildingMetadata } from "@/src/data/metadata/LOY.BuildingMetadata";
 import { SGWBuildingMetadata } from "@/src/data/metadata/SGW.BuildingMetaData";
 import BuildingTheme from "@/src/styles/BuildingTheme";
-import AdditionalInfoPopup from "./AdditionalInfoPopup";
 import DestinationPopup from "./DestinationPopup";
 import IndoorMapOverlay from "./indoor/IndoorMapOverlay";
+import styles from "@/src/styles/campusMap";
 
 // Convert GeoJSON coordinates to LatLng
 const polygonFromGeoJSON = (coordinates: number[][]): LatLng[] =>
@@ -55,8 +63,10 @@ const distanceMetersBetween = (pointA: LatLng, pointB: LatLng): number => {
 
   const a =
     Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
-    Math.cos(lat1) * Math.cos(lat2) *
-      Math.sin(deltaLng / 2) * Math.sin(deltaLng / 2);
+    Math.cos(lat1) *
+      Math.cos(lat2) *
+      Math.sin(deltaLng / 2) *
+      Math.sin(deltaLng / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return earthRadius * c;
 };
@@ -98,27 +108,32 @@ interface GeoJsonFeature {
   };
 }
 
+const PlatformIcon = ({
+  materialName,
+  iosName,
+  size,
+  color,
+}: PlatformIconProps) => {
+  if (Platform.OS === "ios") {
+    return (
+      <SymbolView
+        name={iosName}
+        size={size}
+        weight="medium"
+        tintColor={color}
+      />
+    );
+  }
+  return <MaterialIcons name={materialName} size={size} color={color} />;
+};
+
 const CampusMap: React.FC<CampusMapProps> = ({
   initialLocation = { latitude: 45.49599, longitude: -73.57854 },
   onInfoPopupExpansionChange,
 }) => {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme() || "light";
-
-  const PlatformIcon = ({ materialName, iosName, size, color }: PlatformIconProps) => {
-    if (Platform.OS === "ios") {
-      return (
-        <SymbolView
-          name={iosName}
-          size={size}
-          weight="medium"
-          tintColor={color}
-        />
-      );
-    }
-
-    return <MaterialIcons name={materialName} size={size} color={color} />;
-  };
+  const lastPressTime = useRef<number>(0);
 
   // Get user's location with permission handling
   const {
@@ -126,6 +141,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
     error: locationError,
     loading: locationLoading,
   } = useUserLocation();
+
+  const INITIAL_DELTA = 0.008;
 
   // Get directions context for destination setting
   const {
@@ -149,8 +166,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
   // Track map region to scale location circle based on zoom level
   const [mapRegion, setMapRegion] = useState<Region>({
     ...mapCenter,
-    latitudeDelta: 0.008,
-    longitudeDelta: 0.008,
+    latitudeDelta: INITIAL_DELTA,
+    longitudeDelta: INITIAL_DELTA,
   });
 
   // State for additional building info popup
@@ -166,7 +183,9 @@ const CampusMap: React.FC<CampusMapProps> = ({
     visible: false,
   });
   const [navigationStepIndex, setNavigationStepIndex] = useState(0);
-  const [selectedTransitStopKey, setSelectedTransitStopKey] = useState<string | null>(null);
+  const [selectedTransitStopKey, setSelectedTransitStopKey] = useState<
+    string | null
+  >(null);
   const [indoorBuildingId, setIndoorBuildingId] = useState<string | null>(null);
   const [isInfoPopupExpanded, setIsInfoPopupExpanded] = useState(false);
 
@@ -181,72 +200,115 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
   // Create a ref to the MapView so we can control it
   const mapRef = useRef<MapView>(null);
-  const buildingMarkerRefs = useRef<Record<string, { showCallout?: () => void } | null>>({});
+  const buildingMarkerRefs = useRef<
+    Record<string, { showCallout?: () => void } | null>
+  >({});
   const lastCameraUpdateAtRef = useRef(0);
   const ignoreNextMapPressRef = useRef(false);
   const lastBuildingPressAtRef = useRef(0);
 
   // Handle clicking on the location circle to zoom in
-  const handleLocationPress = () => {
+  const handleLocationPress = useCallback(() => {
     if (userLocation && mapRef.current) {
       mapRef.current.animateToRegion(
         {
           latitude: userLocation.latitude,
           longitude: userLocation.longitude,
-          latitudeDelta: 0.003, // Zoom in closer
+          latitudeDelta: 0.003,
           longitudeDelta: 0.003,
         },
         500,
-      ); // 500ms animation
+      );
     }
-  };
+  }, [userLocation]);
+
+  // auto-pan when toggling campuses
+  useEffect(() => {
+    if (mapRef.current && initialLocation) {
+      mapRef.current.animateToRegion(
+        {
+          latitude: initialLocation.latitude,
+          longitude: initialLocation.longitude,
+          latitudeDelta: INITIAL_DELTA,
+          longitudeDelta: INITIAL_DELTA,
+        },
+        500,
+      );
+    }
+  }, [initialLocation]);
 
   // Handle building tap to show additional info and set destination
-  const handleBuildingPress = (
-    buildingName: string,
-    campus: "SGW" | "LOY",
-    coordinates: LatLng
-  ) => {
-    ignoreNextMapPressRef.current = true;
-    lastBuildingPressAtRef.current = Date.now();
-    setIndoorBuildingId(null);
-    setIsNavigationActive(false);
+  const handleBuildingPress = useCallback(
+    (buildingId: string, campus: "SGW" | "LOY", providedCoords?: LatLng) => {
+      const now = Date.now();
+      if (now - lastPressTime.current < 400) {
+        console.log(`Throttled tap on: ${buildingId}`);
+        return;
+      }
+      lastPressTime.current = now;
 
-    if (showDirections) {
-      setShowDirections(false);
-      clearRouteData();
-    }
+      let coordinates = providedCoords;
+      if (!coordinates) {
+        const sourceGeo = campus === "LOY" ? LOY : SGW;
+        const feature = sourceGeo.features.find(
+          (item) => (item as GeoJsonFeature).properties.id === buildingId,
+        ) as GeoJsonFeature | undefined;
 
-    setSelectedBuilding({
-      name: buildingName,
-      campus,
-      coords: coordinates,
-      visible: true,
-    });
+        if (feature && feature.geometry.type === "Polygon") {
+          coordinates = calculatePolygonCenter(feature.geometry.coordinates[0]);
+        } else {
+          return;
+        }
+      }
 
-    const markerKey = `${campus}-${buildingName}`;
-    requestAnimationFrame(() => {
-      buildingMarkerRefs.current[markerKey]?.showCallout?.();
-    });
+      ignoreNextMapPressRef.current = true;
+      lastBuildingPressAtRef.current = Date.now();
+      setIndoorBuildingId(null);
+      setIsNavigationActive(false);
 
-    // Get building name from metadata for display
-    const buildingMetadata =
-      campus === "LOY"
-        ? LoyolaBuildingMetadata[buildingName]
-        : SGWBuildingMetadata[buildingName];
+      if (showDirections) {
+        setShowDirections(false);
+        clearRouteData();
+      }
 
-    if (buildingMetadata) {
-      setDestination(buildingName, coordinates, buildingMetadata.name);
-    }
-  };
+      setSelectedBuilding({
+        name: buildingId,
+        campus,
+        coords: coordinates,
+        visible: true,
+      });
 
-  // Handle close popup
-  const handleClosePopup = () => {
+      const markerKey = `${campus}-${buildingId}`;
+      requestAnimationFrame(() => {
+        buildingMarkerRefs.current[markerKey]?.showCallout?.();
+      });
+
+      const buildingMetadata =
+        campus === "LOY"
+          ? LoyolaBuildingMetadata[buildingId]
+          : SGWBuildingMetadata[buildingId];
+
+      if (buildingMetadata) {
+        setDestination(buildingId, coordinates, buildingMetadata.name);
+      }
+    },
+    [
+      showDirections,
+      setShowDirections,
+      clearRouteData,
+      setIsNavigationActive,
+      setDestination,
+    ],
+  );
+
+  const handleClosePopup = useCallback(() => {
     setIsInfoPopupExpanded(false);
     setSelectedBuilding((prev) => ({ ...prev, visible: false }));
-  };
+  }, []);
 
-  const handleMapLongPress = (coordinate: LatLng) => {
+  const handleMapLongPress = useCallback((e: LongPressEvent) => {
+    const coordinate = e.nativeEvent.coordinate;
+
     const findBuildingId = (geojson: typeof SGW | typeof LOY) => {
       const feature = geojson.features.find((item) => {
         const currentFeature = item as GeoJsonFeature;
@@ -254,7 +316,9 @@ const CampusMap: React.FC<CampusMapProps> = ({
           return false;
         }
 
-        const polygonCoords = polygonFromGeoJSON(currentFeature.geometry.coordinates[0]);
+        const polygonCoords = polygonFromGeoJSON(
+          currentFeature.geometry.coordinates[0],
+        );
         return isPointInPolygon(coordinate, polygonCoords);
       });
 
@@ -267,9 +331,9 @@ const CampusMap: React.FC<CampusMapProps> = ({
       setIndoorBuildingId(foundId);
       setSelectedBuilding((prev) => ({ ...prev, visible: false }));
     }
-  };
+  }, []);
 
-  const handleMapPress = () => {
+  const handleMapPress = useCallback(() => {
     if (Date.now() - lastBuildingPressAtRef.current < 250) {
       return;
     }
@@ -283,16 +347,19 @@ const CampusMap: React.FC<CampusMapProps> = ({
     if (selectedBuilding.visible) {
       setSelectedBuilding((prev) => ({ ...prev, visible: false }));
     }
-  };
+  }, [selectedBuilding.visible]);
 
-  const directionsEtaLabel = (() => {
+  const directionsEtaLabel = useMemo(() => {
     if (!userLocation || !selectedBuilding.coords) {
       return "--";
     }
 
     const walkingMetersPerSecond = 1.35;
     const meters = distanceMetersBetween(userLocation, selectedBuilding.coords);
-    const minutes = Math.max(1, Math.round(meters / walkingMetersPerSecond / 60));
+    const minutes = Math.max(
+      1,
+      Math.round(meters / walkingMetersPerSecond / 60),
+    );
 
     if (minutes >= 60) {
       const hours = Math.floor(minutes / 60);
@@ -303,14 +370,14 @@ const CampusMap: React.FC<CampusMapProps> = ({
     }
 
     return `${minutes} min`;
-  })();
+  }, [userLocation, selectedBuilding.coords]);
 
-  const handleOpenDirectionsPopup = () => {
+  const handleOpenDirectionsPopup = useCallback(() => {
     setSelectedBuilding((prev) => ({ ...prev, visible: false }));
     setShowDirections(true);
-  };
+  }, [setShowDirections]);
 
-  const handleSetAsDestination = () => {
+  const handleSetAsDestination = useCallback(() => {
     if (!selectedBuilding.name) return;
 
     const buildingMetadata =
@@ -320,18 +387,25 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
     const sourceGeo = selectedBuilding.campus === "LOY" ? LOY : SGW;
     const feature = sourceGeo.features.find(
-      (item) => (item.properties as { id: string }).id === selectedBuilding.name
-    );
+      (item) =>
+        (item.properties as { id: string }).id === selectedBuilding.name,
+    ) as GeoJsonFeature | undefined;
 
     if (!buildingMetadata || !feature || feature.geometry.type !== "Polygon") {
       return;
     }
 
-    const centerCoordinates = calculatePolygonCenter(feature.geometry.coordinates[0]);
-    setDestination(selectedBuilding.name, centerCoordinates, buildingMetadata.name);
-  };
+    const centerCoordinates = calculatePolygonCenter(
+      feature.geometry.coordinates[0],
+    );
+    setDestination(
+      selectedBuilding.name,
+      centerCoordinates,
+      buildingMetadata.name,
+    );
+  }, [selectedBuilding, setDestination]);
 
-  const handleDirectionsTrigger = () => {
+  const handleDirectionsTrigger = useCallback(() => {
     setSelectedBuilding((prev) => ({ ...prev, visible: false }));
     handleSetAsDestination();
 
@@ -340,110 +414,129 @@ const CampusMap: React.FC<CampusMapProps> = ({
     }
 
     handleOpenDirectionsPopup();
-  };
+  }, [
+    handleSetAsDestination,
+    userLocation,
+    setStartPoint,
+    handleOpenDirectionsPopup,
+  ]);
 
-  const handleCloseDestinationPopup = () => {
+  const handleCloseDestinationPopup = useCallback(() => {
     setShowDirections(false);
-  };
+  }, [setShowDirections]);
 
-  const handleEndNavigation = () => {
+  const handleEndNavigation = useCallback(() => {
     setIsNavigationActive(false);
     setShowDirections(false);
     clearRouteData();
-  };
+  }, [setIsNavigationActive, setShowDirections, clearRouteData]);
 
-  const mapID =
-    colorScheme === "dark"
-      ? "eb0ccd6d2f7a95e23f1ec398"
-      : "eb0ccd6d2f7a95e117328051"; // Workaround
-
-  const shouldUseLiveUserStart =
-    startBuildingId === "USER" && !!userLocation;
+  const shouldUseLiveUserStart = startBuildingId === "USER" && !!userLocation;
 
   const routeStartLocation = shouldUseLiveUserStart
     ? userLocation
     : startCoords || userLocation || initialLocation;
 
-  const activeInstruction = routeData?.steps?.[navigationStepIndex] || routeData?.steps?.[0];
+  const activeInstruction =
+    routeData?.steps?.[navigationStepIndex] || routeData?.steps?.[0];
 
   const activeInstructionDistanceMeters =
     userLocation && activeInstruction?.endLocation
-      ? Math.round(distanceMetersBetween(userLocation, activeInstruction.endLocation))
+      ? Math.round(
+          distanceMetersBetween(userLocation, activeInstruction.endLocation),
+        )
       : null;
 
   const recenterButtonTop =
     insets.top + (isNavigationActive && routeData ? 118 : 84);
-  const isSheetVisibleForAccessibility = (selectedBuilding.visible && !showDirections) || showDirections;
+  const isSheetVisibleForAccessibility =
+    (selectedBuilding.visible && !showDirections) || showDirections;
 
-  const modeLabelMap: Record<"walking" | "driving" | "transit" | "bicycling", string> = {
+  const modeLabelMap: Record<
+    "walking" | "driving" | "transit" | "bicycling",
+    string
+  > = {
     walking: "Walking",
     driving: "Driving",
     transit: "Transit",
     bicycling: "Bicycling",
   };
 
-  const transitNavigationStops =
-    isNavigationActive && travelMode === "transit" && routeData?.steps
-      ? routeData.steps
-          .flatMap((step, index) => {
-            const hasTransitMeta =
-              !!step.transitLineName || !!step.transitLineShortName || !!step.transitVehicleType;
-            if (!hasTransitMeta) {
-              return [] as TransitStopMarker[];
+  // Wrapped in useMemo to prevent dependency warning and unnecessary re-evaluations
+  const transitNavigationStops = useMemo(() => {
+    if (!(isNavigationActive && travelMode === "transit" && routeData?.steps)) {
+      return [];
+    }
+
+    return routeData.steps
+      .flatMap((step, index) => {
+        const hasTransitMeta =
+          !!step.transitLineName ||
+          !!step.transitLineShortName ||
+          !!step.transitVehicleType;
+        if (!hasTransitMeta) {
+          return [] as TransitStopMarker[];
+        }
+
+        const lineLabel =
+          step.transitLineShortName || step.transitLineName || "Transit";
+        const normalizedVehicle = (
+          step.transitVehicleType || "Transit"
+        ).toLowerCase();
+        const vehicleLabel =
+          normalizedVehicle.includes("subway") ||
+          normalizedVehicle.includes("metro")
+            ? "Metro"
+            : normalizedVehicle.includes("bus") ||
+                normalizedVehicle.includes("shuttle")
+              ? "Bus"
+              : "Transit";
+        const markerIcon: "directions-bus" | "subway" =
+          vehicleLabel === "Metro" ? "subway" : "directions-bus";
+
+        const boardPoint = step.startLocation
+          ? {
+              key: `board-${index}`,
+              stepIndex: index,
+              coordinate: step.startLocation,
+              title: `Board ${vehicleLabel} ${lineLabel}`,
+              description: step.transitDepartureStop || step.instruction,
+              pinColor: "#2E8B57",
+              iconName: markerIcon,
             }
+          : null;
 
-            const lineLabel = step.transitLineShortName || step.transitLineName || "Transit";
-            const normalizedVehicle = (step.transitVehicleType || "Transit").toLowerCase();
-            const vehicleLabel =
-              normalizedVehicle.includes("subway") || normalizedVehicle.includes("metro")
-                ? "Metro"
-                : normalizedVehicle.includes("bus") || normalizedVehicle.includes("shuttle")
-                  ? "Bus"
-                  : "Transit";
-            const markerIcon: "directions-bus" | "subway" =
-              vehicleLabel === "Metro" ? "subway" : "directions-bus";
+        const exitPoint = step.endLocation
+          ? {
+              key: `exit-${index}`,
+              stepIndex: index,
+              coordinate: step.endLocation,
+              title: `Exit ${vehicleLabel} ${lineLabel}`,
+              description: step.transitArrivalStop || "Continue from this stop",
+              pinColor: "#2D6CDF",
+              iconName: markerIcon,
+            }
+          : null;
 
-            const boardPoint = step.startLocation
-              ? {
-                  key: `board-${index}`,
-                  stepIndex: index,
-                  coordinate: step.startLocation,
-                  title: `Board ${vehicleLabel} ${lineLabel}`,
-                  description: step.transitDepartureStop || step.instruction,
-                  pinColor: "#2E8B57",
-                  iconName: markerIcon,
-                }
-              : null;
-
-            const exitPoint = step.endLocation
-              ? {
-                  key: `exit-${index}`,
-                  stepIndex: index,
-                  coordinate: step.endLocation,
-                  title: `Exit ${vehicleLabel} ${lineLabel}`,
-                  description: step.transitArrivalStop || "Continue from this stop",
-                  pinColor: "#2D6CDF",
-                  iconName: markerIcon,
-                }
-              : null;
-
-            return [boardPoint, exitPoint].filter(
-              (item): item is TransitStopMarker => Boolean(item)
-            );
-          })
-          .filter((item) => item.stepIndex >= navigationStepIndex)
-          .slice(0, 4)
-      : [];
+        return [boardPoint, exitPoint].filter(
+          (item): item is TransitStopMarker => Boolean(item),
+        );
+      })
+      .filter((item) => item.stepIndex >= navigationStepIndex)
+      .slice(0, 4);
+  }, [isNavigationActive, travelMode, routeData?.steps, navigationStepIndex]);
 
   const selectedTransitStop =
-    transitNavigationStops.find((stop) => stop.key === selectedTransitStopKey) || null;
+    transitNavigationStops.find(
+      (stop) => stop.key === selectedTransitStopKey,
+    ) || null;
 
   useEffect(() => {
     if (showDirections) {
       setSelectedBuilding((previousState) =>
         previousState.visible
           ? { ...previousState, visible: false }
-          : previousState
+          : previousState,
       );
     }
   }, [showDirections]);
@@ -456,7 +549,9 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
     if (
       selectedTransitStopKey &&
-      !transitNavigationStops.some((stop) => stop.key === selectedTransitStopKey)
+      !transitNavigationStops.some(
+        (stop) => stop.key === selectedTransitStopKey,
+      )
     ) {
       setSelectedTransitStopKey(null);
     }
@@ -469,12 +564,16 @@ const CampusMap: React.FC<CampusMapProps> = ({
     }
 
     setNavigationStepIndex((previousIndex) =>
-      Math.min(previousIndex, Math.max(0, routeData.steps.length - 1))
+      Math.min(previousIndex, Math.max(0, routeData.steps.length - 1)),
     );
-  }, [showDirections, isNavigationActive, routeData?.id]);
+  }, [showDirections, isNavigationActive, routeData?.id, routeData]);
 
   useEffect(() => {
-    if (!(showDirections || isNavigationActive) || !routeData || !userLocation) {
+    if (
+      !(showDirections || isNavigationActive) ||
+      !routeData ||
+      !userLocation
+    ) {
       return;
     }
 
@@ -497,27 +596,34 @@ const CampusMap: React.FC<CampusMapProps> = ({
       return;
     }
 
-    const metersToStepEnd = distanceMetersBetween(userLocation, currentStep.endLocation);
+    const metersToStepEnd = distanceMetersBetween(
+      userLocation,
+      currentStep.endLocation,
+    );
     if (
       metersToStepEnd <= arrivalThresholdByMode[travelMode] &&
       navigationStepIndex < routeData.steps.length - 1
     ) {
       setNavigationStepIndex((previousIndex) =>
-        Math.min(previousIndex + 1, routeData.steps.length - 1)
+        Math.min(previousIndex + 1, routeData.steps.length - 1),
       );
     }
   }, [
     showDirections,
     isNavigationActive,
     routeData,
-    userLocation?.latitude,
-    userLocation?.longitude,
     navigationStepIndex,
     travelMode,
+    userLocation,
   ]);
 
   useEffect(() => {
-    if (!isNavigationActive || !shouldUseLiveUserStart || !userLocation || !mapRef.current) {
+    if (
+      !isNavigationActive ||
+      !shouldUseLiveUserStart ||
+      !userLocation ||
+      !mapRef.current
+    ) {
       return;
     }
 
@@ -538,181 +644,212 @@ const CampusMap: React.FC<CampusMapProps> = ({
       },
       {
         duration: 550,
-      }
+      },
     );
   }, [
     showDirections,
     isNavigationActive,
     shouldUseLiveUserStart,
-    userLocation?.latitude,
-    userLocation?.longitude,
+    userLocation,
   ]);
 
-  // Helper function to render polygons
-  const renderPolygons = (
-    geojson: typeof SGW | typeof LOY,
-    campus: "SGW" | "LOY",
-  ) =>
-    geojson.features.map((feature) => {
-      if (feature.geometry.type !== "Polygon") return null;
+  // memoize the polygon lists so they don't re-calculate on every render
+  const { sgwPolygons, loyPolygons } = useMemo(() => {
+    const generatePolygons = (geojson: any, campus: "SGW" | "LOY") => {
+      return geojson.features
+        .filter((f: GeoJsonFeature) => f.geometry.type === "Polygon")
+        .map((feature: GeoJsonFeature, index: number) => {
+          const { id: buildingId } = feature.properties;
+          const coordinates = polygonFromGeoJSON(
+            feature.geometry.coordinates[0],
+          );
 
-      const coordinates = feature.geometry.coordinates[0];
-      const properties = feature.properties as { id: string }; // only id now
+          const themeColor =
+            BuildingTheme[campus][
+              buildingId as keyof (typeof BuildingTheme)[typeof campus]
+            ];
+          const color = themeColor || "#888888";
 
-      const color =
-        BuildingTheme[campus][
-          properties.id as keyof (typeof BuildingTheme)[typeof campus]
-        ] || "#888888";
-      const buildingMetadata =
-        campus === "LOY"
-          ? LoyolaBuildingMetadata[properties.id]
-          : SGWBuildingMetadata[properties.id];
+          // metadata for accessibility
+          const meta =
+            campus === "LOY"
+              ? LoyolaBuildingMetadata[buildingId]
+              : SGWBuildingMetadata[buildingId];
+          const name = meta?.name || buildingId;
 
-      const isSelected = selectedBuilding.visible && selectedBuilding.name === properties.id;
-      const isDestination = destinationBuildingId === properties.id;
-      const isHighlighted = isDestination || isSelected;
+          const isSelected =
+            selectedBuilding.visible && selectedBuilding.name === buildingId;
+          const isDestination = destinationBuildingId === buildingId;
+          const isHighlighted = isDestination || isSelected;
 
-      // Calculate center point of building for directions
-      const centerCoordinates = calculatePolygonCenter(coordinates);
-      const markerKey = `${campus}-${properties.id}`;
+          // Calculate center point of building for directions
+          const centerCoordinates = calculatePolygonCenter(coordinates);
+          const markerKey = `${campus}-${buildingId}`;
 
-      return (
-        <React.Fragment key={properties.id}>
-          {isHighlighted && (
-            <Polygon
-              coordinates={polygonFromGeoJSON(coordinates)}
-              fillColor="transparent"
-              strokeColor="#B0306038"
-              strokeWidth={7}
-              tappable
-              onPress={() =>
-                handleBuildingPress(properties.id, campus, centerCoordinates)
-              }
-              zIndex={1}
-            />
-          )}
-
-          {isHighlighted && (
-            <Polygon
-              coordinates={polygonFromGeoJSON(coordinates)}
-              fillColor="transparent"
-              strokeColor="#FFFFFFE6"
-              strokeWidth={2}
-              tappable
-              onPress={() =>
-                handleBuildingPress(properties.id, campus, centerCoordinates)
-              }
-              zIndex={2}
-            />
-          )}
-
-          <Polygon
-            coordinates={polygonFromGeoJSON(coordinates)}
-            fillColor={isDestination ? color + "C8" : isSelected ? color + "BE" : color + "90"} // mostly opaque
-            strokeColor={isHighlighted ? "#FFFFFF" : color}
-            strokeWidth={isHighlighted ? 2 : 1}
-            tappable
-            onPress={() =>
-              handleBuildingPress(properties.id, campus, centerCoordinates)
-            }
-            accessibilityLabel={buildingMetadata?.name || properties.id}
-            accessibilityRole="button"
-            zIndex={3}
-          />
-
-          <Marker
-            ref={(markerRef) => {
-              buildingMarkerRefs.current[markerKey] = markerRef as { showCallout?: () => void } | null;
-            }}
-            coordinate={centerCoordinates}
-            onPress={() => handleBuildingPress(properties.id, campus, centerCoordinates)}
-            zIndex={200}
-            tracksViewChanges={true}
-            title={buildingMetadata?.name || properties.id}
-            importantForAccessibility="yes"
-            accessibilityLabel={buildingMetadata?.name || properties.id}
-            accessibilityRole="button"
-            accessibilityHint="Tap to view details"
-          >
-            <View
-              style={{
-                width: 0.3 / mapRegion.longitudeDelta,
-                height: 0.3 / mapRegion.longitudeDelta,
-                backgroundColor: "#FFFFFF",
-                opacity: 0.01,
-              }}
-              collapsable={false}
-              importantForAccessibility="yes"
-              accessible={true}
-              accessibilityLabel={buildingMetadata?.name || properties.id}
-              accessibilityRole="button"
-              accessibilityHint="Tap to view details"
-            >
-              {Platform.OS === "android" && (
-                <Text style={{ width: 1, height: 1, opacity: 0 }}> </Text>
+          return (
+            <React.Fragment key={buildingId}>
+              {isHighlighted && (
+                <Polygon
+                  key={`${campus}-${buildingId}-highlight`}
+                  coordinates={coordinates}
+                  fillColor={color + "90"} // add transparency
+                  strokeColor={color}
+                  strokeWidth={1}
+                  tappable={true}
+                  onPress={() =>
+                    handleBuildingPress(buildingId, campus, centerCoordinates)
+                  }
+                  importantForAccessibility="no-hide-descendants"
+                  accessibilityLabel={name}
+                  accessibilityRole="button"
+                  zIndex={1}
+                />
               )}
-            </View>
-          </Marker>
-        </React.Fragment>
-      );
-    });
+              {isHighlighted && (
+                <Polygon
+                  coordinates={coordinates}
+                  fillColor="transparent"
+                  strokeColor="#FFFFFFE6"
+                  strokeWidth={2}
+                  tappable
+                  onPress={() =>
+                    handleBuildingPress(buildingId, campus, centerCoordinates)
+                  }
+                  zIndex={2}
+                />
+              )}
+
+              <Polygon
+                coordinates={coordinates}
+                fillColor={
+                  isDestination
+                    ? color + "C8"
+                    : isSelected
+                      ? color + "BE"
+                      : color + "90"
+                } // mostly opaque
+                strokeColor={isHighlighted ? "#FFFFFF" : color}
+                strokeWidth={isHighlighted ? 2 : 1}
+                tappable
+                onPress={() =>
+                  handleBuildingPress(buildingId, campus, centerCoordinates)
+                }
+                accessibilityLabel={name}
+                accessibilityRole="button"
+                zIndex={3}
+              />
+
+              <Marker
+                ref={(markerRef) => {
+                  buildingMarkerRefs.current[markerKey] = markerRef as {
+                    showCallout?: () => void;
+                  } | null;
+                }}
+                coordinate={centerCoordinates}
+                onPress={() =>
+                  handleBuildingPress(buildingId, campus, centerCoordinates)
+                }
+                zIndex={200}
+                tracksViewChanges={true}
+                title={name}
+                importantForAccessibility="yes"
+                accessibilityLabel={name}
+                accessibilityRole="button"
+                accessibilityHint="Tap to view details"
+              >
+                <View
+                  style={{
+                    width: 0.3 / mapRegion.longitudeDelta,
+                    height: 0.3 / mapRegion.longitudeDelta,
+                    backgroundColor: "#FFFFFF",
+                    opacity: 0.01,
+                  }}
+                  collapsable={false}
+                  importantForAccessibility="yes"
+                  accessible={true}
+                  accessibilityLabel={name}
+                  accessibilityRole="button"
+                  accessibilityHint="Tap to view details"
+                >
+                  {Platform.OS === "android" && (
+                    <Text style={{ width: 1, height: 1, opacity: 0 }}> </Text>
+                  )}
+                </View>
+              </Marker>
+            </React.Fragment>
+          );
+        });
+    };
+
+    return {
+      sgwPolygons: generatePolygons(SGW, "SGW"),
+      loyPolygons: generatePolygons(LOY, "LOY"),
+    };
+  }, [
+    destinationBuildingId,
+    handleBuildingPress,
+    mapRegion.longitudeDelta,
+    selectedBuilding.name,
+    selectedBuilding.visible,
+  ]);
+
+  const mapID = useMemo(() => {
+    return colorScheme === "dark"
+      ? "eb0ccd6d2f7a95e23f1ec398"
+      : "eb0ccd6d2f7a95e117328051";
+  }, [colorScheme]);
 
   return (
     <View style={styles.container}>
       <MapView
-        key={mapID} // Rerender when mode (light/dark) changes
+        key={mapID}
         ref={mapRef}
         provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
-        googleMapId={Platform.OS === "android" ? mapID : undefined} // Style
+        googleMapId={Platform.OS === "android" ? mapID : undefined}
         style={styles.map}
-        pitchEnabled={false} // No 3D
-        maxDelta={0}
+        initialRegion={{
+          ...initialLocation,
+          latitudeDelta: INITIAL_DELTA,
+          longitudeDelta: INITIAL_DELTA,
+        }}
+        onRegionChangeComplete={setMapRegion} // update state only when drag ends
+        onLongPress={handleMapLongPress}
+        onPress={handleMapPress}
+        tintColor="#FF2D55"
+        pitchEnabled={false} // no 3d
         mapType={Platform.OS === "ios" ? "mutedStandard" : "standard"}
-        showsPointsOfInterest={false} // takes out the information off all businesses
+        showsPointsOfInterest={false}
         showsTraffic={false}
         showsIndoors={false}
         showsBuildings={false}
-        tintColor="#FF2D55"
-        initialRegion={mapRegion}
-        onRegionChangeComplete={setMapRegion}
-        onLongPress={(event) => handleMapLongPress(event.nativeEvent.coordinate)}
-        onPress={handleMapPress}
         showsUserLocation={false}
         moveOnMarkerPress={false}
         toolbarEnabled={false}
         loadingEnabled
         rotateEnabled={false}
         accessibilityElementsHidden={isSheetVisibleForAccessibility}
-        importantForAccessibility={isSheetVisibleForAccessibility ? "no-hide-descendants" : "yes"}
+        importantForAccessibility={
+          isSheetVisibleForAccessibility ? "no-hide-descendants" : "yes"
+        }
       >
-
         {/* ---------------- overlays ---------------- */}
-        {(Object.keys(CampusConfig) as Array<keyof typeof CampusConfig>).map(
-          (campus) => (
-            <CampusPolygons
-              key={`poly-${campus}`}
-              campus={campus}
-              geojson={CampusConfig[campus].geojson}
-              metadata={CampusConfig[campus].metadata}
-            />
-          )
-        )}
-
-        {/* Render SGW campus */}
-        {renderPolygons(SGW, "SGW")}
-
-        {/* Render Loyola campus */}
-        {renderPolygons(LOY, "LOY")}
+        {sgwPolygons}
+        {loyPolygons}
 
         {/* ---------------- labels ---------------- */}
-        {(Object.keys(CampusConfig) as Array<keyof typeof CampusConfig>).map(campus => (
-          <CampusLabels
-            key={`label-${campus}`}
-            campus={campus}
-            data={CampusConfig[campus].labels}
-            longitudeDelta={mapRegion.longitudeDelta}
-          />
-        ))}
+        {(Object.keys(CampusConfig) as (keyof typeof CampusConfig)[]).map(
+          (campus) => (
+            <CampusLabels
+              key={`label-${campus}`}
+              campus={campus}
+              data={CampusConfig[campus].labels}
+              longitudeDelta={mapRegion.longitudeDelta}
+              onLabelPress={(buildingId) =>
+                handleBuildingPress(buildingId, campus)
+              }
+            />
+          ),
+        )}
 
         {userLocation && ( //Show user's current location if available
           <Circle
@@ -730,7 +867,10 @@ const CampusMap: React.FC<CampusMapProps> = ({
             coordinate={userLocation}
             onPress={handleLocationPress}
             tracksViewChanges={false}
-            zIndex={1001}
+            zIndex={9999}
+            title={"Current Location"}
+            accessibilityLabel={"Current Location"}
+            importantForAccessibility="yes"
           >
             <View
               style={{
@@ -739,6 +879,9 @@ const CampusMap: React.FC<CampusMapProps> = ({
                 borderRadius: 6,
                 backgroundColor: "#B03060",
               }}
+              accessible={true}
+              accessibilityLabel={"Current Location"}
+              importantForAccessibility="yes"
             />
           </Marker>
         )}
@@ -752,7 +895,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
             onPress={() => {
               ignoreNextMapPressRef.current = true;
               setSelectedTransitStopKey((previousKey) =>
-                previousKey === stop.key ? null : stop.key
+                previousKey === stop.key ? null : stop.key,
               );
             }}
             tracksViewChanges={false}
@@ -769,7 +912,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
                 justifyContent: "center",
                 backgroundColor: stop.pinColor,
                 borderWidth: 2,
-                borderColor: selectedTransitStopKey === stop.key ? "#FFFFFF" : "#F2F2F7",
+                borderColor:
+                  selectedTransitStopKey === stop.key ? "#FFFFFF" : "#F2F2F7",
               }}
             >
               <PlatformIcon
@@ -802,9 +946,21 @@ const CampusMap: React.FC<CampusMapProps> = ({
             zIndex: 10003,
           }}
         >
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
             <Text
-              style={{ color: "#B03060", fontWeight: "700", fontSize: 14, flex: 1, paddingRight: 8 }}
+              style={{
+                color: "#B03060",
+                fontWeight: "700",
+                fontSize: 14,
+                flex: 1,
+                paddingRight: 8,
+              }}
               numberOfLines={2}
             >
               {selectedTransitStop.title}
@@ -822,7 +978,11 @@ const CampusMap: React.FC<CampusMapProps> = ({
               accessibilityRole="button"
               accessibilityLabel="Close transit stop info"
             >
-              <MaterialIcons name="close" size={16} color={colorScheme === "dark" ? "#F2F2F7" : "#1C1C1E"} />
+              <MaterialIcons
+                name="close"
+                size={16}
+                color={colorScheme === "dark" ? "#F2F2F7" : "#1C1C1E"}
+              />
             </TouchableOpacity>
           </View>
           <Text
@@ -857,7 +1017,9 @@ const CampusMap: React.FC<CampusMapProps> = ({
                   : "#FFFFFF",
             borderWidth: Platform.OS === "ios" ? 1 : 0,
             borderColor:
-              colorScheme === "dark" ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)",
+              colorScheme === "dark"
+                ? "rgba(255,255,255,0.12)"
+                : "rgba(0,0,0,0.08)",
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: Platform.OS === "ios" ? 0.16 : 0.2,
@@ -885,7 +1047,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
             }}
             numberOfLines={1}
           >
-            {modeLabelMap[travelMode]} • {routeData.duration} • {routeData.distance}
+            {modeLabelMap[travelMode]} • {routeData.duration} •{" "}
+            {routeData.distance}
           </Text>
           <Text
             style={{
@@ -907,7 +1070,10 @@ const CampusMap: React.FC<CampusMapProps> = ({
                 marginTop: 1,
               }}
             >
-              Next in {activeInstructionDistanceMeters !== null ? `${activeInstructionDistanceMeters} m` : activeInstruction.distance}
+              Next in{" "}
+              {activeInstructionDistanceMeters !== null
+                ? `${activeInstructionDistanceMeters} m`
+                : activeInstruction.distance}
             </Text>
           )}
         </View>
@@ -931,7 +1097,9 @@ const CampusMap: React.FC<CampusMapProps> = ({
                   : "#FFFFFF",
             borderWidth: Platform.OS === "ios" ? 1 : 0,
             borderColor:
-              colorScheme === "dark" ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)",
+              colorScheme === "dark"
+                ? "rgba(255,255,255,0.12)"
+                : "rgba(0,0,0,0.08)",
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: Platform.OS === "ios" ? 0.16 : 0.2,
@@ -991,7 +1159,12 @@ const CampusMap: React.FC<CampusMapProps> = ({
               accessibilityLabel="End trip"
               accessibilityHint="Ends active navigation and closes route guidance"
             >
-              <PlatformIcon materialName="close" iosName="xmark" size={18} color="#FFFFFF" />
+              <PlatformIcon
+                materialName="close"
+                iosName="xmark"
+                size={18}
+                color="#FFFFFF"
+              />
             </TouchableOpacity>
           </View>
         </View>
@@ -1059,7 +1232,12 @@ const CampusMap: React.FC<CampusMapProps> = ({
               style={StyleSheet.absoluteFill}
             />
           )}
-          <PlatformIcon materialName="navigation" iosName="location.north.fill" size={20} color="#B03060" />
+          <PlatformIcon
+            materialName="navigation"
+            iosName="location.north.fill"
+            size={20}
+            color="#B03060"
+          />
         </TouchableOpacity>
       )}
 

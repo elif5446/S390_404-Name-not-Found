@@ -11,13 +11,7 @@ interface UseUserLocationReturn {
 
 const DEFAULT_LOCATION: LatLng = { latitude: 45.49559, longitude: -73.57871 };
 
-const createTimeoutPromise = (ms: number): Promise<never> => {
-  return new Promise((_, reject) => {
-    setTimeout(() => reject(new Error("Location request timed out")), ms);
-  });
-};
-
-const isEmulatorLocation = (coords: Location.LocationObject["coords"]) => {
+const isEmulatorLocation = (coords: Location.LocationObjectCoords) => {
   return (
     (Math.abs(coords.latitude - 37.42) < 0.1 &&
       Math.abs(coords.longitude - -122.08) < 0.1) ||
@@ -47,8 +41,8 @@ export const useUserLocation = (): UseUserLocationReturn => {
 
     const requestLocationPermission = async () => {
       let canUseLocation = false;
+
       try {
-        // Request foreground location permission
         const { status } = await Location.requestForegroundPermissionsAsync();
 
         if (status !== "granted") {
@@ -66,58 +60,43 @@ export const useUserLocation = (): UseUserLocationReturn => {
         }
 
         const lastKnown = await Location.getLastKnownPositionAsync();
-        if (lastKnown && isMounted) {
+        if (isMounted && lastKnown) {
           setLocation(processCoords(lastKnown.coords));
           setLoading(false);
+          setError(null);
         }
 
-        try {
-          const freshLocation = await Promise.race([
-            Location.getCurrentPositionAsync({
-              accuracy: Location.Accuracy.Balanced,
-            }),
-            createTimeoutPromise(5000),
-          ]);
-
-          if (freshLocation && isMounted) {
-            setLocation(processCoords(freshLocation.coords));
-            setError(null);
-          }
-        } catch (e) {
-          console.error(
-            "Fresh location fetch failed, relying on last known or default.",
-            e,
-          );
-          if (isMounted) {
-            setError("Failed to retrieve location");
-          }
-        }
-
-        if (isMounted) {
-          locationSubscription.current = await Location.watchPositionAsync(
-            {
-              accuracy: Location.Accuracy.Balanced,
-              timeInterval: 3000,
-              distanceInterval: 8,
-            },
-            (updatedPosition) => {
-              if (!isMounted) {
-                return;
-              }
-
-              setLocation(processCoords(updatedPosition.coords));
+        // start watching
+        const subscription = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.High,
+            timeInterval: 5000, // update every 5 seconds max
+            distanceInterval: 5, // update every 5 meters
+          },
+          (newLocation) => {
+            if (isMounted) {
+              setLocation(processCoords(newLocation.coords));
               setLoading(false);
               setError(null);
             }
-          );
+          },
+        );
+
+        // Prevent memory leak if unmounted while the promise was pending
+        if (!isMounted) {
+          subscription.remove();
+        } else {
+          locationSubscription.current = subscription;
         }
       } catch (err) {
         console.error("Location error:", err);
-        setError("Failed to retrieve location");
-        console.error(err);
+        if (isMounted) {
+          setError("Failed to retrieve location");
+        }
       } finally {
         if (isMounted) {
           setLoading(false);
+          // fallback for development if we somehow have permission but no location yet
           if (canUseLocation) {
             setLocation((prev) => {
               if (!prev && __DEV__) {
