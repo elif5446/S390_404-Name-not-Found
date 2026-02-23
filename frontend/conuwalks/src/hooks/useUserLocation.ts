@@ -37,6 +37,16 @@ export const useUserLocation = (): UseUserLocationReturn => {
   useEffect(() => {
     let isMounted = true;
 
+    const processLocation = (coords: Location.LocationObject["coords"]) => {
+      if (__DEV__ && isEmulatorLocation(coords)) {
+        setLocation(DEFAULT_LOCATION);
+      } else {
+        setLocation({ latitude: coords.latitude, longitude: coords.longitude });
+      }
+      setLoading(false);
+      setError(null);
+    };
+
     const startLocationTracking = async () => {
       try {
         // request permissions
@@ -56,37 +66,27 @@ export const useUserLocation = (): UseUserLocationReturn => {
         // get cached location immediately
         const lastKnown = await Location.getLastKnownPositionAsync();
         if (isMounted && lastKnown) {
-          if (__DEV__ && isEmulatorLocation(lastKnown.coords)) {
-            setLocation(DEFAULT_LOCATION);
-          } else {
-            setLocation(lastKnown.coords);
-          }
-          // we have data, so stop loading spinner immediately
-          setLoading(false);
+          processLocation(lastKnown.coords);
         }
 
         // start watching
-        // 'Balanced' is sufficient for buildings and prevents timeout errors indoors
-        locationSubscription.current = await Location.watchPositionAsync(
+        const subscription = await Location.watchPositionAsync(
           {
-            accuracy: Location.Accuracy.Balanced,
+            accuracy: Location.Accuracy.High,
             timeInterval: 5000, // update every 5 seconds max
-            distanceInterval: 10, // update every 10 meters
+            distanceInterval: 5, // update every 10 meters
           },
           (newLocation) => {
-            if (!isMounted) return;
-
-            // check if we are on a simulator broadcasting fake GPS
-            if (__DEV__ && isEmulatorLocation(newLocation.coords)) {
-              setLocation(DEFAULT_LOCATION);
-            } else {
-              setLocation(newLocation.coords);
-            }
-
-            setLoading(false);
-            setError(null);
+            if (isMounted) processLocation(newLocation.coords);
           },
         );
+
+        // Prevent memory leak if unmounted while the promise was pending
+        if (!isMounted) {
+          subscription.remove();
+        } else {
+          locationSubscription.current = subscription;
+        }
       } catch (err) {
         if (isMounted) {
           console.warn("Location service error:", err);

@@ -1,8 +1,13 @@
 /**
  * Unit Tests for useUserLocation Hook
-*
-* These tests verify the hook's logic in isolation by mocking expo-location
-*/
+ *
+ * These tests verify the hook's logic in isolation by mocking expo-location
+ */
+
+/*
+ *   THIS OVERRIDES jest.setup.js. OTHERWISE TESTS USE WRONG MOCK.
+ */
+jest.unmock("@/src/hooks/useUserLocation");
 
 import { renderHook, waitFor, act } from "@testing-library/react-native";
 import { useUserLocation } from "@/src/hooks/useUserLocation";
@@ -10,15 +15,16 @@ import * as Location from "expo-location";
 
 // IMPORTANT: Mock expo-location BEFORE any imports
 jest.mock("expo-location", () => ({
-    requestForegroundPermissionsAsync: jest.fn(),
-    getCurrentPositionAsync: jest.fn(),
-    getLastKnownPositionAsync: jest.fn(),
-    watchPositionAsync: jest.fn(),
-    Accuracy: {
-        Balanced: 3, // mocking the enum value
-    },
+  requestForegroundPermissionsAsync: jest.fn(),
+  getCurrentPositionAsync: jest.fn(),
+  getLastKnownPositionAsync: jest.fn(),
+  watchPositionAsync: jest.fn(),
+  Accuracy: {
+    Balanced: 3,
+    High: 4,
+    Highest: 5,
+  },
 }));
-
 
 // Types for Mocks
 type WatchPositionCallback = (location: { coords: any }) => void;
@@ -51,16 +57,12 @@ const mockWatchError = (error: Error) => {
   (Location.watchPositionAsync as jest.Mock).mockRejectedValue(error);
 };
 
-
 describe("useUserLocation Hook - Unit Tests", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.useFakeTimers();
   });
 
   afterEach(() => {
-    jest.runOnlyPendingTimers();
-    jest.useRealTimers();
     jest.restoreAllMocks();
   });
 
@@ -72,12 +74,15 @@ describe("useUserLocation Hook - Unit Tests", () => {
         Location.requestForegroundPermissionsAsync as jest.Mock
       ).mockImplementation(() => new Promise(() => {}));
 
-      const { result } = renderHook(() => useUserLocation());
+      const { result, unmount } = renderHook(() => useUserLocation());
 
       expect(result.current.location).toBe(null);
       expect(result.current.error).toBe(null);
       expect(result.current.loading).toBe(true);
       expect(result.current.hasPermission).toBe(false);
+
+      // KILL the hook before moving to Test #2 to stop the pending promise leak
+      unmount();
     });
   });
 
@@ -113,7 +118,7 @@ describe("useUserLocation Hook - Unit Tests", () => {
       expect(Location.getLastKnownPositionAsync).toHaveBeenCalled();
     });
 
-    it("should start watching position with Balanced accuracy", async () => {
+    it("should start watching position with High accuracy", async () => {
       mockPermission("granted");
       mockLastKnownPosition(null);
       mockWatchPosition();
@@ -123,9 +128,9 @@ describe("useUserLocation Hook - Unit Tests", () => {
       await waitFor(() => {
         expect(Location.watchPositionAsync).toHaveBeenCalledWith(
           expect.objectContaining({
-            accuracy: Location.Accuracy.Balanced,
+            accuracy: Location.Accuracy.High,
             timeInterval: 5000,
-            distanceInterval: 10,
+            distanceInterval: 5,
           }),
           expect.any(Function), // The callback
         );

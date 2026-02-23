@@ -13,6 +13,7 @@ appId: com.conuwalks.app
 
 - tapOn:
     point: 45%, 30%
+- waitForAnimationToEnd
 - assertVisible: "Henry F. Hall Building.*"
 - runFlow: ../subflows/expand-info-popup.yaml
 - assertVisible: "Schedule"
