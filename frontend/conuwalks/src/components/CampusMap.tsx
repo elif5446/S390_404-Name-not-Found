@@ -1,4 +1,10 @@
-import React, { useState, useRef, useMemo, useCallback } from "react";
+import React, {
+  useState,
+  useRef,
+  useMemo,
+  useCallback,
+  useEffect,
+} from "react";
 import {
   View,
   Text,
@@ -61,6 +67,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
 }) => {
   const colorScheme = useColorScheme();
   const mapRef = useRef<MapView>(null);
+  const lastPressTime = useRef<number>(0);
 
   const {
     location: userLocation,
@@ -100,24 +107,45 @@ const CampusMap: React.FC<CampusMapProps> = ({
           latitudeDelta: 0.003,
           longitudeDelta: 0.003,
         },
-        500, // ms
+        500,
       );
     }
   }, [userLocation]);
 
-  const handleMapPress = useCallback(
-    (e: MapPressEvent) => {
-      // dismiss popup when clicking empty map space
-      if (selectedBuilding.visible) {
-        setSelectedBuilding((prev) => ({ ...prev, visible: false }));
+  // auto-pan when toggling campuses
+  useEffect(() => {
+    if (mapRef.current && initialLocation) {
+      mapRef.current.animateToRegion(
+        {
+          latitude: initialLocation.latitude,
+          longitude: initialLocation.longitude,
+          latitudeDelta: INITIAL_DELTA,
+          longitudeDelta: INITIAL_DELTA,
+        },
+        500,
+      );
+    }
+  }, [initialLocation]);
+
+  const handleMapPress = useCallback((e: MapPressEvent) => {
+    // dismiss popup when clicking empty map space
+    setSelectedBuilding((prev) => {
+      if (prev.visible) {
+        return { ...prev, visible: false };
       }
-    },
-    [selectedBuilding.visible, setSelectedBuilding],
-  );
+      return prev;
+    });
+  }, []);
 
   const handlePolygonPress = useCallback(
     (buildingId: string, campus: "SGW" | "LOY") => {
-      // prevent event bubbling if necessary (though MapView usually handles this distinct from MapPress)
+      const now = Date.now();
+      if (now - lastPressTime.current < 400) {
+        console.log(`Throttled tap on: ${buildingId}`);
+        return;
+      }
+      lastPressTime.current = now;
+      
       console.log(`Single Tap Building: ${buildingId}`);
       setSelectedBuilding({
         name: buildingId,
@@ -137,8 +165,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
       const feature = geojson.features.find((f: GeoJsonFeature) => {
         if (f.geometry.type === "Polygon") {
           const rawCoords = f.geometry.coordinates[0];
-          // ensure polygonFromGeoJSON is efficient
-          // or memoize the parsed polygons if datasets are huge
           const polygonCoords = polygonFromGeoJSON(rawCoords);
           return isPointInPolygon(coordinate, polygonCoords);
         }
@@ -221,7 +247,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
         provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
         googleMapId={Platform.OS === "android" ? mapID : undefined} // Style
         style={styles.map}
-        // uncontrolled Map Props
         initialRegion={{
           ...initialLocation,
           latitudeDelta: INITIAL_DELTA,
@@ -231,7 +256,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
         onLongPress={handleMapLongPress}
         onPress={handleMapPress}
         // visual Configuration
-        maxDelta={0}
+        // maxDelta={0.0}
         tintColor="#FF2D55"
         pitchEnabled={false} // no 3d
         mapType={Platform.OS === "ios" ? "mutedStandard" : "standard"}
@@ -257,6 +282,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
               campus={campus}
               data={CampusConfig[campus].labels}
               longitudeDelta={regionData.longitudeDelta}
+              onLabelPress={(buildingId) => handlePolygonPress(buildingId, campus)}
             />
           ),
         )}

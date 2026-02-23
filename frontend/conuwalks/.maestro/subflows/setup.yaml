@@ -1,12 +1,26 @@
-appId: ${APP_ID}
+appId: com.conuwalks.app
 ---
 - launchApp:
     clearState: true
     permissions:
       all: allow
-      # "allow" usually handles system permissions automatically on launch
-      # but we add manual handling below for edge cases (like "While Using App" popups)
 
+# Select the Development Server
+- runFlow:
+    when:
+      visible: "http://.*"
+    commands:
+      - tapOn:
+          text: "http://.*"
+          optional: true
+      - extendedWaitUntil:
+          notVisible: "Development Build"
+          timeout: 3000
+          optional: true
+
+- waitForAnimationToEnd:
+    timeout: 1000
+  
 # Handle Android/iOS Location Popup if it slips past launchApp
 - runFlow:
     when:
@@ -26,3 +40,64 @@ appId: ${APP_ID}
       - tapOn:
           text: "Allow|OK"
           optional: true
+
+# Bypass the Expo dev overlay
+- runFlow:
+    when:
+      visible: "Continue"
+    commands:
+      - tapOn:
+          point: 50%, 10%
+
+# Close the second full Expo dev menu
+- runFlow:
+    when:
+      visible: "Performance monitor"
+    commands:
+      # Tap the 'x' icon in the top right corner
+      - tapOn:
+          point: 90%, 6%
+          optional: true
+
+
+# Start the Google Calendar Sign-In process
+- assertVisible: "GET STARTED WITH GOOGLE CALENDAR"
+- tapOn: "GET STARTED WITH GOOGLE CALENDAR"
+
+# Wait for the Google Sign-In bottom sheet/modal to render
+- extendedWaitUntil:
+    visible: "Choose an account"
+    timeout: 3000
+
+# Condition 1: "John Tester" is already an option
+- runFlow:
+    when:
+      visible: "John Tester"
+    commands:
+      - tapOn: "John Tester"
+
+# Condition 2: "John Tester" is missing, need to add account manually
+- runFlow:
+    when:
+      notVisible: "John Tester"
+    commands:
+      - tapOn: "Add another account"
+
+      # Wait for the Google webview to load
+      - extendedWaitUntil:
+          visible: "Sign in"
+          timeout: 15000
+
+      # Enter Email
+      - tapOn: "Email or phone" # Optional: Focuses the input
+      - inputText: "testerjohn602@gmail.com"
+      - tapOn: "Next"
+
+      # Wait for the password field to render
+      - extendedWaitUntil:
+          visible: "Enter your password"
+          timeout: 10000
+
+      # Enter Password (Tip: Use environment variables for passwords in Maestro)
+      - inputText: "${PASSWORD}"
+      - tapOn: "Next"

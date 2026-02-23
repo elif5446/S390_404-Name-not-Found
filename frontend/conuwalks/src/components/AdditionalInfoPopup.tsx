@@ -4,6 +4,7 @@ import React, {
   useState,
   useImperativeHandle,
   forwardRef,
+  useCallback,
 } from "react";
 import {
   Image,
@@ -19,8 +20,8 @@ import {
   ActivityIndicator,
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
-import { SymbolView, SFSymbol } from "expo-symbols"; // SF Symbols (iOS)
-import MaterialIcons from "@expo/vector-icons/MaterialIcons"; // Material Design Icons (Android)
+import { SymbolView, SFSymbol } from "expo-symbols";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { BlurView } from "expo-blur";
 
 import { LoyolaBuildingMetadata } from "../data/metadata/LOY.BuildingMetadata";
@@ -30,6 +31,7 @@ import {
   useBuildingEvents,
   BuildingEvent,
 } from "@/src/hooks/useBuildingEvents";
+import { MetroIcon } from "./MetroIcon";
 
 interface AdditionalInfoPopupProps {
   visible: boolean;
@@ -77,7 +79,7 @@ const AdditionalInfoPopup = forwardRef<
 >(({ visible, buildingId, campus, onClose }, ref) => {
   const mode = useColorScheme() || "light";
   const [buildingInfo, setBuildingInfo] = useState<any>(null);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [copying, setCopying] = useState(false);
 
   // Calendar hook
   const {
@@ -86,16 +88,16 @@ const AdditionalInfoPopup = forwardRef<
     loading: eventsLoading,
   } = useBuildingEvents(buildingId, campus);
 
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
   // Animation values
-  const panY = useRef(new Animated.Value(0)).current;
   const scrollViewRef = useRef<ScrollView>(null);
-
-  // Default heights
   const screenHeight = Dimensions.get("window").height;
-  const MIN_HEIGHT = 300; //initial popup view
-  const MAX_HEIGHT = screenHeight * 0.8; //full popup will be around 80% of the screen
-
-  // How far down the popup must sit so that only 300px is visible.
+  const MIN_HEIGHT = 300;
+  const MAX_HEIGHT = screenHeight * 0.8;
   const SNAP_OFFSET = MAX_HEIGHT - MIN_HEIGHT;
 
   // An animated value that controls vertical movement (is initially off screen)
@@ -104,7 +106,43 @@ const AdditionalInfoPopup = forwardRef<
   const translateYAtGestureStart = useRef(MAX_HEIGHT);
   const scrollOffsetRef = useRef(0);
   //change building info animation
-  const opacity = useRef(new Animated.Value(2)).current;
+  const opacity = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    const id = translateY.addListener(({ value }) => {
+      translateYRef.current = value;
+    });
+    return () => translateY.removeListener(id);
+  }, [translateY]);
+
+  useEffect(() => {
+    if (visible) {
+      //controls the content in the popup
+      scrollOffsetRef.current = 0;
+      scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+
+      //   translateY.setValue(MAX_HEIGHT);
+      //   translateYRef.current = MAX_HEIGHT;
+
+      Animated.spring(translateY, {
+        toValue: SNAP_OFFSET,
+        useNativeDriver: true, // native driver works on translateY
+        tension: 70,
+        friction: 12,
+      }).start(() => {
+        translateYRef.current = SNAP_OFFSET;
+      });
+    } else {
+      // on false dismiss
+      Animated.timing(translateY, {
+        toValue: MAX_HEIGHT,
+        duration: 150,
+        useNativeDriver: true,
+      }).start(() => {
+        translateYRef.current = MAX_HEIGHT;
+      });
+    }
+  }, [visible, translateY, MAX_HEIGHT, SNAP_OFFSET]);
 
   useEffect(() => {
     if (!visible) return;
@@ -122,34 +160,6 @@ const AdditionalInfoPopup = forwardRef<
     ]).start();
   }, [buildingId, visible, opacity]);
 
-  useEffect(() => {
-    const id = translateY.addListener(({ value }) => {
-      translateYRef.current = value;
-    });
-    return () => translateY.removeListener(id);
-  }, [translateY]); //runs only on first render
-
-  useEffect(() => {
-    if (visible) {
-      //controls the content in the popup
-      scrollOffsetRef.current = 0;
-      scrollViewRef.current?.scrollTo({ y: 0, animated: false });
-
-      translateY.setValue(MAX_HEIGHT);
-      translateYRef.current = MAX_HEIGHT;
-
-      // Start off-screen, spring up to collapsed position
-      Animated.spring(translateY, {
-        toValue: SNAP_OFFSET,
-        useNativeDriver: true, // native driver works on translateY
-        tension: 70,
-        friction: 12,
-      }).start(() => {
-        translateYRef.current = SNAP_OFFSET;
-      });
-    }
-  }, [visible, translateY, MAX_HEIGHT, SNAP_OFFSET]);
-
   // Fetch building info based on buildingId and campus
   useEffect(() => {
     if (buildingId) {
@@ -157,57 +167,51 @@ const AdditionalInfoPopup = forwardRef<
         campus === "SGW"
           ? SGWBuildingMetadata[buildingId]
           : LoyolaBuildingMetadata[buildingId];
-
-      if (metadata) {
-        setBuildingInfo(metadata);
-      } else {
-        // Fallback
-        setBuildingInfo({ name: buildingId });
-      }
+      setBuildingInfo(metadata || { name: buildingId });
     }
   }, [buildingId, campus]);
 
-  useImperativeHandle(ref, () => ({
-    collapse: () => snapTo(SNAP_OFFSET),
-  }));
-
   //this will allow us to smoothly move the popup up and down
-  const snapTo = (toValue: number, onDone?: () => void) => {
-    Animated.spring(translateY, {
-      toValue,
-      useNativeDriver: true,
-      tension: 68,
-      friction: 12,
-      overshootClamping: true,
-    }).start(({ finished }) => {
-      if (finished) {
-        translateYRef.current = toValue;
-        onDone?.();
-      }
-    });
-  };
+  const snapTo = useCallback(
+    (toValue: number, onDone?: () => void) => {
+      Animated.spring(translateY, {
+        toValue,
+        useNativeDriver: true,
+        tension: 68,
+        friction: 12,
+        overshootClamping: true,
+      }).start(({ finished }) => {
+        if (finished) {
+          translateYRef.current = toValue;
+          onDone?.();
+        }
+      });
+    },
+    [translateY],
+  );
 
-  const dismiss = () => {
+  const dismiss = useCallback(() => {
     Animated.timing(translateY, {
       toValue: MAX_HEIGHT,
       duration: 240,
       useNativeDriver: true,
     }).start(({ finished }) => {
-      if (finished) onClose();
+      if (finished) onCloseRef.current(); // Use ref to avoid stale closures
     });
-  };
+  }, [translateY, MAX_HEIGHT]);
+
+  useImperativeHandle(ref, () => ({
+    collapse: () => snapTo(SNAP_OFFSET),
+  }));
 
   // PanResponder for the DRAG HANDLE ONLY — does not intercept button taps
   const handlePanResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
-      onStartShouldSetPanResponderCapture: () => false, // ← don't capture, just respond
-      onMoveShouldSetPanResponder: (_, g) => {
-        return Math.abs(g.dy) > Math.abs(g.dx) * 1.2;
-      },
-      onMoveShouldSetPanResponderCapture: (_, g) => {
-        return Math.abs(g.dy) > 5;
-      },
+      onStartShouldSetPanResponderCapture: () => false, // don't capture, just respond
+      onMoveShouldSetPanResponder: (_, g) =>
+        Math.abs(g.dy) > Math.abs(g.dx) * 1.2,
+      onMoveShouldSetPanResponderCapture: (_, g) => Math.abs(g.dy) > 5,
 
       onPanResponderGrant: () => {
         translateY.stopAnimation((value) => {
@@ -257,15 +261,13 @@ const AdditionalInfoPopup = forwardRef<
 
         // Collapsed: intercept all downward drags
         if (!isExpanded) return g.dy > 0;
-
         // Expanded + dragging up: let ScrollView scroll
         if (g.dy < 0) return false;
-
         // Expanded + dragging down + at top: collapse the sheet
         return scrollOffsetRef.current <= 0;
       },
 
-      onMoveShouldSetPanResponderCapture: () => false, // ← never capture, so taps always reach children
+      onMoveShouldSetPanResponderCapture: () => false, // never capture, so taps always reach children
 
       onPanResponderGrant: () => {
         translateY.stopAnimation((value) => {
@@ -301,20 +303,16 @@ const AdditionalInfoPopup = forwardRef<
     }),
   ).current;
 
-  const [copying, setCopying] = useState(false);
-
   // Address copy functionality
-  const copyAddressToClipboard = async () => {
+  const copyAddressToClipboard = useCallback(async () => {
     if (buildingInfo?.address) {
       setCopying(true);
-      Clipboard.setString(buildingInfo.address);
-      setTimeout(() => {
-        setCopying(false);
-      }, 1000);
+      await Clipboard.setStringAsync(buildingInfo.address);
+      setTimeout(() => setCopying(false), 1000);
     }
-  };
+  }, [buildingInfo?.address]);
 
-  const getAccessibilityIcons = (facilities: any) => {
+  const getAccessibilityIcons = useCallback((facilities: any) => {
     if (!facilities) return null;
 
     const icons: {
@@ -328,7 +326,7 @@ const AdditionalInfoPopup = forwardRef<
       facilities.some(
         (f: string) =>
           f.toLowerCase().includes("metro") ||
-          f.toLowerCase().includes("undergound passage"),
+          f.toLowerCase().includes("underground passage"),
       )
     ) {
       icons.push({
@@ -371,49 +369,52 @@ const AdditionalInfoPopup = forwardRef<
     }
 
     return icons;
-  };
+  }, []);
 
-  const renderOpeningHours = (openingHours: any) => {
-    if (typeof openingHours === "string") {
-      return (
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, themedStyles.text(mode)]}>
-            Opening Hours
-          </Text>
-          <Text style={[styles.sectionText, themedStyles.text(mode)]}>
-            {openingHours}
-          </Text>
-        </View>
-      );
-    } else if (openingHours && typeof openingHours === "object") {
-      return (
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, themedStyles.text(mode)]}>
-            Opening Hours
-          </Text>
-          <View style={styles.hoursContainer}>
-            <View style={styles.hoursRow}>
-              <Text style={[styles.hoursLabel, themedStyles.subtext(mode)]}>
-                Weekdays:
-              </Text>
-              <Text style={[styles.hoursValue, themedStyles.text(mode)]}>
-                {openingHours.weekdays}
-              </Text>
-            </View>
-            <View style={styles.hoursRow}>
-              <Text style={[styles.hoursLabel, themedStyles.subtext(mode)]}>
-                Weekend:
-              </Text>
-              <Text style={[styles.hoursValue, themedStyles.text(mode)]}>
-                {openingHours.weekend}
-              </Text>
+  const renderOpeningHours = useCallback(
+    (openingHours: any) => {
+      if (typeof openingHours === "string") {
+        return (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, themedStyles.text(mode)]}>
+              Opening Hours
+            </Text>
+            <Text style={[styles.sectionText, themedStyles.text(mode)]}>
+              {openingHours}
+            </Text>
+          </View>
+        );
+      } else if (openingHours && typeof openingHours === "object") {
+        return (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, themedStyles.text(mode)]}>
+              Opening Hours
+            </Text>
+            <View style={styles.hoursContainer}>
+              <View style={styles.hoursRow}>
+                <Text style={[styles.hoursLabel, themedStyles.subtext(mode)]}>
+                  Weekdays:
+                </Text>
+                <Text style={[styles.hoursValue, themedStyles.text(mode)]}>
+                  {openingHours.weekdays}
+                </Text>
+              </View>
+              <View style={styles.hoursRow}>
+                <Text style={[styles.hoursLabel, themedStyles.subtext(mode)]}>
+                  Weekend:
+                </Text>
+                <Text style={[styles.hoursValue, themedStyles.text(mode)]}>
+                  {openingHours.weekend}
+                </Text>
+              </View>
             </View>
           </View>
-        </View>
-      );
-    }
-    return null;
-  };
+        );
+      }
+      return null;
+    },
+    [mode],
+  );
 
   const accessibilityIcons = getAccessibilityIcons(buildingInfo?.facilities);
 
@@ -494,13 +495,10 @@ const AdditionalInfoPopup = forwardRef<
                             accessibilityLabel={icon.label}
                           >
                             {icon.key === "metro" ? (
-                              <Image
-                                source={require("../../assets/images/metro.png")}
-                                style={{
-                                  width: 25,
-                                  height: 25,
-                                  tintColor: themedStyles.subtext(mode).color,
-                                }}
+                              <MetroIcon
+                                width={25}
+                                height={25}
+                                color={themedStyles.subtext(mode).color}
                               />
                             ) : Platform.OS === "ios" ? (
                               <SymbolView
