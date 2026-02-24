@@ -1,5 +1,6 @@
 module.exports = {
   preset: 'jest-expo',
+  testEnvironment: 'jsdom',
   setupFiles: ['<rootDir>/jest.setup.js'],
   setupFilesAfterEnv: ['@testing-library/jest-native/extend-expect'],
   transformIgnorePatterns: [
@@ -7,6 +8,10 @@ module.exports = {
   ],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
+    '@react-native-async-storage/async-storage': require.resolve(
+      '@react-native-async-storage/async-storage/jest/async-storage-mock'
+    ),
+    '@react-native-google-signin/google-signin': '<rootDir>/jest.setup.js',
   },
   collectCoverageFrom: [
     'src/**/*.{ts,tsx}',

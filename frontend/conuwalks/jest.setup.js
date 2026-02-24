@@ -22,38 +22,37 @@ global.__ExpoImportMetaRegistry = {
 // Mock structuredClone
 global.structuredClone = jest.fn((obj) => JSON.parse(JSON.stringify(obj)));
 
-
 // Mock react-native-maps
 jest.mock('react-native-maps', () => {
   const React = require('react');
   const { View } = require('react-native');
-  
+
   const MockMapView = ({ children, testID, ...props }) => (
     <View testID={testID || 'map-view'} {...props}>
       {children}
     </View>
   );
-  
-  const MockPolygon = ({ 
-    testID, 
-    accessibilityLabel, 
+
+  const MockPolygon = ({
+    testID,
+    accessibilityLabel,
     coordinates,
     fillColor,
     strokeColor,
     strokeWidth,
-    ...props 
+    ...props
   }) => (
-    <View 
-      testID={testID || 'polygon'} 
+    <View
+      testID={testID || 'polygon'}
       accessibilityLabel={accessibilityLabel}
       data-coordinates={JSON.stringify(coordinates)}
       data-fill-color={fillColor}
       data-stroke-color={strokeColor}
       data-stroke-width={strokeWidth}
-      {...props} 
+      {...props}
     />
   );
-  
+
   return {
     __esModule: true,
     default: MockMapView,
@@ -84,8 +83,6 @@ jest.mock('@/src/utils/geo', () => ({
   ),
 }));
 
-
-
 // Suppress act() warnings
 const originalError = console.error;
 console.error = (...args) => {
@@ -99,13 +96,11 @@ console.error = (...args) => {
   originalError.call(console, ...args);
 };
 
-// ... your existing mocks ...
-
 // Mock @react-native-segmented-control/segmented-control (iOS)
 jest.mock('@react-native-segmented-control/segmented-control', () => {
   const React = require('react');
   const { View, TouchableOpacity, Text } = require('react-native');
-  
+
   return {
     __esModule: true,
     default: ({ values, selectedIndex, onChange, testID, ...props }) => (
@@ -134,7 +129,7 @@ jest.mock('@react-native-segmented-control/segmented-control', () => {
 jest.mock('react-native-paper', () => {
   const React = require('react');
   const { View, TouchableOpacity, Text } = require('react-native');
-  
+
   return {
     SegmentedButtons: ({ buttons, value, onValueChange, testID }) => (
       <View testID={testID || 'segmented-buttons'}>
@@ -159,7 +154,7 @@ jest.mock('react-native-paper', () => {
 jest.mock('expo-blur', () => {
   const React = require('react');
   const { View } = require('react-native');
-  
+
   return {
     BlurView: ({ children, testID, ...props }) => (
       <View testID={testID || 'blur-view'} {...props}>
@@ -178,4 +173,21 @@ jest.mock('react-native-safe-area-context', () => ({
     right: 0,
   })),
   SafeAreaProvider: ({ children }) => children,
+}));
+
+// Mock @react-native-google-signin/google-signin
+jest.mock('@react-native-google-signin/google-signin', () => ({
+  GoogleSignin: {
+    configure: jest.fn(),
+    signIn: jest.fn(),
+    signOut: jest.fn(),
+    isSignedIn: jest.fn(() => false),
+    getTokens: jest.fn(() => ({ accessToken: 'mock-token', idToken: 'mock-id-token' })),
+    getCurrentUser: jest.fn(() => null),
+  },
+  statusCodes: {
+    SIGN_IN_CANCELLED: 'SIGN_IN_CANCELLED',
+    IN_PROGRESS: 'IN_PROGRESS',
+    PLAY_SERVICES_NOT_AVAILABLE: 'PLAY_SERVICES_NOT_AVAILABLE',
+  },
 }));
