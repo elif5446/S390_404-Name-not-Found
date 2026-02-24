@@ -1,8 +1,9 @@
-import { Stack } from "expo-router";
+import { Slot } from "expo-router";
 import { useEffect, useState, useRef } from "react";
 import { View, ActivityIndicator } from "react-native";
 import { getTokens, isTokenValid } from "@/src/utils/tokenStorage";
 import { useRouter, useSegments } from "expo-router";
+import { DirectionsProvider } from "@/src/context/DirectionsContext";
 
 export default function DevLayout() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -56,7 +57,7 @@ export default function DevLayout() {
       }
 
       navigationTimeout.current = setTimeout(() => {
-        router.replace("/(dev)");
+        router.replace("/(dev)/home");
         setTimeout(() => {
           isNavigating.current = false;
         }, 500);
@@ -86,9 +87,8 @@ export default function DevLayout() {
   }
 
   return (
-    <Stack>
-      <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="login" options={{ headerShown: false }} />
-    </Stack>
+    <DirectionsProvider>
+      <Slot />
+    </DirectionsProvider>
   );
 }

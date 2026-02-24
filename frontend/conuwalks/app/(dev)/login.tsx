@@ -1,4 +1,10 @@
-import { Text, View, StyleSheet, ActivityIndicator } from "react-native";
+import {
+  Text,
+  View,
+  StyleSheet,
+  ActivityIndicator,
+  Button,
+} from "react-native";
 import React, { useState, useRef, useEffect } from "react";
 import GoogleCalendarAuth from "@/src/screens/GoogleCalendarAuth";
 import { useRouter } from "expo-router";
@@ -46,7 +52,7 @@ export default function LoginScreen() {
         setIsNavigating(true);
 
         if (isMounted.current) {
-          router.replace("/(dev)");
+          router.replace("/(dev)/home");
         }
       }
     } catch (error) {
@@ -68,7 +74,7 @@ export default function LoginScreen() {
     setIsNavigating(true);
 
     if (isMounted.current) {
-      router.replace("/(dev)");
+      router.replace("/(dev)/home");
     }
   };
 
@@ -81,8 +87,19 @@ export default function LoginScreen() {
     );
   }
 
+  const testAuth = () => {
+    console.log("Test auth button pressed");
+    handleAuthSuccess();
+  };
+
   return (
     <View style={styles.container}>
+      {/* Test button */}
+      <Button
+        title="TEST AUTH - Skip Google"
+        onPress={testAuth}
+        color="green"
+      />
       <GoogleCalendarAuth key="google-auth" onAuthSuccess={handleAuthSuccess} />
     </View>
   );

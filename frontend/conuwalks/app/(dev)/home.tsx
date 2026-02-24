@@ -6,7 +6,7 @@ import {
   Image,
   Text,
   ActivityIndicator,
-  Platform
+  Platform,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
@@ -61,37 +61,39 @@ export default function HomeScreen() {
     ]);
   };
 
-  const content = <View style={styles.userContainer}>
-    {userInfo?.photo ? (
-      <Image source={{ uri: userInfo.photo }} style={styles.profileImage} />
-    ) : (
-      <View style={[styles.profileImage, styles.placeholderImage]}>
-        <Text style={styles.placeholderText}>
-          {userInfo?.name?.charAt(0) || "U"}
-        </Text>
-      </View>
-    )}
-    
-    <View style={styles.userInfo}>
-      {userInfo?.name && (
-        <Text style={styles.userName} numberOfLines={1}>
-          {userInfo.name}
-        </Text>
+  const content = (
+    <View style={styles.userContainer}>
+      {userInfo?.photo ? (
+        <Image source={{ uri: userInfo.photo }} style={styles.profileImage} />
+      ) : (
+        <View style={[styles.profileImage, styles.placeholderImage]}>
+          <Text style={styles.placeholderText}>
+            {userInfo?.name?.charAt(0) || "U"}
+          </Text>
+        </View>
       )}
-      <View
-        style={{
-          backgroundColor: Platform.OS === 'ios' ? "#B03060CC" : "#feeded",
-          borderRadius: 20,
-        }}
-      >
-        <Button 
-          title="Sign Out" 
-          onPress={handleSignOut} 
-          color={Platform.OS === 'ios' ? "#feeded" : "#B03060CC"} 
-        />
+
+      <View style={styles.userInfo}>
+        {userInfo?.name && (
+          <Text style={styles.userName} numberOfLines={1}>
+            {userInfo.name}
+          </Text>
+        )}
+        <View
+          style={{
+            backgroundColor: Platform.OS === "ios" ? "#B03060CC" : "#feeded",
+            borderRadius: 20,
+          }}
+        >
+          <Button
+            title="Sign Out"
+            onPress={handleSignOut}
+            color={Platform.OS === "ios" ? "#feeded" : "#B03060CC"}
+          />
+        </View>
       </View>
     </View>
-  </View>
+  );
 
   if (isLoading) {
     return (
@@ -123,17 +125,17 @@ export default function HomeScreen() {
 
       {/* User profile and sign out button */}
       <View style={styles.glassWrapper}>
-        {Platform.OS === 'ios' && 
-          <BlurView 
+        {(Platform.OS === "ios" && (
+          <BlurView
             intensity={60}
-            tint="extraLight" 
+            tint="extraLight"
             style={styles.blurContainer}
           >
             {content}
           </BlurView>
-        ||
-        content}
-        </View>
+        )) ||
+          content}
+      </View>
 
       <StatusBar
         barStyle="dark-content"
