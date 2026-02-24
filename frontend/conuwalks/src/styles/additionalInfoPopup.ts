@@ -227,7 +227,83 @@ const additionalInfoPopupStyles = StyleSheet.create({
         fontSize: 15,
         lineHeight: 22,
         fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',},
-
+    scheduleHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 4,
+        paddingVertical: 3,
+},
+    noEventsContainer: {
+    },
+    noEventsText: {
+        fontSize: 14,
+        fontStyle: 'italic',
+        textAlign: 'center',
+    },
+    nextEventLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+        paddingBottom:4,
+    },
+    eventsList: {  
+    },
+    eventItem: {
+    },
+    eventItemBorder: {
+        borderBottomWidth: 1,
+        borderBottomColor: '#E0E0E0',
+    },
+    eventTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        marginBottom: 6,
+    },
+    eventDetailsRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    eventTime: {
+        fontSize: 16,
+        color: '#666',
+    },
+    eventRoom: {
+        fontSize: 16,
+        fontWeight: '500',
+    },
+    eventItemWithButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+  },
+  eventContent: {
+    flex: 1,
+    marginRight: 12,
+  },
+  directionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 999,
+    paddingVertical: 4,
+    paddingHorizontal: 7,
+    gap: 5,
+  },
+  directionButtonInner: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  directionButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 12,
+    lineHeight: 14,
+  },
     // Android styles
 });
 
