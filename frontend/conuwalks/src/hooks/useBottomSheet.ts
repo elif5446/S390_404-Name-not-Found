@@ -112,7 +112,7 @@ export const useBottomSheet = ({
       reportExpandedState(false);
       Animated.timing(translateY, {
         toValue: screenHeight,
-        duration: 240,
+        duration: 200,
         useNativeDriver: true,
       }).start(({ finished }) => {
         if (finished) {

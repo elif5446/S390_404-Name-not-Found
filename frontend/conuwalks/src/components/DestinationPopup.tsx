@@ -111,7 +111,7 @@ const DestinationPopup = forwardRef<
 
   return (
     <View
-      style={[styles.overlay, { zIndex: visible ? 999 : -1 }]}
+      style={[styles.overlay, { zIndex: 999 }]}
       pointerEvents={visible ? "box-none" : "none"}
       accessibilityViewIsModal={visible}
     >

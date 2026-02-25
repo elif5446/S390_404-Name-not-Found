@@ -120,6 +120,12 @@ const AdditionalInfoPopup = forwardRef<
     }
   };
 
+  const handleDirectionsPress = () => {
+    dismiss(undefined, () => {
+      onDirectionsTrigger?.();
+    });
+  };
+
   useImperativeHandle(ref, () => ({
     collapse: () => snapTo(SNAP_OFFSET),
     minimize,
@@ -212,7 +218,7 @@ const AdditionalInfoPopup = forwardRef<
                 accessibilityIcons={accessibilityIcons}
                 directionsEtaLabel={directionsEtaLabel}
                 onDismiss={() => dismiss()}
-                onDirectionsPress={() => onDirectionsTrigger?.()}
+                onDirectionsPress={handleDirectionsPress}
                 onToggleHeight={handleToggleHeight}
                 onDragHandleAccessibilityAction={
                   handleDragHandleAccessibilityAction
@@ -226,7 +232,7 @@ const AdditionalInfoPopup = forwardRef<
                 buildingInfo={buildingInfo}
                 directionsEtaLabel={directionsEtaLabel}
                 isCopying={isCopying}
-                onDirectionsPress={() => onDirectionsTrigger?.()}
+                onDirectionsPress={handleDirectionsPress}
                 onCopyAddress={copyAddress}
                 scrollViewRef={scrollViewRef}
                 onScroll={(e) =>
