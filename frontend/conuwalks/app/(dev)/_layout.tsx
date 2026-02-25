@@ -1,8 +1,7 @@
-import { Stack } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import { useEffect, useState, useRef } from "react";
 import { View, ActivityIndicator } from "react-native";
 import { getTokens, isTokenValid } from "@/src/utils/tokenStorage";
-import { useRouter, useSegments } from "expo-router";
 
 export default function DevLayout() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -13,7 +12,6 @@ export default function DevLayout() {
 
   useEffect(() => {
     checkAuthStatus();
-
     return () => {
       if (navigationTimeout.current) {
         clearTimeout(navigationTimeout.current);
@@ -24,45 +22,39 @@ export default function DevLayout() {
   useEffect(() => {
     if (isAuthenticated === null || isNavigating.current) return;
 
-    const inAuthGroup = segments[0] === "login";
+    const currentRouteSegments = segments as string[];
+    const inAuthGroup = currentRouteSegments[currentRouteSegments.length - 1] === "login";
+
     console.log("Navigation check:", {
       isAuthenticated,
       inAuthGroup,
-      segment: segments[0],
+      segments,
     });
+
+    // Centralized navigation handler to clear timeouts and prevent rapid-fire redirects
+    const executeNavigation = (path: any) => {
+      isNavigating.current = true;
+      if (navigationTimeout.current) {
+        clearTimeout(navigationTimeout.current);
+      }
+
+      navigationTimeout.current = setTimeout(() => {
+        router.replace(path);
+        // Give the router time to settle before unlocking navigation
+        setTimeout(() => {
+          isNavigating.current = false;
+        }, 500);
+      }, 100);
+    };
 
     if (!isAuthenticated && !inAuthGroup) {
       console.log("Not authenticated, redirecting to login");
-      isNavigating.current = true;
-
-      // Clear any existing timeout
-      if (navigationTimeout.current) {
-        clearTimeout(navigationTimeout.current);
-      }
-
-      navigationTimeout.current = setTimeout(() => {
-        router.replace("/(dev)/login");
-        setTimeout(() => {
-          isNavigating.current = false;
-        }, 500);
-      }, 100);
+      executeNavigation("/(dev)/login");
     } else if (isAuthenticated && inAuthGroup) {
       console.log("Authenticated, redirecting to home");
-      isNavigating.current = true;
-
-      // Clear any existing timeout
-      if (navigationTimeout.current) {
-        clearTimeout(navigationTimeout.current);
-      }
-
-      navigationTimeout.current = setTimeout(() => {
-        router.replace("/(dev)/home");
-        setTimeout(() => {
-          isNavigating.current = false;
-        }, 500);
-      }, 100);
+      executeNavigation("/(dev)/home");
     }
-  }, [isAuthenticated, segments]);
+  }, [isAuthenticated, router, segments]);
 
   const checkAuthStatus = async () => {
     try {

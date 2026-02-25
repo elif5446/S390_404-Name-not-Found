@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { GoogleCalendarApi, CalendarEvent } from '../api/calendarApi';
-import { getTokens, isTokenValid, saveTokens, TokenData } from '../utils/tokenStorage';
+import { useState, useEffect } from "react";
+import { GoogleCalendarApi, CalendarEvent } from "../api/calendarApi";
+import { getTokens, isTokenValid } from "../utils/tokenStorage";
 
 export const useGoogleCalendar = () => {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -22,7 +22,7 @@ export const useGoogleCalendar = () => {
   const getApiInstance = async (): Promise<GoogleCalendarApi | null> => {
     const tokens = await getTokens();
     if (!tokens || !isTokenValid(tokens)) {
-      setError('Not authenticated or token expired');
+      setError("Not authenticated or token expired");
       return null;
     }
     return new GoogleCalendarApi(tokens.accessToken);
@@ -32,7 +32,7 @@ export const useGoogleCalendar = () => {
   const fetchUpcomingEvents = async (maxResults: number = 10) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const api = await getApiInstance();
       if (!api) return;
@@ -40,7 +40,7 @@ export const useGoogleCalendar = () => {
       const data = await api.getUpcomingEvents(maxResults);
       setEvents(data.items || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch events');
+      setError(err instanceof Error ? err.message : "Failed to fetch events");
     } finally {
       setLoading(false);
     }
@@ -50,7 +50,7 @@ export const useGoogleCalendar = () => {
   const fetchCalendars = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const api = await getApiInstance();
       if (!api) return;
@@ -58,17 +58,22 @@ export const useGoogleCalendar = () => {
       const data = await api.listCalendars();
       setCalendars(data.items || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch calendars');
+      setError(
+        err instanceof Error ? err.message : "Failed to fetch calendars",
+      );
     } finally {
       setLoading(false);
     }
   };
 
   // Create a new event
-  const createEvent = async (event: Partial<CalendarEvent>, calendarId: string = 'primary') => {
+  const createEvent = async (
+    event: Partial<CalendarEvent>,
+    calendarId: string = "primary",
+  ) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const api = await getApiInstance();
       if (!api) return null;
@@ -77,7 +82,7 @@ export const useGoogleCalendar = () => {
       await fetchUpcomingEvents(); // Refresh events
       return newEvent;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create event');
+      setError(err instanceof Error ? err.message : "Failed to create event");
       return null;
     } finally {
       setLoading(false);
@@ -85,10 +90,13 @@ export const useGoogleCalendar = () => {
   };
 
   // Delete an event
-  const deleteEvent = async (eventId: string, calendarId: string = 'primary') => {
+  const deleteEvent = async (
+    eventId: string,
+    calendarId: string = "primary",
+  ) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const api = await getApiInstance();
       if (!api) return false;
@@ -97,7 +105,7 @@ export const useGoogleCalendar = () => {
       await fetchUpcomingEvents(); // Refresh events
       return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete event');
+      setError(err instanceof Error ? err.message : "Failed to delete event");
       return false;
     } finally {
       setLoading(false);
