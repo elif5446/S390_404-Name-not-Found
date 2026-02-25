@@ -1,10 +1,12 @@
-import { useRef, useCallback, useEffect } from "react";
+import { useRef, useCallback, useEffect, useMemo } from "react";
 import {
   Animated,
-  Dimensions,
   PanResponder,
   Platform,
   BackHandler,
+  useWindowDimensions,
+  PanResponderGestureState,
+  GestureResponderEvent,
 } from "react-native";
 
 interface UseBottomSheetConfig {
@@ -22,12 +24,19 @@ export const useBottomSheet = ({
   minHeight = Platform.OS === "ios" ? 420 : 380,
   peekHeightRatio = 0.16,
 }: UseBottomSheetConfig) => {
-  const screenHeight = Dimensions.get("window").height;
-  const MAX_HEIGHT = screenHeight * (Platform.OS === "ios" ? 0.92 : 0.9);
-  const SNAP_OFFSET = MAX_HEIGHT - minHeight;
-  const PEEK_HEIGHT = screenHeight * peekHeightRatio;
-  const MINIMIZED_OFFSET = MAX_HEIGHT - PEEK_HEIGHT;
+  const { height: screenHeight } = useWindowDimensions();
 
+  // memoize height calculations so they only update on orientation/resize
+  const { MAX_HEIGHT, SNAP_OFFSET, MINIMIZED_OFFSET } = useMemo(() => {
+    const max = screenHeight * (Platform.OS === "ios" ? 0.92 : 0.9);
+    return {
+      MAX_HEIGHT: max,
+      SNAP_OFFSET: max - minHeight,
+      MINIMIZED_OFFSET: max - screenHeight * peekHeightRatio,
+    };
+  }, [screenHeight, minHeight, peekHeightRatio]);
+
+  // animation & state refs
   const translateY = useRef(new Animated.Value(screenHeight)).current;
   const translateYRef = useRef(screenHeight);
   const translateYAtGestureStart = useRef(screenHeight);
@@ -35,20 +44,22 @@ export const useBottomSheet = ({
   const scrollOffsetRef = useRef(0);
   const expandedStateRef = useRef(false);
 
+  // stable callback refs (prevents stale closures in gestures)
   const onDismissRef = useRef(onDismiss);
+  const onExpansionChangeRef = useRef(onExpansionChange);
+
   useEffect(() => {
     onDismissRef.current = onDismiss;
-  }, [onDismiss]);
+    onExpansionChangeRef.current = onExpansionChange;
+  }, [onDismiss, onExpansionChange]);
 
-  const reportExpandedState = useCallback(
-    (isExpanded: boolean) => {
-      if (expandedStateRef.current === isExpanded) return;
-      expandedStateRef.current = isExpanded;
-      onExpansionChange?.(isExpanded);
-    },
-    [onExpansionChange],
-  );
+  const reportExpandedState = useCallback((isExpanded: boolean) => {
+    if (expandedStateRef.current === isExpanded) return;
+    expandedStateRef.current = isExpanded;
+    onExpansionChangeRef.current?.(isExpanded);
+  }, []);
 
+  // sync animated.Value to standard ref for gesture math
   useEffect(() => {
     const id = translateY.addListener(({ value }) => {
       translateYRef.current = value;
@@ -181,82 +192,83 @@ export const useBottomSheet = ({
     }
   }, [dismiss, visible]);
 
-  const handlePanResponderRelease = (_: any, g: any) => {
-    const currentY = translateYRef.current;
-    const velocity = g.vy;
-    const {
-      dismiss: currentDismiss,
-      snapTo: currentSnapTo,
-      minimize: currentMinimize,
-    } = actionsRef.current;
+  const { handlePanResponder, scrollAreaPanResponder } = useMemo(() => {
+    const onPanResponderGrant = () => {
+      targetAnimY.current = null;
+      translateY.stopAnimation((val) => {
+        translateYAtGestureStart.current = val;
+        translateYRef.current = val;
+      });
+    };
 
-    if (velocity > 1.2) {
-      if (currentY >= MINIMIZED_OFFSET - 40) currentDismiss(true);
-      else if (currentY >= SNAP_OFFSET - 40) currentMinimize();
-      else currentSnapTo(SNAP_OFFSET);
-    } else if (velocity < -1.2) {
-      if (currentY > SNAP_OFFSET + 40) currentSnapTo(SNAP_OFFSET);
-      else currentSnapTo(0);
-    } else {
-      if (currentY > MINIMIZED_OFFSET + 40) currentDismiss(true);
-      else if (currentY > (SNAP_OFFSET + MINIMIZED_OFFSET) / 2)
-        currentMinimize();
-      else if (currentY > SNAP_OFFSET / 2) currentSnapTo(SNAP_OFFSET);
-      else currentSnapTo(0);
-    }
-  };
+    const onPanResponderMove = (
+      _: GestureResponderEvent,
+      g: PanResponderGestureState,
+    ) => {
+      const newY = Math.max(0, translateYAtGestureStart.current + g.dy);
+      translateY.setValue(newY);
+      reportExpandedState(newY <= 12);
+    };
 
-  const handlePanResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onStartShouldSetPanResponderCapture: () => false,
-      onMoveShouldSetPanResponder: (_, g) =>
-        Math.abs(g.dy) > Math.abs(g.dx) * 1.2,
-      onMoveShouldSetPanResponderCapture: (_, g) => Math.abs(g.dy) > 5,
-      onPanResponderGrant: () => {
-        targetAnimY.current = null;
-        translateY.stopAnimation((val) => {
-          translateYAtGestureStart.current = val;
-          translateYRef.current = val;
-        });
-      },
-      onPanResponderMove: (_, g) => {
-        const newY = translateYAtGestureStart.current + g.dy;
-        translateY.setValue(Math.max(0, newY));
-        reportExpandedState(Math.max(0, newY) <= 12);
-      },
-      onPanResponderRelease: handlePanResponderRelease,
-    }),
-  ).current;
+    const onPanResponderRelease = (
+      _: GestureResponderEvent,
+      g: PanResponderGestureState,
+    ) => {
+      const currentY = translateYRef.current;
+      const velocity = g.vy;
 
-  const scrollAreaPanResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => false,
-      onStartShouldSetPanResponderCapture: () => false,
-      onMoveShouldSetPanResponder: (_, g) => {
-        const isVertical = Math.abs(g.dy) > Math.abs(g.dx) * 1.2;
-        if (!isVertical) return false;
-        const isExpanded = translateYRef.current < SNAP_OFFSET - 20;
-        if (!isExpanded) return g.dy > 0;
-        if (g.dy < 0) return false;
-        return scrollOffsetRef.current <= 0;
-      },
-      onMoveShouldSetPanResponderCapture: () => false,
-      onPanResponderGrant: () => {
-        targetAnimY.current = null;
-        translateY.stopAnimation((val) => {
-          translateYAtGestureStart.current = val;
-          translateYRef.current = val;
-        });
-      },
-      onPanResponderMove: (_, g) => {
-        const newY = translateYAtGestureStart.current + g.dy;
-        translateY.setValue(Math.max(0, newY));
-        reportExpandedState(Math.max(0, newY) <= 12);
-      },
-      onPanResponderRelease: handlePanResponderRelease,
-    }),
-  ).current;
+      if (velocity > 1.2) {
+        if (currentY >= MINIMIZED_OFFSET - 40) dismiss(true);
+        else if (currentY >= SNAP_OFFSET - 40) minimize();
+        else snapTo(SNAP_OFFSET);
+      } else if (velocity < -1.2) {
+        if (currentY > SNAP_OFFSET + 40) snapTo(SNAP_OFFSET);
+        else snapTo(0);
+      } else {
+        if (currentY > MINIMIZED_OFFSET + 40) dismiss(true);
+        else if (currentY > (SNAP_OFFSET + MINIMIZED_OFFSET) / 2) minimize();
+        else if (currentY > SNAP_OFFSET / 2) snapTo(SNAP_OFFSET);
+        else snapTo(0);
+      }
+    };
+
+    return {
+      handlePanResponder: PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onStartShouldSetPanResponderCapture: () => false,
+        onMoveShouldSetPanResponder: (_, g) =>
+          Math.abs(g.dy) > Math.abs(g.dx) * 1.2,
+        onMoveShouldSetPanResponderCapture: (_, g) => Math.abs(g.dy) > 5,
+        onPanResponderGrant,
+        onPanResponderMove,
+        onPanResponderRelease,
+      }),
+      scrollAreaPanResponder: PanResponder.create({
+        onStartShouldSetPanResponder: () => false,
+        onStartShouldSetPanResponderCapture: () => false,
+        onMoveShouldSetPanResponder: (_, g) => {
+          const isVertical = Math.abs(g.dy) > Math.abs(g.dx) * 1.2;
+          if (!isVertical) return false;
+          const isExpanded = translateYRef.current < SNAP_OFFSET - 20;
+          if (!isExpanded) return g.dy > 0;
+          if (g.dy < 0) return false;
+          return scrollOffsetRef.current <= 0;
+        },
+        onMoveShouldSetPanResponderCapture: () => false,
+        onPanResponderGrant,
+        onPanResponderMove,
+        onPanResponderRelease,
+      }),
+    };
+  }, [
+    SNAP_OFFSET,
+    MINIMIZED_OFFSET,
+    dismiss,
+    minimize,
+    snapTo,
+    translateY,
+    reportExpandedState,
+  ]);
 
   return {
     translateY,

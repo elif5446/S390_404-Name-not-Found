@@ -11,6 +11,8 @@ import {
   ScrollView,
   useColorScheme,
   StyleSheet,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { styles } from "../styles/DestinationPopup";
@@ -55,7 +57,18 @@ const DestinationPopup = forwardRef<
 
   const scrollViewRef = useRef<ScrollView>(null);
 
-  // --- CORE ENGINE INJECTION ---
+  // wrapped in useCallback to provide a stable reference to useBottomSheet
+  const handleSheetDismiss = useCallback(
+    (shouldClear: boolean = true) => {
+      if (shouldClear) {
+        setIsNavigationActive(false);
+        clearRouteData();
+      }
+      onClose();
+    },
+    [setIsNavigationActive, clearRouteData, onClose],
+  );
+
   const {
     translateY,
     MAX_HEIGHT,
@@ -67,17 +80,22 @@ const DestinationPopup = forwardRef<
     scrollAreaPanResponder,
   } = useBottomSheet({
     visible,
-    onDismiss: (shouldClear: boolean = true) => {
-      if (shouldClear) {
-        setIsNavigationActive(false);
-        clearRouteData();
-      }
-      onClose();
-    },
+    onDismiss: handleSheetDismiss,
   });
 
   // Expose minimize safely to CampusMap
   useImperativeHandle(ref, () => ({ minimize }));
+
+  const handleHeaderDismiss = useCallback(() => {
+    dismiss(true);
+  }, [dismiss]);
+
+  const handleScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      scrollOffsetRef.current = e.nativeEvent.contentOffset.y;
+    },
+    [],
+  );
 
   const handleSelectRoute = useCallback(
     (index: number) => {
@@ -142,7 +160,7 @@ const DestinationPopup = forwardRef<
               travelMode={travelMode as any}
               setTravelMode={setTravelMode}
               getModeDurationLabel={getModeDurationLabel}
-              onDismiss={() => dismiss(true)}
+              onDismiss={handleHeaderDismiss}
               onToggleHeight={handleToggleHeight}
             />
           </View>
@@ -162,9 +180,7 @@ const DestinationPopup = forwardRef<
               handleSelectRoute={handleSelectRoute}
               handleStartNavigation={handleStartNavigation}
               scrollViewRef={scrollViewRef}
-              onScroll={(e) =>
-                (scrollOffsetRef.current = e.nativeEvent.contentOffset.y)
-              }
+              onScroll={handleScroll}
             />
           </View>
         </Animated.View>

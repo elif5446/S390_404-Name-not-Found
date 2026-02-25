@@ -5,6 +5,9 @@ import {
   TouchableOpacity,
   ScrollView,
   Platform,
+  StyleSheet,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { SymbolView } from "expo-symbols";
@@ -19,7 +22,7 @@ interface PopupContentProps {
   onDirectionsPress: () => void;
   onCopyAddress: () => void;
   scrollViewRef: React.RefObject<ScrollView | null>;
-  onScroll: (e: any) => void;
+  onScroll: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
 }
 
 const PopupContent: React.FC<PopupContentProps> = ({
@@ -83,13 +86,13 @@ const PopupContent: React.FC<PopupContentProps> = ({
   return (
     <ScrollView
       ref={scrollViewRef}
-      style={[styles.contentArea, { flex: 1 }]}
+      style={[styles.contentArea, localStyles.scrollFlex]}
       scrollEnabled={true}
       showsVerticalScrollIndicator={true}
       bounces={true}
       nestedScrollEnabled={true}
       onScroll={onScroll}
-      contentContainerStyle={{ flexGrow: 1, paddingBottom: 24 }}
+      contentContainerStyle={localStyles.scrollContent}
       scrollEventThrottle={16}
     >
       <View style={styles.section}>
@@ -99,55 +102,27 @@ const PopupContent: React.FC<PopupContentProps> = ({
         >
           Schedule
         </Text>
-        <View
-          style={{
-            marginTop: 8,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
+        <View style={localStyles.scheduleRow}>
           <Text style={{ color: mode === "dark" ? "#CCCCCC" : "#585858" }}>
             Next class • 5 min walk
           </Text>
           <TouchableOpacity
             onPress={onDirectionsPress}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              borderRadius: 999,
-              backgroundColor: campusPink,
-              paddingVertical: 4,
-              paddingHorizontal: 7,
-              gap: 5,
-            }}
+            style={[
+              localStyles.directionsButton,
+              { backgroundColor: campusPink },
+            ]}
             accessibilityRole="button"
             accessibilityLabel={`Directions, ${directionsEtaLabel || "--"}`}
           >
-            <View
-              style={{
-                width: 18,
-                height: 18,
-                borderRadius: 9,
-                backgroundColor: "#FFFFFF",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
+            <View style={localStyles.directionsIconCircle}>
               <MaterialIcons
                 name="subdirectory-arrow-right"
                 size={12}
                 color={campusPink}
               />
             </View>
-            <Text
-              style={{
-                color: "#FFFFFF",
-                fontWeight: "700",
-                fontSize: 12,
-                lineHeight: 14,
-              }}
-            >
+            <Text style={localStyles.directionsText}>
               {directionsEtaLabel || "--"}
             </Text>
           </TouchableOpacity>
@@ -218,5 +193,44 @@ const PopupContent: React.FC<PopupContentProps> = ({
     </ScrollView>
   );
 };
+
+// Extracted styles from inline objects to prevent re-allocation
+const localStyles = StyleSheet.create({
+  scrollFlex: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 24,
+  },
+  scheduleRow: {
+    marginTop: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  directionsButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 999,
+    paddingVertical: 4,
+    paddingHorizontal: 7,
+    gap: 5,
+  },
+  directionsIconCircle: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  directionsText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 12,
+    lineHeight: 14,
+  },
+});
 
 export default memo(PopupContent);

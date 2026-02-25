@@ -3,6 +3,8 @@ import React, {
   useRef,
   useImperativeHandle,
   forwardRef,
+  useCallback,
+  memo,
 } from "react";
 import {
   View,
@@ -11,6 +13,8 @@ import {
   Animated,
   ScrollView,
   AccessibilityActionEvent,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from "react-native";
 import { BlurView } from "expo-blur";
 import { styles } from "@/src/styles/additionalInfoPopup";
@@ -34,41 +38,45 @@ interface AdditionalInfoPopupProps {
   onExpansionChange?: (isExpanded: boolean) => void;
 }
 
-const BackgroundWrapper = ({
-  children,
-  mode,
-}: {
-  children: React.ReactNode;
-  mode: "light" | "dark";
-}) => {
-  if (Platform.OS === "ios") {
+// Memoized to prevent re-renders when parent animation values change
+const BackgroundWrapper = memo(
+  ({
+    children,
+    mode,
+  }: {
+    children: React.ReactNode;
+    mode: "light" | "dark";
+  }) => {
+    if (Platform.OS === "ios") {
+      return (
+        <BlurView
+          style={[styles.iosBlurContainer, { height: "100%" }]}
+          intensity={100}
+          tint={mode}
+        >
+          {children}
+        </BlurView>
+      );
+    }
     return (
-      <BlurView
-        style={[styles.iosBlurContainer, { height: "100%" }]}
-        intensity={100}
-        tint={mode}
+      <View
+        style={[
+          styles.iosBlurContainer,
+          {
+            height: "100%",
+            backgroundColor: mode === "dark" ? "#1C1C1E" : "#FFFFFF",
+            elevation: 8,
+            borderTopLeftRadius: 28,
+            borderTopRightRadius: 28,
+          },
+        ]}
       >
         {children}
-      </BlurView>
+      </View>
     );
-  }
-  return (
-    <View
-      style={[
-        styles.iosBlurContainer,
-        {
-          height: "100%",
-          backgroundColor: mode === "dark" ? "#1C1C1E" : "#FFFFFF",
-          elevation: 8,
-          borderTopLeftRadius: 28,
-          borderTopRightRadius: 28,
-        },
-      ]}
-    >
-      {children}
-    </View>
-  );
-};
+  },
+);
+BackgroundWrapper.displayName = "BackgroundWrapper";
 
 const AdditionalInfoPopup = forwardRef<
   AdditionalInfoPopupHandle,
@@ -83,6 +91,7 @@ const AdditionalInfoPopup = forwardRef<
     directionsEtaLabel,
     onExpansionChange,
   } = props;
+
   const mode = useColorScheme() || "light";
   const { buildingInfo, isCopying, copyAddress, accessibilityIcons } =
     useBuildingData(buildingId, campus);
@@ -108,23 +117,27 @@ const AdditionalInfoPopup = forwardRef<
     onExpansionChange,
   });
 
-  const handleDragHandleAccessibilityAction = (
-    event: AccessibilityActionEvent,
-  ) => {
-    const actionName = event.nativeEvent.actionName;
-    if (actionName === "increment") {
-      snapTo(0);
-    }
-    if (actionName === "decrement") {
-      snapTo(SNAP_OFFSET);
-    }
-  };
+  const handleDragHandleAccessibilityAction = useCallback(
+    (event: AccessibilityActionEvent) => {
+      const actionName = event.nativeEvent.actionName;
+      if (actionName === "increment") snapTo(0);
+      if (actionName === "decrement") snapTo(SNAP_OFFSET);
+    },
+    [snapTo, SNAP_OFFSET],
+  );
 
-  const handleDirectionsPress = () => {
+  const handleDirectionsPress = useCallback(() => {
     dismiss(undefined, () => {
       onDirectionsTrigger?.();
     });
-  };
+  }, [dismiss, onDirectionsTrigger]);
+
+  const handleScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      scrollOffsetRef.current = e.nativeEvent.contentOffset.y;
+    },
+    [],
+  );
 
   useImperativeHandle(ref, () => ({
     collapse: () => snapTo(SNAP_OFFSET),
@@ -217,7 +230,7 @@ const AdditionalInfoPopup = forwardRef<
                 buildingInfo={buildingInfo}
                 accessibilityIcons={accessibilityIcons}
                 directionsEtaLabel={directionsEtaLabel}
-                onDismiss={() => dismiss()}
+                onDismiss={dismiss}
                 onDirectionsPress={handleDirectionsPress}
                 onToggleHeight={handleToggleHeight}
                 onDragHandleAccessibilityAction={
@@ -235,9 +248,7 @@ const AdditionalInfoPopup = forwardRef<
                 onDirectionsPress={handleDirectionsPress}
                 onCopyAddress={copyAddress}
                 scrollViewRef={scrollViewRef}
-                onScroll={(e) =>
-                  (scrollOffsetRef.current = e.nativeEvent.contentOffset.y)
-                }
+                onScroll={handleScroll}
               />
             </View>
           </Animated.View>

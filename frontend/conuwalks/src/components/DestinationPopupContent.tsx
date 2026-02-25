@@ -6,6 +6,8 @@ import {
   ScrollView,
   ActivityIndicator,
   Platform,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { SymbolView, SFSymbol } from "expo-symbols";
@@ -49,8 +51,10 @@ interface DestinationContentProps {
   handleSelectRoute: (index: number) => void;
   handleStartNavigation: (routeId: string, index: number) => void;
   scrollViewRef: React.RefObject<ScrollView | null>;
-  onScroll: (e: any) => void;
+  onScroll: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
 }
+
+const HIT_SLACK = { top: 10, bottom: 10, left: 10, right: 10 };
 
 const DestinationContent: React.FC<DestinationContentProps> = ({
   isDark,

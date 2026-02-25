@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   Platform,
+  StyleSheet,
 } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { SymbolView, SFSymbol } from "expo-symbols";
@@ -45,6 +46,14 @@ interface DestinationHeaderProps {
   onDismiss: () => void;
   onToggleHeight: () => void;
 }
+
+// outside the component to prevent recreation on every render
+const TRANSPORT_OPTIONS = [
+  { mode: "walking", icon: "directions-walk", iosName: "figure.walk" },
+  { mode: "transit", icon: "directions-transit", iosName: "tram.fill" },
+  { mode: "bicycling", icon: "directions-bike", iosName: "bicycle" },
+  { mode: "driving", icon: "directions-car", iosName: "car.fill" },
+] as const;
 
 const DestinationHeader: React.FC<DestinationHeaderProps> = ({
   isDark,
@@ -114,14 +123,7 @@ const DestinationHeader: React.FC<DestinationHeaderProps> = ({
             { backgroundColor: isDark ? "#3A3A3C" : "#E6E6E9" },
           ]}
         >
-          {(
-            [
-              { mode: "walking", icon: "directions-walk" },
-              { mode: "transit", icon: "directions-transit" },
-              { mode: "bicycling", icon: "directions-bike" },
-              { mode: "driving", icon: "directions-car" },
-            ] as const
-          ).map((option) => {
+          {TRANSPORT_OPTIONS.map((option) => {
             const active = option.mode === travelMode;
             const displayDuration = getModeDurationLabel(option.mode);
             return (
@@ -137,15 +139,7 @@ const DestinationHeader: React.FC<DestinationHeaderProps> = ({
               >
                 <PlatformIcon
                   materialName={option.icon as any}
-                  iosName={
-                    option.mode === "walking"
-                      ? "figure.walk"
-                      : option.mode === "transit"
-                        ? "tram.fill"
-                        : option.mode === "bicycling"
-                          ? "bicycle"
-                          : "car.fill"
-                  }
+                  iosName={option.iosName as SFSymbol}
                   size={15}
                   color={active ? "#FFFFFF" : isDark ? "#F5F5F5" : "#202020"}
                 />
@@ -167,5 +161,6 @@ const DestinationHeader: React.FC<DestinationHeaderProps> = ({
     </TouchableWithoutFeedback>
   );
 };
+
 
 export default memo(DestinationHeader);
