@@ -1,6 +1,6 @@
 import {StyleSheet, Platform} from "react-native";
 
-const indexStyles = StyleSheet.create({
+const homeStyles = StyleSheet.create({
   container: {
     flex: 1,
   },
@@ -14,9 +14,8 @@ const indexStyles = StyleSheet.create({
   },
   glassWrapper: {
     position: "absolute",
-    top: 120,
     right: 20,
-    zIndex: 1000,
+    bottom:35,
     borderRadius: 40,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
@@ -32,12 +31,15 @@ const indexStyles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.4)',
+    display:"flex",
+    flexDirection:"column",
+    margin:0,
   },
   userContainer: {
     flexDirection: "row",
     alignItems: "center",
     padding: 8,
-    paddingRight: 16,
+    paddingRight: 8,
     maxWidth: 400,
   },
   profileImage: {
@@ -67,4 +69,4 @@ const indexStyles = StyleSheet.create({
     maxWidth: 120,
   },
 });
-export {indexStyles as styles};
+export {homeStyles as styles};

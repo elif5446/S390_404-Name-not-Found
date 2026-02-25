@@ -14,7 +14,7 @@ import CampusMap from "@/src/components/CampusMap";
 import StatusGradient from "@/src/components/StatusGradient";
 import SegmentedToggle from "@/src/components/SegmentedToggle";
 import { clearTokens, getUserInfo } from "@/src/utils/tokenStorage";
-import { styles } from "@/src/styles/index";
+import { styles } from "@/src/styles/home";
 import { BlurView } from "expo-blur";
 
 export default function DevHomeScreen() {

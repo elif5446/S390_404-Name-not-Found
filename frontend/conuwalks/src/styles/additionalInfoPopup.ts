@@ -29,26 +29,22 @@ const additionalInfoPopupStyles = StyleSheet.create({
     marginBottom: 0,
   },
   iosHeader: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     position: "relative",
     paddingHorizontal: 20,
-    paddingVertical: 8,
     width: "100%",
     backgroundColor: "transparent",
-    minHeight: 136,
+    minHeight: 100, // Reduced from 136
+    paddingTop: 8, // Added padding
   },
   headerTextContainer: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 6,
-    bottom: 6,
-    backgroundColor: "transparent",
+    flex: 1, // Changed from absolute positioning
     alignItems: "center",
     justifyContent: "center",
-    paddingLeft: 110,
-    paddingRight: 110,
+    paddingHorizontal: 110, // Added padding instead of absolute positioning
+    width: "100%",
   },
   buildingName: {
     fontSize: 18,
@@ -60,7 +56,6 @@ const additionalInfoPopupStyles = StyleSheet.create({
     flexShrink: 0,
     width: "100%",
     maxWidth: "100%",
-    lineHeight: 22,
     textAlignVertical: "center",
     alignSelf: "stretch",
   },
@@ -92,13 +87,12 @@ const additionalInfoPopupStyles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 4,
+    marginTop: 2,
     width: "100%",
     position: "relative",
   },
   accessibilityIcon: {
     fontSize: 22,
-    lineHeight: 24,
   },
   closeButton: {
     width: 44,
@@ -144,7 +138,7 @@ const additionalInfoPopupStyles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: "#B03060",
     paddingVertical: 4,
-    paddingHorizontal: 7,
+    paddingHorizontal: 3,
     gap: 5,
   },
   directionsArrowCircle: {
@@ -160,9 +154,10 @@ const additionalInfoPopupStyles = StyleSheet.create({
     fontWeight: "700" as const,
     fontSize: 12,
     lineHeight: 14,
+    paddingRight:6,
   },
   rightAccessibilityRow: {
-    marginTop: 8,
+    marginTop: 4,
   },
   contentArea: {
     flex: 1,
@@ -170,16 +165,15 @@ const additionalInfoPopupStyles = StyleSheet.create({
   },
   section: {
     paddingHorizontal: 20,
-    paddingBottom: 15,
+    paddingBottom: 12,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600" as const,
-    marginBottom: 5,
-    paddingBottom: 5,
     fontFamily: Platform.OS === "ios" ? "System" : "Roboto",
     borderBottomWidth: 1.5,
     borderBottomColor: "rgba(0, 0, 0, 0.1)",
+    marginBottom: 6,
   },
   sectionText: {
     fontSize: 18,
@@ -194,7 +188,7 @@ const additionalInfoPopupStyles = StyleSheet.create({
     justifyContent: "flex-start",
     alignItems: "center",
     marginBottom: 4,
-    paddingVertical: 3,
+    paddingVertical: 2,
     gap: 10,
   },
   hoursLabel: {
@@ -221,7 +215,7 @@ const additionalInfoPopupStyles = StyleSheet.create({
   },
   addressText: {
     fontSize: 16,
-    lineHeight: 22,
+    lineHeight: 20,
     flex: 1,
     fontFamily: Platform.OS === "ios" ? "System" : "Roboto",
   },
@@ -235,7 +229,6 @@ const additionalInfoPopupStyles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 4,
-    paddingVertical: 3,
   },
   noEventsText: {
     fontSize: 14,
@@ -247,11 +240,17 @@ const additionalInfoPopupStyles = StyleSheet.create({
     fontWeight: "600",
     paddingBottom: 4,
   },
-  eventsList: {},
-  eventItem: {},
+  eventsList: {
+    marginTop:4,
+  },
+  eventItem: {
+    marginBottom:12,
+  },
   eventItemBorder: {
     borderBottomWidth: 1,
     borderBottomColor: "#E0E0E0",
+    paddingBottom: 12,
+    marginBottom: 12,
   },
   eventTitle: {
     fontSize: 16,
@@ -271,9 +270,19 @@ const additionalInfoPopupStyles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "500",
   },
-  eventContent: {},
-  eventItemWithButton: {},
-  noEventsContainer: {},
+  eventContent: {flex: 1,
+    marginRight: 12,
+  },
+  eventItemWithButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 8,
+  },
+  noEventsContainer: {
+    paddingVertical: 8,
+    alignItems: "center",
+  },
 
   // Android styles
 });

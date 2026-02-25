@@ -403,7 +403,6 @@ const AdditionalInfoPopup = forwardRef<
         accessibilityLabel={`Directions to ${eventName || "class"}, ${directionsEtaLabel || "--"}`}
         accessibilityHint="Opens directions panel"
       >
-        {" "}
         <View
           style={{
             width: 18,
@@ -739,7 +738,11 @@ const AdditionalInfoPopup = forwardRef<
       <Animated.View
         style={[
           styles.iosBlurContainer,
-          { height: MAX_HEIGHT, transform: [{ translateY: translateY }] },
+          {
+            height: MAX_HEIGHT,
+            transform: [{ translateY: translateY }],
+            zIndex: 1000,
+          },
         ]}
         importantForAccessibility="yes"
         focusable={true}
