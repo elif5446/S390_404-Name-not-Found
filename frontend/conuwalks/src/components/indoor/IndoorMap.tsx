@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Image, Text, ImageSourcePropType } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { FloorData } from "@/src/types/indoor";
+import { FloorData } from "@/src/indoors/types/floorPlans";
 import { styles } from "@/src/styles/IndoorMap.styles";
 
 interface MapContentProps {

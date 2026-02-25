@@ -15,7 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { ReactNativeZoomableView } from "@openspacelabs/react-native-zoomable-view";
-import { BuildingIndoorConfig } from "@/src/types/indoor";
+import { BuildingIndoorConfig } from "@/src/indoors/types/floorPlans";
 
 import MapContent from "./IndoorMap";
 import FloorPicker from "./FloorPicker";

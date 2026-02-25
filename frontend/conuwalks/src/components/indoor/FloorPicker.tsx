@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
-import { FloorData } from '@/src/types/indoor';
+import { FloorData } from '@/src/indoors/types/floorPlans';
 import { styles } from '@/src/styles/IndoorMap.styles';
 
 interface Props {

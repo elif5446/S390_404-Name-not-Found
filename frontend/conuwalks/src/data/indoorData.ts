@@ -1,4 +1,4 @@
-import { BuildingIndoorConfig } from "@/src/types/indoor";
+import { BuildingIndoorConfig } from "@/src/indoors/types/floorPlans";
 
 import H8_SVG from "@/assets/floor/H-8.svg";
 import H9_SVG from "@/assets/floor/H-9.svg";

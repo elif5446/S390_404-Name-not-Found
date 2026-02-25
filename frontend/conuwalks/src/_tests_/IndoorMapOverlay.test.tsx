@@ -1,7 +1,7 @@
 import React from "react";
 import { render, fireEvent, act, screen } from "@testing-library/react-native";
 import IndoorMapOverlay from "../components/indoor/IndoorMapOverlay";
-import { BuildingIndoorConfig } from '@/src/types/indoor'; 
+import { BuildingIndoorConfig } from '@/src/indoors/types/floorPlans'; 
 import { SvgProps } from 'react-native-svg';
 
 
