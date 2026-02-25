@@ -211,7 +211,7 @@ describe("useUserLocation Hook - Unit Tests", () => {
       // Based on provided code: if __DEV__ fallback logic triggers inside catch
       await waitFor(() => {
         expect(result.current.loading).toBe(false);
-        expect(result.current.error).toBe("Could not fetch location");
+        expect(result.current.error).toBe("Failed to retrieve location");
       });
 
       // Restore console mocks
