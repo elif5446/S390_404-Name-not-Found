@@ -1,4 +1,10 @@
-import React, { createContext, useState, useCallback, ReactNode, useEffect } from "react";
+import React, {
+  createContext,
+  useState,
+  useCallback,
+  ReactNode,
+  useEffect,
+} from "react";
 import { LatLng } from "react-native-maps";
 
 export interface DirectionStep {
@@ -36,7 +42,7 @@ export interface DirectionsContextType {
     buildingId: string,
     coords: LatLng,
     label: string,
-    room?: string | null
+    room?: string | null,
   ) => void;
 
   // Destination state
@@ -44,11 +50,7 @@ export interface DirectionsContextType {
   destinationCoords: LatLng | null;
   destinationLabel: string | null;
   destinationRoom: string | null;
-  setDestination: (
-    buildingId: string,
-    coords: LatLng,
-    label: string
-  ) => void;
+  setDestination: (buildingId: string, coords: LatLng, label: string) => void;
   setStartRoom: (room: string | null) => void;
   setDestinationRoom: (room: string | null) => void;
   clearDestination: () => void;
@@ -64,7 +66,9 @@ export interface DirectionsContextType {
 
   // Travel mode
   travelMode: "walking" | "driving" | "transit" | "bicycling";
-  setTravelMode: (mode: "walking" | "driving" | "transit" | "bicycling") => void;
+  setTravelMode: (
+    mode: "walking" | "driving" | "transit" | "bicycling",
+  ) => void;
 
   // UI state
   showDirections: boolean;
@@ -82,9 +86,9 @@ export interface DirectionsContextType {
   resetDirections: () => void;
 }
 
-export const DirectionsContext = createContext<DirectionsContextType | undefined>(
-  undefined
-);
+export const DirectionsContext = createContext<
+  DirectionsContextType | undefined
+>(undefined);
 
 interface DirectionsProviderProps {
   children: ReactNode;
@@ -101,11 +105,11 @@ export const DirectionsProvider: React.FC<DirectionsProviderProps> = ({
     string | null
   >(null);
   const [destinationCoords, setDestinationCoords] = useState<LatLng | null>(
-    null
+    null,
   );
   const [destinationLabel, setDestinationLabel] = useState<string | null>(null);
   const [destinationRoom, setDestinationRoomState] = useState<string | null>(
-    null
+    null,
   );
   const [routes, setRoutesState] = useState<RouteData[]>([]);
   const [selectedRouteIndex, setSelectedRouteIndexState] = useState(0);
@@ -124,14 +128,14 @@ export const DirectionsProvider: React.FC<DirectionsProviderProps> = ({
       buildingId: string,
       coords: LatLng,
       label: string,
-      room: string | null = null
+      room: string | null = null,
     ) => {
       setStartBuildingId(buildingId);
       setStartCoords(coords);
       setStartLabel(label);
       setStartRoomState(room);
     },
-    []
+    [],
   );
 
   const setDestination = useCallback(
@@ -140,7 +144,7 @@ export const DirectionsProvider: React.FC<DirectionsProviderProps> = ({
       setDestinationCoords(coords);
       setDestinationLabel(label);
     },
-    []
+    [],
   );
 
   const setStartRoom = useCallback((room: string | null) => {
@@ -174,12 +178,9 @@ export const DirectionsProvider: React.FC<DirectionsProviderProps> = ({
     });
   }, []);
 
-  const setSelectedRouteIndex = useCallback(
-    (index: number) => {
-      setSelectedRouteIndexState(index);
-    },
-    []
-  );
+  const setSelectedRouteIndex = useCallback((index: number) => {
+    setSelectedRouteIndexState(index);
+  }, []);
 
   useEffect(() => {
     setRouteDataState(routes[selectedRouteIndex] || null);
@@ -199,7 +200,7 @@ export const DirectionsProvider: React.FC<DirectionsProviderProps> = ({
     (mode: "walking" | "driving" | "transit" | "bicycling") => {
       setTravelModeState(mode);
     },
-    []
+    [],
   );
 
   const setShowDirections = useCallback((show: boolean) => {

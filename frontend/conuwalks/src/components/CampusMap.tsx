@@ -35,6 +35,7 @@ import { CampusConfig } from "@/src/data/campus/campusConfig";
 import AdditionalInfoPopup, {
   AdditionalInfoPopupHandle,
 } from "./AdditionalInfoPopup";
+import DestinationPopup, { DestinationPopupHandle } from "./DestinationPopup";
 
 import { useUserLocation } from "@/src/hooks/useUserLocation";
 import { useDirections } from "@/src/context/DirectionsContext";
@@ -46,7 +47,6 @@ import { INDOOR_DATA } from "@/src/data/indoorData";
 import { LoyolaBuildingMetadata } from "@/src/data/metadata/LOY.BuildingMetadata";
 import { SGWBuildingMetadata } from "@/src/data/metadata/SGW.BuildingMetaData";
 import BuildingTheme from "@/src/styles/BuildingTheme";
-import DestinationPopup from "./DestinationPopup";
 import IndoorMapOverlay from "./indoor/IndoorMapOverlay";
 import styles from "@/src/styles/campusMap";
 
@@ -191,6 +191,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
   const [indoorBuildingId, setIndoorBuildingId] = useState<string | null>(null);
   const [isInfoPopupExpanded, setIsInfoPopupExpanded] = useState(false);
   const additionalInfoPopupRef = useRef<AdditionalInfoPopupHandle>(null);
+  const destinationPopupRef = useRef<DestinationPopupHandle>(null);
 
   const handleInfoPopupExpansionChange = useCallback(
     (isExpanded: boolean) => {
@@ -210,6 +211,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
     Record<string, { showCallout?: () => void } | null>
   >({});
   const lastCameraUpdateAtRef = useRef(0);
+  const ignoreNextMapPressRef = useRef(false);
   const lastBuildingPressAtRef = useRef(0);
 
   // Handle clicking on the location circle to zoom in
@@ -244,16 +246,11 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
   // Handle building tap to show additional info and set destination
   const handleBuildingPress = useCallback(
-    (buildingId: string, campus: "SGW" | "LOY", providedCoords?: LatLng) => {
-      const now = Date.now();
-      if (now - lastPressTime.current < 400) {
-        console.log(`Throttled tap on: ${buildingId}`);
-        return;
-      }
-      lastPressTime.current = now;
-      lastBuildingPressAtRef.current = now;
+    (buildingId: string, campus: "SGW" | "LOY", coords?: LatLng) => {
+      ignoreNextMapPressRef.current = true;
+      lastBuildingPressAtRef.current = Date.now();
 
-      let coordinates = providedCoords;
+      let coordinates = coords;
       if (!coordinates) {
         const sourceGeo = campus === "LOY" ? LOY : SGW;
         const feature = sourceGeo.features.find(
@@ -269,11 +266,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
       setIndoorBuildingId(null);
       setIsNavigationActive(false);
-
-      if (showDirections) {
-        setShowDirections(false);
-        clearRouteData();
-      }
+      setShowDirections(false);
+      clearRouteData();
 
       setSelectedBuilding({
         name: buildingId,
@@ -297,13 +291,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
         setDestination(buildingId, coordinates, buildingMetadata.name);
       }
     },
-    [
-      showDirections,
-      setShowDirections,
-      clearRouteData,
-      setIsNavigationActive,
-      setDestination,
-    ],
+    [setIsNavigationActive, setShowDirections, clearRouteData, setDestination],
   );
 
   const handleClosePopup = useCallback(() => {
@@ -343,13 +331,20 @@ const CampusMap: React.FC<CampusMapProps> = ({
       return;
     }
 
+    if (ignoreNextMapPressRef.current) {
+      ignoreNextMapPressRef.current = false;
+      return;
+    }
+
     setSelectedTransitStopKey(null);
     additionalInfoPopupRef.current?.minimize();
+    destinationPopupRef.current?.minimize();
   }, []);
 
   const handleMapPanDrag = useCallback(() => {
     if (Date.now() - lastBuildingPressAtRef.current < 200) return;
     additionalInfoPopupRef.current?.minimize();
+    destinationPopupRef.current?.minimize();
   }, []);
 
   const directionsEtaLabel = useMemo(() => {
@@ -378,32 +373,23 @@ const CampusMap: React.FC<CampusMapProps> = ({
   const handleOpenDirectionsPopup = useCallback(() => {
     setSelectedBuilding((prev) => ({ ...prev, visible: false }));
     setShowDirections(true);
-  }, [setShowDirections]);
+  }, []);
 
   const handleSetAsDestination = useCallback(() => {
-    if (!selectedBuilding.name) return;
+    if (!selectedBuilding.name || !selectedBuilding.coords) return;
 
     const buildingMetadata =
       selectedBuilding.campus === "LOY"
         ? LoyolaBuildingMetadata[selectedBuilding.name]
         : SGWBuildingMetadata[selectedBuilding.name];
 
-    const sourceGeo = selectedBuilding.campus === "LOY" ? LOY : SGW;
-    const feature = sourceGeo.features.find(
-      (item) =>
-        (item.properties as { id: string }).id === selectedBuilding.name,
-    ) as GeoJsonFeature | undefined;
-
-    if (!buildingMetadata || !feature || feature.geometry.type !== "Polygon") {
+    if (!buildingMetadata) {
       return;
     }
 
-    const centerCoordinates = calculatePolygonCenter(
-      feature.geometry.coordinates[0],
-    );
     setDestination(
       selectedBuilding.name,
-      centerCoordinates,
+      selectedBuilding.coords,
       buildingMetadata.name,
     );
   }, [selectedBuilding, setDestination]);
@@ -426,13 +412,13 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
   const handleCloseDestinationPopup = useCallback(() => {
     setShowDirections(false);
-  }, [setShowDirections]);
+  }, []);
 
   const handleEndNavigation = useCallback(() => {
     setIsNavigationActive(false);
     setShowDirections(false);
     clearRouteData();
-  }, [setIsNavigationActive, setShowDirections, clearRouteData]);
+  }, []);
 
   const shouldUseLiveUserStart = startBuildingId === "USER" && !!userLocation;
 
@@ -650,7 +636,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
     showDirections,
     isNavigationActive,
     shouldUseLiveUserStart,
-    userLocation,
+    userLocation?.latitude,
+    userLocation?.longitude,
   ]);
 
   // memoize the polygon lists so they don't re-calculate on every render
@@ -694,7 +681,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
                   coordinates={coordinates}
                   fillColor={color + "90"} // add transparency
                   strokeColor={color}
-                  strokeWidth={1}
+                  strokeWidth={7}
                   tappable={true}
                   onPress={() =>
                     handleBuildingPress(buildingId, campus, centerCoordinates)
@@ -751,6 +738,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
                 }
                 zIndex={200}
                 tracksViewChanges={true}
+                // tracksViewChanges={false}
                 title={name}
                 importantForAccessibility="yes"
                 accessibilityLabel={name}
@@ -1191,6 +1179,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
       )}
 
       <DestinationPopup
+        ref={destinationPopupRef}
         visible={showDirections}
         onClose={handleCloseDestinationPopup}
       />
