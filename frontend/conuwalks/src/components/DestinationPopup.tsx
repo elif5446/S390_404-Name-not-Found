@@ -218,7 +218,7 @@ const DestinationPopup: React.FC<DestinationPopupProps> = ({
     }
 
     let isCancelled = false;
-    const allModes: Array<"walking" | "driving" | "transit" | "bicycling"> = [
+    const allModes: ("walking" | "driving" | "transit" | "bicycling")[] = [
       "walking",
       "transit",
       "bicycling",

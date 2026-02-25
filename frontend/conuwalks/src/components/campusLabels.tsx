@@ -1,7 +1,6 @@
-import React, { useRef } from 'react';
-import { useState, useEffect } from 'react';
+import React from 'react';
 import { Marker } from 'react-native-maps';
-import { View, Text, Platform } from 'react-native';
+import { View, Text } from 'react-native';
 import { getLabelFontSize, FeatureCollection } from '@/src/data/BuildingLabels';
 import { CampusId } from '@/src/data/campus/campusConfig';
 //will only render the labels
