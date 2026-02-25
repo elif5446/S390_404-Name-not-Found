@@ -56,7 +56,7 @@ export default function DevLayout() {
       }
 
       navigationTimeout.current = setTimeout(() => {
-        router.replace("/(dev)");
+        router.replace("/(dev)/home");
         setTimeout(() => {
           isNavigating.current = false;
         }, 500);
@@ -87,7 +87,7 @@ export default function DevLayout() {
 
   return (
     <Stack>
-      <Stack.Screen name="index" options={{ headerShown: false }} />
+      <Stack.Screen name="home" options={{ headerShown: false }} />
       <Stack.Screen name="login" options={{ headerShown: false }} />
     </Stack>
   );

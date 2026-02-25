@@ -46,7 +46,7 @@ export default function LoginScreen() {
         setIsNavigating(true);
 
         if (isMounted.current) {
-          router.replace("/(dev)");
+          router.replace("/(dev)/home");
         }
       }
     } catch (error) {
@@ -68,7 +68,7 @@ export default function LoginScreen() {
     setIsNavigating(true);
 
     if (isMounted.current) {
-      router.replace("/(dev)");
+      router.replace("/(dev)/home");
     }
   };
 

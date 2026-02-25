@@ -1,5 +1,4 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 const TOKEN_KEY = '@auth_tokens';
 const USER_INFO_KEY = '@user_info';
@@ -58,6 +57,7 @@ export const clearTokens = async () => {
     
     // Sign out of Google
     try {
+      const { GoogleSignin } = await import('@react-native-google-signin/google-signin');
       await GoogleSignin.signOut();
       console.log('Google Sign-Out successful');
     } catch (googleError) {
