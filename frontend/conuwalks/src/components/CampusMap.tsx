@@ -32,7 +32,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import CampusLabels from "@/src/components/campusLabels";
 import RoutePolyline from "@/src/components/RoutePolyline";
 import { CampusConfig } from "@/src/data/campus/campusConfig";
-import AdditionalInfoPopup from "./AdditionalInfoPopup";
+import AdditionalInfoPopup, {
+  AdditionalInfoPopupHandle,
+} from "./AdditionalInfoPopup";
 
 import { useUserLocation } from "@/src/hooks/useUserLocation";
 import { useDirections } from "@/src/context/DirectionsContext";
@@ -188,11 +190,15 @@ const CampusMap: React.FC<CampusMapProps> = ({
   >(null);
   const [indoorBuildingId, setIndoorBuildingId] = useState<string | null>(null);
   const [isInfoPopupExpanded, setIsInfoPopupExpanded] = useState(false);
+  const additionalInfoPopupRef = useRef<AdditionalInfoPopupHandle>(null);
 
-  const handleInfoPopupExpansionChange = (isExpanded: boolean) => {
-    setIsInfoPopupExpanded(isExpanded);
-    onInfoPopupExpansionChange?.(isExpanded);
-  };
+  const handleInfoPopupExpansionChange = useCallback(
+    (isExpanded: boolean) => {
+      setIsInfoPopupExpanded(isExpanded);
+      onInfoPopupExpansionChange?.(isExpanded);
+    },
+    [onInfoPopupExpansionChange],
+  );
 
   // Calculate circle radius based on zoom level (longitudeDelta)
   // Larger longitudeDelta = zoomed out = bigger circle
@@ -204,7 +210,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
     Record<string, { showCallout?: () => void } | null>
   >({});
   const lastCameraUpdateAtRef = useRef(0);
-  const ignoreNextMapPressRef = useRef(false);
   const lastBuildingPressAtRef = useRef(0);
 
   // Handle clicking on the location circle to zoom in
@@ -246,6 +251,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
         return;
       }
       lastPressTime.current = now;
+      lastBuildingPressAtRef.current = now;
 
       let coordinates = providedCoords;
       if (!coordinates) {
@@ -261,8 +267,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
         }
       }
 
-      ignoreNextMapPressRef.current = true;
-      lastBuildingPressAtRef.current = Date.now();
       setIndoorBuildingId(null);
       setIsNavigationActive(false);
 
@@ -280,6 +284,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
       const markerKey = `${campus}-${buildingId}`;
       requestAnimationFrame(() => {
+        additionalInfoPopupRef.current?.collapse();
         buildingMarkerRefs.current[markerKey]?.showCallout?.();
       });
 
@@ -288,7 +293,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
           ? LoyolaBuildingMetadata[buildingId]
           : SGWBuildingMetadata[buildingId];
 
-      if (buildingMetadata) {
+      if (buildingMetadata && coordinates) {
         setDestination(buildingId, coordinates, buildingMetadata.name);
       }
     },
@@ -338,16 +343,14 @@ const CampusMap: React.FC<CampusMapProps> = ({
       return;
     }
 
-    if (ignoreNextMapPressRef.current) {
-      ignoreNextMapPressRef.current = false;
-      return;
-    }
-
     setSelectedTransitStopKey(null);
-    if (selectedBuilding.visible) {
-      setSelectedBuilding((prev) => ({ ...prev, visible: false }));
-    }
-  }, [selectedBuilding.visible]);
+    additionalInfoPopupRef.current?.minimize();
+  }, []);
+
+  const handleMapPanDrag = useCallback(() => {
+    if (Date.now() - lastBuildingPressAtRef.current < 200) return;
+    additionalInfoPopupRef.current?.minimize();
+  }, []);
 
   const directionsEtaLabel = useMemo(() => {
     if (!userLocation || !selectedBuilding.coords) {
@@ -562,7 +565,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
       setNavigationStepIndex(0);
       return;
     }
-
     setNavigationStepIndex((previousIndex) =>
       Math.min(previousIndex, Math.max(0, routeData.steps.length - 1)),
     );
@@ -572,12 +574,10 @@ const CampusMap: React.FC<CampusMapProps> = ({
     if (
       !(showDirections || isNavigationActive) ||
       !routeData ||
-      !userLocation
+      !userLocation ||
+      !routeData.steps ||
+      routeData.steps.length === 0
     ) {
-      return;
-    }
-
-    if (!routeData.steps || routeData.steps.length === 0) {
       return;
     }
 
@@ -815,6 +815,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
         onRegionChangeComplete={setMapRegion} // update state only when drag ends
         onLongPress={handleMapLongPress}
         onPress={handleMapPress}
+        onPanDrag={handleMapPanDrag}
         tintColor="#FF2D55"
         pitchEnabled={false} // no 3d
         mapType={Platform.OS === "ios" ? "mutedStandard" : "standard"}
@@ -893,7 +894,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
             key={stop.key}
             coordinate={stop.coordinate}
             onPress={() => {
-              ignoreNextMapPressRef.current = true;
               setSelectedTransitStopKey((previousKey) =>
                 previousKey === stop.key ? null : stop.key,
               );
@@ -1179,6 +1179,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
       {!indoorBuildingId && (
         <AdditionalInfoPopup
+          ref={additionalInfoPopupRef}
           visible={selectedBuilding.visible && !showDirections}
           buildingId={selectedBuilding.name}
           campus={selectedBuilding.campus}

@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, useCallback } from "react";
-import { Polyline } from "react-native-maps";
+import { LatLng, Polyline } from "react-native-maps";
 import { useDirections } from "@/src/context/DirectionsContext";
 import { getDirections, decodePolyline } from "@/src/api/directions";
-import { LatLng } from "react-native-maps";
 import { Platform } from "react-native";
 
 interface RoutePolylineProps {
