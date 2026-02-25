@@ -1,11 +1,11 @@
 import React from "react";
 import { render, fireEvent, act, screen } from "@testing-library/react-native";
-import IndoorMapOverlay from "../components/indoor/IndoorMapOverlay";
+import IndoorMapOverlay from "../../components/indoor/IndoorMapOverlay";
 import { BuildingIndoorConfig } from '@/src/types/indoor'; 
 import { SvgProps } from 'react-native-svg';
 
 
-// mock SafeAreaView to pass children through
+// mock safeareaview to pass children through
 jest.mock('react-native-safe-area-context', () => ({
   SafeAreaView: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
@@ -61,7 +61,6 @@ jest.mock('@/src/styles/IndoorMap.styles', () => ({
   },
 }));
 
-/// Test Data
 const MockSvgImage: React.FC<SvgProps> = (props) => {
   const { View } = require('react-native');
   return <View testID="mock-svg-image" {...props} />;

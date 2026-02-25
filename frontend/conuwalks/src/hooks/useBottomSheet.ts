@@ -9,7 +9,7 @@ import {
   GestureResponderEvent,
 } from "react-native";
 
-interface UseBottomSheetConfig {
+export interface UseBottomSheetConfig {
   visible: boolean;
   onDismiss: (payload?: any) => void;
   onExpansionChange?: (isExpanded: boolean) => void;
