@@ -1,6 +1,6 @@
 import { LatLng } from 'react-native-maps';
 //we can add the POIs later
-export type NodeType = 'room' | 'hallway' | 'elevator' | 'stairs' | 'entrance';
+export type NodeType = 'room' | 'hallway' | 'elevator' | 'stairs' | 'entrance' | 'bathroom'| 'escalator';
 
 export interface Node {
   id: string;
@@ -16,6 +16,7 @@ export interface Node {
 export interface Edge {
   nodeAId: string;
   nodeBId: string;
+  weight? : number;
   accessible: boolean;
 }
 
@@ -28,4 +29,5 @@ export interface FloorNavData {
 export interface BuildingNavConfig {
   buildingId: string;
   floors: FloorNavData[];
+  interFloorEdges: Edge[];
 }
