@@ -12,16 +12,18 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
 import CampusMap from "@/src/components/CampusMap";
 import StatusGradient from "@/src/components/StatusGradient";
-import SegmentedToggle from "@/src/components/SegmentedToggle";
+import { SegmentedToggle } from "@/src/components/SegmentedToggle";
 import { clearTokens, getUserInfo } from "@/src/utils/tokenStorage";
 import { styles } from "@/src/styles/home";
 import { BlurView } from "expo-blur";
+import { useDirections } from "@/src/context/DirectionsContext";
 
 export default function DevHomeScreen() {
   const [campus, setCampus] = useState<"SGW" | "Loyola">("SGW");
   const [userInfo, setUserInfo] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const { isNavigationActive } = useDirections();
 
   useEffect(() => {
     loadUserInfo();
@@ -121,21 +123,25 @@ export default function DevHomeScreen() {
       </View>
 
       <StatusGradient />
-      <SegmentedToggle campus={campus} setCampus={setCampus} />
+      {!isNavigationActive && (
+        <SegmentedToggle campus={campus} setCampus={setCampus} />
+      )}
 
       {/* User profile and sign out button */}
-      <View style={styles.glassWrapper}>
-        {(Platform.OS === "ios" && (
-          <BlurView
-            intensity={60}
-            tint="extraLight"
-            style={styles.blurContainer}
-          >
-            {content}
-          </BlurView>
-        )) ||
-          content}
-      </View>
+      {!isNavigationActive && (
+        <View style={styles.glassWrapper}>
+          {(Platform.OS === "ios" && (
+            <BlurView
+              intensity={60}
+              tint="extraLight"
+              style={styles.blurContainer}
+            >
+              {content}
+            </BlurView>
+          )) ||
+            content}
+        </View>
+      )}
 
       <StatusBar
         barStyle="dark-content"
