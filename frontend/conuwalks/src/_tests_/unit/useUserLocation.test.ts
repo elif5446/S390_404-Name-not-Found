@@ -4,6 +4,11 @@
  * These tests verify the hook's logic in isolation by mocking expo-location
  */
 
+/*
+ *   !!! THIS OVERRIDES jest.setup.js. OTHERWISE TESTS USE WRONG MOCK.
+ */
+jest.unmock("@/src/hooks/useUserLocation");
+
 import { renderHook, waitFor, act } from "@testing-library/react-native";
 import { useUserLocation } from "@/src/hooks/useUserLocation";
 import * as Location from "expo-location";

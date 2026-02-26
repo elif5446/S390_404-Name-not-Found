@@ -38,7 +38,12 @@ const DestinationPopup: React.FC<DestinationPopupProps> = ({
   const mode = useColorScheme() || "light";
   const isDark = mode === "dark";
 
-  const PlatformIcon = ({ materialName, iosName, size, color }: PlatformIconProps) => {
+  const PlatformIcon = ({
+    materialName,
+    iosName,
+    size,
+    color,
+  }: PlatformIconProps) => {
     if (Platform.OS === "ios") {
       return (
         <SymbolView
@@ -71,7 +76,9 @@ const DestinationPopup: React.FC<DestinationPopupProps> = ({
     setIsNavigationActive,
   } = useDirections();
 
-  const [navigationRouteId, setNavigationRouteId] = useState<string | null>(null);
+  const [navigationRouteId, setNavigationRouteId] = useState<string | null>(
+    null,
+  );
   const [modeDurationCache, setModeDurationCache] = useState<
     Partial<Record<"walking" | "driving" | "transit" | "bicycling", string>>
   >({});
@@ -101,7 +108,7 @@ const DestinationPopup: React.FC<DestinationPopupProps> = ({
         (step) =>
           step.transitLineShortName ||
           step.transitLineName ||
-          step.transitVehicleType
+          step.transitVehicleType,
       )
       .map((step) => {
         const rawVehicle = (step.transitVehicleType || "Transit").toLowerCase();
@@ -112,7 +119,11 @@ const DestinationPopup: React.FC<DestinationPopupProps> = ({
               ? "Bus"
               : "Transit";
 
-        const lineLabel = (step.transitLineShortName || step.transitLineName || "").trim();
+        const lineLabel = (
+          step.transitLineShortName ||
+          step.transitLineName ||
+          ""
+        ).trim();
         return lineLabel ? `${vehicleLabel} ${lineLabel}` : vehicleLabel;
       });
 
@@ -137,7 +148,7 @@ const DestinationPopup: React.FC<DestinationPopupProps> = ({
       step.transitLineShortName ||
       step.transitDepartureStop ||
       step.transitArrivalStop ||
-      step.transitHeadsign
+      step.transitHeadsign,
   );
 
   const formatMinutes = (minutes: number): string => {
@@ -199,7 +210,6 @@ const DestinationPopup: React.FC<DestinationPopupProps> = ({
         [travelMode]: normalizedDuration,
       };
     });
-
   }, [routes, selectedRouteIndex, routeData, travelMode]);
 
   useEffect(() => {
@@ -218,13 +228,17 @@ const DestinationPopup: React.FC<DestinationPopupProps> = ({
     const fetchModeDurations = async () => {
       const results = await Promise.allSettled(
         allModes.map(async (modeKey) => {
-          const fetchedRoutes = await getDirections(startCoords, destinationCoords, modeKey);
+          const fetchedRoutes = await getDirections(
+            startCoords,
+            destinationCoords,
+            modeKey,
+          );
           const duration = fetchedRoutes[0]?.duration;
           return {
             modeKey,
             duration: duration ? normalizeDurationLabel(duration) : null,
           };
-        })
+        }),
       );
 
       if (isCancelled) {
@@ -259,14 +273,15 @@ const DestinationPopup: React.FC<DestinationPopupProps> = ({
   ]);
 
   const getModeDurationLabel = (
-    modeKey: "walking" | "driving" | "transit" | "bicycling"
+    modeKey: "walking" | "driving" | "transit" | "bicycling",
   ): string => {
     const cachedDuration = modeDurationCache[modeKey];
     if (cachedDuration) {
       return cachedDuration;
     }
 
-    const selectedDuration = routeData?.duration || routes[selectedRouteIndex]?.duration;
+    const selectedDuration =
+      routeData?.duration || routes[selectedRouteIndex]?.duration;
 
     if (modeKey === travelMode && selectedDuration) {
       return normalizeDurationLabel(selectedDuration);
@@ -307,7 +322,8 @@ const DestinationPopup: React.FC<DestinationPopupProps> = ({
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: (_, gestureState) =>
-        gestureState.dy > 6 && Math.abs(gestureState.dy) > Math.abs(gestureState.dx),
+        gestureState.dy > 6 &&
+        Math.abs(gestureState.dy) > Math.abs(gestureState.dx),
       onPanResponderGrant: () => {
         sheetTranslateY.stopAnimation((value) => {
           dragStartRef.current = value;
@@ -337,7 +353,7 @@ const DestinationPopup: React.FC<DestinationPopupProps> = ({
           friction: 11,
         }).start();
       },
-    })
+    }),
   ).current;
 
   if (!visible) {
@@ -346,19 +362,17 @@ const DestinationPopup: React.FC<DestinationPopupProps> = ({
 
   return (
     <View pointerEvents="box-none" style={styles.overlay}>
-        <View style={styles.backdrop}>
-          <Animated.View
-            style={[
-              styles.sheet,
-              {
-                backgroundColor:
-                  Platform.OS === "android"
-                    ? "#FFFFFF"
-                    : "transparent",
-                transform: [{ translateY: sheetTranslateY }],
-              },
-            ]}
-          >
+      <View style={styles.backdrop}>
+        <Animated.View
+          style={[
+            styles.sheet,
+            {
+              backgroundColor:
+                Platform.OS === "android" ? "#FFFFFF" : "transparent",
+              transform: [{ translateY: sheetTranslateY }],
+            },
+          ]}
+        >
           {Platform.OS === "ios" && (
             <BlurView
               intensity={100}
@@ -367,8 +381,16 @@ const DestinationPopup: React.FC<DestinationPopupProps> = ({
             />
           )}
 
-          <View style={styles.dragHandleTouchArea} {...dragHandlePanResponder.panHandlers}>
-            <View style={[styles.dragHandle, { backgroundColor: isDark ? "#7A7A7C" : "#B8B8BC" }]} />
+          <View
+            style={styles.dragHandleTouchArea}
+            {...dragHandlePanResponder.panHandlers}
+          >
+            <View
+              style={[
+                styles.dragHandle,
+                { backgroundColor: isDark ? "#7A7A7C" : "#B8B8BC" },
+              ]}
+            />
           </View>
 
           <View style={styles.header}>
@@ -397,27 +419,37 @@ const DestinationPopup: React.FC<DestinationPopupProps> = ({
                     </Text>
                   </View>
                 ) : (
-                  <PlatformIcon materialName="close" iosName="xmark" size={22} color={campusPink} />
+                  <PlatformIcon
+                    materialName="close"
+                    iosName="xmark"
+                    size={22}
+                    color={campusPink}
+                  />
                 )}
               </TouchableOpacity>
             </View>
 
             <View style={styles.headerCenter}>
-              <Text style={styles.title}>
-                Directions
-              </Text>
+              <Text style={styles.title}>Directions</Text>
             </View>
 
             <View style={[styles.headerSide, styles.headerSideRight]} />
           </View>
 
-          <View style={[styles.transportRow, { backgroundColor: isDark ? "#3A3A3C" : "#E6E6E9" }]}>
-            {([
-              { mode: "walking", icon: "directions-walk" },
-              { mode: "transit", icon: "directions-transit" },
-              { mode: "bicycling", icon: "directions-bike" },
-              { mode: "driving", icon: "directions-car" },
-            ] as const).map((option) => {
+          <View
+            style={[
+              styles.transportRow,
+              { backgroundColor: isDark ? "#3A3A3C" : "#E6E6E9" },
+            ]}
+          >
+            {(
+              [
+                { mode: "walking", icon: "directions-walk" },
+                { mode: "transit", icon: "directions-transit" },
+                { mode: "bicycling", icon: "directions-bike" },
+                { mode: "driving", icon: "directions-car" },
+              ] as const
+            ).map((option) => {
               const active = option.mode === travelMode;
               const displayDuration = getModeDurationLabel(option.mode);
               return (
@@ -451,7 +483,11 @@ const DestinationPopup: React.FC<DestinationPopupProps> = ({
                   <Text
                     numberOfLines={1}
                     style={{
-                      color: active ? "#FFFFFF" : isDark ? "#F5F5F5" : "#202020",
+                      color: active
+                        ? "#FFFFFF"
+                        : isDark
+                          ? "#F5F5F5"
+                          : "#202020",
                       fontSize: 9,
                       fontWeight: "600",
                     }}
@@ -463,18 +499,25 @@ const DestinationPopup: React.FC<DestinationPopupProps> = ({
             })}
           </View>
 
-          <ScrollView style={styles.routeList} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            style={styles.routeList}
+            showsVerticalScrollIndicator={false}
+          >
             {loading ? (
               <View style={styles.centerInline}>
                 <ActivityIndicator color="#B03060" />
-                <Text style={{ color: isDark ? "#FFFFFF" : "#111111" }}>Loading routes...</Text>
+                <Text style={{ color: isDark ? "#FFFFFF" : "#111111" }}>
+                  Loading routes...
+                </Text>
               </View>
             ) : error ? (
               <Text style={{ color: "#FF4444" }}>{error}</Text>
             ) : routes.length > 0 ? (
               routes.map((route, index) => {
                 const selected = index === selectedRouteIndex;
-                const transitSummary = getRouteTransitSummary(route.steps || []);
+                const transitSummary = getRouteTransitSummary(
+                  route.steps || [],
+                );
                 return (
                   <TouchableOpacity
                     key={route.id}
@@ -484,27 +527,28 @@ const DestinationPopup: React.FC<DestinationPopupProps> = ({
                       styles.routeCard,
                       {
                         backgroundColor: isDark ? "#323235" : "#F8F8FA",
-                        borderColor: selected ? "#C48BA1" : isDark ? "#3F3F42" : "#ECECEF",
+                        borderColor: selected
+                          ? "#C48BA1"
+                          : isDark
+                            ? "#3F3F42"
+                            : "#ECECEF",
                       },
                     ]}
                   >
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.durationText}>
-                        {route.duration}
-                      </Text>
-                      <Text style={styles.etaText}>
-                        {route.eta}
-                      </Text>
+                      <Text style={styles.durationText}>{route.duration}</Text>
+                      <Text style={styles.etaText}>{route.eta}</Text>
                       {travelMode === "transit" && !!transitSummary && (
-                        <Text style={styles.routeTransitSummary} numberOfLines={1}>
+                        <Text
+                          style={styles.routeTransitSummary}
+                          numberOfLines={1}
+                        >
                           {transitSummary}
                         </Text>
                       )}
                     </View>
 
-                    <Text style={styles.distanceText}>
-                      {route.distance}
-                    </Text>
+                    <Text style={styles.distanceText}>{route.distance}</Text>
 
                     <TouchableOpacity
                       onPress={() => handleStartNavigation(route.id, index)}
@@ -539,7 +583,10 @@ const DestinationPopup: React.FC<DestinationPopupProps> = ({
 
                 {transitSteps.length > 0 ? (
                   transitSteps.map((step, index) => {
-                    const lineLabel = step.transitLineShortName || step.transitLineName || "Transit";
+                    const lineLabel =
+                      step.transitLineShortName ||
+                      step.transitLineName ||
+                      "Transit";
                     const vehicleLabel = getTransitBadgeLabel(step);
                     const stopLabel =
                       step.transitDepartureStop && step.transitArrivalStop
@@ -558,14 +605,21 @@ const DestinationPopup: React.FC<DestinationPopupProps> = ({
                         ]}
                       >
                         <View style={styles.transitCardHeader}>
-                          <Text style={styles.transitLineName}>{lineLabel}</Text>
+                          <Text style={styles.transitLineName}>
+                            {lineLabel}
+                          </Text>
                           <View style={styles.transitTypeBadge}>
-                            <Text style={styles.transitTypeBadgeText}>{vehicleLabel}</Text>
+                            <Text style={styles.transitTypeBadgeText}>
+                              {vehicleLabel}
+                            </Text>
                           </View>
                         </View>
 
                         {!!step.transitHeadsign && (
-                          <Text style={styles.transitHeadsign} numberOfLines={1}>
+                          <Text
+                            style={styles.transitHeadsign}
+                            numberOfLines={1}
+                          >
                             Toward {step.transitHeadsign}
                           </Text>
                         )}
@@ -583,17 +637,17 @@ const DestinationPopup: React.FC<DestinationPopupProps> = ({
                 )}
               </View>
             )}
-
           </ScrollView>
-          </Animated.View>
-        </View>
+        </Animated.View>
       </View>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
+    zIndex: 100,
   },
   backdrop: {
     flex: 1,

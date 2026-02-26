@@ -97,7 +97,7 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
       const fetchedRoutes = await getDirections(
         effectiveStartLocation,
         destinationCoords,
-        travelMode
+        travelMode,
       );
 
       console.log("RoutePolyline: API call successful", {
@@ -106,7 +106,9 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
 
       // Check if component is still mounted before updating state
       if (!isMountedRef.current) {
-        console.log("RoutePolyline: Component unmounted, skipping state update");
+        console.log(
+          "RoutePolyline: Component unmounted, skipping state update",
+        );
         return;
       }
 
