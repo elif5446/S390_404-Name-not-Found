@@ -224,65 +224,6 @@ const additionalInfoPopupStyles = StyleSheet.create({
     lineHeight: 22,
     fontFamily: Platform.OS === "ios" ? "System" : "Roboto",
   },
-  scheduleHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  noEventsText: {
-    fontSize: 14,
-    fontStyle: "italic",
-    textAlign: "center",
-  },
-  nextEventLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    paddingBottom: 4,
-  },
-  eventsList: {
-    marginTop:4,
-  },
-  eventItem: {
-    marginBottom:12,
-  },
-  eventItemBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
-    paddingBottom: 12,
-    marginBottom: 12,
-  },
-  eventTitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 6,
-  },
-  eventDetailsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  eventTime: {
-    fontSize: 16,
-    color: "#666",
-  },
-  eventRoom: {
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  eventContent: {flex: 1,
-    marginRight: 12,
-  },
-  eventItemWithButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 8,
-  },
-  noEventsContainer: {
-    paddingVertical: 8,
-    alignItems: "center",
-  },
 
   // Android styles
 });

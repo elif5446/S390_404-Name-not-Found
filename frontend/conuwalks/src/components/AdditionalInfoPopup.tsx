@@ -29,6 +29,7 @@ import { LoyolaBuildingMetadata } from "../data/metadata/LOY.BuildingMetadata";
 import { SGWBuildingMetadata } from "../data/metadata/SGW.BuildingMetaData";
 import { styles, themedStyles } from "../styles/additionalInfoPopup";
 import { useBuildingEvents, BuildingEvent } from "../hooks/useBuildingEvents";
+import ScheduleSection from "./ScheduleSection";
 
 interface AdditionalInfoPopupProps {
   visible: boolean;
@@ -432,177 +433,6 @@ const AdditionalInfoPopup = forwardRef<
       </TouchableOpacity>
     );
 
-    const renderSchedule = (
-      event: BuildingEvent,
-      showDate: boolean = false,
-    ) => (
-      <View style={styles.eventContent}>
-        <Text
-          style={[
-            styles.eventTitle,
-            { color: mode === "dark" ? "#FFFFFF" : "#333333" },
-          ]}
-        >
-          {event.courseName}
-        </Text>
-        <View style={styles.eventDetailsRow}>
-          <Text
-            style={[
-              styles.eventTime,
-              { color: mode === "dark" ? "#CCCCCC" : "#585858" },
-            ]}
-          >
-            {showDate ? (
-              <>
-                {event.start.toLocaleDateString([], {
-                  month: "short",
-                  day: "numeric",
-                })}{" "}
-                at{" "}
-                {event.start.toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </>
-            ) : (
-              <>
-                {event.start.toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}{" "}
-                -{" "}
-                {event.end.toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </>
-            )}
-          </Text>
-          {event.roomNumber && (
-            <Text
-              style={[
-                styles.eventRoom,
-                { color: mode === "dark" ? "#CCCCCC" : "#585858" },
-              ]}
-            >
-              Room {event.roomNumber}
-            </Text>
-          )}
-        </View>
-      </View>
-    );
-
-    const renderScheduleItem = (
-      event: BuildingEvent,
-      showDate: boolean = false,
-      showBorder: boolean = false,
-    ) => (
-      <View
-        style={[
-          styles.eventItemWithButton,
-          showBorder && styles.eventItemBorder,
-        ]}
-      >
-        {renderSchedule(event, showDate)}
-        {renderDirectionButton(event.courseName)}
-      </View>
-    );
-
-    const renderScheduleSection = () => {
-      if (eventsLoading) {
-        return (
-          <View style={styles.section}>
-            <View style={styles.scheduleHeader}>
-              <Text
-                style={[
-                  styles.sectionTitle,
-                  { color: mode === "dark" ? "#FFFFFF" : "#333333" },
-                ]}
-                accessible={true}
-                accessibilityRole="header"
-              >
-                Schedule
-              </Text>
-              <ActivityIndicator size="small" color="#666666" />
-            </View>
-          </View>
-        );
-      }
-
-      if (todayEvents.length === 0) {
-        return (
-          <View style={styles.section}>
-            <View style={styles.scheduleHeader}>
-              <Text
-                style={[
-                  styles.sectionTitle,
-                  { color: mode === "dark" ? "#FFFFFF" : "#333333" },
-                ]}
-                accessible={true}
-                accessibilityRole="header"
-              >
-                Schedule
-              </Text>
-            </View>
-            <View style={styles.noEventsContainer}>
-              <Text
-                style={[
-                  styles.noEventsText,
-                  { color: mode === "dark" ? "#999999" : "#666666" },
-                ]}
-              >
-                No classes scheduled in this building today
-              </Text>
-              {nextEvent && (
-                <>
-                  <Text
-                    style={[
-                      styles.nextEventLabel,
-                      {
-                        color: mode === "dark" ? "#CCCCCC" : "#585858",
-                        marginTop: 12,
-                      },
-                    ]}
-                  >
-                    Next class in this building:
-                  </Text>
-                  {renderScheduleItem(nextEvent, true)}
-                </>
-              )}
-            </View>
-          </View>
-        );
-      }
-
-      return (
-        <View style={styles.section}>
-          <View style={styles.scheduleHeader}>
-            <Text
-              style={[
-                styles.sectionTitle,
-                { color: mode === "dark" ? "#FFFFFF" : "#333333" },
-              ]}
-              accessible={true}
-              accessibilityRole="header"
-            >
-              Schedule
-            </Text>
-          </View>
-          <View style={styles.eventsList}>
-            {todayEvents.map((event: BuildingEvent, index: number) => (
-              <View key={event.id}>
-                {renderScheduleItem(
-                  event,
-                  false,
-                  index < todayEvents.length - 1,
-                )}
-              </View>
-            ))}
-          </View>
-        </View>
-      );
-    };
-
     // Address copy functionality
     const [copying, setCopying] = useState(false);
 
@@ -938,7 +768,15 @@ const AdditionalInfoPopup = forwardRef<
                 scrollEventThrottle={16}
               >
                 {/* Schedule section */}
-                {renderScheduleSection()}
+                <ScheduleSection
+                  eventsLoading={eventsLoading}
+                  todayEvents={todayEvents}
+                  nextEvent={nextEvent}
+                  campusPink={campusPink}
+                  directionsEtaLabel={directionsEtaLabel}
+                  onDirectionsPress={handleDirectionsPress}
+                  mode={mode}
+                />
                 {/* Opening hours section */}
                 {buildingInfo?.openingHours &&
                   renderOpeningHours(buildingInfo.openingHours)}
