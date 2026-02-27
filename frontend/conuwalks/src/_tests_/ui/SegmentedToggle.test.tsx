@@ -11,6 +11,10 @@ jest.mock("../../context/DirectionsContext", () => ({
     clearDestination: jest.fn(),
     resetDirections: jest.fn(),
   })),
+  // dummy provider so the import is not undefined
+  DirectionsProvider: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
 }));
 
 describe("SegmentedToggle Component", () => {

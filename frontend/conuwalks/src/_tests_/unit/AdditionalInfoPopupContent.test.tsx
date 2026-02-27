@@ -65,6 +65,9 @@ describe("PopupContent Component", () => {
   });
 
   afterEach(() => {
+    act(() => {
+      jest.runOnlyPendingTimers();
+    });
     Platform.OS = originalOS;
     jest.useRealTimers();
   });
