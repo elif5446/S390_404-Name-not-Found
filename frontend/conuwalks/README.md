@@ -92,8 +92,6 @@ Make sure that the file 'google.services.json' is in your project root directory
 
 ## Run E2E Maestro tests
 
-Note: APP_ID is the android/ios appID; see app.config.js.
-
 ```bash
 cd frontend/conuwalks
 # run all tests
