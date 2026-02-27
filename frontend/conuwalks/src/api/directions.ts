@@ -180,6 +180,7 @@ const stripHtml = (input: string | undefined): string => {
   if (!input) {
     return "Continue";
   }
+  // prevent ReDoS flags
   return input.replace(/<[^>]{0,1000}>/g, "").trim() || "Continue";
 };
 
