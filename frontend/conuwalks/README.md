@@ -112,5 +112,5 @@ EXPO_PUBLIC_MOCK_CALENDAR=true npx expo start
 
 # or pass the flag to the app 
 android: adb shell am start -n com.conuwals.app/.MainActivity --ez isMockCalendarEnabled true
-iOS: xcrun simctl launch booted com.your.campusapp -isMockCalendarEnabled true
+iOS: xcrun simctl launch booted com.conuwalks.app -isMockCalendarEnabled true
 ```
