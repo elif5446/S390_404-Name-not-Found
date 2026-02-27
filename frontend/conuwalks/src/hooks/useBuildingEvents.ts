@@ -12,6 +12,20 @@ export interface BuildingEvent {
   courseName: string;
 }
 
+const parseLocation = (location: string = "") => {
+  const match = location.match(
+    /^(?:(?:SGW|LOY)[\s-]{0,10})?([A-Za-z]{1,15})[\s-]{1,10}(.{1,50})$/i,
+  );
+
+  if (match) {
+    return {
+      buildingCode: match[1].toUpperCase(),
+      roomNumber: match[2].trim(),
+    };
+  }
+  return null;
+};
+
 export const useBuildingEvents = (
   buildingId: string,
   campus: "SGW" | "LOY",
@@ -21,45 +35,34 @@ export const useBuildingEvents = (
   const [todayEvents, setTodayEvents] = useState<BuildingEvent[]>([]);
   const [nextEvent, setNextEvent] = useState<BuildingEvent | null>(null);
 
-  const parseLocation = (location: string = "") => {
-    const match = location.match(
-      /^(?:(?:SGW|LOY)[\s-]{0,10})?([A-Za-z]{1,15})[\s-]{1,10}(.{1,50})$/i,
-    );
-
-    if (match) {
-      return {
-        buildingCode: match[1].toUpperCase(),
-        roomNumber: match[2].trim(),
-      };
-    }
-    return null;
-  };
-
   // Filter events for this building
   useEffect(() => {
-    if (!events || events.length === 0 || !buildingId) return;
+    if (!events || events.length === 0 || !buildingId) {
+      setBuildingEvents([]);
+      setTodayEvents([]);
+      setNextEvent(null);
+      return;
+    }
 
     const filtered: BuildingEvent[] = [];
 
     for (let i = 0; i < events.length; i++) {
       const event = events[i];
-
-      // Skip if no location
       if (!event.location) continue;
-
-      // Parse location
       const parsed = parseLocation(event.location);
       if (!parsed) continue;
-
-      // Check if building code matches
       if (parsed.buildingCode !== buildingId.toUpperCase()) continue;
+
+      const startDateString = event.start?.dateTime || event.start?.date;
+      const endDateString = event.end?.dateTime || event.end?.date;
+      if (!startDateString || !endDateString) continue;
 
       // Create valid BuildingEvent object
       const buildingEvent: BuildingEvent = {
         id: event.id,
         summary: event.summary,
-        start: new Date(event.start?.dateTime || event.start?.date || ""),
-        end: new Date(event.end?.dateTime || event.end?.date || ""),
+        start: new Date(startDateString),
+        end: new Date(endDateString),
         location: event.location,
         roomNumber: parsed.roomNumber,
         buildingCode: parsed.buildingCode,

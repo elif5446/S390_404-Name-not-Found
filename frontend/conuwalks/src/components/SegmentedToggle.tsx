@@ -7,7 +7,7 @@ import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDirections } from "@/src/context/DirectionsContext";
 
-export function SegmentedToggle({
+function SegmentedToggle({
   campus,
   setCampus,
 }: {
@@ -84,3 +84,5 @@ export function SegmentedToggle({
     </View>
   );
 }
+
+export default SegmentedToggle;
