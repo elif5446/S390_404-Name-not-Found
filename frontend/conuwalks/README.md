@@ -105,12 +105,15 @@ maestro record --local .maestro/flows/smoke-launch.yaml -e USERNAME=testerjohn60
 ## Run local tests with Mock Data
 
 ```sh
-# Build and Install the app on your simulator<br>
-# Close the app<br>
-# Restart with env var in another terminal ex:<br>
+# Example mock data for calendar found in _tests_/mock/
+
+1. Build and Install the app on your simulator<br>
+2. Close the app<br>
+3. Restart with env var in another terminal ex:<br>
 EXPO_PUBLIC_MOCK_CALENDAR=true npx expo start
 
 # or pass the flag to the app 
-android: adb shell am start -n com.conuwals.app/.MainActivity --ez isMockCalendarEnabled true
-iOS: xcrun simctl launch booted com.conuwalks.app -isMockCalendarEnabled true
+1. Add EXPO_PUBLIC_MOCK_CALENDAR=true to your local .env
+2. android: adb shell am start -n com.conuwals.app/.MainActivity --ez isMockCalendarEnabled true
+   iOS: xcrun simctl launch booted com.conuwalks.app -isMockCalendarEnabled true
 ```
