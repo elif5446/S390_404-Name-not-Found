@@ -21,9 +21,10 @@ export const useBuildingEvents = (
   const [todayEvents, setTodayEvents] = useState<BuildingEvent[]>([]);
   const [nextEvent, setNextEvent] = useState<BuildingEvent | null>(null);
 
-  // Parse location string
   const parseLocation = (location: string = "") => {
-    const match = location.match(/^([A-Za-z]+)[\s-]+(.+)$/);
+    const match = location.match(
+      /^(?:(?:SGW|LOY)[\s-]{0,10})?([A-Za-z]{1,15})[\s-]{1,10}(.{1,50})$/i,
+    );
 
     if (match) {
       return {

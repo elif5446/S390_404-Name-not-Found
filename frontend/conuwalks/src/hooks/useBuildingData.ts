@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { AccessibilityInfo } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { SGWBuildingMetadata } from "@/src/data/metadata/SGW.BuildingMetaData";
@@ -10,6 +10,15 @@ export const useBuildingData = (buildingId: string, campus: "SGW" | "LOY") => {
     null,
   );
   const [isCopying, setIsCopying] = useState(false);
+  const isMounted = useRef(true);
+
+  // track unmounts to prevent state updates on unmounted components
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (buildingId) {
@@ -27,12 +36,16 @@ export const useBuildingData = (buildingId: string, campus: "SGW" | "LOY") => {
       await Clipboard.setStringAsync(buildingInfo.address);
       setTimeout(() => {
         AccessibilityInfo.announceForAccessibility("Address copied");
-        setTimeout(() => setIsCopying(false), 500);
+        setTimeout(() => {
+          if (isMounted.current) {
+            setIsCopying(false);
+          }
+        }, 500);
       }, 500);
     }
   }, [buildingInfo?.address]);
 
-  const accessibilityIcons = useCallback(() => {
+  const accessibilityIcons = useMemo(() => {
     const facilities = buildingInfo?.facilities;
     if (!facilities) return [];
 
@@ -72,7 +85,7 @@ export const useBuildingData = (buildingId: string, campus: "SGW" | "LOY") => {
     }
 
     return icons;
-  }, [buildingInfo?.facilities])();
+  }, [buildingInfo?.facilities]);
 
   return { buildingInfo, isCopying, copyAddress, accessibilityIcons };
 };
