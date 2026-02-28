@@ -18,19 +18,6 @@ export const useBuildingEvents = (buildingId: string, campus: 'SGW' | 'LOY') => 
   const [todayEvents, setTodayEvents] = useState<BuildingEvent[]>([]);
   const [nextEvent, setNextEvent] = useState<BuildingEvent | null>(null);
 
-  // Parse location string
-  const parseLocation = (location: string = '') => {
-    const match = location.match(/^([A-Za-z]+)[\s-]+(.+)$/);
-    
-    if (match) {
-      return {
-        buildingCode: match[1].toUpperCase(),
-        roomNumber: match[2].trim()
-      };
-    }
-    return null;
-  };
-
   // Filter events for this building
   useEffect(() => {
     if (!events || events.length === 0 || !buildingId) return;
@@ -100,4 +87,13 @@ export const useBuildingEvents = (buildingId: string, campus: 'SGW' | 'LOY') => 
     error,
     refresh: () => fetchUpcomingEvents(50)
   };
+};
+
+// Parse location string
+export const parseLocation = (location: string = '') => {
+  const match = new RegExp(/^([A-Za-z]+)[\s-]+(.+)$/).exec(location);
+  if (match) {
+      return { buildingCode: match[1].toUpperCase(), roomNumber: match[2].trim() };
+  }
+  return null;
 };

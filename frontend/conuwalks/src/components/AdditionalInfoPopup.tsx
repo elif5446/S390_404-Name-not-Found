@@ -18,8 +18,7 @@ import {
   PanResponder,
   ScrollView,
   BackHandler,
-  AccessibilityInfo,
-  ActivityIndicator,
+  AccessibilityInfo
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { SymbolView, SFSymbol } from "expo-symbols"; // SF Symbols (iOS)

@@ -39,6 +39,7 @@ import BuildingTheme from "@/src/styles/BuildingTheme";
 import AdditionalInfoPopup from "./AdditionalInfoPopup";
 import DestinationPopup from "./DestinationPopup";
 import IndoorMapOverlay from "./indoor/IndoorMapOverlay";
+import DirectionsSearchPanel from "./DirectionsSearchPanel"
 
 // Convert GeoJSON coordinates to LatLng
 const polygonFromGeoJSON = (coordinates: number[][]): LatLng[] =>
@@ -1020,6 +1021,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
         visible={showDirections}
         onClose={handleCloseDestinationPopup}
       />
+
+      {showDirections && <DirectionsSearchPanel setStartPoint={setStartPoint} setDestination={setDestination}/>}
 
       {userLocation && !indoorBuildingId && !isInfoPopupExpanded && (
         <TouchableOpacity

@@ -1,3 +1,5 @@
+import { LatLng } from "react-native-maps";
+
 export type OpeningHours = {
   weekdays: string;
   weekend: string;
@@ -96,3 +98,150 @@ export const SGWBuildingMetadata: Record<string, BuildingData> = {
     openingHours: { weekdays: defaultWeekday, weekend: defaultWeekend }
   }
 };
+
+export const SGWBuildingSearchMetadata: Record<string, { name: string; coordinates: LatLng; }> = {
+  "H": {
+    name: "Henry F. Hall Building",
+    coordinates: {latitude: 45.49722, longitude: -73.57862}
+  },
+  "LB": {
+    name: "J.W. McConnell Building (Webster Library)",
+    coordinates: {latitude: 45.48706, longitude: -73.58936}
+  },
+  "LS": {
+    name: "Learning Square",
+    coordinates: {latitude: 45.49612, longitude: -73.57954}
+  },
+  "EV": {
+    name: "Engineering, Computer Science and Visual Arts Integrated Complex",
+    coordinates: {latitude: 45.49531, longitude: -73.57783}
+  },
+  "MB": {
+    name: "John Molson Building",
+    coordinates: {latitude: 45.49544, longitude: -73.57919}
+  },
+  "FB": {
+    name: "Faubourg Building",
+    coordinates: {latitude: 45.49480, longitude: -73.57762}
+  },
+  "FG": {
+    name: "Faubourg Ste-Catherine Building",
+    coordinates: {latitude: 45.49428, longitude: -73.57834}
+  },
+  "CL": {
+    name: "CL Annex",
+    coordinates: {latitude: 45.49425, longitude: -73.57910}
+  },
+  "GM": {
+    name: "Guy-De Maisonneuve Building",
+    coordinates: {latitude: 45.49557, longitude: -73.57823}
+  },
+  "ER": {
+    name: "ER Building",
+    coordinates: {latitude: 45.49624, longitude: -73.58013}
+  },
+  "B": {
+    name: "B Annex",
+    coordinates: {latitude: 45.49786, longitude: -73.57948}
+  },
+  "CI": {
+    name: "CI Annex",
+    coordinates: {latitude: 45.49742, longitude: -73.57993}
+  },
+  "D": {
+    name: "D Annex",
+    coordinates: {latitude: 45.49779, longitude: -73.57932}
+  },
+  "EN": {
+    name: "EN Annex",
+    coordinates: {latitude: 45.49686, longitude: -73.57956}
+  },
+  "FA": {
+    name: "FA Annex",
+    coordinates: {latitude: 45.49683, longitude: -73.57948}
+  },
+  "GA": {
+    name: "Grey Nuns Annex",
+    coordinates: {latitude: 45.49397, longitude: -73.57814}
+  },
+  "GN": {
+    name: "Grey Nuns Building",
+    coordinates: {latitude: 45.49403, longitude: -73.57642}
+  },
+  "GS": {
+    name: "GS Building",
+    coordinates: {latitude: 45.49668, longitude: -73.58119}
+  },
+  "K": {
+    name: "K Annex",
+    coordinates: {latitude: 45.49782, longitude: -73.57940}
+  },
+  "LD": {
+    name: "LD Building",
+    coordinates: {latitude: 45.49670, longitude: -73.57727}
+  },
+  "M": {
+    name: "M Annex",
+    coordinates: {latitude: 45.49735, longitude: -73.57976}
+  },
+  "MI": {
+    name: "MI Annex",
+    coordinates: {latitude: 45.49735, longitude: -73.57976}
+  },
+  "MU": {
+    name: "MU Annex",
+    coordinates: {latitude: 45.49790, longitude: -73.57955}
+  },
+  "P": {
+    name: "P Annex",
+    coordinates: {latitude: 45.49667, longitude: -73.57917}
+  },
+  "PR": {
+    name: "PR Annex",
+    coordinates: {latitude: 45.49698, longitude: -73.57983}
+  },
+  "Q": {
+    name: "Q Annex",
+    coordinates: {latitude: 45.49663, longitude: -73.57910}
+  },
+  "R": {
+    name: "R Annex",
+    coordinates: {latitude: 45.49675, longitude: -73.57938}
+  },
+  "RR": {
+    name: "RR Annex",
+    coordinates: {latitude: 45.49673, longitude: -73.57932}
+  },
+  "S": {
+    name: "S Annex",
+    coordinates: {latitude: 45.49738, longitude: -73.57984}
+  },
+  "SB": {
+    name: "Samuel Bronfman Building",
+    coordinates: {latitude: 45.49658, longitude: -73.58607}
+  },
+  "T": {
+    name: "T Annex",
+    coordinates: {latitude: 45.49670, longitude: -73.57924}
+  },
+  "TD": {
+    name: "Toronto-Dominion Building",
+    coordinates: {latitude: 45.49516, longitude: -73.57841}
+  },
+  "V": {
+    name: "V Annex",
+    coordinates: {latitude: 45.49702, longitude: -73.57991}
+  },
+  "VA": {
+    name: "Visual Arts Building",
+    coordinates: {latitude: 45.49552, longitude: -73.57379}
+  },
+  "X": {
+    name: "X Annex",
+    coordinates: {latitude: 45.49688, longitude: -73.57967}
+  },
+  "Z": {
+    name: "Z Annex",
+    coordinates: {latitude: 45.49693, longitude: -73.57974}
+  }
+}
