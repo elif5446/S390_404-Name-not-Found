@@ -39,39 +39,24 @@ import DestinationPopup, { DestinationPopupHandle } from "./DestinationPopup";
 
 import { useUserLocation } from "@/src/hooks/useUserLocation";
 import { useDirections } from "@/src/context/DirectionsContext";
-import { calculatePolygonCenter } from "@/src/utils/geometry";
+import {
+  calculatePolygonCenter,
+  distanceMetersBetween,
+} from "@/src/utils/geometry";
 import { isPointInPolygon } from "@/src/utils/geo";
 import SGW from "@/src/data/campus/SGW.geojson";
 import LOY from "@/src/data/campus/LOY.geojson";
 import { INDOOR_DATA } from "@/src/data/indoorData";
 import { LoyolaBuildingMetadata } from "@/src/data/metadata/LOY.BuildingMetadata";
 import { SGWBuildingMetadata } from "@/src/data/metadata/SGW.BuildingMetaData";
-import BuildingTheme from "@/src/styles/BuildingTheme";
 import IndoorMapOverlay from "./indoor/IndoorMapOverlay";
+
+import BuildingTheme from "@/src/styles/BuildingTheme";
 import styles from "@/src/styles/campusMap";
 
 // Convert GeoJSON coordinates to LatLng
 const polygonFromGeoJSON = (coordinates: number[][]): LatLng[] =>
   coordinates.map(([longitude, latitude]) => ({ latitude, longitude }));
-
-const toRadians = (value: number): number => (value * Math.PI) / 180;
-
-const distanceMetersBetween = (pointA: LatLng, pointB: LatLng): number => {
-  const earthRadius = 6371000;
-  const lat1 = toRadians(pointA.latitude);
-  const lat2 = toRadians(pointB.latitude);
-  const deltaLat = toRadians(pointB.latitude - pointA.latitude);
-  const deltaLng = toRadians(pointB.longitude - pointA.longitude);
-
-  const a =
-    Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
-    Math.cos(lat1) *
-      Math.cos(lat2) *
-      Math.sin(deltaLng / 2) *
-      Math.sin(deltaLng / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return earthRadius * c;
-};
 
 interface CampusMapProps {
   initialLocation?: {
@@ -546,14 +531,12 @@ const CampusMap: React.FC<CampusMapProps> = ({
   }, [isNavigationActive, selectedTransitStopKey, transitNavigationStops]);
 
   useEffect(() => {
-    if (!(showDirections || isNavigationActive) || !routeData) {
+    if (!(showDirections || isNavigationActive) || !routeData?.id) {
       setNavigationStepIndex(0);
       return;
     }
-    setNavigationStepIndex((previousIndex) =>
-      Math.min(previousIndex, Math.max(0, routeData.steps.length - 1)),
-    );
-  }, [showDirections, isNavigationActive, routeData?.id, routeData]);
+    setNavigationStepIndex(0);
+  }, [showDirections, isNavigationActive, routeData?.id]);
 
   useEffect(() => {
     if (
@@ -566,10 +549,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
       return;
     }
 
-    const arrivalThresholdByMode: Record<
-      "walking" | "driving" | "transit" | "bicycling",
-      number
-    > = {
+    const arrivalThresholdByMode: Record<string, number> = {
+      walk: 28,
       walking: 28,
       bicycling: 45,
       transit: 60,
@@ -585,8 +566,12 @@ const CampusMap: React.FC<CampusMapProps> = ({
       userLocation,
       currentStep.endLocation,
     );
+
+    const stepMode = (currentStep.travelMode || "walking").toLowerCase();
+    const threshold = arrivalThresholdByMode[stepMode] || 45;
+
     if (
-      metersToStepEnd <= arrivalThresholdByMode[travelMode] &&
+      metersToStepEnd <= threshold &&
       navigationStepIndex < routeData.steps.length - 1
     ) {
       setNavigationStepIndex((previousIndex) =>

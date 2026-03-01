@@ -1,4 +1,4 @@
-import React, { memo } from "react";
+import React, { memo, useState } from "react";
 import {
   View,
   Text,
@@ -8,7 +8,10 @@ import {
 } from "react-native";
 import PlatformIcon from "./ui/PlatformIcon";
 import BottomSheetDragHandle from "./ui/BottomSheetDragHandle";
+import { useDirections } from "@/src/context/DirectionsContext";
+import TimeSelectorModal from "./TimeSelectorModal";
 import { styles } from "../styles/DestinationPopup";
+import { isToday } from "../utils/time";
 
 interface DestinationHeaderProps {
   isDark: boolean;
@@ -41,98 +44,184 @@ const DestinationHeader: React.FC<DestinationHeaderProps> = ({
 }) => {
   const campusPink = "#B03060";
 
-  return (
-    <TouchableWithoutFeedback onPress={onToggleHeight}>
-      <View>
-        <BottomSheetDragHandle
-          isDark={isDark}
-          onToggleHeight={onToggleHeight}
-        />
+  const { timeMode, targetTime, setTimeMode, setTargetTime } = useDirections();
+  const [isTimeModalVisible, setTimeModalVisible] = useState(false);
 
-        <View style={styles.header}>
-          <View style={[styles.headerSide, styles.headerSideLeft]}>
-            <TouchableOpacity
-              onPress={onDismiss}
-              style={styles.iconButton}
-              accessibilityRole="button"
-              accessibilityLabel="Close directions"
-              accessibilityHint="Closes the directions panel"
-            >
-              {Platform.OS === "ios" ? (
-                <View
-                  style={[
-                    styles.closeButtonCircle,
-                    { backgroundColor: isDark ? "#00000031" : "#85858522" },
-                  ]}
-                >
-                  <Text
+  let timeLabel = "Leave now";
+  if (targetTime) {
+    const timeString = targetTime.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+    const prefix = timeMode === "leave" ? "Leave at" : "Arrive by";
+
+    if (isToday(targetTime)) {
+      timeLabel = `${prefix} ${timeString}`;
+    } else {
+      // append the date if it's not today
+      const dateString = targetTime.toLocaleDateString([], {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+      });
+      timeLabel = `${prefix} ${timeString}, ${dateString}`;
+    }
+  }
+
+  return (
+    <>
+      <TouchableWithoutFeedback onPress={onToggleHeight}>
+        <View>
+          <BottomSheetDragHandle
+            isDark={isDark}
+            onToggleHeight={onToggleHeight}
+          />
+
+          <View style={styles.header}>
+            <View style={[styles.headerSide, styles.headerSideLeft]}>
+              <TouchableOpacity
+                onPress={onDismiss}
+                style={styles.iconButton}
+                accessibilityRole="button"
+                accessibilityLabel="Close directions"
+                accessibilityHint="Closes the directions panel"
+              >
+                {Platform.OS === "ios" ? (
+                  <View
                     style={[
-                      styles.closeButtonText,
-                      { color: isDark ? "#FFFFFF" : "#333333" },
+                      styles.closeButtonCircle,
+                      { backgroundColor: isDark ? "#00000031" : "#85858522" },
                     ]}
                   >
-                    ✕
-                  </Text>
-                </View>
-              ) : (
-                <PlatformIcon
-                  materialName="close"
-                  iosName="xmark"
-                  size={22}
-                  color={campusPink}
-                />
-              )}
-            </TouchableOpacity>
+                    <Text
+                      style={[
+                        styles.closeButtonText,
+                        { color: isDark ? "#FFFFFF" : "#333333" },
+                      ]}
+                    >
+                      ✕
+                    </Text>
+                  </View>
+                ) : (
+                  <PlatformIcon
+                    materialName="close"
+                    iosName="xmark"
+                    size={22}
+                    color={campusPink}
+                  />
+                )}
+              </TouchableOpacity>
+            </View>
+            <View style={styles.headerCenter}>
+              <Text style={styles.title}>Directions</Text>
+            </View>
+            <View style={[styles.headerSide, styles.headerSideRight]} />
           </View>
-          <View style={styles.headerCenter}>
-            <Text style={styles.title}>Directions</Text>
-          </View>
-          <View style={[styles.headerSide, styles.headerSideRight]} />
-        </View>
 
-        <View
-          style={[
-            styles.transportRow,
-            { backgroundColor: isDark ? "#3A3A3C" : "#E6E6E9" },
-          ]}
-        >
-          {TRANSPORT_OPTIONS.map((option) => {
-            const active = option.mode === travelMode;
-            const displayDuration = getModeDurationLabel(option.mode);
-            return (
+          <View
+            style={[
+              styles.transportRow,
+              { backgroundColor: isDark ? "#3A3A3C" : "#E6E6E9" },
+            ]}
+          >
+            {TRANSPORT_OPTIONS.map((option) => {
+              const active = option.mode === travelMode;
+              const displayDuration = getModeDurationLabel(option.mode);
+              return (
+                <TouchableOpacity
+                  key={option.mode}
+                  style={[
+                    styles.transportButton,
+                    { backgroundColor: active ? campusPink : "transparent" },
+                  ]}
+                  onPress={() => setTravelMode(option.mode)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Select ${option.mode} mode`}
+                  accessibilityHint={`Updates routes for ${option.mode} transportation`}
+                >
+                  <PlatformIcon
+                    materialName={option.icon}
+                    iosName={option.iosName}
+                    size={15}
+                    color={active ? "#FFFFFF" : isDark ? "#F5F5F5" : "#202020"}
+                  />
+                  <Text
+                    numberOfLines={1}
+                    style={{
+                      color: active
+                        ? "#FFFFFF"
+                        : isDark
+                          ? "#F5F5F5"
+                          : "#202020",
+                      fontSize: 9,
+                      fontWeight: "600",
+                    }}
+                  >
+                    {displayDuration}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {travelMode === "transit" && (
+            <View
+              style={{
+                marginTop: 4,
+                marginBottom: 4,
+                paddingHorizontal: 12,
+                alignItems: "flex-start",
+              }}
+            >
               <TouchableOpacity
-                key={option.mode}
-                style={[
-                  styles.transportButton,
-                  { backgroundColor: active ? campusPink : "transparent" },
-                ]}
-                onPress={() => setTravelMode(option.mode)}
+                style={{
+                  backgroundColor: isDark ? "#3A3A3C" : "#E6E6E9",
+                  paddingVertical: 8,
+                  paddingHorizontal: 14,
+                  borderRadius: 10,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 4,
+                }}
+                onPress={() => setTimeModalVisible(true)}
                 accessibilityRole="button"
-                accessibilityLabel={`Select ${option.mode} mode`}
-                accessibilityHint={`Updates routes for ${option.mode} transportation`}
+                accessibilityLabel="Select departure or arrival time"
               >
-                <PlatformIcon
-                  materialName={option.icon}
-                  iosName={option.iosName}
-                  size={15}
-                  color={active ? "#FFFFFF" : isDark ? "#F5F5F5" : "#202020"}
-                />
                 <Text
-                  numberOfLines={1}
                   style={{
-                    color: active ? "#FFFFFF" : isDark ? "#F5F5F5" : "#202020",
-                    fontSize: 9,
+                    color: isDark ? "#E5E5EA" : "#1C1C1E",
                     fontWeight: "600",
+                    fontSize: 13,
                   }}
                 >
-                  {displayDuration}
+                  {timeLabel}
                 </Text>
+                <PlatformIcon
+                  materialName="arrow-drop-down"
+                  iosName="chevron.down"
+                  size={16}
+                  color={campusPink}
+                />
               </TouchableOpacity>
-            );
-          })}
+            </View>
+          )}
         </View>
-      </View>
-    </TouchableWithoutFeedback>
+      </TouchableWithoutFeedback>
+
+      {/* MODAL */}
+      <TimeSelectorModal
+        visible={isTimeModalVisible}
+        onClose={() => setTimeModalVisible(false)}
+        initialMode={timeMode}
+        initialDate={targetTime}
+        onApply={(mode, date) => {
+          setTimeMode(mode);
+          setTargetTime(date);
+          setTimeModalVisible(false);
+        }}
+      />
+    </>
   );
 };
 
