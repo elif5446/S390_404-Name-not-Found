@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, { useEffect, useState, useRef, useCallback, useId } from "react";
 import {
   GoogleSignin,
   statusCodes,
@@ -35,7 +35,7 @@ export default function GoogleCalendarAuth({
   const [isAutoLoggingIn, setIsAutoLoggingIn] = useState(false);
 
   const isMounted = useRef(true);
-  const instanceId = useRef(Math.random().toString(36).substring(7));
+  const instanceId = useRef(useId());
   const hasNavigated = useRef(false);
 
   const initializeGoogleSignin = useCallback(async () => {

@@ -61,8 +61,8 @@ export type ShuttleRouteData = RouteData & {
 
 const parseDur = (d?: string) => {
   if (!d) return 0;
-  const h = d.match(/(\d+)\s*h/);
-  const m = d.match(/(\d+)\s*min/);
+  const h = d.match(/(\d{1,5})\s{0,5}h/);
+  const m = d.match(/(\d{1,5})\s{0,5}min/);
   return (h ? parseInt(h[1], 10) * 60 : 0) + (m ? parseInt(m[1], 10) : 0);
 };
 
@@ -267,8 +267,9 @@ export const getShuttleRouteIfApplicable = async (
       distance: formatDist(isSGWtoLOY ? destToLOY : destToSGW),
       duration: `${walkFromMins} min`,
       travelMode: "WALK",
-      startLocation: DestStop, endLocation: destinationCoords,
-      polylinePoints: [DestStop, destinationCoords]
+      startLocation: DestStop,
+      endLocation: destinationCoords,
+      polylinePoints: [DestStop, destinationCoords],
     });
     fullPolyline.push(DestStop, destinationCoords);
   }
