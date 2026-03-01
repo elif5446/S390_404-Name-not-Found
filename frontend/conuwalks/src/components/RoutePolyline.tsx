@@ -202,17 +202,48 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
   const isWalking = travelMode === "walking";
 
   return (
-    <Polyline
-      key={`route-${travelMode}`}
-      coordinates={routeData.polylinePoints}
-      strokeColor={campusPink}
-      strokeWidth={isWalking ? (Platform.OS === "ios" ? 3 : 4) : 5}
-      lineDashPattern={isWalking ? [1, 8] : undefined}
-      lineCap={isWalking ? "round" : "butt"}
-      lineJoin={isWalking ? "round" : "miter"}
-      zIndex={zIndex}
-      geodesic
-    />
+    <>
+      {routeData.steps.map((step, index) => {
+        if (!step.startLocation || !step.endLocation) return null;
+  
+        const mode = step.travelMode;
+  
+        const getColor = () => {
+          switch (mode) {
+            case "WALK":
+            case "WALKING":
+              return "#666666"; // grey walking
+            case "TRANSIT":
+              return "#1E90FF"; // blue transit
+            case "BICYCLE":
+            case "BICYCLING":
+              return "#32CD32"; // green bike
+            case "DRIVE":
+            case "DRIVING":
+              return "#FF3B30"; // red drive
+            default:
+              return "#B03060";
+          }
+        };
+  
+        const isWalking =
+          mode === "WALK" || mode === "WALKING";
+  
+        return (
+          <Polyline
+            key={`step-${index}`}
+            coordinates={[step.startLocation, step.endLocation]}
+            strokeColor={getColor()}
+            strokeWidth={isWalking ? 3 : 5}
+            lineDashPattern={isWalking ? [4, 6] : undefined}
+            lineCap="round"
+            lineJoin="round"
+            zIndex={zIndex}
+            geodesic
+          />
+        );
+      })}
+    </>
   );
 };
 
