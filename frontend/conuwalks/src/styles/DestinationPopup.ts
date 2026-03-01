@@ -206,4 +206,28 @@ export const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "500",
   },
+  shuttleBadgeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  shuttleBadgeIcon: {
+    backgroundColor: "#B03060",
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 6,
+  },
+  shuttleBadgeLetter: {
+    color: "#FFFFFF",
+    fontWeight: "bold",
+    fontSize: 12,
+  },
+  shuttleBadgeText: {
+    color: "#B03060",
+    fontWeight: "700",
+    fontSize: 12,
+  },
 });
