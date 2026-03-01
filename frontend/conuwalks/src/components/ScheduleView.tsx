@@ -320,7 +320,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ onNavigateToClass }) => {
                         accessibilityRole="button"
                       >
                         <MaterialIcons
-                          name="directions"
+                          name="subdirectory-arrow-right" // here
                           size={18}
                           color="#FFFFFF"
                         />
