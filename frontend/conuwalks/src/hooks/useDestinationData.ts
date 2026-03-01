@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { DirectionStep, useDirections } from "@/src/context/DirectionsContext";
 import { getDirections } from "@/src/api/directions";
 
@@ -39,13 +39,13 @@ export const useDestinationData = (visible: boolean) => {
   const normalizeDurationLabel = useCallback((value: string): string => {
     const lower = value.toLowerCase();
     if (lower.includes("h") || lower.includes("hour")) {
-      const hourMatch = lower.match(/(\d+)\s*h/);
-      const minuteMatch = lower.match(/(\d+)\s*(min|mins|minute|minutes)/);
+      const hourMatch = lower.match(/(\d{1,10})\s{0,10}h/);
+      const minuteMatch = lower.match(/(\d{1,10})\s{0,10}(?:mins?|minutes?)/);
       const hours = hourMatch ? Number.parseInt(hourMatch[1], 10) : 0;
       const minutes = minuteMatch ? Number.parseInt(minuteMatch[1], 10) : 0;
       return minutes > 0 ? `${hours} h ${minutes} min` : `${hours} h`;
     }
-    const minuteMatch = lower.match(/(\d+)\s*(min|mins|minute|minutes)/);
+    const minuteMatch = lower.match(/(\d{1,10})\s{0,10}(?:mins?|minutes?)/);
     if (minuteMatch) {
       return formatMinutes(Number.parseInt(minuteMatch[1], 10));
     }
@@ -145,52 +145,57 @@ export const useDestinationData = (visible: boolean) => {
     ],
   );
 
-  const getTransitBadgeLabel = (step: DirectionStep): string => {
+  const getTransitBadgeLabel = useCallback((step: DirectionStep): string => {
     const type = (step.transitVehicleType || "").toLowerCase();
     if (type.includes("subway") || type.includes("metro")) return "Metro";
     if (type.includes("bus") || type.includes("shuttle")) return "Bus";
     return step.transitVehicleType || "Transit";
-  };
+  }, []);
 
-  const getRouteTransitSummary = (steps: DirectionStep[]): string | null => {
-    const labels = steps
-      .filter(
-        (step) =>
-          step.transitLineShortName ||
-          step.transitLineName ||
-          step.transitVehicleType,
-      )
-      .map((step) => {
-        const type = (step.transitVehicleType || "Transit").toLowerCase();
-        const vehicle =
-          type.includes("subway") || type.includes("metro")
-            ? "Metro"
-            : type.includes("bus") || type.includes("shuttle")
-              ? "Bus"
-              : "Transit";
-        const line = (
-          step.transitLineShortName ||
-          step.transitLineName ||
-          ""
-        ).trim();
-        return line ? `${vehicle} ${line}` : vehicle;
-      });
+  const getRouteTransitSummary = useCallback(
+    (steps: DirectionStep[]): string | null => {
+      const labels = steps
+        .filter(
+          (step) =>
+            step.transitLineShortName ||
+            step.transitLineName ||
+            step.transitVehicleType,
+        )
+        .map((step) => {
+          const type = (step.transitVehicleType || "Transit").toLowerCase();
+          const vehicle =
+            type.includes("subway") || type.includes("metro")
+              ? "Metro"
+              : type.includes("bus") || type.includes("shuttle")
+                ? "Bus"
+                : "Transit";
+          const line = (
+            step.transitLineShortName ||
+            step.transitLineName ||
+            ""
+          ).trim();
+          return line ? `${vehicle} ${line}` : vehicle;
+        });
 
-    if (labels.length === 0) return null;
-    return labels
-      .filter((val, i) => i === 0 || val !== labels[i - 1])
-      .join(" → ");
-  };
-
-  const selectedRoute = routes[selectedRouteIndex] || routeData;
-  const transitSteps = (selectedRoute?.steps || []).filter(
-    (step) =>
-      step.transitLineName ||
-      step.transitLineShortName ||
-      step.transitDepartureStop ||
-      step.transitArrivalStop ||
-      step.transitHeadsign,
+      if (labels.length === 0) return null;
+      return labels
+        .filter((val, i) => i === 0 || val !== labels[i - 1])
+        .join(" → ");
+    },
+    [],
   );
+
+  const transitSteps = useMemo(() => {
+    const selectedRoute = routes[selectedRouteIndex] || routeData;
+    return (selectedRoute?.steps || []).filter(
+      (step) =>
+        step.transitLineName ||
+        step.transitLineShortName ||
+        step.transitDepartureStop ||
+        step.transitArrivalStop ||
+        step.transitHeadsign,
+    );
+  }, [routes, selectedRouteIndex, routeData]);
 
   return {
     ...directions,

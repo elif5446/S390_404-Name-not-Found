@@ -154,7 +154,7 @@ const additionalInfoPopupStyles = StyleSheet.create({
     fontWeight: "700" as const,
     fontSize: 12,
     lineHeight: 14,
-    paddingRight:6,
+    paddingRight: 6,
   },
   rightAccessibilityRow: {
     marginTop: 4,
@@ -223,6 +223,10 @@ const additionalInfoPopupStyles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
     fontFamily: Platform.OS === "ios" ? "System" : "Roboto",
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 24,
   },
 
   // Android styles

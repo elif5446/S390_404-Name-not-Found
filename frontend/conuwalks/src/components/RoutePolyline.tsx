@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useCallback } from "react";
-import { Polyline , LatLng } from "react-native-maps";
+import { LatLng, Polyline } from "react-native-maps";
 import { useDirections } from "@/src/context/DirectionsContext";
 import { getDirections, decodePolyline } from "@/src/api/directions";
 import { Platform } from "react-native";
@@ -28,19 +28,19 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
     setLoading,
     setError,
   } = useDirections();
+
   const isMountedRef = useRef(true);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const blockedRequestKeyRef = useRef<string | null>(null);
 
   // Determine the actual start location to use
   const effectiveStartLocation = startLocation;
+  const shouldShowRoute = showDirections || isNavigationActive;
 
   const requestKey =
     effectiveStartLocation && destinationCoords
       ? `${effectiveStartLocation.latitude.toFixed(6)},${effectiveStartLocation.longitude.toFixed(6)}->${destinationCoords.latitude.toFixed(6)},${destinationCoords.longitude.toFixed(6)}:${travelMode}`
       : null;
-
-  const shouldShowRoute = showDirections || isNavigationActive;
 
   // Fetch directions when destination, start, or travel mode changes
   const fetchRoute = useCallback(async () => {
@@ -52,13 +52,9 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
       mode: travelMode,
     });
 
-    if (!shouldShowRoute) {
-      return;
-    }
-
-    if (!effectiveStartLocation || !destinationCoords) {
+    if (!shouldShowRoute || !effectiveStartLocation || !destinationCoords) {
+      if (!effectiveStartLocation || !destinationCoords) setRoutes([]);
       console.log("RoutePolyline: Missing start or destination, skipping");
-      setRoutes([]);
       return;
     }
 
@@ -112,13 +108,10 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
       }
 
       const decodedRoutes = fetchedRoutes
-        .map((route) => {
-          const decodedPoints = decodePolyline(route.overviewPolyline);
-          return {
-            ...route,
-            polylinePoints: decodedPoints,
-          };
-        })
+        .map((route) => ({
+          ...route,
+          polylinePoints: decodePolyline(route.overviewPolyline),
+        }))
         .filter((route) => route.polylinePoints.length > 0);
 
       if (decodedRoutes.length === 0) {
@@ -139,14 +132,12 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
           err instanceof Error ? err.message : "Failed to fetch directions";
         console.warn("Route fetch error:", errorMessage);
 
-        const isApiConfigurationError =
-          errorMessage.toLowerCase().includes("not been used") ||
-          errorMessage.toLowerCase().includes("disabled") ||
-          errorMessage.toLowerCase().includes("legacy api") ||
-          errorMessage.toLowerCase().includes("request denied");
-
-        if (isApiConfigurationError && requestKey) {
-          blockedRequestKeyRef.current = requestKey;
+        if (
+          errorMessage
+            .toLowerCase()
+            .match(/not been used|disabled|legacy api|request denied/)
+        ) {
+          if (requestKey) blockedRequestKeyRef.current = requestKey;
         }
 
         setError(errorMessage);
@@ -155,11 +146,11 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
       }
     }
   }, [
+    showDirections,
+    isNavigationActive,
     effectiveStartLocation,
     destinationCoords,
     travelMode,
-    showDirections,
-    isNavigationActive,
     shouldShowRoute,
     requestKey,
     setRoutes,
@@ -171,14 +162,13 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
   useEffect(() => {
     blockedRequestKeyRef.current = null;
 
-    // Debounce the fetch to prevent rapid API calls
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
 
     debounceTimerRef.current = setTimeout(() => {
       fetchRoute();
-    }, 300); // Wait 300ms after dependencies change before fetching
+    }, 300);
 
     return () => {
       if (debounceTimerRef.current) {
@@ -193,7 +183,6 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
     };
   }, []);
 
-  // Don't render if no points
   if (!shouldShowRoute || !routeData || routeData.polylinePoints.length === 0) {
     return null;
   }

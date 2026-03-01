@@ -1,8 +1,21 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react-native";
 import { Platform } from "react-native";
-import { SegmentedToggle } from "../../components/SegmentedToggle";
+import SegmentedToggle from "../../components/SegmentedToggle";
 import { DirectionsProvider } from "../../context/DirectionsContext";
+
+jest.mock("../../context/DirectionsContext", () => ({
+  useDirections: jest.fn(() => ({
+    // If toggle calls any specific functions like clearRouteData() when switching campuses,
+    // add them here as jest mock functions so the component doesn't crash when it tries to call them.
+    clearDestination: jest.fn(),
+    resetDirections: jest.fn(),
+  })),
+  // dummy provider so the import is not undefined
+  DirectionsProvider: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
+}));
 
 describe("SegmentedToggle Component", () => {
   let mockSetCampus: jest.Mock;
@@ -105,14 +118,16 @@ describe("SegmentedToggle Component", () => {
     it("should have SGW button with correct accessibility label", () => {
       renderSegmentedToggle("SGW");
 
-      const sgwButton = screen.getByLabelText('Go to Sir George Williams Campus'); 
+      const sgwButton = screen.getByLabelText(
+        "Go to Sir George Williams Campus",
+      );
       expect(sgwButton).toBeTruthy();
     });
 
     it("should have Loyola button with correct accessibility label", () => {
       renderSegmentedToggle("SGW");
 
-      const loyolaButton = screen.getByLabelText('Go to Loyola Campus'); 
+      const loyolaButton = screen.getByLabelText("Go to Loyola Campus");
       expect(loyolaButton).toBeTruthy();
     });
 

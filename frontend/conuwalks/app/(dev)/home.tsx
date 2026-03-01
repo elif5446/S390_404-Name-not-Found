@@ -12,7 +12,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
 import CampusMap from "@/src/components/CampusMap";
 import StatusGradient from "@/src/components/StatusGradient";
-import { SegmentedToggle } from "@/src/components/SegmentedToggle";
+import SegmentedToggle from "@/src/components/SegmentedToggle";
 import { clearTokens, getUserInfo } from "@/src/utils/tokenStorage";
 import { styles } from "@/src/styles/home";
 import { BlurView } from "expo-blur";

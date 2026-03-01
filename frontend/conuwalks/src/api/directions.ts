@@ -170,7 +170,9 @@ const isRoutesBlockedError = (message: string): boolean => {
     normalized.includes("routes.googleapis.com") ||
     normalized.includes("google.maps.routing.v2.routes.computeroutes") ||
     normalized.includes("routes api has not been used") ||
-    normalized.includes("method google.maps.routing.v2.routes.computeroutes are blocked")
+    normalized.includes(
+      "method google.maps.routing.v2.routes.computeroutes are blocked",
+    )
   );
 };
 
@@ -178,7 +180,8 @@ const stripHtml = (input: string | undefined): string => {
   if (!input) {
     return "Continue";
   }
-  return input.replace(/<[^>]*>/g, "").trim() || "Continue";
+  // prevent ReDoS flags
+  return input.replace(/<[^>]{0,1000}>/g, "").trim() || "Continue";
 };
 
 const toLatLng = (
@@ -191,20 +194,16 @@ const toLatLng = (
         lat?: number;
         lng?: number;
       }
-    | undefined
+    | undefined,
 ): LatLng | undefined => {
   if (!value) {
     return undefined;
   }
 
   const latitude =
-    "latitude" in value
-      ? value.latitude
-      : (value as { lat?: number }).lat;
+    "latitude" in value ? value.latitude : (value as { lat?: number }).lat;
   const longitude =
-    "longitude" in value
-      ? value.longitude
-      : (value as { lng?: number }).lng;
+    "longitude" in value ? value.longitude : (value as { lng?: number }).lng;
 
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
     return undefined;
@@ -219,7 +218,7 @@ const toLatLng = (
 const fetchLegacyDirections = async (
   start: LatLng,
   destination: LatLng,
-  mode: "walking" | "driving" | "transit" | "bicycling"
+  mode: "walking" | "driving" | "transit" | "bicycling",
 ): Promise<RouteData[]> => {
   const origin = `${start.latitude},${start.longitude}`;
   const destinationValue = `${destination.latitude},${destination.longitude}`;
@@ -241,7 +240,7 @@ const fetchLegacyDirections = async (
   if (!response.ok) {
     throw new Error(
       data.error_message ||
-        `Directions API request failed with status ${response.status}`
+        `Directions API request failed with status ${response.status}`,
     );
   }
 
@@ -250,7 +249,7 @@ const fetchLegacyDirections = async (
       data.error_message ||
         (data.status === "ZERO_RESULTS"
           ? "No route found between these locations"
-          : `Directions API error: ${data.status}`)
+          : `Directions API error: ${data.status}`),
     );
   }
 
@@ -306,7 +305,7 @@ const fetchLegacyDirections = async (
 export const getDirections = async (
   start: LatLng | null,
   destination: LatLng | null,
-  mode: "walking" | "driving" | "transit" | "bicycling"
+  mode: "walking" | "driving" | "transit" | "bicycling",
 ): Promise<RouteData[]> => {
   // Validate inputs
   if (!start) {
@@ -380,7 +379,7 @@ export const getDirections = async (
     if (!response.ok) {
       throw new Error(
         data.error?.message ||
-          `Routes API request failed with status ${response.status}`
+          `Routes API request failed with status ${response.status}`,
       );
     }
 
@@ -415,7 +414,8 @@ export const getDirections = async (
           transitHeadsign: step.transitDetails?.headsign,
           transitDepartureStop:
             step.transitDetails?.stopDetails?.departureStop?.name,
-          transitArrivalStop: step.transitDetails?.stopDetails?.arrivalStop?.name,
+          transitArrivalStop:
+            step.transitDetails?.stopDetails?.arrivalStop?.name,
         }));
 
         return {

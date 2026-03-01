@@ -4,7 +4,6 @@ import {
   View,
   Text,
   ActivityIndicator,
-  useColorScheme,
   TouchableOpacity,
 } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
