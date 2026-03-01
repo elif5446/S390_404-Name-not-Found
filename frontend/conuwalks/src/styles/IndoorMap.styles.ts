@@ -5,7 +5,7 @@ const { width } = Dimensions.get("window");
 export const THEME = {
   background: "#F2F2F7", // iOS System Gray 6
   text: "#1C1C1E",
-  primary: "#b03060",
+  primary: "#B03060",
   secondary: "#912F40",
   white: "#FFFFFF",
   errorBg: "#ffcccc",
