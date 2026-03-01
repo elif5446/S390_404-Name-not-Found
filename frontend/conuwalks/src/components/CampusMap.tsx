@@ -36,6 +36,7 @@ import AdditionalInfoPopup, {
   AdditionalInfoPopupHandle,
 } from "./AdditionalInfoPopup";
 import DestinationPopup, { DestinationPopupHandle } from "./DestinationPopup";
+import RightControlsPanel from "./RightControlsPanel";
 
 import { useUserLocation } from "@/src/hooks/useUserLocation";
 import { useDirections } from "@/src/context/DirectionsContext";
@@ -79,6 +80,8 @@ interface CampusMapProps {
     longitude: number;
   };
   onInfoPopupExpansionChange?: (isExpanded: boolean) => void;
+  userInfo?: any;
+  onSignOut?: () => void;
 }
 
 interface TransitStopMarker {
@@ -132,6 +135,8 @@ const PlatformIcon = ({
 const CampusMap: React.FC<CampusMapProps> = ({
   initialLocation = { latitude: 45.49599, longitude: -73.57854 },
   onInfoPopupExpansionChange,
+  userInfo,
+  onSignOut,
 }) => {
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme() || "light";
@@ -1183,51 +1188,16 @@ const CampusMap: React.FC<CampusMapProps> = ({
         onClose={handleCloseDestinationPopup}
       />
 
-      {userLocation && !indoorBuildingId && !isInfoPopupExpanded && (
-        <TouchableOpacity
-          onPress={handleLocationPress}
-          activeOpacity={0.85}
-          style={{
-            position: "absolute",
-            right: 16,
-            top: recenterButtonTop,
-            width: 44,
-            height: 44,
-            borderRadius: 22,
-            alignItems: "center",
-            justifyContent: "center",
-            overflow: "hidden",
-            backgroundColor:
-              Platform.OS === "ios"
-                ? "transparent"
-                : colorScheme === "dark"
-                  ? "#2C2C2E"
-                  : "#FFFFFF",
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: Platform.OS === "ios" ? 0.18 : 0.22,
-            shadowRadius: 4,
-            elevation: Platform.OS === "ios" ? 0 : 4,
-            zIndex: 10000,
-          }}
-          accessibilityRole="button"
-          accessibilityLabel="Recenter to your location"
-          accessibilityHint="Moves the map camera back to your current location"
-        >
-          {Platform.OS === "ios" && (
-            <BlurView
-              intensity={35}
-              tint={colorScheme === "dark" ? "dark" : "light"}
-              style={StyleSheet.absoluteFill}
-            />
-          )}
-          <PlatformIcon
-            materialName="navigation"
-            iosName="location.north.fill"
-            size={20}
-            color="#B03060"
-          />
-        </TouchableOpacity>
+      {/* Right Controls Panel: User Profile + Location Recenter */}
+      {userInfo && onSignOut && (
+        <RightControlsPanel
+          userInfo={userInfo}
+          onSignOut={onSignOut}
+          userLocation={userLocation}
+          onLocationPress={handleLocationPress}
+          indoorBuildingId={indoorBuildingId}
+          isInfoPopupExpanded={isInfoPopupExpanded}
+        />
       )}
 
       {locationLoading && (
