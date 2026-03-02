@@ -698,9 +698,7 @@ return (
               : color + "90"
       }
       strokeColor={
-        isSelected
-          ? "rgba(0,0,0,0.20)"
-          : "rgba(0,0,0,0.12)"
+          "rgba(0,0,0,0.12)"
       }
       strokeWidth={1}
       tappable
@@ -711,22 +709,37 @@ return (
     />
 
     {}
-    {isSelected && (
-      <>
-        <Polygon
-          key={`${campus}-${buildingId}-selected`}
-          coordinates={coordinates}
-          fillColor="transparent"
-          strokeColor="#1C1C1E"
-          strokeWidth={5}
-          tappable
-          onPress={() =>
-            handleBuildingPress(buildingId, campus, centerCoordinates)
-          }
-          zIndex={5}
-        />
-      </>
-    )}
+{isSelected && (
+  <>
+    {}
+    <Polygon
+      key={`${campus}-${buildingId}-selected-outer`}
+      coordinates={coordinates}
+      fillColor="transparent"
+      strokeColor="#000000"
+      strokeWidth={6}
+      tappable
+      onPress={() =>
+        handleBuildingPress(buildingId, campus, centerCoordinates)
+      }
+      zIndex={5}
+    />
+
+    {}
+    <Polygon
+      key={`${campus}-${buildingId}-selected-inner`}
+      coordinates={coordinates}
+      fillColor="transparent"
+      strokeColor="#FFFFFF"
+      strokeWidth={2}
+      tappable
+      onPress={() =>
+        handleBuildingPress(buildingId, campus, centerCoordinates)
+      }
+      zIndex={6}
+    />
+  </>
+)}
 
     {}
     {isDestination && !isSelected && (
