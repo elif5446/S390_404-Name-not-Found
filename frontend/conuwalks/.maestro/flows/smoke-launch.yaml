@@ -1,8 +1,11 @@
-appId: ${APP_ID}
+appId: com.conuwalks.app
 tags:
   - smoke
 ---
-- runFlow: ../subflows/setup.yaml
-
+- runFlow: 
+    file: ../subflows/launch.yaml
+    env:
+        USERNAME: "${USERNAME}"
+        PASSWORD: "${PASSWORD}"
 - assertVisible: "Sir George Williams"
 - assertVisible: "Loyola"

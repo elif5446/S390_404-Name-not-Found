@@ -2,13 +2,29 @@ import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react-native";
 import { Platform } from "react-native";
 import SegmentedToggle from "../../components/SegmentedToggle";
+import { DirectionsProvider } from "../../context/DirectionsContext";
+
+jest.mock("../../context/DirectionsContext", () => ({
+  useDirections: jest.fn(() => ({
+    // If toggle calls any specific functions like clearRouteData() when switching campuses,
+    // add them here as jest mock functions so the component doesn't crash when it tries to call them.
+    clearDestination: jest.fn(),
+    resetDirections: jest.fn(),
+  })),
+  // dummy provider so the import is not undefined
+  DirectionsProvider: ({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  ),
+}));
 
 describe("SegmentedToggle Component", () => {
   let mockSetCampus: jest.Mock;
 
   const renderSegmentedToggle = (campus: "SGW" | "Loyola" = "SGW") => {
     return render(
-      <SegmentedToggle campus={campus} setCampus={mockSetCampus} />,
+      <DirectionsProvider>
+        <SegmentedToggle campus={campus} setCampus={mockSetCampus} />
+      </DirectionsProvider>,
     );
   };
 
@@ -103,7 +119,7 @@ describe("SegmentedToggle Component", () => {
       renderSegmentedToggle("SGW");
 
       const sgwButton = screen.getByLabelText(
-        "Switch to Sir George Williams Campus",
+        "Go to Sir George Williams Campus",
       );
       expect(sgwButton).toBeTruthy();
     });
@@ -111,7 +127,7 @@ describe("SegmentedToggle Component", () => {
     it("should have Loyola button with correct accessibility label", () => {
       renderSegmentedToggle("SGW");
 
-      const loyolaButton = screen.getByLabelText("Switch to Loyola Campus");
+      const loyolaButton = screen.getByLabelText("Go to Loyola Campus");
       expect(loyolaButton).toBeTruthy();
     });
 
@@ -163,7 +179,11 @@ describe("SegmentedToggle Component", () => {
 
       expect(mockSetCampus).toHaveBeenCalledWith("Loyola");
 
-      rerender(<SegmentedToggle campus="Loyola" setCampus={mockSetCampus} />);
+      rerender(
+        <DirectionsProvider>
+          <SegmentedToggle campus="Loyola" setCampus={mockSetCampus} />
+        </DirectionsProvider>,
+      );
 
       const loyolaSegmentAfter = screen.getByTestId("segment-1");
       expect(loyolaSegmentAfter.props.accessibilityState.selected).toBe(true);
@@ -177,7 +197,11 @@ describe("SegmentedToggle Component", () => {
 
       expect(mockSetCampus).toHaveBeenCalledWith("SGW");
 
-      rerender(<SegmentedToggle campus="SGW" setCampus={mockSetCampus} />);
+      rerender(
+        <DirectionsProvider>
+          <SegmentedToggle campus="SGW" setCampus={mockSetCampus} />
+        </DirectionsProvider>,
+      );
 
       const sgwSegmentAfter = screen.getByTestId("segment-0");
       expect(sgwSegmentAfter.props.accessibilityState.selected).toBe(true);

@@ -74,18 +74,20 @@ export const clearTokens = async (): Promise<void> => {
   try {
     await AsyncStorage.removeItem(TOKEN_KEY);
     await AsyncStorage.removeItem(USER_INFO_KEY);
-    console.log('Local tokens and user info cleared');
-    
+    console.log("Local tokens and user info cleared");
+
     try {
       await GoogleSignin.signOut();
-      console.log('Google Sign-Out successful');
+      console.log("Google Sign-Out successful");
     } catch (googleError) {
       // the user wasn't signed in, or the native bridge fails, we just log it.
-      console.log('Note: Google Sign-Out threw an error (likely already signed out):', googleError);
+      console.log(
+        "Note: Google Sign-Out threw an error (likely already signed out):",
+        googleError,
+      );
     }
-    
   } catch (error) {
-    console.error('Error clearing tokens:', error);
+    console.error("Error clearing tokens:", error);
   }
 };
 

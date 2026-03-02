@@ -1,0 +1,6 @@
+appId: com.conuwalks.app
+---
+- swipe:
+    start: 50%, 40%
+    end: 50%, 100%
+    duration: 100

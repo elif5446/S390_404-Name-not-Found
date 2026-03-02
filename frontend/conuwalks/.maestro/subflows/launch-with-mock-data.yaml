@@ -1,0 +1,13 @@
+appId: com.conuwalks.app
+---
+- launchApp:
+    clearState: true
+    permissions:
+      all: allow
+    arguments:
+      isMockCalendarEnabled: true
+- runFlow: 
+    file: ../subflows/setup.yaml
+    env:
+        USERNAME: "${USERNAME}"
+        PASSWORD: "${PASSWORD}"

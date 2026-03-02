@@ -21,6 +21,33 @@ import MapContent from "./IndoorMap";
 import FloorPicker from "./FloorPicker";
 import { styles } from "@/src/styles/IndoorMap.styles";
 
+const calculateGeographicHeight = (
+  bounds:
+    | {
+        northEast: { latitude: number; longitude: number };
+        southWest: { latitude: number; longitude: number };
+      }
+    | undefined,
+  screenWidth: number,
+  screenHeight: number,
+): number => {
+  if (!bounds) return screenHeight;
+
+  const { northEast, southWest } = bounds;
+  const latDiff = Math.abs(northEast.latitude - southWest.latitude);
+  const lonDiff = Math.abs(northEast.longitude - southWest.longitude);
+
+  if (latDiff < 0.00001 || lonDiff < 0.00001) return screenHeight;
+
+  // Adjust longitude for latitude (Geographic projection correction)
+  const latRadians = (northEast.latitude * Math.PI) / 180;
+  const lonScale = Math.cos(latRadians);
+  const geographicRatio = (lonDiff * lonScale) / latDiff;
+
+  const calculatedHeight = screenWidth / geographicRatio;
+  return isFinite(calculatedHeight) ? calculatedHeight : screenHeight;
+};
+
 interface Props {
   buildingData: BuildingIndoorConfig;
   onExit: () => void;
@@ -29,7 +56,6 @@ interface Props {
 const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
   const { width, height } = useWindowDimensions();
   const [currentLevel, setCurrentLevel] = useState(buildingData.defaultFloor);
-  const [isSwitching, setIsSwitching] = useState(false);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const zoomRef = useRef<ReactNativeZoomableView>(null);
@@ -42,23 +68,10 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
 
   // calculate Aspect Ratio strictly based on Geodata
   // returns a safe height or defaults to screen height if data is missing
-  const contentHeight = useMemo(() => {
-    if (!activeFloor || !activeFloor.bounds) return height;
-
-    const { northEast, southWest } = activeFloor.bounds;
-    const latDiff = Math.abs(northEast.latitude - southWest.latitude);
-    const lonDiff = Math.abs(northEast.longitude - southWest.longitude);
-
-    if (latDiff < 0.00001 || lonDiff < 0.00001) return height;
-
-    // adjust longitude for latitude (Geographic projection correction)
-    const latRadians = (northEast.latitude * Math.PI) / 180;
-    const lonScale = Math.cos(latRadians);
-    const geographicRatio = (lonDiff * lonScale) / latDiff;
-
-    const calculatedHeight = width / geographicRatio;
-    return isFinite(calculatedHeight) ? calculatedHeight : height;
-  }, [activeFloor, width, height]);
+  const contentHeight = useMemo(
+    () => calculateGeographicHeight(activeFloor?.bounds, width, height),
+    [activeFloor, width, height],
+  );
 
   // inital fade in
   useEffect(() => {
@@ -72,39 +85,35 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
 
     return () => {
       isMounted.current = false;
-      fadeAnim.stopAnimation();
     };
   }, [fadeAnim]);
 
   // floor transtion
+  useEffect(() => {
+    if (!isMounted.current) return;
+
+    zoomRef.current?.zoomTo(1);
+
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 250,
+      useNativeDriver: true,
+    }).start();
+  }, [currentLevel, fadeAnim]);
+
   const handleFloorChange = useCallback(
     (level: number) => {
       if (level === currentLevel) return;
-
-      fadeAnim.stopAnimation();
-      setIsSwitching(true);
 
       Animated.timing(fadeAnim, {
         toValue: 0,
         duration: 150,
         useNativeDriver: true,
       }).start(({ finished }) => {
-        if (!finished || !isMounted.current) return;
-        setCurrentLevel(level);
-
-        requestAnimationFrame(() => {
-          if (!isMounted.current) return;
-          zoomRef.current?.zoomTo(1);
-          Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 250,
-            useNativeDriver: true,
-          }).start(({ finished: fadeInFinished }) => {
-            if (fadeInFinished && isMounted.current) {
-              setIsSwitching(false);
-            }
-          });
-        });
+        // once the old map is entirely invisible, swap the state data
+        if (finished && isMounted.current) {
+          setCurrentLevel(level);
+        }
       });
     },
     [currentLevel, fadeAnim],
@@ -147,8 +156,16 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
       </View>
 
       <SafeAreaView style={styles.headerWrapper} edges={["top"]}>
-        <View style={styles.headerContent}>
-          <Text style={styles.buildingTitle} numberOfLines={1}>
+        <View
+          style={styles.headerContent}
+          accessible={true}
+          accessibilityLabel={`${buildingData.name} Floor ${activeFloor.label}`}
+        >
+          <Text
+            style={styles.buildingTitle}
+            numberOfLines={1}
+            accessibilityRole="header"
+          >
             {buildingData.name}
           </Text>
           <View style={styles.floorBadge}>

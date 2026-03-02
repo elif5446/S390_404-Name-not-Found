@@ -2,6 +2,22 @@ import { useState, useEffect } from "react";
 import { GoogleCalendarApi, CalendarEvent } from "../api/calendarApi";
 import { getTokens, isTokenValid } from "../utils/tokenStorage";
 
+import { LaunchArguments } from "react-native-launch-arguments";
+import { MOCK_CALENDAR_EVENTS } from "../_tests_/mock/mockCalendarData";
+
+const checkIsMockEnv = () => {
+  if (process.env.EXPO_PUBLIC_MOCK_CALENDAR === "true") {
+    return true;
+  }
+
+  try {
+    const isMock = LaunchArguments.value().isMockCalendarEnabled;
+    return !!isMock;
+  } catch (e) {
+    return false;
+  }
+};
+
 export const useGoogleCalendar = () => {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [calendars, setCalendars] = useState<any[]>([]);
@@ -9,17 +25,23 @@ export const useGoogleCalendar = () => {
   const [error, setError] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+  const isMock = checkIsMockEnv();
+
   // Check authentication status on mount
   useEffect(() => {
-    checkAuthStatus();
+    const checkAuthStatus = async () => {
+      const tokens = await getTokens();
+      setIsAuthenticated(!!tokens && isTokenValid(tokens));
+    };
+
+    if (!isMock) {
+      checkAuthStatus();
+    }
   }, []);
 
-  const checkAuthStatus = async () => {
-    const tokens = await getTokens();
-    setIsAuthenticated(!!tokens && isTokenValid(tokens));
-  };
-
   const getApiInstance = async (): Promise<GoogleCalendarApi | null> => {
+    if (isMock) return null;
+
     const tokens = await getTokens();
     if (!tokens || !isTokenValid(tokens)) {
       setError("Not authenticated or token expired");
@@ -34,6 +56,12 @@ export const useGoogleCalendar = () => {
     setError(null);
 
     try {
+      if (isMock) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        setEvents(MOCK_CALENDAR_EVENTS as CalendarEvent[]);
+        return;
+      }
+
       const api = await getApiInstance();
       if (!api) return;
 
@@ -52,6 +80,12 @@ export const useGoogleCalendar = () => {
     setError(null);
 
     try {
+      if (isMock) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        setCalendars([{ id: "primary", summary: "Mock Primary Calendar" }]);
+        return;
+      }
+
       const api = await getApiInstance();
       if (!api) return;
 
@@ -75,6 +109,11 @@ export const useGoogleCalendar = () => {
     setError(null);
 
     try {
+      if (isMock) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        return { ...event, id: `mock-id-${Date.now()}` } as CalendarEvent;
+      }
+
       const api = await getApiInstance();
       if (!api) return null;
 
@@ -98,6 +137,11 @@ export const useGoogleCalendar = () => {
     setError(null);
 
     try {
+      if (isMock) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        return true;
+      }
+
       const api = await getApiInstance();
       if (!api) return false;
 

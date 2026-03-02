@@ -1,0 +1,36 @@
+appId: com.conuwalks.app
+---
+- runFlow: 
+    file: ../subflows/launch-with-mock-data.yaml
+    env:
+        USERNAME: "${USERNAME}"
+        PASSWORD: "${PASSWORD}"
+
+- doubleTapOn:
+    point: 50%, 50%
+
+- waitForAnimationToEnd
+
+- tapOn:
+    point: 45%, 30%
+- waitForAnimationToEnd
+- assertVisible: "Henry F. Hall Building.*"
+- runFlow: ../subflows/expand-info-popup.yaml
+- assertVisible: "Schedule"
+- extendedWaitUntil:
+    visible: "SOEN 390 - Software Engineering.*"
+    timeout: 3000
+- assertVisible: "Room 820" 
+
+# add when routing is merged
+# - tapOn: "SOEN 390 - Software Engineering Team Project"
+# - tapOn: "Get Directions"
+
+# - tapOn: "Cancel Route"
+# - tapOn: "✕"
+
+# - tapOn:
+#     point: 10%, 15%
+
+# - assertVisible: "COMP 346 - Operating Systems.*"
+# - assertVisible: "Room S1.230"

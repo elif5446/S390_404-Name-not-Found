@@ -1,0 +1,40 @@
+appId: com.conuwalks.app
+---
+- runFlow: 
+    file: ../subflows/launch.yaml
+    env:
+        USERNAME: "${USERNAME}"
+        PASSWORD: "${PASSWORD}"
+
+- doubleTapOn:
+    point: 50%, 50%
+- waitForAnimationToEnd
+
+
+- longPressOn:
+    point: 45%, 30%
+- waitForAnimationToEnd:
+    timeout: 5000
+
+- assertVisible: "Hall Building Floor.*"
+- tapOn: "9"
+- waitForAnimationToEnd
+- assertVisible: "Hall Building Floor 9"
+- tapOn: "8"
+- waitForAnimationToEnd
+- assertVisible: "Hall Building Floor 8"
+- tapOn: "Exit"
+- waitForAnimationToEnd
+
+- longPressOn:
+    point: 45%, 63%
+- waitForAnimationToEnd:
+    timeout: 5000
+- assertVisible: "John Molson Building Floor.*"
+- tapOn: "1"
+- waitForAnimationToEnd
+- assertVisible: "John Molson Building Floor 1"
+- tapOn: "S1"
+- waitForAnimationToEnd
+- assertVisible: "John Molson Building Floor S1"
+- tapOn: "Exit"

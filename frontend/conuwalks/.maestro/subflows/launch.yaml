@@ -1,0 +1,11 @@
+appId: com.conuwalks.app
+---
+- launchApp:
+    clearState: true
+    permissions:
+      all: allow
+- runFlow: 
+    file: ../subflows/setup.yaml
+    env:
+        USERNAME: "${USERNAME}"
+        PASSWORD: "${PASSWORD}"
