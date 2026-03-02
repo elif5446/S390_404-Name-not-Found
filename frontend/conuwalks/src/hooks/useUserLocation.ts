@@ -11,19 +11,15 @@ interface UseUserLocationReturn {
 
 const DEFAULT_LOCATION: LatLng = { latitude: 45.49559, longitude: -73.57871 };
 
-// helper to detect if the location is the default simulated location
-const isEmulatorLocation = (coords: Location.LocationObject["coords"]) => {
+const isEmulatorLocation = (coords: Location.LocationObjectCoords) => {
   return (
-    // Googleplex
     (Math.abs(coords.latitude - 37.42) < 0.1 &&
       Math.abs(coords.longitude - -122.08) < 0.1) ||
-    // Apple HQ
     (Math.abs(coords.latitude - 37.33) < 0.1 &&
       Math.abs(coords.longitude - -122.03) < 0.1)
   );
 };
 
-// helper to clean coordinates
 const processCoords = (coords: Location.LocationObjectCoords): LatLng => {
   if (__DEV__ && isEmulatorLocation(coords)) {
     return DEFAULT_LOCATION;
@@ -43,37 +39,39 @@ export const useUserLocation = (): UseUserLocationReturn => {
   useEffect(() => {
     let isMounted = true;
 
-    const startLocationTracking = async () => {
+    const requestLocationPermission = async () => {
+      let canUseLocation = false;
+
       try {
-        // request permissions
         const { status } = await Location.requestForegroundPermissionsAsync();
 
-        if (!isMounted) return;
-
         if (status !== "granted") {
-          setError("Location permission denied");
-          setHasPermission(false);
-          setLoading(false);
+          if (isMounted) {
+            setError("Location permission denied");
+            setHasPermission(false);
+            setLoading(false);
+          }
           return;
         }
 
-        setHasPermission(true);
+        if (isMounted) {
+          setHasPermission(true);
+          canUseLocation = true; // Mark as safe to fallback later
+        }
 
-        // get cached location immediately
         const lastKnown = await Location.getLastKnownPositionAsync();
         if (isMounted && lastKnown) {
           setLocation(processCoords(lastKnown.coords));
-          // we have data, so stop loading spinner immediately
           setLoading(false);
+          setError(null);
         }
 
         // start watching
-        // 'Balanced' is sufficient for buildings and prevents timeout errors indoors
-        locationSubscription.current = await Location.watchPositionAsync(
+        const subscription = await Location.watchPositionAsync(
           {
-            accuracy: Location.Accuracy.Balanced,
+            accuracy: Location.Accuracy.High,
             timeInterval: 5000, // update every 5 seconds max
-            distanceInterval: 10, // update every 10 meters
+            distanceInterval: 5, // update every 5 meters
           },
           (newLocation) => {
             if (isMounted) {
@@ -83,19 +81,36 @@ export const useUserLocation = (): UseUserLocationReturn => {
             }
           },
         );
+
+        // Prevent memory leak if unmounted while the promise was pending
+        if (!isMounted) {
+          subscription.remove();
+        } else {
+          locationSubscription.current = subscription;
+        }
       } catch (err) {
+        console.error("Location error:", err);
         if (isMounted) {
-          console.warn("Location service error:", err);
-          // fallback to default if we actually hit an error
-          setError("Could not fetch location");
+          setError("Failed to retrieve location");
+        }
+      } finally {
+        if (isMounted) {
           setLoading(false);
+          // fallback for development if we somehow have permission but no location yet
+          if (canUseLocation) {
+            setLocation((prev) => {
+              if (!prev && __DEV__) {
+                return DEFAULT_LOCATION;
+              }
+              return prev;
+            });
+          }
         }
       }
     };
 
-    startLocationTracking();
+    requestLocationPermission();
 
-    // cleanup: Unsubscribe when component unmounts
     return () => {
       isMounted = false;
       locationSubscription.current?.remove();

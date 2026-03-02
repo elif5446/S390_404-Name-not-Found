@@ -25,6 +25,7 @@ const styles = StyleSheet.create({
     borderRadius: 100,
     overflow: 'hidden', 
   },
+  segmentedAndroid: {},
   shadowAndroid: {
     width: '90%',
     alignSelf: 'center',

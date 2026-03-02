@@ -1,3 +1,4 @@
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
   GoogleSignin,
   statusCodes,
@@ -10,9 +11,8 @@ import {
   ActivityIndicator,
   Image,
   Linking,
-  Platform
+  Platform,
 } from "react-native";
-import React, { useEffect, useState, useRef } from "react";
 import {
   saveTokens,
   saveUserInfo,
@@ -38,41 +38,23 @@ export default function GoogleCalendarAuth({
   const instanceId = useRef(Math.random().toString(36).substring(7));
   const hasNavigated = useRef(false);
 
-  useEffect(() => {
-    console.log(`GoogleCalendarAuth [${instanceId.current}] MOUNTED`);
-    isMounted.current = true;
-
-    // Only initialize if not already started globally
-    if (!globalInitializationStarted) {
-      globalInitializationStarted = true;
-      console.log(`[${instanceId.current}] Starting initialization...`);
-      initializeGoogleSignin();
-    } else {
-      console.log(
-        `[${instanceId.current}] Initialization already started by another instance, waiting...`,
-      );
-
-      setTimeout(() => {
-        if (isMounted.current && !isAutoLoggingIn) {
-          setIsInitialized(true);
-        }
-      }, 100);
-    }
-
-    return () => {
-      console.log(`GoogleCalendarAuth [${instanceId.current}] UNMOUNTED`);
-      isMounted.current = false;
-    };
-  }, []);
-
-  const initializeGoogleSignin = async () => {
+  const initializeGoogleSignin = useCallback(async () => {
     try {
       console.log(`[${instanceId.current}] Initializing Google Sign-In...`);
 
-      // Configure Google Sign-In
-      await GoogleSignin.configure({
-        webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-        iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
+      const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+      const iosClientId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+
+      if (!webClientId || !iosClientId) {
+        console.warn(
+          `[${instanceId.current}] WARNING: Google Client IDs are missing from environment variables. Sign-in will fail if attempted.`,
+        );
+      }
+
+      // Configure Google Sign-In with fallbacks to prevent native module crashes
+      GoogleSignin.configure({
+        webClientId: webClientId || "",
+        iosClientId: iosClientId || "",
         scopes: ["https://www.googleapis.com/auth/calendar.readonly"],
       });
 
@@ -90,7 +72,7 @@ export default function GoogleCalendarAuth({
         );
 
         // Check if user is still signed in with Google
-        const currentUser = await GoogleSignin.getCurrentUser();
+        const currentUser = GoogleSignin.getCurrentUser();
         console.log(
           `[${instanceId.current}] Current user from Google:`,
           !!currentUser,
@@ -104,8 +86,18 @@ export default function GoogleCalendarAuth({
           // Show auto-login loading state
           setIsAutoLoggingIn(true);
 
+          const userData =
+            "user" in currentUser ? currentUser.user : currentUser;
+          const mappedUserInfo = {
+            id: (userData as any).id || (userData as any).userId || "",
+            name:
+              (userData as any).name || (userData as any).displayName || "User",
+            email: (userData as any).email || "",
+            photo: (userData as any).photo || (userData as any).photoUrl || "",
+          };
+
           // Save user info
-          await saveUserInfo(currentUser);
+          await saveUserInfo(mappedUserInfo);
           console.log(`[${instanceId.current}] User info saved`);
 
           // Small delay to ensure everything is saved
@@ -144,7 +136,34 @@ export default function GoogleCalendarAuth({
         setIsInitialized(true);
       }
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    console.log(`GoogleCalendarAuth [${instanceId.current}] MOUNTED`);
+    isMounted.current = true;
+
+    // Only initialize if not already started globally
+    if (!globalInitializationStarted) {
+      globalInitializationStarted = true;
+      console.log(`[${instanceId.current}] Starting initialization...`);
+      initializeGoogleSignin();
+    } else {
+      console.log(
+        `[${instanceId.current}] Initialization already started by another instance, waiting...`,
+      );
+
+      setTimeout(() => {
+        if (isMounted.current && !isAutoLoggingIn) {
+          setIsInitialized(true);
+        }
+      }, 100);
+    }
+
+    return () => {
+      console.log(`GoogleCalendarAuth [${instanceId.current}] UNMOUNTED`);
+      isMounted.current = false;
+    };
+  }, [initializeGoogleSignin, isAutoLoggingIn]);
 
   const signIn = async () => {
     try {
@@ -301,7 +320,7 @@ export default function GoogleCalendarAuth({
 
       <View
         style={{
-          backgroundColor: Platform.OS === 'ios' ? "#B03060CC" : "#feeded",
+          backgroundColor: Platform.OS === "ios" ? "#B03060CC" : "#feeded",
           borderRadius: 20,
         }}
       >
@@ -313,7 +332,7 @@ export default function GoogleCalendarAuth({
           }
           disabled={isSigninInProgress}
           onPress={signIn}
-          color={Platform.OS === 'ios' ? "#feeded" : "#B03060CC"}
+          color={Platform.OS === "ios" ? "#feeded" : "#B03060CC"}
         />
       </View>
 
