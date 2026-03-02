@@ -92,7 +92,7 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
             setStartPointText(stableStartPointText);
         }
     }
-    const enterDestination = (forcedText: string | null = null) => {
+    const enterDestination = () => {
         setDestinationIsHidden(null);
         const newDestination = processDestinationSearch(destinationText, events);
         if (newDestination) {
