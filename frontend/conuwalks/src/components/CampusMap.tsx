@@ -72,7 +72,16 @@ const distanceMetersBetween = (pointA: LatLng, pointB: LatLng): number => {
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return earthRadius * c;
 };
+const SELECTED_RING_OUTER = "#1C1C1E"; // charcoal (premium, works on all pastels)
+const SELECTED_RING_INNER = "#FFFFFF";
 
+const DESTINATION_RING = "#FFFFFF";
+
+const SELECTED_OUTER_WIDTH = 10;
+const SELECTED_INNER_WIDTH = 4;
+
+const DESTINATION_OUTER_WIDTH = 8;
+const DESTINATION_INNER_WIDTH = 4;
 interface CampusMapProps {
   initialLocation?: {
     latitude: number;
@@ -666,64 +675,76 @@ const CampusMap: React.FC<CampusMapProps> = ({
           const isSelected =
             selectedBuilding.visible && selectedBuilding.name === buildingId;
           const isDestination = destinationBuildingId === buildingId;
-          const isHighlighted = isDestination || isSelected;
-
+          const hasSelection = selectedBuilding.visible && !!selectedBuilding.name;
+          const dimOthers = hasSelection && !isSelected; // dim everything except selected
           // Calculate center point of building for directions
           const centerCoordinates = calculatePolygonCenter(coordinates);
           const markerKey = `${campus}-${buildingId}`;
 
-          return (
-            <React.Fragment key={buildingId}>
-              {isHighlighted && (
-                <Polygon
-                  key={`${campus}-${buildingId}-highlight`}
-                  coordinates={coordinates}
-                  fillColor={color + "90"} // add transparency
-                  strokeColor={color}
-                  strokeWidth={7}
-                  tappable={true}
-                  onPress={() =>
-                    handleBuildingPress(buildingId, campus, centerCoordinates)
-                  }
-                  importantForAccessibility="no-hide-descendants"
-                  accessibilityLabel={name}
-                  accessibilityRole="button"
-                  zIndex={1}
-                />
-              )}
-              {isHighlighted && (
-                <Polygon
-                  coordinates={coordinates}
-                  fillColor="transparent"
-                  strokeColor="#FFFFFFE6"
-                  strokeWidth={2}
-                  tappable
-                  onPress={() =>
-                    handleBuildingPress(buildingId, campus, centerCoordinates)
-                  }
-                  zIndex={2}
-                />
-              )}
+          
+return (
+  <React.Fragment key={buildingId}>
+    {}
+    <Polygon
+      key={`${campus}-${buildingId}-base`}
+      coordinates={coordinates}
+      fillColor={
+        isSelected
+          ? color + "F0"
+          : isDestination
+            ? color + "C8"
+            : dimOthers
+              ? color + "55"
+              : color + "90"
+      }
+      strokeColor={
+        isSelected
+          ? "rgba(0,0,0,0.20)"
+          : "rgba(0,0,0,0.12)"
+      }
+      strokeWidth={1}
+      tappable
+      onPress={() => handleBuildingPress(buildingId, campus, centerCoordinates)}
+      accessibilityLabel={name}
+      accessibilityRole="button"
+      zIndex={3}
+    />
 
-              <Polygon
-                coordinates={coordinates}
-                fillColor={
-                  isDestination
-                    ? color + "C8"
-                    : isSelected
-                      ? color + "BE"
-                      : color + "90"
-                } // mostly opaque
-                strokeColor={isHighlighted ? "#FFFFFF" : color}
-                strokeWidth={isHighlighted ? 2 : 1}
-                tappable
-                onPress={() =>
-                  handleBuildingPress(buildingId, campus, centerCoordinates)
-                }
-                accessibilityLabel={name}
-                accessibilityRole="button"
-                zIndex={3}
-              />
+    {}
+    {isSelected && (
+      <>
+        <Polygon
+          key={`${campus}-${buildingId}-selected`}
+          coordinates={coordinates}
+          fillColor="transparent"
+          strokeColor="#1C1C1E"
+          strokeWidth={5}
+          tappable
+          onPress={() =>
+            handleBuildingPress(buildingId, campus, centerCoordinates)
+          }
+          zIndex={5}
+        />
+      </>
+    )}
+
+    {}
+    {isDestination && !isSelected && (
+      <Marker
+        key={`${campus}-${buildingId}-dest-pin`}
+        coordinate={centerCoordinates}
+        anchor={{ x: 0.5, y: 1 }}
+        zIndex={1000}
+        onPress={() =>
+          handleBuildingPress(buildingId, campus, centerCoordinates)
+        }
+        accessibilityLabel={`${name} destination`}
+        accessibilityRole="button"
+      >
+        <MaterialIcons name="place" size={26} color="#B03060" />
+      </Marker>
+    )}
+
 
               <Marker
                 ref={(markerRef) => {
@@ -737,7 +758,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
                 }
                 zIndex={200}
                 tracksViewChanges={true}
-                // tracksViewChanges={false}
                 title={name}
                 importantForAccessibility="yes"
                 accessibilityLabel={name}
