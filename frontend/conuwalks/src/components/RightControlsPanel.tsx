@@ -55,6 +55,14 @@ const RightControlsPanel: React.FC<Props> = ({
         alignItems: "center",
       }}
     >
+    {/* Close button on profile popup */}
+          <TouchableOpacity
+            onPress={() => setIsProfileExpanded(false)}
+            style={{ alignSelf: 'flex-end', marginBottom: -10, zIndex: 1 }}
+          >
+            <MaterialIcons name="close" size={20} color={mode === "dark" ? "#FFFFFF" : "#333333"} />
+          </TouchableOpacity>
+
       {userInfo?.photo ? (
         <Image
           source={{ uri: userInfo.photo }}
@@ -129,11 +137,13 @@ const RightControlsPanel: React.FC<Props> = ({
         <View
           style={{
             position: "absolute",
-            right: 0,
+            right: 53,
             top: 0,
             bottom: 0,
             left: 0,
-            zIndex: 999,
+            overflow: "hidden",
+           // zIndex: 100002,
+
           }}
           pointerEvents="box-none"
         >
@@ -143,7 +153,7 @@ const RightControlsPanel: React.FC<Props> = ({
             onPress={() => setIsProfileExpanded(false)}
             style={{
               flex: 1,
-              backgroundColor: "rgba(0, 0, 0, 0.3)",
+              //backgroundColor: "rgba(0, 0, 0, 0.3)",
             }}
           />
 
@@ -156,12 +166,12 @@ const RightControlsPanel: React.FC<Props> = ({
               borderRadius: 16,
               overflow: "hidden",
               minWidth: 200,
-              zIndex: 9999,
+              //zIndex: 100002,
             }}
-            pointerEvents="box-none"
+            pointerEvents="auto"
           >
             {Platform.OS === "ios" ? (
-              <BlurView intensity={80} tint="extraLight">
+              <BlurView intensity={35} tint="extraLight">
                 {profileContent}
               </BlurView>
             ) : (
@@ -196,13 +206,19 @@ const RightControlsPanel: React.FC<Props> = ({
             width: userIconSize,
             height: userIconSize,
             borderRadius: userIconSize / 2,
-            backgroundColor: mode === "dark" ? "#1C1B1F" : "#FFFFFF",
+            backgroundColor:
+                            Platform.OS === "ios"
+                              ? "transparent"
+                              : mode === "dark"
+                                ? "#2C2C2E"
+                                : "#FFFFFF",
             justifyContent: "center",
             alignItems: "center",
             shadowColor: "#000",
-            shadowOpacity: 0.12,
-            shadowRadius: 8,
-            elevation: 6,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: Platform.OS === "ios" ? 0.18 : 0.22,
+            shadowRadius: 4,
+            elevation: Platform.OS === "ios" ? 0 : 4,
             marginBottom: buttonSpacing,
           }}
           pointerEvents="auto"
@@ -210,6 +226,17 @@ const RightControlsPanel: React.FC<Props> = ({
           accessibilityLabel="Open user profile"
           accessibilityRole="button"
         >
+        {Platform.OS === "ios" && (
+            <BlurView
+                   intensity={35}
+                   tint={mode === "dark" ? "dark" : "light"}
+                   style={{
+                       position: "absolute",
+                       width: "100%",
+                       height: "100%",
+                   }}
+               />
+        )}
           <MaterialIcons name="person" size={24} color="#B03060" />
         </TouchableOpacity>
 
@@ -237,6 +264,7 @@ const RightControlsPanel: React.FC<Props> = ({
               shadowOpacity: Platform.OS === "ios" ? 0.18 : 0.22,
               shadowRadius: 4,
               elevation: Platform.OS === "ios" ? 0 : 4,
+              marginBottom: buttonSpacing,
             }}
             pointerEvents="auto"
             accessible={true}

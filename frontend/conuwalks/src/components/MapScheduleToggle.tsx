@@ -28,30 +28,55 @@ const MapCalendarToggle: React.FC<Props> = ({ selected, onChange, visible = true
   return (
     <View
       style={{
-        position: "absolute",
-        left: "50%",
-        bottom: 24,
-        transform: [{ translateX: -65 }],
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "center",
-        borderRadius: 28,
-        padding: 6,
-        backgroundColor: background,
-        shadowColor: "#000",
-        shadowOpacity: 0.12,
-        shadowRadius: 8,
-        elevation: 6,
-      }}
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 24,
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 10,
+        }}
+      pointerEvents="box-none"
       accessible={true}
       accessibilityRole="tablist"
     >
+    <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          borderRadius: 28,
+          padding: 6,
+          backgroundColor: Platform.OS === "ios" ? "transparent" : background,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: Platform.OS === "ios" ? 0.18 : 0.22,
+          shadowRadius: 4,
+          elevation: Platform.OS === "ios" ? 0 : 4,
+          shadowColor: "#000",
+          shadowOpacity: 0.12,
+          shadowRadius: 8,
+          elevation: 6,
+        }}
+      >
+      {Platform.OS === "ios" && (
+                  <BlurView
+                         intensity={35}
+                         tint={mode === "dark" ? "dark" : "light"}
+                         style={{
+                             position: "absolute",
+                             width: "100%",
+                             height: "100%",
+                         }}
+                     />
+              )}
+
       <TouchableOpacity
         accessibilityRole="button"
         accessibilityState={{ selected: selected === "map" }}
         accessibilityLabel="Map View"
         onPress={() => onChange("map")}
         style={{
+          width: 105,
           paddingVertical: 10,
           paddingHorizontal: 14,
           borderRadius: 22,
@@ -84,6 +109,7 @@ const MapCalendarToggle: React.FC<Props> = ({ selected, onChange, visible = true
         accessibilityLabel="Schedule View"
         onPress={() => onChange("calendar")}
         style={{
+          width: 105,
           marginLeft: 6,
           paddingVertical: 10,
           paddingHorizontal: 14,
@@ -110,6 +136,7 @@ const MapCalendarToggle: React.FC<Props> = ({ selected, onChange, visible = true
           Schedule
         </Text>
       </TouchableOpacity>
+    </View>
     </View>
   );
 };
