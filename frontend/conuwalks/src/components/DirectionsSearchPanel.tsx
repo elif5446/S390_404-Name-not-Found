@@ -159,11 +159,13 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
                             spellCheck={false} 
                             autoCorrect={false}
                             selectionColor="#B03060"
+                            accessibilityLabel="Start Point"
+                            accessibilityHint="Enter the building and optionally the room you are starting from"
                         />
                     </View>
                 }
                 {destinationIsHidden === null && <View style={[styles.listSuggestion, {paddingVertical: 0}]}/>}
-                {destinationIsHidden !== true && <View style={{flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10}}>
+                {destinationIsHidden !== true && <View style={{flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10}} accessible={false}>
                         <SuggestionIcon
                             iosName="pin.fill"
                             androidName="location-on"
@@ -181,6 +183,8 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
                             spellCheck={false} 
                             autoCorrect={false}
                             selectionColor="#B03060"
+                            accessibilityLabel="Destination"
+                            accessibilityHint="Enter the building and optionally the room you are heading to"
                         />
                     </View>
                 }
@@ -196,6 +200,10 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
                                         setStartPointText(startText);
                                         Keyboard.dismiss();
                                     }}
+                                    accessible={true}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`Set the start point to ${startText}`}
+                                    accessibilityHint="Tap to select and enter this location"
                                 >
                                 {suggestion.isLocation && <SuggestionIcon 
                                     iosName="location" 
@@ -206,7 +214,7 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
                                     {startText}
                                 </Text>
                                 {suggestion.buildingName && !suggestion.roomNumber &&
-                                    <TouchableOpacity style={styles.suggestionIconButton} onPress={() => setStartPointText(startText)}>
+                                    <TouchableOpacity style={styles.suggestionIconButton} onPress={() => setStartPointText(startText)} accessible={true} accessibilityRole="button" accessibilityLabel={`Set the searchbar's text to ${startText}`} accessibilityHint="Tap to replace the text input and continue editing">
                                         <SuggestionIcon 
                                             iosName="arrow.up.backward" 
                                             androidName="arrow-outward"
@@ -229,12 +237,16 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
                                     setDestinationText(destText);
                                     Keyboard.dismiss();
                                 }}
+                                accessible={true}
+                                accessibilityRole="button"
+                                accessibilityLabel={`Set the destination to ${destText}`}
+                                accessibilityHint="Tap to select and enter this location"
                             >
                                 <Text style={styles.listSuggestionText}>
                                     {destText}
                                 </Text>
                                 {suggestion.buildingName && !suggestion.roomNumber &&
-                                    <TouchableOpacity style={styles.suggestionIconButton} onPress={() => setDestinationText(destText)}>
+                                    <TouchableOpacity style={styles.suggestionIconButton} onPress={() => setDestinationText(destText)} accessible={true} accessibilityRole="button" accessibilityLabel={`Set the searchbar's text to ${destText}`} accessibilityHint="Tap to replace the text input and continue editing">
                                         <SuggestionIcon 
                                             iosName="arrow.up.backward" 
                                             androidName="arrow-outward"
@@ -262,6 +274,10 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
                                     key={id}
                                     onPress={() => insertStartPointBuildingName(SGWBuildingSearchMetadata[id]?.name ?? id)}
                                     style={[styles.buildingButton, { paddingHorizontal: 10 }]}
+                                    accessible={true}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`Insert ${SGWBuildingSearchMetadata[id]?.name ?? id} into the searchbar where your cursor or text selection is`}
+                                    accessibilityHint="Tap to quickly add the complete name of this building to your start point search"
                                 >
                                     <Text style={[styles.buildingButtonText, {color: BuildingTheme.SGW[id as keyof typeof BuildingTheme.SGW] ?? "#000000"}]}>
                                         {id}
@@ -272,6 +288,10 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
                                     key={id}
                                     onPress={() => insertDestinationBuildingName(LoyolaBuildingSearchMetadata[id]?.name ?? id)}
                                     style={[styles.buildingButton, { paddingHorizontal: 10 }]}
+                                    accessible={true}
+                                    accessibilityRole="button"
+                                    accessibilityLabel={`Insert ${LoyolaBuildingSearchMetadata[id]?.name ?? id} into the searchbar where your cursor or text selection is`}
+                                    accessibilityHint="Tap to quickly add the complete name of this building to your destination search"
                                 >
                                     <Text style={[styles.buildingButtonText, {color: BuildingTheme.LOY[id as keyof typeof BuildingTheme.LOY] ?? "#000000"}]}>
                                         {id}
