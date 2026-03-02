@@ -309,6 +309,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ onNavigateToClass }) => {
                     {event.location && (
                       <TouchableOpacity
                         onPress={() => handleGoToClass(event.location)}
+                        accessibilityLabel={`Maps to ${event.summary}`}
                         style={{
                           marginLeft: 8,
                           padding: 6,

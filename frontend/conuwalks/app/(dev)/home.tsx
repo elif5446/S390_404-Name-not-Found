@@ -13,7 +13,7 @@ import { clearTokens, getUserInfo } from "@/src/utils/tokenStorage";
 import { styles } from "@/src/styles/home";
 import { useDirections } from "@/src/context/DirectionsContext";
 
-import MapCalendarToggle from "@/src/components/MapCalendarToggle";
+import MapScheduleToggle from "@/src/components/MapScheduleToggle";
 import ScheduleView from "@/src/components/ScheduleView";
 
 export default function DevHomeScreen() {
@@ -110,7 +110,7 @@ export default function DevHomeScreen() {
         <SegmentedToggle campus={campus} setCampus={setCampus} />
       )}
       {!isNavigationActive && (
-        <MapCalendarToggle
+        <MapScheduleToggle
           selected={selectedView}
           onChange={(v) => setSelectedView(v)}
           visible={!isInfoPopupVisible}
