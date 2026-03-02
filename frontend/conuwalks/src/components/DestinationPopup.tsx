@@ -15,7 +15,6 @@ import {
   NativeScrollEvent,
 } from "react-native";
 import { BlurView } from "expo-blur";
-import { styles } from "../styles/DestinationPopup";
 import { useDestinationData } from "../hooks/useDestinationData";
 import { useBottomSheet } from "../hooks/useBottomSheet";
 import DestinationHeader from "./DestinationPopupHeader";
@@ -197,7 +196,7 @@ const DestinationPopup = forwardRef<
       </View>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   overlay: {

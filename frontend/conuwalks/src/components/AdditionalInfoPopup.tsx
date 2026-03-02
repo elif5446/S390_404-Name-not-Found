@@ -12,22 +12,17 @@ import {
   useColorScheme,
   Animated,
   ScrollView,
-  BackHandler,
-  AccessibilityInfo
   AccessibilityActionEvent,
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from "react-native";
 import { BlurView } from "expo-blur";
-import { LoyolaBuildingMetadata } from "../data/metadata/LOY.BuildingMetadata";
-import { SGWBuildingMetadata } from "../data/metadata/SGW.BuildingMetaData";
-import { styles, themedStyles } from "@/src/styles/additionalInfoPopup";
+import { styles } from "@/src/styles/additionalInfoPopup";
 import { useBuildingData } from "../hooks/useBuildingData";
 import { useBottomSheet } from "../hooks/useBottomSheet";
 import { useBuildingEvents } from "../hooks/useBuildingEvents";
 import PopupHeader from "./AdditionalInfoPopupHeader";
 import PopupContent from "./AdditionalInfoPopupContent";
-import ScheduleSection from "./ScheduleSection";
 
 export interface AdditionalInfoPopupHandle {
   collapse: () => void;

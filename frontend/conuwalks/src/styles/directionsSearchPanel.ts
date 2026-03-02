@@ -11,7 +11,7 @@ const directionsSearchPanelStyles = StyleSheet.create({
         backgroundColor: Platform.OS === 'android' ? "#FFFFFF" : "transparent",
         borderWidth: Platform.OS === 'android' ? 1 : 0,
         borderColor: 'rgba(0, 0, 0, 0.05)',
-        zIndex: 10010,
+        zIndex: 997,
     },
     blurContainer: {
         borderRadius: 30,

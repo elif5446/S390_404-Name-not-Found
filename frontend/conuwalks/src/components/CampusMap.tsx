@@ -1,4 +1,3 @@
-import CampusPolygons from "@/src/components/polygons";
 import CampusLabels from "@/src/components/campusLabels";
 import RoutePolyline from "@/src/components/RoutePolyline";
 import { CampusConfig } from "@/src/data/campus/campusConfig";
@@ -32,10 +31,6 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { BlurView } from "expo-blur";
 import { SymbolView, SFSymbol } from "expo-symbols";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-import CampusLabels from "@/src/components/campusLabels";
-import RoutePolyline from "@/src/components/RoutePolyline";
-import { CampusConfig } from "@/src/data/campus/campusConfig";
 import AdditionalInfoPopup, {
   AdditionalInfoPopupHandle,
 } from "./AdditionalInfoPopup";
@@ -1262,7 +1257,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
             shadowOpacity: Platform.OS === "ios" ? 0.18 : 0.22,
             shadowRadius: 4,
             elevation: Platform.OS === "ios" ? 0 : 4,
-            zIndex: 10000,
+            zIndex: 998,
           }}
           accessibilityRole="button"
           accessibilityLabel="Recenter to your location"
