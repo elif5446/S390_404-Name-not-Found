@@ -1,15 +1,16 @@
-import { useGoogleCalendar } from "../hooks/useGoogleCalendar";
-import { useBuildingEvents, parseLocation } from "../hooks/useBuildingEvents";
+import { parseLocation, BuildingEvent } from "../hooks/useBuildingEvents";
+import { CalendarEvent } from "../api/calendarApi";
 
 // Current room location
-export const guessRoomLocation = (buildingId: string = '', campus: 'SGW' | 'LOY' = 'SGW'): { buildingCode: string; roomNumber: string; } | null => {
-    if (buildingId) {
-        return guessRoomLocationFromScheduleAndBuilding(buildingId, campus);
+export const guessRoomLocation = (events: CalendarEvent[] | null = null, todayEvents: BuildingEvent[] | null = null): { buildingCode: string; roomNumber: string; } | null => {
+    if (todayEvents) {
+        return guessRoomLocationFromScheduleAndBuilding(todayEvents);
+    } else if (events) {
+        return guessRoomLocationFromSchedule(events);
     }
-    return guessRoomLocationFromSchedule();
+    return null;
 }
-const guessRoomLocationFromSchedule = (): { buildingCode: string; roomNumber: string; } | null => {
-    const { events } = useGoogleCalendar();
+const guessRoomLocationFromSchedule = (events: CalendarEvent[]): { buildingCode: string; roomNumber: string; } | null => {
     const event = events.find(event => {
         const startString = event.start.dateTime || event.start.date;
         if (!startString) return false;
@@ -27,8 +28,7 @@ const guessRoomLocationFromSchedule = (): { buildingCode: string; roomNumber: st
     if (!event?.location) return null;
     return parseLocation(event.location);
 }
-const guessRoomLocationFromScheduleAndBuilding = (buildingId: string, campus: 'SGW' | 'LOY' = 'SGW'): { buildingCode: string; roomNumber: string; } | null => {
-    const { todayEvents } = useBuildingEvents(buildingId, campus);
+const guessRoomLocationFromScheduleAndBuilding = (todayEvents: BuildingEvent[]): { buildingCode: string; roomNumber: string; } | null => {
     const event = todayEvents.find(event => {
         const now = Date.now();
         return now >= +event.start && now <= +event.end + 600000; // 600,000 ms = 10 min
@@ -44,15 +44,15 @@ const guessRoomLocationFromScheduleAndBuilding = (buildingId: string, campus: 'S
 }
 
 // Room the user might be heading to next
-export const guessFutureRoomLocation = (buildingId: string = '', campus: 'SGW' | 'LOY' = 'SGW'): { buildingCode: string; roomNumber: string; } | null => {
-    if (buildingId) {
-        return guessFutureRoomLocationFromScheduleAndBuilding(buildingId, campus);
+export const guessFutureRoomLocation = (events: CalendarEvent[] | null = null, nextEvent: BuildingEvent | null = null): { buildingCode: string; roomNumber: string; } | null => {
+    if (nextEvent) {
+        return guessFutureRoomLocationFromScheduleAndBuilding(nextEvent);
+    } else if (events) {
+        return guessFutureRoomLocationFromSchedule(events);
     }
-    return guessFutureRoomLocationFromSchedule();
+    return null;
 }
-const guessFutureRoomLocationFromSchedule = (): { buildingCode: string; roomNumber: string; } | null => {
-    const { events } = useGoogleCalendar();
-
+const guessFutureRoomLocationFromSchedule = (events: CalendarEvent[]): { buildingCode: string; roomNumber: string; } | null => {
     const now = Date.now();
     const event = events
         .filter(event => +event.start >= now)
@@ -61,9 +61,7 @@ const guessFutureRoomLocationFromSchedule = (): { buildingCode: string; roomNumb
     if (!event?.location) return null;
     return parseLocation(event.location);
 }
-const guessFutureRoomLocationFromScheduleAndBuilding = (buildingId: string, campus: 'SGW' | 'LOY' = 'SGW'): { buildingCode: string; roomNumber: string; } | null => {
-    const { nextEvent } = useBuildingEvents(buildingId, campus);
-
+const guessFutureRoomLocationFromScheduleAndBuilding = (nextEvent: BuildingEvent): { buildingCode: string; roomNumber: string; } | null => {
     const buildingCode = nextEvent?.buildingCode;
     if (!buildingCode) return null;
 

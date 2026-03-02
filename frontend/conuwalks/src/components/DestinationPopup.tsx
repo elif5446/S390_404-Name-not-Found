@@ -647,7 +647,7 @@ const DestinationPopup: React.FC<DestinationPopupProps> = ({
 const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
-    zIndex: 100,
+    zIndex: 10001,
   },
   backdrop: {
     flex: 1,

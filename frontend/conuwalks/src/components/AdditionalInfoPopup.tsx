@@ -27,7 +27,7 @@ import { BlurView } from "expo-blur";
 import { LoyolaBuildingMetadata } from "../data/metadata/LOY.BuildingMetadata";
 import { SGWBuildingMetadata } from "../data/metadata/SGW.BuildingMetaData";
 import { styles, themedStyles } from "../styles/additionalInfoPopup";
-import { useBuildingEvents, BuildingEvent } from "../hooks/useBuildingEvents";
+import { useBuildingEvents } from "../hooks/useBuildingEvents";
 import ScheduleSection from "./ScheduleSection";
 
 interface AdditionalInfoPopupProps {
