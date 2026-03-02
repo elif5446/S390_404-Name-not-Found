@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { GoogleCalendarApi, CalendarEvent } from "../api/calendarApi";
-import { getTokens, isTokenValid } from "../utils/tokenStorage";
+import { getTokens, isTokenValid, saveTokens } from "../utils/tokenStorage";
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
 
 import { LaunchArguments } from "react-native-launch-arguments";
 import { MOCK_CALENDAR_EVENTS } from "../_tests_/mock/mockCalendarData";
@@ -42,6 +43,24 @@ export const useGoogleCalendar = () => {
   const getApiInstance = async (): Promise<GoogleCalendarApi | null> => {
     if (isMock) return null;
 
+    try {
+      // Only try GoogleSignin in non-test environments
+      if (process.env.NODE_ENV !== 'test') {
+        const freshTokens = await GoogleSignin.getTokens();
+        if (freshTokens && freshTokens.accessToken) {
+          // Save the fresh token for future use
+          await saveTokens({
+            accessToken: freshTokens.accessToken,
+            idToken: freshTokens.idToken,
+          });
+          return new GoogleCalendarApi(freshTokens.accessToken);
+        }
+      }
+    } catch (signInError) {
+      // GoogleSignin failed or in test env, try stored tokens
+    }
+
+    // Fallback to stored tokens
     const tokens = await getTokens();
     if (!tokens || !isTokenValid(tokens)) {
       setError("Not authenticated or token expired");

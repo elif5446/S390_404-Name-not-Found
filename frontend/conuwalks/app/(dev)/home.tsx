@@ -1,12 +1,8 @@
 import {
   View,
   StatusBar,
-  Button,
   Alert,
-  Image,
-  Text,
   ActivityIndicator,
-  Platform,
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
@@ -15,8 +11,10 @@ import StatusGradient from "@/src/components/StatusGradient";
 import SegmentedToggle from "@/src/components/SegmentedToggle";
 import { clearTokens, getUserInfo } from "@/src/utils/tokenStorage";
 import { styles } from "@/src/styles/home";
-import { BlurView } from "expo-blur";
 import { useDirections } from "@/src/context/DirectionsContext";
+
+import MapScheduleToggle from "@/src/components/MapScheduleToggle";
+import ScheduleView from "@/src/components/ScheduleView";
 
 export default function DevHomeScreen() {
   const [campus, setCampus] = useState<"SGW" | "Loyola">("SGW");
@@ -24,6 +22,9 @@ export default function DevHomeScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const { isNavigationActive } = useDirections();
+
+  const [isInfoPopupVisible, setIsInfoPopupVisible] = useState(false);
+  const [selectedView, setSelectedView] = useState<"map" | "calendar">("map");
 
   useEffect(() => {
     loadUserInfo();
@@ -63,40 +64,6 @@ export default function DevHomeScreen() {
     ]);
   };
 
-  const content = (
-    <View style={styles.userContainer}>
-      {userInfo?.photo ? (
-        <Image source={{ uri: userInfo.photo }} style={styles.profileImage} />
-      ) : (
-        <View style={[styles.profileImage, styles.placeholderImage]}>
-          <Text style={styles.placeholderText}>
-            {userInfo?.name?.charAt(0) || "U"}
-          </Text>
-        </View>
-      )}
-
-      <View style={styles.userInfo}>
-        {userInfo?.name && (
-          <Text style={styles.userName} numberOfLines={1}>
-            {userInfo.name}
-          </Text>
-        )}
-        <View
-          style={{
-            backgroundColor: Platform.OS === "ios" ? "#B03060CC" : "#feeded",
-            borderRadius: 20,
-          }}
-        >
-          <Button
-            title="Sign Out"
-            onPress={handleSignOut}
-            color={Platform.OS === "ios" ? "#feeded" : "#B03060CC"}
-          />
-        </View>
-      </View>
-    </View>
-  );
-
   if (isLoading) {
     return (
       <View style={styles.container}>
@@ -110,37 +77,44 @@ export default function DevHomeScreen() {
   return (
     <View style={styles.container}>
       <View key={campus} style={styles.mapWrapper}>
-        {campus === "SGW" && (
-          <CampusMap
-            initialLocation={{ latitude: 45.49599, longitude: -73.57854 }}
-          />
+        {selectedView === "map" && (
+          <>
+            {campus === "SGW" && (
+              <CampusMap
+                initialLocation={{ latitude: 45.49599, longitude: -73.57854 }}
+                onInfoPopupExpansionChange={(isExpanded) => {
+                  setIsInfoPopupVisible(isExpanded);
+                }}
+                userInfo={userInfo}
+                onSignOut={handleSignOut}
+              />
+            )}
+            {campus === "Loyola" && (
+              <CampusMap
+                initialLocation={{ latitude: 45.45846, longitude: -73.63999 }}
+                onInfoPopupExpansionChange={(isExpanded) => {
+                  setIsInfoPopupVisible(isExpanded);
+                }}
+                userInfo={userInfo}
+                onSignOut={handleSignOut}
+              />
+            )}
+          </>
         )}
-        {campus === "Loyola" && (
-          <CampusMap
-            initialLocation={{ latitude: 45.45846, longitude: -73.63999 }}
-          />
-        )}
+
+        {selectedView === "calendar" && <ScheduleView onNavigateToClass={() => setSelectedView("map")} />}
       </View>
 
       <StatusGradient />
-      {!isNavigationActive && (
+      {!isNavigationActive && selectedView === "map" && (
         <SegmentedToggle campus={campus} setCampus={setCampus} />
       )}
-
-      {/* User profile and sign out button */}
       {!isNavigationActive && (
-        <View style={styles.glassWrapper}>
-          {(Platform.OS === "ios" && (
-            <BlurView
-              intensity={60}
-              tint="extraLight"
-              style={styles.blurContainer}
-            >
-              {content}
-            </BlurView>
-          )) ||
-            content}
-        </View>
+        <MapScheduleToggle
+          selected={selectedView}
+          onChange={(v) => setSelectedView(v)}
+          visible={!isInfoPopupVisible}
+        />
       )}
 
       <StatusBar
