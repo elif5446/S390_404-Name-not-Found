@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { openNotificationSettings, openAppearanceSettings } from "@/src/utils/openSystemSettings";
 
 const ProfileSection = ({ title, children, mode }: any) => (
   <View style={styles.section}>
@@ -47,13 +48,13 @@ const UserProfileContent = ({ userInfo, onSignOut, mode }: any) => {
       </ProfileSection>
 
       <ProfileSection title="Preferences" mode={mode}>
-        <TouchableOpacity style={styles.row}>
+        <TouchableOpacity style={styles.row} onPress={() => openNotificationSettings()}>
           <MaterialIcons name="notifications-none" size={22} color="#B03060" />
           <Text style={[styles.rowText, { color: textColor }]}>
             Notifications
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.row}>
+        <TouchableOpacity style={styles.row} onPress={() => openAppearanceSettings()}>
           <MaterialIcons name="dark-mode" size={22} color="#B03060" />
           <Text style={[styles.rowText, { color: textColor }]}>Appearance</Text>
         </TouchableOpacity>
