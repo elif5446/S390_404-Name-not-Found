@@ -12,7 +12,7 @@ export interface BuildingEvent {
   courseName: string;
 }
 
-const parseLocation = (location: string = "") => {
+export const parseLocation = (location: string = "") => {
   // bounded quantifier to ensure safe execution times
   const match = location.match(
     /^(?:(?:SGW|LOY)[\s-]{0,10})?([A-Za-z]{1,15})[\s-]{1,10}(.{1,50})$/i,

@@ -1,3 +1,6 @@
+import CampusLabels from "@/src/components/campusLabels";
+import RoutePolyline from "@/src/components/RoutePolyline";
+import { CampusConfig } from "@/src/data/campus/campusConfig";
 import React, {
   useState,
   useRef,
@@ -28,10 +31,6 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { BlurView } from "expo-blur";
 import { SymbolView, SFSymbol } from "expo-symbols";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-import CampusLabels from "@/src/components/campusLabels";
-import RoutePolyline from "@/src/components/RoutePolyline";
-import { CampusConfig } from "@/src/data/campus/campusConfig";
 import AdditionalInfoPopup, {
   AdditionalInfoPopupHandle,
 } from "./AdditionalInfoPopup";
@@ -48,6 +47,7 @@ import { LoyolaBuildingMetadata } from "@/src/data/metadata/LOY.BuildingMetadata
 import { SGWBuildingMetadata } from "@/src/data/metadata/SGW.BuildingMetaData";
 import BuildingTheme from "@/src/styles/BuildingTheme";
 import IndoorMapOverlay from "./indoor/IndoorMapOverlay";
+import DirectionsSearchPanel from "./DirectionsSearchPanel"
 import styles from "@/src/styles/campusMap";
 
 // Convert GeoJSON coordinates to LatLng
@@ -148,7 +148,9 @@ const CampusMap: React.FC<CampusMapProps> = ({
   // Get directions context for destination setting
   const {
     destinationBuildingId,
+    destinationRoom,
     startBuildingId,
+    startRoom,
     startCoords,
     routeData,
     travelMode,
@@ -435,10 +437,16 @@ const CampusMap: React.FC<CampusMapProps> = ({
         )
       : null;
 
+  const [searchPanelHeight, setSearchPanelHeight] = useState(0);
+  useEffect(() => {
+    if (!showDirections || isNavigationActive) {
+      setSearchPanelHeight(0);
+    }
+  }, [showDirections, isNavigationActive]);
+
   const recenterButtonTop =
-    insets.top + (isNavigationActive && routeData ? 118 : 84);
-  const isSheetVisibleForAccessibility =
-    (selectedBuilding.visible && !showDirections) || showDirections;
+    insets.top + (isNavigationActive && routeData ? 118 : 84 + searchPanelHeight);
+  const isSheetVisibleForAccessibility = (selectedBuilding.visible && !showDirections) || showDirections;
 
   const modeLabelMap: Record<
     "walking" | "driving" | "transit" | "bicycling",
@@ -639,6 +647,29 @@ const CampusMap: React.FC<CampusMapProps> = ({
     userLocation?.longitude,
   ]);
 
+  const [userLocationBuildingId, setUserLocationBuildingId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!userLocation) {
+      if (userLocationBuildingId !== null) setUserLocationBuildingId(null);
+      return;
+    }
+    const findBuildingId = (geojson: typeof SGW | typeof LOY) => {
+      const feature = geojson.features.find(item => {
+        const currentFeature = item as GeoJsonFeature;
+        if (currentFeature.geometry.type !== "Polygon") {
+          return false;
+        }
+        const polygonCoords = polygonFromGeoJSON(currentFeature.geometry.coordinates[0]);
+        return isPointInPolygon(userLocation, polygonCoords);
+      });
+      return (feature?.properties as { id?: string } | undefined)?.id ?? null;
+    };
+    const currentId = findBuildingId(SGW) || findBuildingId(LOY);
+    if (currentId !== userLocationBuildingId) {
+      setUserLocationBuildingId(currentId);
+    }
+  }, [userLocation]);
+  
   // memoize the polygon lists so they don't re-calculate on every render
   const { sgwPolygons, loyPolygons } = useMemo(() => {
     const generatePolygons = (geojson: any, campus: "SGW" | "LOY") => {
@@ -1183,6 +1214,24 @@ const CampusMap: React.FC<CampusMapProps> = ({
         onClose={handleCloseDestinationPopup}
       />
 
+
+      {showDirections && !isNavigationActive &&
+        <View
+          onLayout={event => {const { height } = event.nativeEvent.layout; setSearchPanelHeight(height);}}
+          style={{top: insets.top + 63, position: "absolute", left: 20, right: 20}}
+        >
+          <DirectionsSearchPanel
+            startBuildingId={startBuildingId}
+            startRoom={startRoom}
+            setStartPoint={setStartPoint}
+            destinationBuildingId={destinationBuildingId}
+            destinationRoom={destinationRoom}
+            setDestination={setDestination}
+            userLocationBuildingId={userLocationBuildingId}
+          />
+        </View>
+      }
+
       {userLocation && !indoorBuildingId && !isInfoPopupExpanded && (
         <TouchableOpacity
           onPress={handleLocationPress}
@@ -1208,7 +1257,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
             shadowOpacity: Platform.OS === "ios" ? 0.18 : 0.22,
             shadowRadius: 4,
             elevation: Platform.OS === "ios" ? 0 : 4,
-            zIndex: 10000,
+            zIndex: 998,
           }}
           accessibilityRole="button"
           accessibilityLabel="Recenter to your location"

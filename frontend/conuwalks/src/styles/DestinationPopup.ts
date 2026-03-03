@@ -2,6 +2,7 @@ import { StyleSheet } from "react-native";
 export const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
+    zIndex: 10001,
   },
   backdrop: {
     flex: 1,
@@ -205,5 +206,5 @@ export const styles = StyleSheet.create({
     color: "#6E6E73",
     fontSize: 13,
     fontWeight: "500",
-  },
+  }
 });
