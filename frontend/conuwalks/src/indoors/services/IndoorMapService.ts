@@ -1,10 +1,10 @@
 import { BuildingNavConfig, Node } from "../types/Navigation";
-import { Route, UserLocation } from "../types/routes";
+import { Route, UserLocation } from "../types/Routes";
 import { Graph } from "./Graph";
 import { PathFinder } from "./PathFinder";
 
 //use this file to load The Building Data, to find the fastest path.
-//Return:
+//Return:S
 //     route{
 //     Nodes:Node[]
 //     distance: number (can be converted to time later)

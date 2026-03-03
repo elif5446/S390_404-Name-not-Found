@@ -1,4 +1,5 @@
-import { Node } from "./Navigation";
+import { Node } from './Navigation';
+
 export interface Route {
   nodes: Node[];
   totalDistance: number;

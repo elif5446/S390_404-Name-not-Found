@@ -1,5 +1,5 @@
 import { Node } from "../types/Navigation";
-import { Route } from "../types/routes";
+import { Route } from "../types/Routes";
 import { Graph } from "./Graph";
 
 export class PathFinder {
