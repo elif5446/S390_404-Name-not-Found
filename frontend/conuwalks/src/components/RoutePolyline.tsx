@@ -85,6 +85,7 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
   const isMountedRef = useRef(true);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const blockedRequestKeyRef = useRef<string | null>(null);
+  const lastFetchedKeyRef = useRef<string | null>(null);
 
   // Determine the actual start location to use
   const effectiveStartLocation = startLocation;
@@ -92,7 +93,7 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
 
   const requestKey =
     effectiveStartLocation && destinationCoords
-      ? `${effectiveStartLocation.latitude.toFixed(6)},${effectiveStartLocation.longitude.toFixed(6)}->${destinationCoords.latitude.toFixed(6)},${destinationCoords.longitude.toFixed(6)}:${travelMode}:${timeMode}:${targetTime ? targetTime.getTime() : "now"}`
+      ? `${effectiveStartLocation.latitude.toFixed(4)},${effectiveStartLocation.longitude.toFixed(4)}->${destinationCoords.latitude.toFixed(4)},${destinationCoords.longitude.toFixed(4)}:${travelMode}:${timeMode}:${targetTime ? targetTime.getTime() : "now"}`
       : null;
 
   // Fetch directions when destination, start, or travel mode changes
@@ -131,6 +132,18 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
       destination: destinationCoords,
     });
 
+    // block spam during active navigation
+    // don't need to check routeData here; if navigation is active, route exists
+    if (isNavigationActive) {
+      return;
+    }
+
+    // block duplicate fetches for the same route parameters
+    if (requestKey && lastFetchedKeyRef.current === requestKey) {
+      return;
+    }
+
+    // block previously failed/blocked requests
     if (requestKey && blockedRequestKeyRef.current === requestKey) {
       return;
     }
@@ -226,6 +239,7 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
 
       setRoutes(decodedRoutes);
       setRouteData(decodedRoutes[0]);
+      lastFetchedKeyRef.current = requestKey;
       blockedRequestKeyRef.current = null;
 
       if (isMountedRef.current) {

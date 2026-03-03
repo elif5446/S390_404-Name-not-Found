@@ -67,9 +67,7 @@ const WheelPicker = ({
   loop = false,
 }: any) => {
   const flatListRef = useRef<FlatList>(null);
-
-  // faking infinity: 50 clones is plenty. useMemo prevents recreating this array on every render.
-  const REPEAT_COUNT = loop ? 50 : 1;
+  const REPEAT_COUNT = loop ? 3 : 1;
   const loopedData = useMemo(
     () => Array.from({ length: REPEAT_COUNT }).flatMap(() => data),
     [data, loop],
@@ -78,7 +76,7 @@ const WheelPicker = ({
   const originalIndex = data.findIndex((d: any) => d.value === selectedValue);
   const safeOriginalIndex = originalIndex >= 0 ? originalIndex : 0;
 
-  const centerOffset = loop ? Math.floor(REPEAT_COUNT / 2) * data.length : 0;
+  const centerOffset = loop ? data.length : 0;
   const startIndex = centerOffset + safeOriginalIndex;
 
   const handleScrollEnd = (e: any) => {
@@ -91,15 +89,18 @@ const WheelPicker = ({
       onValueChange(realItem.value);
     }
 
-    // silent recenter: snap back to the middle if they scroll too close to the edges
     if (loop) {
-      const buffer = data.length * 5;
-      if (clampedIndex < buffer || clampedIndex > loopedData.length - buffer) {
+      const isTopBlock = clampedIndex < data.length;
+      const isBottomBlock = clampedIndex >= data.length * 2;
+
+      if (isTopBlock || isBottomBlock) {
         const recenterIndex = centerOffset + (clampedIndex % data.length);
-        flatListRef.current?.scrollToOffset({
-          offset: recenterIndex * ITEM_HEIGHT,
-          animated: false,
-        });
+        setTimeout(() => {
+          flatListRef.current?.scrollToOffset({
+            offset: recenterIndex * ITEM_HEIGHT,
+            animated: false,
+          });
+        }, 0);
       }
     }
   };
@@ -127,8 +128,20 @@ const WheelPicker = ({
         windowSize={3}
         maxToRenderPerBatch={10}
         contentContainerStyle={{ paddingVertical: ITEM_HEIGHT * 2 }}
-        renderItem={({ item }) => (
-          <View style={styles.wheelItem}>
+        renderItem={({ item, index: loopedIndex }) => (
+          <TouchableOpacity
+            activeOpacity={0.6}
+            style={styles.wheelItem}
+            onPress={() => {
+              flatListRef.current?.scrollToOffset({
+                offset: loopedIndex * ITEM_HEIGHT,
+                animated: true,
+              });
+              if (item.value !== selectedValue) {
+                onValueChange(item.value);
+              }
+            }}
+          >
             <Text
               style={[
                 styles.wheelText,
@@ -144,7 +157,7 @@ const WheelPicker = ({
             >
               {item.label}
             </Text>
-          </View>
+          </TouchableOpacity>
         )}
       />
     </View>

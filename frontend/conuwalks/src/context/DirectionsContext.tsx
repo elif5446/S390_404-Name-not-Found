@@ -256,7 +256,8 @@ export const DirectionsProvider: React.FC<DirectionsProviderProps> = ({
     setErrorState(null);
   }, []);
 
-  const value: DirectionsContextType = {
+  // Memoize the context value to prevent layout thrashing across the app
+  const value: DirectionsContextType = React.useMemo(() => ({
     startBuildingId,
     startCoords,
     startLabel,
@@ -292,7 +293,18 @@ export const DirectionsProvider: React.FC<DirectionsProviderProps> = ({
     setTimeMode,
     targetTime,
     setTargetTime,
-  };
+  }), [
+    startBuildingId, startCoords, startLabel, startRoom,
+    destinationBuildingId, destinationCoords, destinationLabel, destinationRoom,
+    routes, selectedRouteIndex, routeData, travelModeState,
+    showDirections, isNavigationActive, loading, error, 
+    timeMode, targetTime,
+    // setters are stable (wrapped in useCallback)
+    setStartPoint, setDestination, setStartRoom, setDestinationRoom, clearDestination,
+    setRoutes, setSelectedRouteIndex, setRouteData, clearRouteData, setTravelMode,
+    setShowDirections, setIsNavigationActive, setLoading, setError, resetDirections,
+    setTimeMode, setTargetTime
+  ]);
 
   return (
     <DirectionsContext.Provider value={value}>

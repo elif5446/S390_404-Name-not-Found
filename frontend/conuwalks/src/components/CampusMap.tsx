@@ -146,6 +146,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
     showDirections,
     setShowDirections,
     setIsNavigationActive,
+    clearDestination,
   } = useDirections();
 
   // Use user location if available, otherwise use initial location
@@ -178,6 +179,25 @@ const CampusMap: React.FC<CampusMapProps> = ({
   const [isInfoPopupExpanded, setIsInfoPopupExpanded] = useState(false);
   const additionalInfoPopupRef = useRef<AdditionalInfoPopupHandle>(null);
   const destinationPopupRef = useRef<DestinationPopupHandle>(null);
+  const preNavigationRegionRef = useRef<Region | null>(null);
+  const [trackLocationMarker, setTrackLocationMarker] = useState(true);
+
+  // handle restoring the camera view when navigation ends
+  useEffect(() => {
+    if (isNavigationActive) {
+      if (!preNavigationRegionRef.current) {
+        preNavigationRegionRef.current = mapRegion;
+      }
+    } else if (preNavigationRegionRef.current && mapRef.current) {
+      mapRef.current.animateCamera({ pitch: 0, heading: 0 }, { duration: 150 });
+
+      setTimeout(() => {
+        mapRef.current?.animateToRegion(preNavigationRegionRef.current!, 500);
+        preNavigationRegionRef.current = null;
+      }, 150);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNavigationActive]);
 
   const handleInfoPopupExpansionChange = useCallback(
     (isExpanded: boolean) => {
@@ -189,7 +209,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
   // Calculate circle radius based on zoom level (longitudeDelta)
   // Larger longitudeDelta = zoomed out = bigger circle
-  const circleRadius = Math.max(2.5, mapRegion.longitudeDelta * 2000);
+  //   const circleRadius = Math.max(2.5, mapRegion.longitudeDelta * 2000);
 
   // Create a ref to the MapView so we can control it
   const mapRef = useRef<MapView>(null);
@@ -203,32 +223,44 @@ const CampusMap: React.FC<CampusMapProps> = ({
   // Handle clicking on the location circle to zoom in
   const handleLocationPress = useCallback(() => {
     if (userLocation && mapRef.current) {
-      mapRef.current.animateToRegion(
+      mapRef.current.animateCamera(
         {
-          latitude: userLocation.latitude,
-          longitude: userLocation.longitude,
-          latitudeDelta: 0.003,
-          longitudeDelta: 0.003,
+          center: {
+            latitude: userLocation.latitude,
+            longitude: userLocation.longitude,
+          },
+          zoom: 17.5,
+          pitch: 0,
+          heading: 0,
         },
-        500,
+        { duration: 500 },
       );
+
+      additionalInfoPopupRef.current?.minimize();
+      destinationPopupRef.current?.minimize();
     }
   }, [userLocation]);
 
+  const initialLat = initialLocation?.latitude;
+  const initialLng = initialLocation?.longitude;
+
   // auto-pan when toggling campuses
   useEffect(() => {
-    if (mapRef.current && initialLocation) {
+    if (mapRef.current && initialLat && initialLng) {
       mapRef.current.animateToRegion(
         {
-          latitude: initialLocation.latitude,
-          longitude: initialLocation.longitude,
+          latitude: initialLat,
+          longitude: initialLng,
           latitudeDelta: INITIAL_DELTA,
           longitudeDelta: INITIAL_DELTA,
         },
         500,
       );
+
+      clearDestination();
+      setSelectedBuilding((prev) => ({ ...prev, visible: false }));
     }
-  }, [initialLocation]);
+  }, [initialLat, initialLng, clearDestination]);
 
   // Handle building tap to show additional info and set destination
   const handleBuildingPress = useCallback(
@@ -402,9 +434,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
   const handleEndNavigation = useCallback(() => {
     setIsNavigationActive(false);
-    setShowDirections(false);
-    clearRouteData();
-  }, [clearRouteData, setIsNavigationActive, setShowDirections]);
+    setShowDirections(true);
+  }, [setIsNavigationActive, setShowDirections]);
 
   const shouldUseLiveUserStart = startBuildingId === "USER" && !!userLocation;
 
@@ -752,8 +783,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
                   handleBuildingPress(buildingId, campus, centerCoordinates)
                 }
                 zIndex={200}
-                tracksViewChanges={true}
-                // tracksViewChanges={false}
+                tracksViewChanges={false}
                 title={name}
                 importantForAccessibility="yes"
                 accessibilityLabel={name}
@@ -762,8 +792,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
               >
                 <View
                   style={{
-                    width: 0.3 / mapRegion.longitudeDelta,
-                    height: 0.3 / mapRegion.longitudeDelta,
+                    width: 44,
+                    height: 44,
                     backgroundColor: "#FFFFFF",
                     opacity: 0.01,
                   }}
@@ -791,7 +821,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
   }, [
     destinationBuildingId,
     handleBuildingPress,
-    mapRegion.longitudeDelta,
     selectedBuilding.name,
     selectedBuilding.visible,
   ]);
@@ -855,38 +884,39 @@ const CampusMap: React.FC<CampusMapProps> = ({
           ),
         )}
 
-        {userLocation && ( //Show user's current location if available
-          <Circle
-            center={userLocation}
-            radius={circleRadius}
-            fillColor="#B03060BF"
-            strokeColor="#FFFFFF"
-            strokeWidth={2}
-            zIndex={9999}
-          />
-        )}
-
         {userLocation && (
           <Marker
             coordinate={userLocation}
             onPress={handleLocationPress}
-            tracksViewChanges={false}
+            tracksViewChanges={trackLocationMarker}
             zIndex={9999}
-            title={"Current Location"}
-            accessibilityLabel={"Current Location"}
+            title="Current Location"
+            accessibilityLabel="Current Location"
             importantForAccessibility="yes"
+            anchor={{ x: 0.5, y: 0.5 }}
           >
             <View
-              style={{
-                width: 12,
-                height: 12,
-                borderRadius: 6,
-                backgroundColor: "#B03060",
+              onLayout={() => {
+                if (trackLocationMarker) {
+                  setTimeout(() => setTrackLocationMarker(false), 100);
+                }
               }}
-              accessible={true}
-              accessibilityLabel={"Current Location"}
-              importantForAccessibility="yes"
-            />
+              style={{
+                width: 30,
+                height: 30,
+                borderRadius: 18,
+                backgroundColor: "#B03060BF",
+                borderColor: "#FFFFFF",
+                borderWidth: 4,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              collapsable={false}
+            >
+              {Platform.OS === "android" && (
+                <Text style={{ width: 1, height: 1, opacity: 0 }}> </Text>
+              )}
+            </View>
           </Marker>
         )}
 
