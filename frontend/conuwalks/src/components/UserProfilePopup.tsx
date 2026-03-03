@@ -5,9 +5,9 @@ import {
   useColorScheme,
   Modal,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { BlurView } from "expo-blur";
 import UserProfileHeader from "./UserProfileHeader";
 import UserProfileContent from "./UserProfileContent";
@@ -53,7 +53,7 @@ const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
             />
           )}
 
-          <SafeAreaView style={{ flex: 1 }}>
+          <SafeAreaView style={{ flex: 1, paddingTop: 20}}>
             <UserProfileHeader
               userInfo={userInfo}
               onClose={onClose}

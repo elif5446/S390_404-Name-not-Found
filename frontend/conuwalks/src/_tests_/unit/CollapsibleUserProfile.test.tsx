@@ -4,6 +4,10 @@ import CollapsibleUserProfile from "../../components/CollapsibleUserProfile";
 
 jest.mock("@expo/vector-icons/MaterialIcons", () => "MaterialIcons");
 jest.mock("expo-blur", () => ({ BlurView: ({ children }: any) => children }));
+jest.mock('react-native-safe-area-context', () => ({
+  SafeAreaView: (props: any) => props.children,
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+}));
 
 describe("CollapsibleUserProfile", () => {
   const mockUserInfo = { name: "John Tester", email: "john@concordia.ca", photo: "test-url" };
