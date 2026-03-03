@@ -14,6 +14,7 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { SymbolView } from "expo-symbols";
 import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import UserProfilePopup from "./UserProfilePopup";
 
 interface Props {
   userInfo: any;
@@ -48,146 +49,8 @@ const RightControlsPanel: React.FC<Props> = ({
   const userIconSize = 50;
   const containerPadding = 8;
 
-  const profileContent = (
-    <View
-      style={{
-        padding: 16,
-        alignItems: "center",
-      }}
-    >
-    {/* Close button on profile popup */}
-          <TouchableOpacity
-            onPress={() => setIsProfileExpanded(false)}
-            style={{ alignSelf: 'flex-end', marginBottom: -10, zIndex: 1 }}
-          >
-            <MaterialIcons name="close" size={20} color={mode === "dark" ? "#FFFFFF" : "#333333"} />
-          </TouchableOpacity>
-
-      {userInfo?.photo ? (
-        <Image
-          source={{ uri: userInfo.photo }}
-          style={{
-            width: 60,
-            height: 60,
-            borderRadius: 30,
-            marginBottom: 12,
-          }}
-        />
-      ) : (
-        <View
-          style={{
-            width: 60,
-            height: 60,
-            borderRadius: 30,
-            backgroundColor: "#B03060",
-            justifyContent: "center",
-            alignItems: "center",
-            marginBottom: 12,
-          }}
-        >
-          <Text
-            style={{
-              color: "#FFFFFF",
-              fontSize: 24,
-              fontWeight: "600",
-            }}
-          >
-            {userInfo?.name?.charAt(0) || "U"}
-          </Text>
-        </View>
-      )}
-
-      {userInfo?.name && (
-        <Text
-          style={{
-            fontSize: 16,
-            fontWeight: "600",
-            color: mode === "dark" ? "#FFFFFF" : "#333333",
-            marginBottom: 12,
-            textAlign: "center",
-          }}
-          numberOfLines={1}
-        >
-          {userInfo.name}
-        </Text>
-      )}
-
-      <View
-        style={{
-          backgroundColor: Platform.OS === "ios" ? "#B03060CC" : "#feeded",
-          borderRadius: 20,
-          marginBottom: 8,
-        }}
-      >
-        <Button
-          title="Sign Out"
-          onPress={() => {
-            setIsProfileExpanded(false);
-            onSignOut();
-          }}
-          color={Platform.OS === "ios" ? "#feeded" : "#B03060CC"}
-        />
-      </View>
-    </View>
-  );
-
   return (
     <>
-      {isProfileExpanded && (
-        <View
-          style={{
-            position: "absolute",
-            right: 53,
-            top: 0,
-            bottom: 0,
-            left: 0,
-            overflow: "hidden",
-           // zIndex: 100002,
-
-          }}
-          pointerEvents="box-none"
-        >
-          {/* Backdrop tap to close */}
-          <TouchableOpacity
-            activeOpacity={1}
-            onPress={() => setIsProfileExpanded(false)}
-            style={{
-              flex: 1,
-              //backgroundColor: "rgba(0, 0, 0, 0.3)",
-            }}
-          />
-
-          {/* Profile card */}
-          <View
-            style={{
-              position: "absolute",
-              right: 16,
-              top: Math.max(insets.top + 80, 80),
-              borderRadius: 16,
-              overflow: "hidden",
-              minWidth: 200,
-              //zIndex: 100002,
-            }}
-            pointerEvents="auto"
-          >
-            {Platform.OS === "ios" ? (
-              <BlurView intensity={35} tint="extraLight">
-                {profileContent}
-              </BlurView>
-            ) : (
-              <View
-                style={{
-                  backgroundColor:
-                    mode === "dark" ? "#1C1B1F" : "rgba(255, 255, 255, 0.95)",
-                }}
-              >
-                {profileContent}
-              </View>
-            )}
-          </View>
-        </View>
-      )}
-
       {/* Controls panel, user icon + location button stacked */}
       <View
         style={{
@@ -207,11 +70,11 @@ const RightControlsPanel: React.FC<Props> = ({
             height: userIconSize,
             borderRadius: userIconSize / 2,
             backgroundColor:
-                            Platform.OS === "ios"
-                              ? "transparent"
-                              : mode === "dark"
-                                ? "#2C2C2E"
-                                : "#FFFFFF",
+              Platform.OS === "ios"
+                ? "transparent"
+                : mode === "dark"
+                  ? "#2C2C2E"
+                  : "#FFFFFF",
             justifyContent: "center",
             alignItems: "center",
             shadowColor: "#000",
@@ -220,23 +83,24 @@ const RightControlsPanel: React.FC<Props> = ({
             shadowRadius: 4,
             elevation: Platform.OS === "ios" ? 0 : 4,
             marginBottom: buttonSpacing,
+            overflow: "hidden",
           }}
           pointerEvents="auto"
           accessible={true}
           accessibilityLabel="Open user profile"
           accessibilityRole="button"
         >
-        {Platform.OS === "ios" && (
+          {Platform.OS === "ios" && (
             <BlurView
-                   intensity={35}
-                   tint={mode === "dark" ? "dark" : "light"}
-                   style={{
-                       position: "absolute",
-                       width: "100%",
-                       height: "100%",
-                   }}
-               />
-        )}
+              intensity={35}
+              tint={mode === "dark" ? "dark" : "light"}
+              style={{
+                position: "absolute",
+                width: "100%",
+                height: "100%",
+              }}
+            />
+          )}
           <MaterialIcons name="person" size={24} color="#B03060" />
         </TouchableOpacity>
 
@@ -297,9 +161,14 @@ const RightControlsPanel: React.FC<Props> = ({
           </TouchableOpacity>
         )}
       </View>
+      <UserProfilePopup
+        visible={isProfileExpanded}
+        userInfo={userInfo}
+        onClose={() => setIsProfileExpanded(false)}
+        onSignOut={onSignOut}
+      />
     </>
   );
 };
 
 export default RightControlsPanel;
-
