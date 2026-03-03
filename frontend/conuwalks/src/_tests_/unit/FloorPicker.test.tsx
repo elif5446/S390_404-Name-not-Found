@@ -1,7 +1,7 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react-native";
 import FloorPicker from "../../components/indoor/FloorPicker";
-import { FloorData } from "@/src/indoors/types/indoor";
+import { FloorData } from "@/src/indoors/types/FloorPlans";
 
 jest.mock("@/src/styles/IndoorMap.styles", () => ({
   styles: {
