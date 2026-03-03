@@ -58,14 +58,6 @@ import styles from "@/src/styles/campusMap";
 const polygonFromGeoJSON = (coordinates: number[][]): LatLng[] =>
   coordinates.map(([longitude, latitude]) => ({ latitude, longitude }));
 
-const SELECTED_RING_OUTER = "#1C1C1E"; // charcoal (premium, works on all pastels)
-const SELECTED_RING_INNER = "#FFFFFF";
-const DESTINATION_RING = "#FFFFFF";
-const SELECTED_OUTER_WIDTH = 10;
-const SELECTED_INNER_WIDTH = 4;
-const DESTINATION_OUTER_WIDTH = 8;
-const DESTINATION_INNER_WIDTH = 4;
-
 interface CampusMapProps {
   initialLocation?: {
     latitude: number;
