@@ -1,13 +1,13 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import {
   View,
   Text,
   FlatList,
   ActivityIndicator,
   useColorScheme,
-  SafeAreaView,
   TouchableOpacity,
 } from "react-native";
+import { SafeAreaView } from 'react-native-safe-area-context';
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useGoogleCalendar } from "@/src/hooks/useGoogleCalendar";
 import { useDirections } from "@/src/context/DirectionsContext";
@@ -18,6 +18,7 @@ import { SGWBuildingMetadata } from "@/src/data/metadata/SGW.BuildingMetaData";
 import SGW from "@/src/data/campus/SGW.geojson";
 import LOY from "@/src/data/campus/LOY.geojson";
 import { calculatePolygonCenter } from "@/src/utils/geometry";
+import { parseLocation } from "@/src/hooks/useBuildingEvents";
 
 interface EnhancedEvent extends CalendarEvent {
   formattedDate?: string;
@@ -35,7 +36,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ onNavigateToClass }) => {
   const { setStartPoint, setDestination, setShowDirections } = useDirections();
   const { location: userLocation } = useUserLocation();
 
-  // HIGHLIGHT: Higher contrast widget background colors
+  // Higher contrast widget background colors
   const widgetBg = mode === "dark" ? "#000" : "#fff";
   const secondaryTextColor = mode === "dark" ? "#BBB" : "#555";
 
@@ -45,7 +46,9 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ onNavigateToClass }) => {
 
   const handleGoToClass = (location?: string) => {
     if (!location || !userLocation) return;
-    const buildingCode = location.split(" ")[0]?.trim();
+    // reuse the parseLocation implementation from the hook
+    const parsed = parseLocation(location);
+    const buildingCode = parsed?.buildingCode;
     if (!buildingCode) return;
 
     const buildingMetadata =
@@ -123,20 +126,22 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ onNavigateToClass }) => {
     return { ...event, formattedDate, formattedTime, isToday };
   });
 
-  const groupedByDate = enhancedEvents.reduce<Record<string, EnhancedEvent[]>>(
-    (acc, event) => {
-      const dateKey = event.formattedDate || "No Date";
-      if (!acc[dateKey]) acc[dateKey] = [];
-      acc[dateKey].push(event);
-      return acc;
-    },
-    {},
-  );
+  const groupedArray = useMemo(() => {
+    const groupedByDate = enhancedEvents.reduce<Record<string, EnhancedEvent[]>>(
+      (acc, event) => {
+        const dateKey = event.formattedDate || "No Date";
+        if (!acc[dateKey]) acc[dateKey] = [];
+        acc[dateKey].push(event);
+        return acc;
+      },
+      {},
+    );
 
-  const groupedArray = Object.entries(groupedByDate).map(([date, items]) => ({
-    date,
-    events: items,
-  }));
+    return Object.entries(groupedByDate).map(([date, items]) => ({
+      date,
+      events: items,
+    }));
+  }, [events]);
 
   if (loading) {
     return (

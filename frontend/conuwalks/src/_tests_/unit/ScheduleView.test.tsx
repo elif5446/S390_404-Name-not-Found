@@ -4,6 +4,15 @@ import ScheduleView from "../../components/ScheduleView";
 import { useGoogleCalendar } from "@/src/hooks/useGoogleCalendar";
 import { useDirections } from "@/src/context/DirectionsContext";
 
+jest.mock('react-native-safe-area-context', () => {
+  const React = require('react');
+  return {
+    SafeAreaView: (props: any) => React.createElement('View', props, props.children),
+    SafeAreaProvider: (props: any) => React.createElement('View', props, props.children),
+    useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+  };
+});
+
 // Mock hooks
 jest.mock("@/src/hooks/useGoogleCalendar");
 jest.mock("@/src/context/DirectionsContext");
@@ -26,7 +35,7 @@ describe("ScheduleView", () => {
     {
       id: "1",
       summary: "Software Engineering",
-      location: "H", // Using just the building code to ensure metadata match
+      location: "H-820",
       start: { dateTime: new Date().toISOString() },
       formattedTime: "10:00 AM",
     }
@@ -55,8 +64,8 @@ describe("ScheduleView", () => {
   it("triggers navigation when directions icon is pressed", () => {
     render(<ScheduleView />);
 
-    // Target the button via accessibility label
-    const navBtn = screen.getByLabelText("Go to class location");
+    // Target the button via visible text
+    const navBtn = screen.getByText("GO");
 
     fireEvent.press(navBtn);
 

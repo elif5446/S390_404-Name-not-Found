@@ -5,6 +5,10 @@ import MapScheduleToggle from "../../components/MapScheduleToggle";
 // Mock external icons
 jest.mock("@expo/vector-icons/MaterialIcons", () => "MaterialIcons");
 jest.mock("expo-symbols", () => ({ SymbolView: "SymbolView" }));
+jest.mock('react-native-safe-area-context', () => ({
+  SafeAreaView: (props: any) => props.children,
+  useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+}));
 
 describe("MapScheduleToggle", () => {
   const mockOnChange = jest.fn();
