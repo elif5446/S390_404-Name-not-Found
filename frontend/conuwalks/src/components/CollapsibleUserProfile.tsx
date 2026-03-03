@@ -5,13 +5,12 @@ import {
   Image,
   Text,
   Button,
-  Alert,
   Platform,
   useColorScheme,
-  Animated,
+  StyleSheet,
 } from "react-native";
-import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { BlurView } from "expo-blur";
+import PlatformIcon from "./ui/PlatformIcon";
 
 interface Props {
   userInfo: any;
@@ -20,10 +19,11 @@ interface Props {
 
 const CollapsibleUserProfile: React.FC<Props> = ({ userInfo, onSignOut }) => {
   const mode = useColorScheme() || "light";
+  const isDark = mode === "dark";
+  const campusPink = "#B03060";
   const [isExpanded, setIsExpanded] = useState(false);
 
   if (!isExpanded) {
-    // Collapsed: just show icon
     return (
       <TouchableOpacity
         onPress={() => setIsExpanded(true)}
@@ -41,7 +41,7 @@ const CollapsibleUserProfile: React.FC<Props> = ({ userInfo, onSignOut }) => {
           shadowOpacity: 0.12,
           shadowRadius: 8,
           elevation: 6,
-          zIndex: 9999, // Below location button but above map
+          zIndex: 9999,
         }}
         accessible={true}
         accessibilityLabel="Open user profile"
@@ -50,11 +50,7 @@ const CollapsibleUserProfile: React.FC<Props> = ({ userInfo, onSignOut }) => {
         {userInfo?.photo ? (
           <Image
             source={{ uri: userInfo.photo }}
-            style={{
-              width: 48,
-              height: 48,
-              borderRadius: 24,
-            }}
+            style={{ width: 48, height: 48, borderRadius: 24 }}
           />
         ) : (
           <View
@@ -62,18 +58,12 @@ const CollapsibleUserProfile: React.FC<Props> = ({ userInfo, onSignOut }) => {
               width: 48,
               height: 48,
               borderRadius: 24,
-              backgroundColor: "#B03060",
+              backgroundColor: campusPink,
               justifyContent: "center",
               alignItems: "center",
             }}
           >
-            <Text
-              style={{
-                color: "#FFFFFF",
-                fontSize: 18,
-                fontWeight: "600",
-              }}
-            >
+            <Text style={{ color: "#FFFFFF", fontSize: 18, fontWeight: "600" }}>
               {userInfo?.name?.charAt(0) || "U"}
             </Text>
           </View>
@@ -82,23 +72,12 @@ const CollapsibleUserProfile: React.FC<Props> = ({ userInfo, onSignOut }) => {
     );
   }
 
-  // Expanded: show full profile
   const content = (
-    <View
-      style={{
-        padding: 16,
-        alignItems: "center",
-      }}
-    >
+    <View style={{ padding: 16, alignItems: "center" }}>
       {userInfo?.photo ? (
         <Image
           source={{ uri: userInfo.photo }}
-          style={{
-            width: 60,
-            height: 60,
-            borderRadius: 30,
-            marginBottom: 12,
-          }}
+          style={{ width: 60, height: 60, borderRadius: 30, marginBottom: 12 }}
         />
       ) : (
         <View
@@ -106,19 +85,13 @@ const CollapsibleUserProfile: React.FC<Props> = ({ userInfo, onSignOut }) => {
             width: 60,
             height: 60,
             borderRadius: 30,
-            backgroundColor: "#B03060",
+            backgroundColor: campusPink,
             justifyContent: "center",
             alignItems: "center",
             marginBottom: 12,
           }}
         >
-          <Text
-            style={{
-              color: "#FFFFFF",
-              fontSize: 24,
-              fontWeight: "600",
-            }}
-          >
+          <Text style={{ color: "#FFFFFF", fontSize: 24, fontWeight: "600" }}>
             {userInfo?.name?.charAt(0) || "U"}
           </Text>
         </View>
@@ -158,18 +131,34 @@ const CollapsibleUserProfile: React.FC<Props> = ({ userInfo, onSignOut }) => {
 
       <TouchableOpacity
         onPress={() => setIsExpanded(false)}
-        style={{
-          padding: 8,
-        }}
-        accessible={true}
-        accessibilityLabel="Close profile"
+        style={styles.iconButton}
         accessibilityRole="button"
+        accessibilityLabel="Close Profile"
       >
-        <MaterialIcons
-          name="close"
-          size={24}
-          color={mode === "dark" ? "#FFFFFF" : "#333333"}
-        />
+        {Platform.OS === "ios" ? (
+          <View
+            style={[
+              styles.closeButtonCircle,
+              { backgroundColor: isDark ? "#00000031" : "#85858522" },
+            ]}
+          >
+            <Text
+              style={[
+                styles.closeButtonText,
+                { color: isDark ? "#FFFFFF" : "#333333" },
+              ]}
+            >
+              ✕
+            </Text>
+          </View>
+        ) : (
+          <PlatformIcon
+            materialName="close"
+            iosName="xmark"
+            size={22}
+            color={campusPink}
+          />
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -186,17 +175,11 @@ const CollapsibleUserProfile: React.FC<Props> = ({ userInfo, onSignOut }) => {
       }}
       pointerEvents="box-none"
     >
-      {/* Backdrop - tap to close */}
       <TouchableOpacity
         activeOpacity={1}
         onPress={() => setIsExpanded(false)}
-        style={{
-          flex: 1,
-          backgroundColor: "rgba(0, 0, 0, 0.3)",
-        }}
+        style={{ flex: 1, backgroundColor: "rgba(0, 0, 0, 0.3)" }}
       />
-
-      {/* Profile card */}
       <View
         style={{
           position: "absolute",
@@ -228,5 +211,23 @@ const CollapsibleUserProfile: React.FC<Props> = ({ userInfo, onSignOut }) => {
   );
 };
 
-export default CollapsibleUserProfile;
+// Added Missing Styles
+const styles = StyleSheet.create({
+  iconButton: {
+    padding: 8,
+    marginTop: 8,
+  },
+  closeButtonCircle: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  closeButtonText: {
+    fontSize: 14,
+    fontWeight: "bold",
+  },
+});
 
+export default CollapsibleUserProfile;
