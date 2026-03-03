@@ -754,8 +754,8 @@ return (
       key={`${campus}-${buildingId}-selected-outer`}
       coordinates={coordinates}
       fillColor="transparent"
-      strokeColor="#000000"
-      strokeWidth={6}
+      strokeColor="#515351ff"
+      strokeWidth={5}
       tappable
       onPress={() =>
         handleBuildingPress(buildingId, campus, centerCoordinates)
@@ -784,13 +784,14 @@ return (
       <Marker
         key={`${campus}-${buildingId}-dest-pin`}
         coordinate={centerCoordinates}
-        anchor={{ x: 0.5, y: 1 }}
+        anchor={{ x: 0.5, y:0.5 }}
         zIndex={1000}
         onPress={() =>
           handleBuildingPress(buildingId, campus, centerCoordinates)
         }
         accessibilityLabel={`${name} destination`}
         accessibilityRole="button"
+        flat
       >
         <MaterialIcons name="place" size={26} color="#B03060" />
       </Marker>
