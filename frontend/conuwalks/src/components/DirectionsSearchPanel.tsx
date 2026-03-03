@@ -11,8 +11,29 @@ import { useGoogleCalendar } from "../hooks/useGoogleCalendar"
 import { useBuildingEvents } from "../hooks/useBuildingEvents"
 import { useUserLocation } from "../hooks/useUserLocation"
 import BuildingTheme from "../styles/BuildingTheme"
-import { SymbolView, SFSymbol } from "expo-symbols"; // SF Symbols (iOS)
-import MaterialIcons from "@expo/vector-icons/MaterialIcons"; // Material Design Icons (Android)
+import { SymbolView, SFSymbol } from "expo-symbols";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+
+
+interface SuggestionIconProps {
+    iosName: SFSymbol; 
+    androidName: React.ComponentProps<typeof MaterialIcons>["name"]; 
+    color: string;
+}
+
+const SuggestionIcon = ({ iosName, androidName, color }: SuggestionIconProps) => {
+    if (Platform.OS === "ios") {
+        return (
+            <SymbolView
+                name={iosName}
+                size={20}
+                tintColor={color}
+                fallback={<MaterialIcons name={androidName} size={20} color={color} />}
+            />
+        );
+    }
+    return <MaterialIcons name={androidName} size={20} color={color} />;
+};
 
 interface DirectionsSearchProps {
   startBuildingId: string | null;
@@ -42,6 +63,7 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
     const [destinationIsHidden, setDestinationIsHidden] = useState<boolean | null>(null);
     const [startPointSelection, setStartPointSelection] = useState({ start: 0, end: 0 });
     const [destinationSelection, setDestinationSelection] = useState({ start: 0, end: 0 });
+    const [isAndroidKeyboardVisible, setIsAndroidKeyboardVisible] = useState(false);
     const { location } = useUserLocation();
     const INPUT_ACCESSORY_VIEW_ID = "Directions Search";
     const CURRENT_LOCATION = "Current Location";
@@ -56,6 +78,22 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
             setStableDestinationText(CURRENT_LOCATION)
         }
     }, [])
+
+    useEffect(() => {
+        if (Platform.OS !== "android") return;
+        // Listeners for when the keyboard opens and closes
+        const showSubscription = Keyboard.addListener("keyboardDidShow", () => {
+            setIsAndroidKeyboardVisible(true);
+        });
+        const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
+            setIsAndroidKeyboardVisible(false);
+        });
+
+        return () => {
+            showSubscription.remove();
+            hideSubscription.remove();
+        };
+    }, []);
 
     const setPoint = (newPoint: { buildingName: string; roomNumber: string | null; isLocation: boolean }) => {
         const buildingId = Object
@@ -122,21 +160,49 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
         setDestinationText(left + buildingName + right);
     }
 
-    interface SuggestionIconProps {iosName: SFSymbol; androidName: React.ComponentProps<typeof MaterialIcons>["name"]; color: string;}
-    const SuggestionIcon = ({ iosName, androidName, color }: SuggestionIconProps) => {
-        if (Platform.OS === "ios") {
-            return (
-            <SymbolView
-                name={iosName}
-                size={20}
-                tintColor={color}
-                fallback={<MaterialIcons name={androidName} size={20} color={color} />}
-            />
-            );
-        }
-        return <MaterialIcons name={androidName} size={20} color={color} />;
-    };
-    
+    const accessoryViewContent = (
+        <View style={styles.accessoryContainer}>
+            <View style={styles.scrollContainer}>
+                <ScrollView horizontal
+                    showsHorizontalScrollIndicator={false}
+                    keyboardShouldPersistTaps="always"
+                >
+                    {SGWBuildingSearchMetadata[startBuildingId ?? destinationBuildingId ?? ""] ?
+                        ["MB", "FG", "FB", "LS", "CL", "EV"].map(id => (
+                            <TouchableOpacity
+                                key={id}
+                                onPress={() => destinationIsHidden === true ? insertStartPointBuildingName(SGWBuildingSearchMetadata[id]?.name ?? id) : insertDestinationBuildingName(SGWBuildingSearchMetadata[id]?.name ?? id)}
+                                style={[styles.buildingButton, { paddingHorizontal: 10 }]}
+                                accessible={true}
+                                accessibilityRole="button"
+                                accessibilityLabel={`Insert ${SGWBuildingSearchMetadata[id]?.name ?? id} into the searchbar`}
+                                accessibilityHint="Tap to quickly add the complete name of this building to your search"
+                            >
+                                <Text style={[styles.buildingButtonText, {color: BuildingTheme.SGW[id as keyof typeof BuildingTheme.SGW] ?? "#000000"}]}>
+                                    {id}
+                                </Text>
+                            </TouchableOpacity>
+                        )) : ["VL", "CJ", "SP", "AD", "CC", "HU"].map(id => (
+                            <TouchableOpacity
+                                key={id}
+                                onPress={() => destinationIsHidden === true ? insertStartPointBuildingName(LoyolaBuildingSearchMetadata[id]?.name ?? id) : insertDestinationBuildingName(LoyolaBuildingSearchMetadata[id]?.name ?? id)}
+                                style={[styles.buildingButton, { paddingHorizontal: 10 }]}
+                                accessible={true}
+                                accessibilityRole="button"
+                                accessibilityLabel={`Insert ${LoyolaBuildingSearchMetadata[id]?.name ?? id} into the searchbar`}
+                                accessibilityHint="Tap to quickly add the complete name of this building to your search"
+                            >
+                                <Text style={[styles.buildingButtonText, {color: BuildingTheme.LOY[id as keyof typeof BuildingTheme.LOY] ?? "#000000"}]}>
+                                    {id}
+                                </Text>
+                            </TouchableOpacity>
+                        ))
+                    }
+                </ScrollView>
+            </View>
+        </View>
+    );
+
     return <>
         <View style={styles.glassWrapper}>
             <BlurView intensity={80} tint="light" style={[styles.blurContainer, {gap: destinationIsHidden !== null ? 0 : 10, paddingBottom: destinationIsHidden !== null ? 5 : 15}]}>
@@ -261,48 +327,24 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
             </BlurView>
         </View>
 
-        <InputAccessoryView nativeID={INPUT_ACCESSORY_VIEW_ID}>
-            <View style={styles.accessoryContainer}>
-                <View style={styles.scrollContainer}>
-                    <ScrollView horizontal
-                        showsHorizontalScrollIndicator={false}
-                        keyboardShouldPersistTaps="always"
-                    >
-                        {SGWBuildingSearchMetadata[startBuildingId ?? destinationBuildingId ?? ""] ?
-                            ["MB", "FG", "FB", "LS", "CL", "EV"].map(id => (
-                                <TouchableOpacity
-                                    key={id}
-                                    onPress={() => destinationIsHidden === true ? insertStartPointBuildingName(SGWBuildingSearchMetadata[id]?.name ?? id) : insertDestinationBuildingName(SGWBuildingSearchMetadata[id]?.name ?? id)}
-                                    style={[styles.buildingButton, { paddingHorizontal: 10 }]}
-                                    accessible={true}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={`Insert ${SGWBuildingSearchMetadata[id]?.name ?? id} into the searchbar where your cursor or text selection is`}
-                                    accessibilityHint="Tap to quickly add the complete name of this building to your search"
-                                >
-                                    <Text style={[styles.buildingButtonText, {color: BuildingTheme.SGW[id as keyof typeof BuildingTheme.SGW] ?? "#000000"}]}>
-                                        {id}
-                                    </Text>
-                                </TouchableOpacity>
-                            )) : ["VL", "CJ", "SP", "AD", "CC", "HU"].map(id => (
-                                <TouchableOpacity
-                                    key={id}
-                                    onPress={() => destinationIsHidden === true ? insertStartPointBuildingName(LoyolaBuildingSearchMetadata[id]?.name ?? id) : insertDestinationBuildingName(LoyolaBuildingSearchMetadata[id]?.name ?? id)}
-                                    style={[styles.buildingButton, { paddingHorizontal: 10 }]}
-                                    accessible={true}
-                                    accessibilityRole="button"
-                                    accessibilityLabel={`Insert ${LoyolaBuildingSearchMetadata[id]?.name ?? id} into the searchbar where your cursor or text selection is`}
-                                    accessibilityHint="Tap to quickly add the complete name of this building to your search"
-                                >
-                                    <Text style={[styles.buildingButtonText, {color: BuildingTheme.LOY[id as keyof typeof BuildingTheme.LOY] ?? "#000000"}]}>
-                                        {id}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))
-                        }
-                    </ScrollView>
+        {Platform.OS === "ios" ? (
+            <InputAccessoryView nativeID={INPUT_ACCESSORY_VIEW_ID}>
+                {accessoryViewContent}
+            </InputAccessoryView>
+        ) : (
+            destinationIsHidden !== null && isAndroidKeyboardVisible && (
+                <View style={{ 
+                    position: "absolute", 
+                    bottom: 0,
+                    left: 0, 
+                    right: 0, 
+                    elevation: 5,
+                    backgroundColor: "#FFFFFF",
+                }}>
+                    {accessoryViewContent}
                 </View>
-            </View>
-        </InputAccessoryView>
-    </>
+            )
+        )}
+    </>;
 }
 export default DirectionsSearchPanel;
