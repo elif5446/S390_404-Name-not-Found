@@ -7,7 +7,7 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from "react-native";
-import { BuildingMetadata, OpeningHours } from "../types/Building";
+import { BuildingMetadata, OpeningHours } from "../indoors/types/Building";
 import { BuildingEvent } from "../hooks/useBuildingEvents";
 import ScheduleSection from "./ScheduleSection";
 import { styles, themedStyles } from "@/src/styles/additionalInfoPopup";

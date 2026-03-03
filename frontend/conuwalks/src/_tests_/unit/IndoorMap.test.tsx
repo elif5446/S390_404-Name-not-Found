@@ -2,7 +2,7 @@ import React from "react";
 import { Image, View } from "react-native";
 import { render, screen } from "@testing-library/react-native";
 import MapContent from "../../components/indoor/IndoorMap";
-import { FloorData } from "@/src/types/indoor";
+import { FloorData } from "@/src/indoors/types/indoor";
 
 // mock expo vector icons to prevent native rendering errors in jest
 jest.mock("@expo/vector-icons", () => ({
