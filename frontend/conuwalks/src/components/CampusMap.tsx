@@ -1,3 +1,6 @@
+import CampusLabels from "@/src/components/campusLabels";
+import RoutePolyline from "@/src/components/RoutePolyline";
+import { CampusConfig } from "@/src/data/campus/campusConfig";
 import React, {
   useState,
   useRef,
@@ -28,10 +31,6 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { BlurView } from "expo-blur";
 import { SymbolView, SFSymbol } from "expo-symbols";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
-import CampusLabels from "@/src/components/campusLabels";
-import RoutePolyline from "@/src/components/RoutePolyline";
-import { CampusConfig } from "@/src/data/campus/campusConfig";
 import AdditionalInfoPopup, {
   AdditionalInfoPopupHandle,
 } from "./AdditionalInfoPopup";
@@ -39,49 +38,34 @@ import DestinationPopup, { DestinationPopupHandle } from "./DestinationPopup";
 
 import { useUserLocation } from "@/src/hooks/useUserLocation";
 import { useDirections } from "@/src/context/DirectionsContext";
-import { calculatePolygonCenter } from "@/src/utils/geometry";
+import {
+  calculatePolygonCenter,
+  distanceMetersBetween,
+} from "@/src/utils/geometry";
 import { isPointInPolygon } from "@/src/utils/geo";
 import SGW from "@/src/data/campus/SGW.geojson";
 import LOY from "@/src/data/campus/LOY.geojson";
 import { INDOOR_DATA } from "@/src/data/indoorData";
 import { LoyolaBuildingMetadata } from "@/src/data/metadata/LOY.BuildingMetadata";
 import { SGWBuildingMetadata } from "@/src/data/metadata/SGW.BuildingMetaData";
-import BuildingTheme from "@/src/styles/BuildingTheme";
 import IndoorMapOverlay from "./indoor/IndoorMapOverlay";
+import DirectionsSearchPanel from "./DirectionsSearchPanel"
+
+import BuildingTheme from "@/src/styles/BuildingTheme";
 import styles from "@/src/styles/campusMap";
 
 // Convert GeoJSON coordinates to LatLng
 const polygonFromGeoJSON = (coordinates: number[][]): LatLng[] =>
   coordinates.map(([longitude, latitude]) => ({ latitude, longitude }));
 
-const toRadians = (value: number): number => (value * Math.PI) / 180;
-
-const distanceMetersBetween = (pointA: LatLng, pointB: LatLng): number => {
-  const earthRadius = 6371000;
-  const lat1 = toRadians(pointA.latitude);
-  const lat2 = toRadians(pointB.latitude);
-  const deltaLat = toRadians(pointB.latitude - pointA.latitude);
-  const deltaLng = toRadians(pointB.longitude - pointA.longitude);
-
-  const a =
-    Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
-    Math.cos(lat1) *
-      Math.cos(lat2) *
-      Math.sin(deltaLng / 2) *
-      Math.sin(deltaLng / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return earthRadius * c;
-};
 const SELECTED_RING_OUTER = "#1C1C1E"; // charcoal (premium, works on all pastels)
 const SELECTED_RING_INNER = "#FFFFFF";
-
 const DESTINATION_RING = "#FFFFFF";
-
 const SELECTED_OUTER_WIDTH = 10;
 const SELECTED_INNER_WIDTH = 4;
-
 const DESTINATION_OUTER_WIDTH = 8;
 const DESTINATION_INNER_WIDTH = 4;
+
 interface CampusMapProps {
   initialLocation?: {
     latitude: number;
@@ -157,7 +141,9 @@ const CampusMap: React.FC<CampusMapProps> = ({
   // Get directions context for destination setting
   const {
     destinationBuildingId,
+    destinationRoom,
     startBuildingId,
+    startRoom,
     startCoords,
     routeData,
     travelMode,
@@ -168,6 +154,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
     showDirections,
     setShowDirections,
     setIsNavigationActive,
+    clearDestination,
   } = useDirections();
 
   // Use user location if available, otherwise use initial location
@@ -200,6 +187,25 @@ const CampusMap: React.FC<CampusMapProps> = ({
   const [isInfoPopupExpanded, setIsInfoPopupExpanded] = useState(false);
   const additionalInfoPopupRef = useRef<AdditionalInfoPopupHandle>(null);
   const destinationPopupRef = useRef<DestinationPopupHandle>(null);
+  const preNavigationRegionRef = useRef<Region | null>(null);
+  const [trackLocationMarker, setTrackLocationMarker] = useState(true);
+
+  // handle restoring the camera view when navigation ends
+  useEffect(() => {
+    if (isNavigationActive) {
+      if (!preNavigationRegionRef.current) {
+        preNavigationRegionRef.current = mapRegion;
+      }
+    } else if (preNavigationRegionRef.current && mapRef.current) {
+      mapRef.current.animateCamera({ pitch: 0, heading: 0 }, { duration: 150 });
+
+      setTimeout(() => {
+        mapRef.current?.animateToRegion(preNavigationRegionRef.current!, 500);
+        preNavigationRegionRef.current = null;
+      }, 150);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNavigationActive]);
 
   const handleInfoPopupExpansionChange = useCallback(
     (isExpanded: boolean) => {
@@ -211,7 +217,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
   // Calculate circle radius based on zoom level (longitudeDelta)
   // Larger longitudeDelta = zoomed out = bigger circle
-  const circleRadius = Math.max(2.5, mapRegion.longitudeDelta * 2000);
+  //   const circleRadius = Math.max(2.5, mapRegion.longitudeDelta * 2000);
 
   // Create a ref to the MapView so we can control it
   const mapRef = useRef<MapView>(null);
@@ -225,32 +231,44 @@ const CampusMap: React.FC<CampusMapProps> = ({
   // Handle clicking on the location circle to zoom in
   const handleLocationPress = useCallback(() => {
     if (userLocation && mapRef.current) {
-      mapRef.current.animateToRegion(
+      mapRef.current.animateCamera(
         {
-          latitude: userLocation.latitude,
-          longitude: userLocation.longitude,
-          latitudeDelta: 0.003,
-          longitudeDelta: 0.003,
+          center: {
+            latitude: userLocation.latitude,
+            longitude: userLocation.longitude,
+          },
+          zoom: 17.5,
+          pitch: 0,
+          heading: 0,
         },
-        500,
+        { duration: 500 },
       );
+
+      additionalInfoPopupRef.current?.minimize();
+      destinationPopupRef.current?.minimize();
     }
   }, [userLocation]);
 
+  const initialLat = initialLocation?.latitude;
+  const initialLng = initialLocation?.longitude;
+
   // auto-pan when toggling campuses
   useEffect(() => {
-    if (mapRef.current && initialLocation) {
+    if (mapRef.current && initialLat && initialLng) {
       mapRef.current.animateToRegion(
         {
-          latitude: initialLocation.latitude,
-          longitude: initialLocation.longitude,
+          latitude: initialLat,
+          longitude: initialLng,
           latitudeDelta: INITIAL_DELTA,
           longitudeDelta: INITIAL_DELTA,
         },
         500,
       );
+
+      clearDestination();
+      setSelectedBuilding((prev) => ({ ...prev, visible: false }));
     }
-  }, [initialLocation]);
+  }, [initialLat, initialLng, clearDestination]);
 
   // Handle building tap to show additional info and set destination
   const handleBuildingPress = useCallback(
@@ -424,9 +442,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
   const handleEndNavigation = useCallback(() => {
     setIsNavigationActive(false);
-    setShowDirections(false);
-    clearRouteData();
-  }, [clearRouteData, setIsNavigationActive, setShowDirections]);
+    setShowDirections(true);
+  }, [setIsNavigationActive, setShowDirections]);
 
   const shouldUseLiveUserStart = startBuildingId === "USER" && !!userLocation;
 
@@ -444,10 +461,16 @@ const CampusMap: React.FC<CampusMapProps> = ({
         )
       : null;
 
+  const [searchPanelHeight, setSearchPanelHeight] = useState(0);
+  useEffect(() => {
+    if (!showDirections || isNavigationActive) {
+      setSearchPanelHeight(0);
+    }
+  }, [showDirections, isNavigationActive]);
+
   const recenterButtonTop =
-    insets.top + (isNavigationActive && routeData ? 118 : 84);
-  const isSheetVisibleForAccessibility =
-    (selectedBuilding.visible && !showDirections) || showDirections;
+    insets.top + (isNavigationActive && routeData ? 118 : 84 + searchPanelHeight);
+  const isSheetVisibleForAccessibility = (selectedBuilding.visible && !showDirections) || showDirections;
 
   const modeLabelMap: Record<
     "walking" | "driving" | "transit" | "bicycling",
@@ -555,14 +578,12 @@ const CampusMap: React.FC<CampusMapProps> = ({
   }, [isNavigationActive, selectedTransitStopKey, transitNavigationStops]);
 
   useEffect(() => {
-    if (!(showDirections || isNavigationActive) || !routeData) {
+    if (!(showDirections || isNavigationActive) || !routeData?.id) {
       setNavigationStepIndex(0);
       return;
     }
-    setNavigationStepIndex((previousIndex) =>
-      Math.min(previousIndex, Math.max(0, routeData.steps.length - 1)),
-    );
-  }, [showDirections, isNavigationActive, routeData?.id, routeData]);
+    setNavigationStepIndex(0);
+  }, [showDirections, isNavigationActive, routeData?.id]);
 
   useEffect(() => {
     if (
@@ -575,10 +596,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
       return;
     }
 
-    const arrivalThresholdByMode: Record<
-      "walking" | "driving" | "transit" | "bicycling",
-      number
-    > = {
+    const arrivalThresholdByMode: Record<string, number> = {
+      walk: 28,
       walking: 28,
       bicycling: 45,
       transit: 60,
@@ -594,8 +613,12 @@ const CampusMap: React.FC<CampusMapProps> = ({
       userLocation,
       currentStep.endLocation,
     );
+
+    const stepMode = (currentStep.travelMode || "walking").toLowerCase();
+    const threshold = arrivalThresholdByMode[stepMode] || 45;
+
     if (
-      metersToStepEnd <= arrivalThresholdByMode[travelMode] &&
+      metersToStepEnd <= threshold &&
       navigationStepIndex < routeData.steps.length - 1
     ) {
       setNavigationStepIndex((previousIndex) =>
@@ -648,6 +671,29 @@ const CampusMap: React.FC<CampusMapProps> = ({
     userLocation?.longitude,
   ]);
 
+  const [userLocationBuildingId, setUserLocationBuildingId] = useState<string | null>(null);
+  useEffect(() => {
+    if (!userLocation) {
+      if (userLocationBuildingId !== null) setUserLocationBuildingId(null);
+      return;
+    }
+    const findBuildingId = (geojson: typeof SGW | typeof LOY) => {
+      const feature = geojson.features.find(item => {
+        const currentFeature = item as GeoJsonFeature;
+        if (currentFeature.geometry.type !== "Polygon") {
+          return false;
+        }
+        const polygonCoords = polygonFromGeoJSON(currentFeature.geometry.coordinates[0]);
+        return isPointInPolygon(userLocation, polygonCoords);
+      });
+      return (feature?.properties as { id?: string } | undefined)?.id ?? null;
+    };
+    const currentId = findBuildingId(SGW) || findBuildingId(LOY);
+    if (currentId !== userLocationBuildingId) {
+      setUserLocationBuildingId(currentId);
+    }
+  }, [userLocation]);
+  
   // memoize the polygon lists so they don't re-calculate on every render
   const { sgwPolygons, loyPolygons } = useMemo(() => {
     const generatePolygons = (geojson: any, campus: "SGW" | "LOY") => {
@@ -770,7 +816,7 @@ return (
                   handleBuildingPress(buildingId, campus, centerCoordinates)
                 }
                 zIndex={200}
-                tracksViewChanges={true}
+                tracksViewChanges={false}
                 title={name}
                 importantForAccessibility="yes"
                 accessibilityLabel={name}
@@ -779,8 +825,8 @@ return (
               >
                 <View
                   style={{
-                    width: 0.3 / mapRegion.longitudeDelta,
-                    height: 0.3 / mapRegion.longitudeDelta,
+                    width: 44,
+                    height: 44,
                     backgroundColor: "#FFFFFF",
                     opacity: 0.01,
                   }}
@@ -808,7 +854,6 @@ return (
   }, [
     destinationBuildingId,
     handleBuildingPress,
-    mapRegion.longitudeDelta,
     selectedBuilding.name,
     selectedBuilding.visible,
   ]);
@@ -872,38 +917,39 @@ return (
           ),
         )}
 
-        {userLocation && ( //Show user's current location if available
-          <Circle
-            center={userLocation}
-            radius={circleRadius}
-            fillColor="#B03060BF"
-            strokeColor="#FFFFFF"
-            strokeWidth={2}
-            zIndex={9999}
-          />
-        )}
-
         {userLocation && (
           <Marker
             coordinate={userLocation}
             onPress={handleLocationPress}
-            tracksViewChanges={false}
+            tracksViewChanges={trackLocationMarker}
             zIndex={9999}
-            title={"Current Location"}
-            accessibilityLabel={"Current Location"}
+            title="Current Location"
+            accessibilityLabel="Current Location"
             importantForAccessibility="yes"
+            anchor={{ x: 0.5, y: 0.5 }}
           >
             <View
-              style={{
-                width: 12,
-                height: 12,
-                borderRadius: 6,
-                backgroundColor: "#B03060",
+              onLayout={() => {
+                if (trackLocationMarker) {
+                  setTimeout(() => setTrackLocationMarker(false), 100);
+                }
               }}
-              accessible={true}
-              accessibilityLabel={"Current Location"}
-              importantForAccessibility="yes"
-            />
+              style={{
+                width: 30,
+                height: 30,
+                borderRadius: 18,
+                backgroundColor: "#B03060BF",
+                borderColor: "#FFFFFF",
+                borderWidth: 4,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+              collapsable={false}
+            >
+              {Platform.OS === "android" && (
+                <Text style={{ width: 1, height: 1, opacity: 0 }}> </Text>
+              )}
+            </View>
           </Marker>
         )}
 
@@ -1216,6 +1262,24 @@ return (
         onClose={handleCloseDestinationPopup}
       />
 
+
+      {showDirections && !isNavigationActive &&
+        <View
+          onLayout={event => {const { height } = event.nativeEvent.layout; setSearchPanelHeight(height);}}
+          style={{top: insets.top + 63, position: "absolute", left: 20, right: 20}}
+        >
+          <DirectionsSearchPanel
+            startBuildingId={startBuildingId}
+            startRoom={startRoom}
+            setStartPoint={setStartPoint}
+            destinationBuildingId={destinationBuildingId}
+            destinationRoom={destinationRoom}
+            setDestination={setDestination}
+            userLocationBuildingId={userLocationBuildingId}
+          />
+        </View>
+      }
+
       {userLocation && !indoorBuildingId && !isInfoPopupExpanded && (
         <TouchableOpacity
           onPress={handleLocationPress}
@@ -1241,7 +1305,7 @@ return (
             shadowOpacity: Platform.OS === "ios" ? 0.18 : 0.22,
             shadowRadius: 4,
             elevation: Platform.OS === "ios" ? 0 : 4,
-            zIndex: 10000,
+            zIndex: 998,
           }}
           accessibilityRole="button"
           accessibilityLabel="Recenter to your location"

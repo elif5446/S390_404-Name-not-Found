@@ -165,13 +165,15 @@ export const useBottomSheet = ({
       }
     } else {
       reportExpandedState(false);
-      Animated.timing(translateY, {
-        toValue: screenHeight,
-        duration: 150,
-        useNativeDriver: true,
-      }).start(() => {
-        translateYRef.current = screenHeight;
-      });
+      if (translateYRef.current !== screenHeight) {
+        Animated.timing(translateY, {
+          toValue: screenHeight,
+          duration: 150,
+          useNativeDriver: true,
+        }).start(() => {
+          translateYRef.current = screenHeight;
+        });
+      }
     }
   }, [visible, translateY, screenHeight, SNAP_OFFSET, reportExpandedState]);
 
