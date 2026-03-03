@@ -44,8 +44,8 @@ const RightControlsPanel: React.FC<Props> = ({
     userLocation && !indoorBuildingId && !isInfoPopupExpanded;
 
   // Calculate spacing between buttons
-  const buttonSize = 44;
-  const buttonSpacing = 8;
+  const buttonSize = 50;
+  const buttonSpacing = 12;
   const userIconSize = 50;
   const containerPadding = 8;
 
@@ -58,7 +58,7 @@ const RightControlsPanel: React.FC<Props> = ({
           right: 16,
           top: Math.max(insets.top + 80, 80),
           alignItems: "center",
-          zIndex: 9999,
+          //zIndex: 9999,
         }}
         pointerEvents="box-none"
       >
