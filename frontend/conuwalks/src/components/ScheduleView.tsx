@@ -35,63 +35,35 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ onNavigateToClass }) => {
   const { setStartPoint, setDestination, setShowDirections } = useDirections();
   const { location: userLocation } = useUserLocation();
 
+  // HIGHLIGHT: Higher contrast widget background colors
+  const widgetBg = mode === "dark" ? "#000" : "#fff";
+  const secondaryTextColor = mode === "dark" ? "#BBB" : "#555";
+
   useEffect(() => {
     fetchUpcomingEvents(50);
-    // Only fetch once on component mount
   }, []);
 
-  // Handle Go to Class button press
   const handleGoToClass = (location?: string) => {
-    if (!location || !userLocation) {
-      console.log("Missing location or userLocation:", { location, userLocation });
-      return;
-    }
-
-    // Parsing building code from location
+    if (!location || !userLocation) return;
     const buildingCode = location.split(" ")[0]?.trim();
-    if (!buildingCode) {
-      console.log("Could not parse building code from:", location);
-      return;
-    }
+    if (!buildingCode) return;
 
-    // Try to find the building in both campuses
     const buildingMetadata =
-      SGWBuildingMetadata[buildingCode] ||
-      LoyolaBuildingMetadata[buildingCode];
+      SGWBuildingMetadata[buildingCode] || LoyolaBuildingMetadata[buildingCode];
+    if (!buildingMetadata) return;
 
-    if (!buildingMetadata) {
-      console.log("Building not found in metadata:", buildingCode);
-      return;
-    }
-
-    // Determine which campus
     const geoData = SGWBuildingMetadata[buildingCode] ? SGW : LOY;
-
-    // Find building from geojson
     const feature = geoData.features?.find(
       (item: any) => item.properties?.id === buildingCode,
     );
 
-    if (!feature) {
-      console.log("Feature not found in geojson:", buildingCode);
-      return;
-    }
-
-    if (feature.geometry?.type === "Polygon" && feature.geometry.coordinates) {
+    if (feature?.geometry?.type === "Polygon" && feature.geometry.coordinates) {
       const polygonCoords = feature.geometry.coordinates[0];
-
-      if (!polygonCoords || polygonCoords.length === 0) {
-        console.log("Empty polygon coordinates:", polygonCoords);
-        return;
-      }
-
-      // Calculate center manually if calculatePolygonCenter fails
       let coordinates = calculatePolygonCenter(polygonCoords);
 
-      if (!coordinates || isNaN(coordinates.latitude) || isNaN(coordinates.longitude)) {
-        console.log("calculatePolygonCenter returned invalid coords, computing manually");
-        // Manual calculation: average of all coordinates
-        let sumLat = 0, sumLng = 0;
+      if (!coordinates || isNaN(coordinates.latitude)) {
+        let sumLat = 0,
+          sumLng = 0;
         polygonCoords.forEach((coord: [number, number]) => {
           sumLng += coord[0];
           sumLat += coord[1];
@@ -102,27 +74,19 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ onNavigateToClass }) => {
         };
       }
 
-      if (coordinates && !isNaN(coordinates.latitude) && !isNaN(coordinates.longitude)) {
-        console.log("Navigating to:", buildingCode, coordinates);
-        // Set start point (user location)
-        setStartPoint("USER", userLocation, "Your Location");
-        // Set destination building
-        setDestination(buildingCode, coordinates, buildingMetadata.name);
-        // Show directions popup
-        setShowDirections(true);
-        // Switch to map view
-        onNavigateToClass?.();
-      } else {
-        console.log("Invalid coordinates:", coordinates);
-      }
+      setStartPoint("USER", userLocation, "Your Location");
+      setDestination(buildingCode, coordinates, buildingMetadata.name);
+      setShowDirections(true);
+      onNavigateToClass?.();
     }
   };
 
-
-  // Format dates and enhance events
   const enhancedEvents: EnhancedEvent[] = events.map((event) => {
     const startStr = event.start?.dateTime || event.start?.date || "";
+    const endStr = event.end?.dateTime || event.end?.date || "";
     const startDate = new Date(startStr);
+    const endDate = new Date(endStr);
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const eventDate = new Date(startDate);
@@ -146,27 +110,28 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ onNavigateToClass }) => {
       minute: "2-digit",
       hour12: true,
     };
-    const formattedTime = event.start?.dateTime
+
+    const startTime = event.start?.dateTime
       ? startDate.toLocaleTimeString("en-US", timeOptions)
       : "";
+    const endTime = event.end?.dateTime
+      ? endDate.toLocaleTimeString("en-US", timeOptions)
+      : "";
+    const formattedTime =
+      startTime && endTime ? `${startTime} - ${endTime}` : startTime;
 
-    return {
-      ...event,
-      formattedDate,
-      formattedTime,
-      isToday,
-    };
+    return { ...event, formattedDate, formattedTime, isToday };
   });
 
-  // Group events by date
-  const groupedByDate = enhancedEvents.reduce<
-    Record<string, EnhancedEvent[]>
-  >((acc, event) => {
-    const dateKey = event.formattedDate || "No Date";
-    if (!acc[dateKey]) acc[dateKey] = [];
-    acc[dateKey].push(event);
-    return acc;
-  }, {});
+  const groupedByDate = enhancedEvents.reduce<Record<string, EnhancedEvent[]>>(
+    (acc, event) => {
+      const dateKey = event.formattedDate || "No Date";
+      if (!acc[dateKey]) acc[dateKey] = [];
+      acc[dateKey].push(event);
+      return acc;
+    },
+    {},
+  );
 
   const groupedArray = Object.entries(groupedByDate).map(([date, items]) => ({
     date,
@@ -176,39 +141,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ onNavigateToClass }) => {
   if (loading) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#4285F4" />
+        <ActivityIndicator size="large" color="#B03060" />
       </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <SafeAreaView
-        style={{
-          flex: 1,
-          padding: 16,
-          backgroundColor: mode === "dark" ? "#000" : "#fff",
-        }}
-      >
-        <Text
-          style={{
-            color: mode === "dark" ? "#ff6b6b" : "#c92a2a",
-            fontSize: 16,
-            fontWeight: "500",
-          }}
-        >
-          Error loading schedule
-        </Text>
-        <Text
-          style={{
-            color: mode === "dark" ? "#ccc" : "#555",
-            fontSize: 14,
-            marginTop: 8,
-          }}
-        >
-          {error}
-        </Text>
-      </SafeAreaView>
     );
   }
 
@@ -216,7 +150,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ onNavigateToClass }) => {
     <SafeAreaView
       style={{
         flex: 1,
-        backgroundColor: mode === "dark" ? "#000" : "#fff",
+        backgroundColor: mode === "dark" ? "#121212" : "#F0F2F5",
       }}
     >
       {enhancedEvents.length === 0 ? (
@@ -233,19 +167,9 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ onNavigateToClass }) => {
               fontSize: 18,
               fontWeight: "600",
               color: mode === "dark" ? "#fff" : "#333",
-              marginBottom: 8,
             }}
           >
             No Upcoming Events
-          </Text>
-          <Text
-            style={{
-              fontSize: 14,
-              color: mode === "dark" ? "#ccc" : "#666",
-              textAlign: "center",
-            }}
-          >
-            You don't have any scheduled events in the coming days.
           </Text>
         </View>
       ) : (
@@ -254,13 +178,12 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ onNavigateToClass }) => {
           keyExtractor={(item) => item.date}
           renderItem={({ item: dateGroup }) => (
             <View key={dateGroup.date} style={{ paddingHorizontal: 16 }}>
-              {/* Date Header */}
               <Text
                 style={{
                   marginTop: 24,
                   marginBottom: 12,
-                  fontSize: 16,
-                  fontWeight: "700",
+                  fontSize: 18,
+                  fontWeight: "800",
                   color:
                     dateGroup.date === "Today"
                       ? "#B03060"
@@ -272,33 +195,34 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ onNavigateToClass }) => {
                 {dateGroup.date}
               </Text>
 
-              {/* Events for this date */}
               {dateGroup.events.map((event) => (
                 <View
                   key={event.id}
                   style={{
-                    backgroundColor:
-                      mode === "dark" ? "#1a1a1a" : "#f8f9fa",
-                    borderLeftWidth: 4,
+                    backgroundColor: widgetBg,
+                    borderLeftWidth: 5,
                     borderLeftColor: "#B03060",
-                    borderRadius: 8,
-                    padding: 14,
-                    marginBottom: 10,
+                    borderRadius: 12,
+                    padding: 16,
+                    marginBottom: 12,
+                    shadowColor: "#000",
+                    shadowOpacity: 0.1,
+                    shadowRadius: 4,
+                    elevation: 2,
                   }}
                 >
-                  {/* Event Title + Go to Class Button */}
                   <View
                     style={{
                       flexDirection: "row",
                       justifyContent: "space-between",
-                      alignItems: "flex-start",
-                      marginBottom: 6,
+                      alignItems: "center",
+                      marginBottom: 10,
                     }}
                   >
                     <Text
                       style={{
-                        fontSize: 15,
-                        fontWeight: "600",
+                        fontSize: 20,
+                        fontWeight: "700",
                         color: mode === "dark" ? "#fff" : "#111",
                         flex: 1,
                       }}
@@ -306,61 +230,95 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ onNavigateToClass }) => {
                     >
                       {event.summary}
                     </Text>
+
                     {event.location && (
                       <TouchableOpacity
                         onPress={() => handleGoToClass(event.location)}
-                        accessibilityLabel={`Maps to ${event.summary}`}
                         style={{
-                          marginLeft: 8,
-                          padding: 6,
+                          marginLeft: 12,
+                          padding: 10,
                           backgroundColor: "#B03060",
-                          borderRadius: 6,
+                          borderRadius: 25,
+                          flexDirection: "row",
+                          alignItems: "center",
                         }}
-                        accessible={true}
-                        accessibilityLabel="Go to class location"
-                        accessibilityRole="button"
                       >
                         <MaterialIcons
-                          name="subdirectory-arrow-right" // here
-                          size={18}
+                          name="directions"
+                          size={20}
                           color="#FFFFFF"
                         />
+                        <Text
+                          style={{
+                            color: "#FFF",
+                            fontWeight: "bold",
+                            marginLeft: 4,
+                            fontSize: 12,
+                          }}
+                        >
+                          GO
+                        </Text>
                       </TouchableOpacity>
                     )}
                   </View>
 
-                  {/* Time */}
                   {event.formattedTime && (
-                    <Text
+                    <View
                       style={{
-                        fontSize: 13,
-                        color: mode === "dark" ? "#aaa" : "#666",
+                        flexDirection: "row",
+                        alignItems: "center",
                         marginBottom: 6,
                       }}
                     >
-                      Time: {event.formattedTime}
-                    </Text>
+                      <MaterialIcons
+                        name="access-time"
+                        size={20}
+                        color={secondaryTextColor}
+                        style={{ marginRight: 6 }}
+                      />
+                      <Text
+                        style={{
+                          fontSize: 17,
+                          color: secondaryTextColor,
+                          fontWeight: "500",
+                        }}
+                      >
+                        {event.formattedTime}
+                      </Text>
+                    </View>
                   )}
 
-                  {/* Location */}
                   {event.location && (
-                    <Text
+                    <View
                       style={{
-                        fontSize: 13,
-                        color: mode === "dark" ? "#aaa" : "#666",
+                        flexDirection: "row",
+                        alignItems: "center",
                         marginBottom: 4,
                       }}
-                      numberOfLines={1}
                     >
-                      Location: {event.location}
-                    </Text>
+                      <MaterialIcons
+                        name="place"
+                        size={20}
+                        color={secondaryTextColor}
+                        style={{ marginRight: 6 }}
+                      />
+                      <Text
+                        style={{
+                          fontSize: 17,
+                          color: secondaryTextColor,
+                          fontWeight: "500",
+                        }}
+                        numberOfLines={1}
+                      >
+                        {event.location}
+                      </Text>
+                    </View>
                   )}
 
-                  {/* Description (if available) */}
                   {event.description && (
                     <Text
                       style={{
-                        fontSize: 12,
+                        fontSize: 13,
                         color: mode === "dark" ? "#999" : "#777",
                         marginTop: 8,
                         fontStyle: "italic",
@@ -374,8 +332,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ onNavigateToClass }) => {
               ))}
             </View>
           )}
-          contentContainerStyle={{ paddingBottom: 40, paddingTop: 20 }}
-          scrollEventThrottle={16}
+          contentContainerStyle={{ paddingBottom: 60, paddingTop: 10 }}
         />
       )}
     </SafeAreaView>
@@ -383,4 +340,3 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ onNavigateToClass }) => {
 };
 
 export default ScheduleView;
-
