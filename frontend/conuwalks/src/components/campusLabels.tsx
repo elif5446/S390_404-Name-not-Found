@@ -1,9 +1,8 @@
-import React from "react";
+import React, { memo, useEffect, useState } from "react";
 import { Marker } from "react-native-maps";
-import { View, Text } from "react-native";
+import { View, Text, Platform } from "react-native";
 import { getLabelFontSize, FeatureCollection } from "@/src/data/BuildingLabels";
 import { CampusId } from "@/src/data/campus/campusConfig";
-//will only render the labels
 
 interface Props {
   campus: CampusId;
@@ -19,6 +18,17 @@ const CampusLabels: React.FC<Props> = ({
   onLabelPress,
 }) => {
   const isVisible = longitudeDelta <= 0.0075;
+  const fontSize = getLabelFontSize(longitudeDelta);
+  const [trackChanges, setTrackChanges] = useState(true);
+
+  useEffect(() => {
+    if (!isVisible) return;
+
+    setTrackChanges(true);
+    const timeout = setTimeout(() => setTrackChanges(false), 150);
+    return () => clearTimeout(timeout);
+  }, [fontSize, isVisible]);
+
   if (!isVisible) return null;
 
   return (
@@ -29,9 +39,9 @@ const CampusLabels: React.FC<Props> = ({
 
         return (
           <Marker
-            key={`${id}-label`}
+            key={`${campus}-${id}-label`}
             coordinate={centroid}
-            tracksViewChanges={true}
+            tracksViewChanges={trackChanges}
             zIndex={100}
             anchor={{ x: 0.5, y: 0.5 }}
             onPress={(e) => {
@@ -44,15 +54,19 @@ const CampusLabels: React.FC<Props> = ({
             <View>
               <Text
                 style={{
-                  fontSize: getLabelFontSize(longitudeDelta),
+                  fontSize: fontSize,
                   fontWeight: "bold",
                   color: "#00000033",
                 }}
+                allowFontScaling={false}
                 importantForAccessibility="no"
                 accessible={false}
               >
                 {id}
               </Text>
+              {Platform.OS === "android" && (
+                <Text style={{ width: 1, height: 1, opacity: 0 }}> </Text>
+              )}
             </View>
           </Marker>
         );
@@ -61,4 +75,17 @@ const CampusLabels: React.FC<Props> = ({
   );
 };
 
-export default CampusLabels;
+export default memo(CampusLabels, (prevProps, nextProps) => {
+  const prevVisible = prevProps.longitudeDelta <= 0.0075;
+  const nextVisible = nextProps.longitudeDelta <= 0.0075;
+
+  // if visibility toggled, we need to re-render
+  if (prevVisible !== nextVisible) return false;
+  // if both are invisible, don't re-rendering
+  if (!prevVisible && !nextVisible) return true;
+
+  const prevFontSize = getLabelFontSize(prevProps.longitudeDelta);
+  const nextFontSize = getLabelFontSize(nextProps.longitudeDelta);
+
+  return prevFontSize === nextFontSize && prevProps.campus === nextProps.campus;
+});

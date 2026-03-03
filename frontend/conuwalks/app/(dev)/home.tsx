@@ -17,6 +17,7 @@ import { clearTokens, getUserInfo } from "@/src/utils/tokenStorage";
 import { styles } from "@/src/styles/home";
 import { BlurView } from "expo-blur";
 import { useDirections } from "@/src/context/DirectionsContext";
+import { syncShuttleScheduleInBackground } from "@/src/api/shuttleSyncService";
 
 export default function DevHomeScreen() {
   const [campus, setCampus] = useState<"SGW" | "Loyola">("SGW");
@@ -24,6 +25,10 @@ export default function DevHomeScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const { isNavigationActive } = useDirections();
+
+  useEffect(() => {
+    syncShuttleScheduleInBackground();
+  }, []);
 
   useEffect(() => {
     loadUserInfo();
@@ -110,16 +115,13 @@ export default function DevHomeScreen() {
   return (
     <View style={styles.container}>
       <View key={campus} style={styles.mapWrapper}>
-        {campus === "SGW" && (
-          <CampusMap
-            initialLocation={{ latitude: 45.49599, longitude: -73.57854 }}
-          />
-        )}
-        {campus === "Loyola" && (
-          <CampusMap
-            initialLocation={{ latitude: 45.45846, longitude: -73.63999 }}
-          />
-        )}
+        <CampusMap
+          initialLocation={
+            campus === "SGW"
+              ? { latitude: 45.49599, longitude: -73.57854 }
+              : { latitude: 45.45846, longitude: -73.63999 }
+          }
+        />
       </View>
 
       <StatusGradient />
