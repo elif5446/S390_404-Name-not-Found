@@ -272,12 +272,12 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
                             ["MB", "FG", "FB", "LS", "CL", "EV"].map(id => (
                                 <TouchableOpacity
                                     key={id}
-                                    onPress={() => insertStartPointBuildingName(SGWBuildingSearchMetadata[id]?.name ?? id)}
+                                    onPress={() => destinationIsHidden === true ? insertStartPointBuildingName(SGWBuildingSearchMetadata[id]?.name ?? id) : insertDestinationBuildingName(SGWBuildingSearchMetadata[id]?.name ?? id)}
                                     style={[styles.buildingButton, { paddingHorizontal: 10 }]}
                                     accessible={true}
                                     accessibilityRole="button"
                                     accessibilityLabel={`Insert ${SGWBuildingSearchMetadata[id]?.name ?? id} into the searchbar where your cursor or text selection is`}
-                                    accessibilityHint="Tap to quickly add the complete name of this building to your start point search"
+                                    accessibilityHint="Tap to quickly add the complete name of this building to your search"
                                 >
                                     <Text style={[styles.buildingButtonText, {color: BuildingTheme.SGW[id as keyof typeof BuildingTheme.SGW] ?? "#000000"}]}>
                                         {id}
@@ -286,12 +286,12 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
                             )) : ["VL", "CJ", "SP", "AD", "CC", "HU"].map(id => (
                                 <TouchableOpacity
                                     key={id}
-                                    onPress={() => insertDestinationBuildingName(LoyolaBuildingSearchMetadata[id]?.name ?? id)}
+                                    onPress={() => destinationIsHidden === true ? insertStartPointBuildingName(LoyolaBuildingSearchMetadata[id]?.name ?? id) : insertDestinationBuildingName(LoyolaBuildingSearchMetadata[id]?.name ?? id)}
                                     style={[styles.buildingButton, { paddingHorizontal: 10 }]}
                                     accessible={true}
                                     accessibilityRole="button"
                                     accessibilityLabel={`Insert ${LoyolaBuildingSearchMetadata[id]?.name ?? id} into the searchbar where your cursor or text selection is`}
-                                    accessibilityHint="Tap to quickly add the complete name of this building to your destination search"
+                                    accessibilityHint="Tap to quickly add the complete name of this building to your search"
                                 >
                                     <Text style={[styles.buildingButtonText, {color: BuildingTheme.LOY[id as keyof typeof BuildingTheme.LOY] ?? "#000000"}]}>
                                         {id}
