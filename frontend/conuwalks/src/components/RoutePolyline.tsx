@@ -1,8 +1,56 @@
 import React, { useEffect, useRef, useCallback } from "react";
 import { Polyline , LatLng } from "react-native-maps";
-import { useDirections } from "@/src/context/DirectionsContext";
 import { getDirections, decodePolyline } from "@/src/api/directions";
-import { Platform } from "react-native";
+import { useDirections, DirectionStep } from "@/src/context/DirectionsContext";
+
+const getStepColorAndStyle = (step: DirectionStep, isIOS: boolean) => {
+  const mode = (step.travelMode || "").toUpperCase();
+
+  if (mode === "WALK" || mode === "WALKING") {
+    return {
+      color: "#A970FF",
+      width: 5,
+      isWalk: true,
+    };
+  }
+
+  const type = (step.transitVehicleType || "").toLowerCase();
+  const shortName = (step.transitLineShortName || "").toLowerCase();
+  const longName = (step.transitLineName || "").toLowerCase();
+
+  let color = "#888888";
+
+  if (type.includes("shuttle")) {
+    color = "#B03060";
+  } else if (type.includes("subway") || type.includes("metro")) {
+    // STM Montreal Metro Colors
+    if (
+      shortName === "1" ||
+      longName.includes("green") ||
+      longName.includes("verte")
+    )
+      color = "#139D48";
+    else if (shortName === "2" || longName.includes("orange"))
+      color = "#F38031";
+    else if (
+      shortName === "4" ||
+      longName.includes("yellow") ||
+      longName.includes("jaune")
+    )
+      color = "#F1C40F";
+    else if (
+      shortName === "5" ||
+      longName.includes("blue") ||
+      longName.includes("bleue")
+    )
+      color = "#2980B9";
+    else color = "#2980B9";
+  } else if (type.includes("bus")) {
+    color = "#A970FF"; // Light Purple for public buses
+  }
+
+  return { color, dash: null, width: 5, isWalk: false };
+};
 
 interface RoutePolylineProps {
   startLocation?: LatLng;
