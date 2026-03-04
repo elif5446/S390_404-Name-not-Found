@@ -69,6 +69,7 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
   zIndex = 5,
 }) => {
   const {
+    startCoords,
     destinationCoords,
     travelMode,
     timeMode,
@@ -88,7 +89,7 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
   const lastFetchedKeyRef = useRef<string | null>(null);
 
   // Determine the actual start location to use
-  const effectiveStartLocation = startLocation;
+  const effectiveStartLocation = startLocation || startCoords;
   const shouldShowRoute = showDirections || isNavigationActive;
 
   const requestKey =

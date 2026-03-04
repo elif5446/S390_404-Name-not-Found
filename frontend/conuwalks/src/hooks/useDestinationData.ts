@@ -2,7 +2,11 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { DirectionStep, useDirections } from "@/src/context/DirectionsContext";
 import { getDirections } from "@/src/api/directions";
 
-export const useDestinationData = (visible: boolean) => {
+export const useDestinationData = (
+  visible: boolean,
+  overrideDestination?: { latitude: number; longitude: number },
+  overrideStart?: { latitude: number; longitude: number },
+) => {
   const directions = useDirections();
   const {
     routes,
@@ -10,7 +14,8 @@ export const useDestinationData = (visible: boolean) => {
     routeData,
     travelMode,
     startCoords,
-    destinationCoords,
+    destinationCoords: contextDestination, //renamed for clarity
+    startCoords: contextStart,
     startBuildingId,
     destinationBuildingId,
   } = directions;
@@ -18,6 +23,8 @@ export const useDestinationData = (visible: boolean) => {
   const [navigationRouteId, setNavigationRouteId] = useState<string | null>(
     null,
   );
+  const effectiveDestination = overrideDestination || contextDestination;
+  const effectiveStart = overrideStart || contextStart;
   const [modeDurationCache, setModeDurationCache] = useState<
     Partial<Record<"walking" | "driving" | "transit" | "bicycling", string>>
   >({});
@@ -75,7 +82,8 @@ export const useDestinationData = (visible: boolean) => {
   ]);
 
   useEffect(() => {
-    if (!visible || !startCoords || !destinationCoords) return;
+    // fix to only trigger fetch if we have both start (user) and the specific destination
+    if (!visible || !startCoords || !effectiveDestination) return;
 
     let isCancelled = false;
     const allModes: ("walking" | "driving" | "transit" | "bicycling")[] = [
@@ -90,7 +98,7 @@ export const useDestinationData = (visible: boolean) => {
         allModes.map(async (modeKey) => {
           const fetchedRoutes = await getDirections(
             startCoords,
-            destinationCoords,
+            effectiveDestination,
             modeKey,
           );
           const duration = fetchedRoutes[0]?.duration;
@@ -120,8 +128,8 @@ export const useDestinationData = (visible: boolean) => {
     };
   }, [
     visible,
-    startCoords,
-    destinationCoords,
+    effectiveStart,
+    effectiveDestination,
     routeScopeKey,
     normalizeDurationLabel,
   ]);
