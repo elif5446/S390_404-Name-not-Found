@@ -12,6 +12,7 @@ import SegmentedToggle from "@/src/components/SegmentedToggle";
 import { clearTokens, getUserInfo } from "@/src/utils/tokenStorage";
 import { styles } from "@/src/styles/home";
 import { useDirections } from "@/src/context/DirectionsContext";
+import { syncShuttleScheduleInBackground } from "@/src/api/shuttleSyncService";
 
 import MapScheduleToggle from "@/src/components/MapScheduleToggle";
 import ScheduleView from "@/src/components/ScheduleView";
@@ -25,6 +26,10 @@ export default function DevHomeScreen() {
 
   const [isInfoPopupVisible, setIsInfoPopupVisible] = useState(false);
   const [selectedView, setSelectedView] = useState<"map" | "calendar">("map");
+
+  useEffect(() => {
+    syncShuttleScheduleInBackground();
+  }, []);
 
   useEffect(() => {
     loadUserInfo();
