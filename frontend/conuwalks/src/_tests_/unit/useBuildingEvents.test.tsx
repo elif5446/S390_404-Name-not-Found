@@ -29,9 +29,7 @@ const setupMock = (
   });
 };
 
-// ─────────────────────────────────────────────
-// 1. LOCATION PARSING
-// ─────────────────────────────────────────────
+//location parsing
 describe("Location Parsing", () => {
   it("parses location with space separator", async () => {
     setupMock([mockEvent({ location: "H 820" })]);
@@ -63,9 +61,7 @@ describe("Location Parsing", () => {
   });
 });
 
-// ─────────────────────────────────────────────
-// 2. EVENT FILTERING
-// ─────────────────────────────────────────────
+//event filtering
 describe("Event Filtering", () => {
   it("filters events by exact building code match", async () => {
     setupMock([
@@ -98,9 +94,7 @@ describe("Event Filtering", () => {
   });
 });
 
-// ─────────────────────────────────────────────
-// 4. TODAY'S EVENTS
-// ─────────────────────────────────────────────
+//Today's event
 describe("Today's Events", () => {
   it("filters only today events", async () => {
     const todayEvent = mockEvent({
@@ -161,9 +155,8 @@ describe("Today's Events", () => {
   });
 });
 
-// ─────────────────────────────────────────────
-// 5. NEXT EVENT
-// ─────────────────────────────────────────────
+
+//next event
 describe("Next Event", () => {
   it("identifies the next upcoming event correctly", async () => {
     const soonEvent = mockEvent({
@@ -205,9 +198,7 @@ describe("Next Event", () => {
   });
 });
 
-// ─────────────────────────────────────────────
-// 6. STATE MANAGEMENT
-// ─────────────────────────────────────────────
+//state management 
 describe("State Management", () => {
   it("propagates loading state from useGoogleCalendar", () => {
     setupMock([], true, null);
@@ -223,9 +214,7 @@ describe("State Management", () => {
   });
 });
 
-// ─────────────────────────────────────────────
-// 7. EDGE CASES
-// ─────────────────────────────────────────────
+//edge case
 describe("Edge Cases", () => {
   it("handles events with date-only format (no dateTime)", async () => {
     const dateOnlyEvent = mockEvent({
