@@ -1,10 +1,13 @@
 import { Node, Edge, WighedEdge } from "../types/Navigation";
 
 //This class will create the whole indoor mapping system for
-// a selected building. This graph will then be passed to pathfinder to get the shortest distance
+// a selected building. This graph will then be passed to pathfinder to get the shortest path
 export class Graph {
   private nodes: Map<string, Node>; //key is nodeId
-  private edges: Map<string, Edge[]>; //key is nodeId and the list of edges its connected to
+  private edges: Map<string, Edge[]>; //key is nodeId and value is the list of edges its connected to
+
+  //navigation between floors uses a predefined cost (in terms of pixel distance). Can be changed but for now we favour escalators over stairs,
+  //stairs over elevator (if you add accessiblity as true in pathFinder you will see that elevator path will be taken)
   private readonly FLOOR_TRANSITION_COSTS: Record<string, number> = {
     elevator: 500,    
     escalator: 50,   
@@ -34,7 +37,7 @@ export class Graph {
       );
     }
       //calculate the distance of the edge with Euclidean distance formula (note that no edges are assigned an initial weight)
-      // nodes on different floors use a fixed cost
+      // recall nodes on different floors use a fixed cost
       const weight = nodeA.floorId !== nodeB.floorId
         ? this.getTransitionCost(nodeA, nodeB)
         : Math.sqrt(
@@ -89,11 +92,12 @@ export class Graph {
     return Array.from(this.nodes.values());
   }
 
+  //each building will have a specific entrance node to be the initial user location inside the building
   getEntranceNodes(): Node[] {
     return Array.from(this.nodes.values()).filter((n) => n.isEntrance);
   }
 
-      private getTransitionCost(nodeA: Node, nodeB: Node): number {
+    private getTransitionCost(nodeA: Node, nodeB: Node): number {
     // check both nodes since either could be the elevator/stairs
     const type = nodeA.type in this.FLOOR_TRANSITION_COSTS 
       ? nodeA.type 

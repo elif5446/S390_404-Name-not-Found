@@ -55,6 +55,7 @@ export class IndoorMapService {
     }
   }
   
+  //you can find a route by giving a start and end node
   getRoute(startNodeId: string, endNodeId: string, accessibleOnly: boolean = false): Route {
     return this.pathFinder.findShortestPath(startNodeId, endNodeId,accessibleOnly);
   }
@@ -72,7 +73,7 @@ export class IndoorMapService {
     return this.userLocation;
   }
 
-  //uses the current user location as the start point
+  //find shortest route by giving only an end node (will use the default location or preset location as starting node)
   getRouteFromCurrentLocation(endNodeId: string, accessibleOnly: boolean= false): Route {
     if (!this.userLocation) {
       throw new Error("IndoorMapService: user location not set");

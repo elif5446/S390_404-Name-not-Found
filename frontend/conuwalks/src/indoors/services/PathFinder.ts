@@ -2,6 +2,7 @@ import { Node } from "../types/Navigation";
 import { Route } from "../types/Routes";
 import { Graph } from "./Graph";
 
+//this class is the A* implementation for finding the shortest path.
 export class PathFinder {
   private graph: Graph;
 
@@ -9,7 +10,7 @@ export class PathFinder {
     this.graph = graph;
   }
 
-  findShortestPath(startNodeId: string, endNodeId: string, accessibleOnly: boolean): Route {
+  findShortestPath(startNodeId: string, endNodeId: string, accessibleOnly: boolean = false): Route {
     const startNode = this.graph.getNode(startNodeId);
     const endNode = this.graph.getNode(endNodeId);
 
