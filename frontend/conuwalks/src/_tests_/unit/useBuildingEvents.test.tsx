@@ -97,12 +97,13 @@ describe("Event Filtering", () => {
 //Today's event
 describe("Today's Events", () => {
   it("filters only today events", async () => {
-    const todayEvent = mockEvent({
-      id: "1",
-      location: "H 820",
-      start: { dateTime: new Date().toISOString() },
-      end: { dateTime: new Date(Date.now() + 3600000).toISOString() },
-    });
+    const futureTime = new Date(Date.now() + 7200000).toISOString();
+        const todayEvent = mockEvent({
+          id: "1",
+          location: "H 820",
+          start: { dateTime: futureTime },
+          end: { dateTime: new Date(Date.now() + 10800000).toISOString() },
+        });
 
     const futureEvent = mockEvent({
       id: "2",

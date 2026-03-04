@@ -22,7 +22,18 @@ function SegmentedToggle({
     <View style={[styles.overlay, { paddingTop: insets.top + 10 }]}>
       {(Platform.OS === "ios" && (
         <View style={styles.shadowiOS}>
-          <BlurView intensity={10} tint="light" style={styles.blurContainer}>
+          <BlurView
+            intensity={10}
+            tint="light"
+            style={[
+              styles.blurContainer,
+              {
+                borderRadius: 8,
+                padding: 0,
+                backgroundColor: "transparent",
+              },
+            ]}
+          >
             <SegmentedControl
               values={["Sir George Williams", "Loyola"]}
               selectedIndex={campus === "SGW" ? 0 : 1}
@@ -33,7 +44,7 @@ function SegmentedToggle({
                     : "Loyola",
                 );
               }}
-              tintColor="#B03060CC"
+              tintColor="#B03060"
               appearance={mode}
               backgroundColor="transparent"
               activeFontStyle={{
