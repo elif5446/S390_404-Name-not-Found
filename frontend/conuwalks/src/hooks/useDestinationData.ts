@@ -2,7 +2,11 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { DirectionStep, useDirections } from "@/src/context/DirectionsContext";
 import { getDirections } from "@/src/api/directions";
 
-export const useDestinationData = (visible: boolean) => {
+export const useDestinationData = (
+  visible: boolean,
+  overrideDestination?: { latitude: number; longitude: number },
+  overrideStart?: { latitude: number; longitude: number },
+) => {
   const directions = useDirections();
   const {
     routes,
@@ -10,7 +14,8 @@ export const useDestinationData = (visible: boolean) => {
     routeData,
     travelMode,
     startCoords,
-    destinationCoords,
+    destinationCoords: contextDestination, //renamed for clarity
+    startCoords: contextStart,
     startBuildingId,
     destinationBuildingId,
   } = directions;
@@ -18,6 +23,8 @@ export const useDestinationData = (visible: boolean) => {
   const [navigationRouteId, setNavigationRouteId] = useState<string | null>(
     null,
   );
+  const effectiveDestination = overrideDestination || contextDestination;
+  const effectiveStart = overrideStart || contextStart;
   const [modeDurationCache, setModeDurationCache] = useState<
     Partial<Record<"walking" | "driving" | "transit" | "bicycling", string>>
   >({});
@@ -59,12 +66,12 @@ export const useDestinationData = (visible: boolean) => {
 
   useEffect(() => {
     const activeRoute = routes[selectedRouteIndex] || routeData;
-    if (!activeRoute) return;
+    if (!activeRoute || !activeRoute.requestMode) return;
 
     const normalizedDuration = normalizeDurationLabel(activeRoute.duration);
     setModeDurationCache((prev) => {
-      if (prev[travelMode] === normalizedDuration) return prev;
-      return { ...prev, [travelMode]: normalizedDuration };
+      if (prev[activeRoute.requestMode] === normalizedDuration) return prev;
+      return { ...prev, [activeRoute.requestMode]: normalizedDuration };
     });
   }, [
     routes,
@@ -75,7 +82,8 @@ export const useDestinationData = (visible: boolean) => {
   ]);
 
   useEffect(() => {
-    if (!visible || !startCoords || !destinationCoords) return;
+    // fix to only trigger fetch if we have both start (user) and the specific destination
+    if (!visible || !startCoords || !effectiveDestination) return;
 
     let isCancelled = false;
     const allModes: ("walking" | "driving" | "transit" | "bicycling")[] = [
@@ -90,7 +98,7 @@ export const useDestinationData = (visible: boolean) => {
         allModes.map(async (modeKey) => {
           const fetchedRoutes = await getDirections(
             startCoords,
-            destinationCoords,
+            effectiveDestination,
             modeKey,
           );
           const duration = fetchedRoutes[0]?.duration;
@@ -120,8 +128,8 @@ export const useDestinationData = (visible: boolean) => {
     };
   }, [
     visible,
-    startCoords,
-    destinationCoords,
+    effectiveStart,
+    effectiveDestination,
     routeScopeKey,
     normalizeDurationLabel,
   ]);
@@ -129,10 +137,15 @@ export const useDestinationData = (visible: boolean) => {
   const getModeDurationLabel = useCallback(
     (modeKey: "walking" | "driving" | "transit" | "bicycling"): string => {
       if (modeDurationCache[modeKey]) return modeDurationCache[modeKey]!;
-      const selectedDuration =
-        routeData?.duration || routes[selectedRouteIndex]?.duration;
-      if (modeKey === travelMode && selectedDuration)
-        return normalizeDurationLabel(selectedDuration);
+
+      const activeRoute = routeData || routes[selectedRouteIndex];
+      if (
+        activeRoute &&
+        activeRoute.requestMode === modeKey &&
+        activeRoute.duration
+      ) {
+        return normalizeDurationLabel(activeRoute.duration);
+      }
       return "--";
     },
     [
@@ -140,7 +153,6 @@ export const useDestinationData = (visible: boolean) => {
       routeData,
       routes,
       selectedRouteIndex,
-      travelMode,
       normalizeDurationLabel,
     ],
   );
