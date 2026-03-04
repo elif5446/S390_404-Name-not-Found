@@ -39,7 +39,6 @@ const buildingConfig: BuildingNavConfig = {
           y: 10,
           type: "entrance",
           isEntrance: true,
-          entranceLocation: { latitude: 45.5, longitude: -73.6 },
         },
       ],
       edges: [

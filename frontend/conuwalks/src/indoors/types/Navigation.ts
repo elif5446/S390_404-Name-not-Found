@@ -10,7 +10,6 @@ export interface Node {
   type: NodeType;
   label?: string;
   isEntrance?: boolean;
-  entranceLocation?: LatLng;
 }
 
 export interface Edge {
