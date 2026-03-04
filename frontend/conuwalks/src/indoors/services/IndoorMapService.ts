@@ -63,7 +63,7 @@ export class IndoorMapService {
   setUserLocation(nodeId: string): void {
     const initialUserLocation = this.graph.getNode(nodeId)
     if(!initialUserLocation){
-      throw new Error(`Node: ${nodeId} does not exisit in the graph`);
+      throw new Error(`Node: ${nodeId} does not exist in the graph`);
     }
     this.userLocation = {nodeId: initialUserLocation.id, floorId: initialUserLocation.floorId};
     
