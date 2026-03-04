@@ -49,18 +49,126 @@ interface ScheduleViewProps {
   onNavigateToClass?: () => void;
 }
 
+const NavigationButton = ({
+  location,
+  userLocation,
+  onNavigate,
+}: {
+  location: string;
+  userLocation: any;
+  onNavigate: (loc: string) => void;
+}) => {
+  const parsed = parseLocation(location);
+  const buildingCode = parsed?.buildingCode;
+
+  // moved the logic inside useMemo and return the final coordinates
+  // to avoid 'feature is not defined' errors in outer scope
+  const coords = useMemo(() => {
+    if (!buildingCode) return null;
+    const geoData = SGWBuildingMetadata[buildingCode] ? SGW : LOY;
+
+    const feature = geoData.features?.find(
+      (item: any) => item.properties?.id === buildingCode,
+    );
+
+    if (feature?.geometry?.type === "Polygon" && feature.geometry.coordinates) {
+      const polygonCoords = feature.geometry.coordinates[0] as number[][];
+      let centerCoords = calculatePolygonCenter(polygonCoords);
+
+      // integrated the manual calculation fallback here inside useMemo
+      if (!centerCoords || isNaN(centerCoords.latitude)) {
+        let sumLat = 0,
+          sumLng = 0;
+        polygonCoords.forEach((coord: number[]) => {
+          if (coord.length >= 2) {
+            sumLng += coord[0];
+            sumLat += coord[1];
+          }
+        });
+        centerCoords = {
+          latitude: sumLat / polygonCoords.length,
+          longitude: sumLng / polygonCoords.length,
+        };
+      }
+      return centerCoords;
+    }
+    return null;
+  }, [buildingCode]);
+
+  const { getModeDurationLabel, travelMode } = useDestinationData(
+    true,
+    coords || undefined,
+    userLocation || undefined,
+  );
+  return (
+    <TouchableOpacity
+      onPress={() => onNavigate(location)}
+      style={{
+        marginLeft: 12,
+        padding: 10,
+        backgroundColor: "#B03060",
+        borderRadius: 25,
+        flexDirection: "row",
+        alignItems: "center",
+        minWidth: 80,
+      }}
+    >
+      <View
+        style={{
+          backgroundColor: "#FFFFFF",
+          borderRadius: 12,
+          width: 24,
+          height: 24,
+          alignItems: "center",
+          justifyContent: "center",
+          marginRight: 4,
+        }}
+      >
+        <PlatformIcon
+          materialName="subdirectory-arrow-right"
+          iosName="arrow.turn.up.right"
+          size={15}
+          color="#B03060"
+        />
+      </View>
+      <Text
+        style={{
+          color: "#FFF",
+          fontWeight: "bold",
+          marginLeft: 4,
+          fontSize: 12,
+        }}
+      >
+        {getModeDurationLabel(travelMode)}
+      </Text>
+    </TouchableOpacity>
+  );
+};
+
 const ScheduleView: React.FC<ScheduleViewProps> = ({ onNavigateToClass }) => {
   const mode = useColorScheme() || "light";
 
   const { events, loading, error, fetchUpcomingEvents } = useGoogleCalendar();
 
-  const { setStartPoint, setDestination, setShowDirections } = useDirections();
+  const {
+    setStartPoint,
+    setDestination,
+    setShowDirections,
+    startCoords, // included for the auto-load fix
+  } = useDirections();
 
   const { location: userLocation } = useUserLocation();
 
+  // fix by forcing the global startCoords to update as soon as userLocation is found
+  useEffect(() => {
+    if (userLocation && !startCoords) {
+      setStartPoint("USER", userLocation, "Your Location");
+    }
+  }, [userLocation, startCoords]);
+
   // destination data hook
 
-  const { getModeDurationLabel, travelMode } = useDestinationData(true);
+  //const { getModeDurationLabel, travelMode } = useDestinationData(true);
 
   // Higher contrast widget background colors
 
@@ -344,65 +452,11 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ onNavigateToClass }) => {
                     </Text>
 
                     {event.location && (
-                      <TouchableOpacity
-                        onPress={() => handleGoToClass(event.location)}
-                        style={{
-                          marginLeft: 12,
-
-                          padding: 10,
-
-                          backgroundColor: "#B03060",
-
-                          borderRadius: 25,
-
-                          flexDirection: "row",
-
-                          alignItems: "center",
-
-                          minWidth: 80,
-                        }}
-                      >
-                        <View
-                          style={{
-                            backgroundColor: "#FFFFFF",
-
-                            borderRadius: 12,
-
-                            width: 24,
-
-                            height: 24,
-
-                            alignItems: "center",
-
-                            justifyContent: "center",
-
-                            marginRight: 4,
-                          }}
-                        >
-                          <PlatformIcon
-                            materialName="subdirectory-arrow-right"
-                            iosName="arrow.turn.up.right"
-                            size={15}
-                            color="#B03060"
-                          />
-                        </View>
-
-                        <Text
-                          style={{
-                            color: "#FFF",
-
-                            fontWeight: "bold",
-
-                            marginLeft: 4,
-
-                            fontSize: 12,
-                          }}
-                        >
-                          {getModeDurationLabel(travelMode) === "--"
-                            ? "--"
-                            : getModeDurationLabel(travelMode)}
-                        </Text>
-                      </TouchableOpacity>
+                      <NavigationButton
+                        location={event.location}
+                        userLocation={userLocation}
+                        onNavigate={handleGoToClass}
+                      />
                     )}
                   </View>
 
