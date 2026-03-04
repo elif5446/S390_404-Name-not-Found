@@ -94,6 +94,7 @@ const hallBuildingNavConfig: BuildingNavConfig = {
   ]
 }
 
+//use this to find the shortest path between any two given nodes
 describe('Hall Building Navigation', () => {
 
   test('find the route between N1 and N2', ()=>{
@@ -103,5 +104,15 @@ describe('Hall Building Navigation', () => {
     const route = service.getRoute('H_964', "H_801");
     console.log('Path:', route.nodes.map(n => n.id).join(' → '));
     console.log(route.totalDistance);
+  }),
+
+
+  //use this to check that you can find the shortest path to a node N2 from the initial starting node of the building
+  test('find the route between default initial node and N2', ()=>{
+    const service = new IndoorMapService();
+    service.loadBuilding(hallBuildingNavConfig);
+
+    const route = service.getRouteFromCurrentLocation("H_964");
+    console.log('Path:', route.nodes.map(n => n.id).join(' → '));
   })
 });
