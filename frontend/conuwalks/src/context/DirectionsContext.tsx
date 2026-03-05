@@ -20,6 +20,7 @@ export interface DirectionStep {
   transitHeadsign?: string;
   transitDepartureStop?: string;
   transitArrivalStop?: string;
+  polylinePoints?: LatLng[];
 }
 
 export interface RouteData {
@@ -30,10 +31,11 @@ export interface RouteData {
   eta: string;
   steps: DirectionStep[];
   overviewPolyline: string;
+  isShuttle?: boolean;
+  requestMode: "walking" | "driving" | "transit" | "bicycling";
 }
 
 export interface DirectionsContextType {
-  // Start state
   startBuildingId: string | null;
   startCoords: LatLng | null;
   startLabel: string | null;
@@ -44,6 +46,10 @@ export interface DirectionsContextType {
     label: string,
     room?: string | null,
   ) => void;
+  timeMode: "leave" | "arrive";
+  setTimeMode: (mode: "leave" | "arrive") => void;
+  targetTime: Date | null;
+  setTargetTime: (time: Date | null) => void;
 
   // Destination state
   destinationBuildingId: string | null;
@@ -121,6 +127,18 @@ export const DirectionsProvider: React.FC<DirectionsProviderProps> = ({
   const [isNavigationActive, setIsNavigationActiveState] = useState(false);
   const [loading, setLoadingState] = useState(false);
   const [error, setErrorState] = useState<string | null>(null);
+
+  const [timeMode, setTimeModeState] = useState<"leave" | "arrive">("leave");
+  const [targetTime, setTargetTimeState] = useState<Date | null>(null);
+
+  const setTimeMode = useCallback(
+    (mode: "leave" | "arrive") => setTimeModeState(mode),
+    [],
+  );
+  const setTargetTime = useCallback(
+    (time: Date | null) => setTargetTimeState(time),
+    [],
+  );
 
   // Memoized setters to prevent unnecessary context updates
   const setStartPoint = useCallback(
@@ -238,7 +256,8 @@ export const DirectionsProvider: React.FC<DirectionsProviderProps> = ({
     setErrorState(null);
   }, []);
 
-  const value: DirectionsContextType = {
+  // Memoize the context value to prevent layout thrashing across the app
+  const value: DirectionsContextType = React.useMemo(() => ({
     startBuildingId,
     startCoords,
     startLabel,
@@ -270,7 +289,22 @@ export const DirectionsProvider: React.FC<DirectionsProviderProps> = ({
     error,
     setError,
     resetDirections,
-  };
+    timeMode,
+    setTimeMode,
+    targetTime,
+    setTargetTime,
+  }), [
+    startBuildingId, startCoords, startLabel, startRoom,
+    destinationBuildingId, destinationCoords, destinationLabel, destinationRoom,
+    routes, selectedRouteIndex, routeData, travelModeState,
+    showDirections, isNavigationActive, loading, error, 
+    timeMode, targetTime,
+    // setters are stable (wrapped in useCallback)
+    setStartPoint, setDestination, setStartRoom, setDestinationRoom, clearDestination,
+    setRoutes, setSelectedRouteIndex, setRouteData, clearRouteData, setTravelMode,
+    setShowDirections, setIsNavigationActive, setLoading, setError, resetDirections,
+    setTimeMode, setTargetTime
+  ]);
 
   return (
     <DirectionsContext.Provider value={value}>

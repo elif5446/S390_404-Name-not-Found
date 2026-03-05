@@ -87,6 +87,15 @@ const DestinationContent: React.FC<DestinationContentProps> = ({
               ]}
             >
               <View style={{ flex: 1 }}>
+                {/* Shuttle badge injection */}
+                {route.isShuttle && (
+                  <View style={styles.shuttleBadgeContainer}>
+                    <View style={styles.shuttleBadgeIcon}>
+                      <Text style={styles.shuttleBadgeLetter}>C</Text>
+                    </View>
+                    <Text style={styles.shuttleBadgeText}>Concordia Shuttle</Text>
+                  </View>
+                )}
                 <Text style={styles.durationText}>{route.duration}</Text>
                 <Text style={styles.etaText}>{route.eta}</Text>
                 {travelMode === "transit" && !!transitSummary && (

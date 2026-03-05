@@ -1,0 +1,93 @@
+import { StyleSheet, Platform } from "react-native";
+
+const directionsSearchPanelStyles = StyleSheet.create({
+    glassWrapper: {
+        borderRadius: 30,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 10,
+        backgroundColor: Platform.OS === 'android' ? "#FFFFFF" : "transparent",
+        borderWidth: Platform.OS === 'android' ? 1 : 0,
+        borderColor: 'rgba(0, 0, 0, 0.05)',
+        zIndex: 997,
+    },
+    blurContainer: {
+        borderRadius: 30,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.4)',
+        display:"flex",
+        flexDirection:"column",
+        margin:0,
+        padding:15
+    },
+    input: {
+        height: 40,
+        backgroundColor: 'rgba(255, 255, 255, 0)',
+        borderRadius: 8,
+        paddingHorizontal: 10,
+        color: "#000",
+        flex: 1,
+        fontSize: 18
+    },
+    accessoryContainer: {
+        width: '100%', 
+        alignItems: 'center', 
+        paddingBottom: 10,
+        backgroundColor: 'transparent'
+    },
+    scrollContainer: {
+        flexDirection: 'row',
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        borderRadius: 25,
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        elevation: 5,
+        alignItems: 'center',
+        justifyContent: 'center'
+    },
+    buildingButton: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
+        marginHorizontal: 4,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 1.5,
+        elevation: 2,
+    },
+    buildingButtonText: {
+        fontWeight: '600',
+        fontSize: 15,
+    },
+    listContainer: {
+        marginTop: 10,
+        marginHorizontal: 10,
+    },
+    listSuggestion: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 12,
+        paddingHorizontal: 5,
+        borderTopWidth: StyleSheet.hairlineWidth,
+        borderBottomColor: 'rgba(0,0,0,0.1)',
+    },
+    listSuggestionText: {
+        fontSize: 16,
+        color: '#000',
+        flex: 0.95
+    },
+    suggestionIconButton: {
+        marginLeft: 10,
+        opacity: 0.8,
+    }
+})
+export default directionsSearchPanelStyles;

@@ -66,12 +66,12 @@ export const useDestinationData = (
 
   useEffect(() => {
     const activeRoute = routes[selectedRouteIndex] || routeData;
-    if (!activeRoute) return;
+    if (!activeRoute || !activeRoute.requestMode) return;
 
     const normalizedDuration = normalizeDurationLabel(activeRoute.duration);
     setModeDurationCache((prev) => {
-      if (prev[travelMode] === normalizedDuration) return prev;
-      return { ...prev, [travelMode]: normalizedDuration };
+      if (prev[activeRoute.requestMode] === normalizedDuration) return prev;
+      return { ...prev, [activeRoute.requestMode]: normalizedDuration };
     });
   }, [
     routes,
@@ -137,10 +137,15 @@ export const useDestinationData = (
   const getModeDurationLabel = useCallback(
     (modeKey: "walking" | "driving" | "transit" | "bicycling"): string => {
       if (modeDurationCache[modeKey]) return modeDurationCache[modeKey]!;
-      const selectedDuration =
-        routeData?.duration || routes[selectedRouteIndex]?.duration;
-      if (modeKey === travelMode && selectedDuration)
-        return normalizeDurationLabel(selectedDuration);
+
+      const activeRoute = routeData || routes[selectedRouteIndex];
+      if (
+        activeRoute &&
+        activeRoute.requestMode === modeKey &&
+        activeRoute.duration
+      ) {
+        return normalizeDurationLabel(activeRoute.duration);
+      }
       return "--";
     },
     [
@@ -148,7 +153,6 @@ export const useDestinationData = (
       routeData,
       routes,
       selectedRouteIndex,
-      travelMode,
       normalizeDurationLabel,
     ],
   );

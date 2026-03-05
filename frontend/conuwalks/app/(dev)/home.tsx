@@ -1,9 +1,4 @@
-import {
-  View,
-  StatusBar,
-  Alert,
-  ActivityIndicator,
-} from "react-native";
+import { View, StatusBar, Alert, ActivityIndicator } from "react-native";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
 import CampusMap from "@/src/components/CampusMap";
@@ -13,18 +8,12 @@ import { clearTokens, getUserInfo } from "@/src/utils/tokenStorage";
 import { styles } from "@/src/styles/home";
 import { useDirections } from "@/src/context/DirectionsContext";
 
-import MapScheduleToggle from "@/src/components/MapScheduleToggle";
-import ScheduleView from "@/src/components/ScheduleView";
-
 export default function DevHomeScreen() {
   const [campus, setCampus] = useState<"SGW" | "Loyola">("SGW");
   const [userInfo, setUserInfo] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const { isNavigationActive } = useDirections();
-
-  const [isInfoPopupVisible, setIsInfoPopupVisible] = useState(false);
-  const [selectedView, setSelectedView] = useState<"map" | "calendar">("map");
 
   useEffect(() => {
     loadUserInfo();
@@ -102,7 +91,9 @@ export default function DevHomeScreen() {
           </>
         )}
 
-        {selectedView === "calendar" && <ScheduleView onNavigateToClass={() => setSelectedView("map")} />}
+        {selectedView === "calendar" && (
+          <ScheduleView onNavigateToClass={() => setSelectedView("map")} />
+        )}
       </View>
 
       <StatusGradient />
