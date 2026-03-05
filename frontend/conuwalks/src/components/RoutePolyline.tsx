@@ -10,9 +10,8 @@ const getStepColorAndStyle = (step: DirectionStep, isIOS: boolean) => {
 
   if (mode === "WALK" || mode === "WALKING") {
     return {
-      color: "#B03060",
-      dash: isIOS ? [1, 6] : [1, 8],
-      width: isIOS ? 3 : 4,
+      color: "#FF69B4",
+      width: 5,
       isWalk: true,
     };
   }
