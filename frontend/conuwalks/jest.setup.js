@@ -212,3 +212,6 @@ jest.mock("@react-native-async-storage/async-storage", () => ({
   multiSet: jest.fn(() => Promise.resolve(null)),
   multiRemove: jest.fn(() => Promise.resolve(null)),
 }));
+
+
+
