@@ -21,7 +21,7 @@ export interface Edge {
 
 //this was only made cause we do not initially add a weight to the edges in the buildingNavConfig files. 
 //so this is a way to inforce that a weight will be added later
-export interface WighedEdge extends Edge{
+export interface WeighedEdge extends Edge{
   weight: number;
 }
 

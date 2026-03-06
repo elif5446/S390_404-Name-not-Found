@@ -1,4 +1,4 @@
-import { Node, Edge, WighedEdge } from "../types/Navigation";
+import { Node, Edge, WeighedEdge } from "../types/Navigation";
 
 //This class will create the whole indoor mapping system for
 // a selected building. This graph will then be passed to pathfinder to get the shortest path
@@ -45,7 +45,7 @@ export class Graph {
           );
 
     
-    const weightedEdge: WighedEdge = {
+    const weightedEdge: WeighedEdge = {
       ...edge,
       weight,      
     };
@@ -79,9 +79,9 @@ export class Graph {
     });
   }
 
-  getEdge(nodeAId: string, nodeBId: string): WighedEdge | undefined {
+  getEdge(nodeAId: string, nodeBId: string): WeighedEdge | undefined {
     const connectedEdges = this.edges.get(nodeAId) || [];
-    return connectedEdges.find((edge) => edge.nodeBId === nodeBId) as WighedEdge;
+    return connectedEdges.find((edge) => edge.nodeBId === nodeBId) as WeighedEdge;
   }
 
   getNode(nodeId: string): Node | undefined {
