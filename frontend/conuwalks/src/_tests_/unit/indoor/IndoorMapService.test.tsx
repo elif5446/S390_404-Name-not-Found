@@ -66,14 +66,7 @@ describe("IndoorMapService", () => {
     mockGraphInstance = {
       addNode: jest.fn(),
       addEdge: jest.fn(),
-      getNode: jest.fn().mockReturnValue({
-        id: "A",
-        floorId: "floor-1",
-        x: 0,
-        y: 0,
-        type: "room",
-        isEntrance: true,
-      }),
+      getNode: jest.fn(),
       getEntranceNodes: jest.fn(),
     } as unknown as jest.Mocked<Graph>;
 
@@ -91,10 +84,6 @@ describe("IndoorMapService", () => {
     it("creates a Graph and a PathFinder", () => {
       expect(MockGraph).toHaveBeenCalledTimes(1);
       expect(MockPathFinder).toHaveBeenCalledTimes(1);
-    });
-
-    it("initialises userLocation as null", () => {
-      expect(service.getUserLocation()).toBeNull();
     });
   });
 
@@ -130,46 +119,7 @@ describe("IndoorMapService", () => {
         expect(mockGraphInstance.addEdge).toHaveBeenCalledWith(edge);
       });
     });
-
-    it("sets userLocation to defaultStartNodeId when node is found", () => {
-      const nodeA = {
-        id: "A",
-        floorId: "floor-1",
-        x: 0,
-        y: 0,
-        type: "room" as NodeType,
-      };
-      mockGraphInstance.getNode.mockReturnValue(nodeA);
-
-      service.loadBuilding(buildingConfig);
-
-      expect(service.getUserLocation()).toEqual({
-        nodeId: "A",
-        floorId: "floor-1",
-      });
-    });
-
-    it("resets a previously set userLocation before applying default", () => {
-      const nodeA = {
-        id: "A",
-        floorId: "floor-1",
-        x: 0,
-        y: 0,
-        type: "room" as NodeType,
-      };
-      mockGraphInstance.getNode.mockReturnValue(nodeA);
-
-      service.setUserLocation("B");
-      service.loadBuilding(buildingConfig);
-
-      // should now be the default, not B
-      expect(service.getUserLocation()).toEqual({
-        nodeId: "A",
-        floorId: "floor-1",
-      });
-    });
   });
-
   describe("getRoute", () => {
     it("delegates to PathFinder and returns the result", () => {
       const route = service.getRoute("A", "B");
@@ -188,106 +138,6 @@ describe("IndoorMapService", () => {
         "B",
         true,
       );
-    });
-  });
-
-  describe("setUserLocation / getUserLocation", () => {
-    it("stores and returns the user location", () => {
-      const nodeB = {
-        id: "B",
-        floorId: "floor-1",
-        x: 10,
-        y: 0,
-        type: "room" as NodeType,
-      };
-      mockGraphInstance.getNode.mockReturnValue(nodeB);
-
-      service.setUserLocation("B");
-
-      expect(service.getUserLocation()).toEqual({
-        nodeId: "B",
-        floorId: "floor-1",
-      });
-    });
-
-    it("throws when the node does not exist in the graph", () => {
-      mockGraphInstance.getNode.mockReturnValue(
-        undefined as unknown as ReturnType<Graph["getNode"]>,
-      );
-
-      expect(() => service.setUserLocation("nonexistent")).toThrow(
-        "Node: nonexistent does not exist in the graph",
-      );
-    });
-  });
-
-  describe("getRouteFromCurrentLocation", () => {
-    it("throws if userLocation is not set", () => {
-      expect(() => service.getRouteFromCurrentLocation("B")).toThrow(
-        "IndoorMapService: user location not set",
-      );
-    });
-
-    it("uses the current userLocation as start node", () => {
-      const nodeA = {
-        id: "A",
-        floorId: "floor-1",
-        x: 0,
-        y: 0,
-        type: "room" as NodeType,
-      };
-      mockGraphInstance.getNode.mockReturnValue(nodeA);
-
-      service.setUserLocation("A");
-      const route = service.getRouteFromCurrentLocation("B");
-
-      expect(mockPathFinderInstance.findShortestPath).toHaveBeenCalledWith(
-        "A",
-        "B",
-        false,
-      );
-      expect(route).toBe(mockRoute);
-    });
-
-    it("passes accessibleOnly flag into PathFinder", () => {
-      const nodeA = {
-        id: "A",
-        floorId: "floor-1",
-        x: 0,
-        y: 0,
-        type: "room" as NodeType,
-      };
-      mockGraphInstance.getNode.mockReturnValue(nodeA);
-
-      service.setUserLocation("A");
-      service.getRouteFromCurrentLocation("B", true);
-
-      expect(mockPathFinderInstance.findShortestPath).toHaveBeenCalledWith(
-        "A",
-        "B",
-        true,
-      );
-    });
-  });
-  describe("getStartNode", () => {
-    it("returns null when userLocation is not set", () => {
-      expect(service.getStartNode()).toBeNull();
-    });
-
-    it("returns the node from the graph when userLocation is set", () => {
-      const nodeA = {
-        id: "A",
-        floorId: "floor-1",
-        x: 0,
-        y: 0,
-        type: "room" as NodeType,
-      };
-      mockGraphInstance.getNode.mockReturnValue(nodeA);
-
-      service.setUserLocation("A");
-
-      expect(service.getStartNode()).toBe(nodeA);
-      expect(mockGraphInstance.getNode).toHaveBeenCalledWith("A");
     });
   });
 });

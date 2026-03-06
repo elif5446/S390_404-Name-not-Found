@@ -13,7 +13,6 @@ import { PathFinder } from "./PathFinder";
 export class IndoorMapService {
   private graph: Graph;
   private pathFinder: PathFinder;
-  private userLocation: UserLocation | null = null;
 
   constructor() {
     this.graph = new Graph();
@@ -24,9 +23,7 @@ export class IndoorMapService {
     //this will reset the graph everytime a new building is pressed
     this.graph = new Graph();
     this.pathFinder = new PathFinder(this.graph);
-    this.userLocation = null;
     
-
     //load the floors
     for (const floor of config.floors) {
       for (const node of floor.nodes) {
@@ -45,14 +42,10 @@ export class IndoorMapService {
         this.graph.addEdge(edge);
       }
     }
+  }
 
-    //set default start node as initial user location
-    const startNode = this.graph.getNode(config.defaultStartNodeId);
-    if (startNode) {
-      this.userLocation = { nodeId: config.defaultStartNodeId, floorId: startNode.floorId };
-    } else {
-      throw new Error(`IndoorMapService: defaultStartNodeId "${config.defaultStartNodeId}" not found in graph`);
-    }
+  getGraph(): Graph {
+    return this.graph;
   }
   
   //you can find a route by giving a start and end node
@@ -60,34 +53,4 @@ export class IndoorMapService {
     return this.pathFinder.findShortestPath(startNodeId, endNodeId,accessibleOnly);
   }
 
-  setUserLocation(nodeId: string): void {
-    const initialUserLocation = this.graph.getNode(nodeId)
-    if(!initialUserLocation){
-      throw new Error(`Node: ${nodeId} does not exist in the graph`);
-    }
-    this.userLocation = {nodeId: initialUserLocation.id, floorId: initialUserLocation.floorId};
-    
-  }
-
-  getUserLocation(): UserLocation | null {
-    return this.userLocation;
-  }
-
-  //find shortest route by giving only an end node (will use the default location or preset location as starting node)
-  getRouteFromCurrentLocation(endNodeId: string, accessibleOnly: boolean= false): Route {
-    if (!this.userLocation) {
-      throw new Error("IndoorMapService: user location not set");
-    }
-    return this.pathFinder.findShortestPath(
-      this.userLocation.nodeId,
-      endNodeId,
-      accessibleOnly
-    );
-  }
-
-  //this will get the default start node for the building that is being loaded
-  getStartNode(): Node | null {
-  if (!this.userLocation) return null;
-  return this.graph.getNode(this.userLocation.nodeId) ?? null;
-}
 }
