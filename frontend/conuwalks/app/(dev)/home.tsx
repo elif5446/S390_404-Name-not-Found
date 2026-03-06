@@ -7,6 +7,10 @@ import SegmentedToggle from "@/src/components/SegmentedToggle";
 import { clearTokens, getUserInfo } from "@/src/utils/tokenStorage";
 import { styles } from "@/src/styles/home";
 import { useDirections } from "@/src/context/DirectionsContext";
+import { syncShuttleScheduleInBackground } from "@/src/api/shuttleSyncService";
+
+import MapScheduleToggle from "@/src/components/MapScheduleToggle";
+import ScheduleView from "@/src/components/ScheduleView";
 
 export default function DevHomeScreen() {
   const [campus, setCampus] = useState<"SGW" | "Loyola">("SGW");
@@ -14,6 +18,13 @@ export default function DevHomeScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const { isNavigationActive } = useDirections();
+
+  const [isInfoPopupVisible, setIsInfoPopupVisible] = useState(false);
+  const [selectedView, setSelectedView] = useState<"map" | "calendar">("map");
+
+  useEffect(() => {
+    syncShuttleScheduleInBackground();
+  }, []);
 
   useEffect(() => {
     loadUserInfo();
