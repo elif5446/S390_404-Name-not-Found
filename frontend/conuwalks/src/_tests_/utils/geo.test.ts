@@ -1,31 +1,6 @@
-jest.mock("react-native-maps", () => ({}));
-
-// defined the logic here because the transpiler is dropping it from the source file
-const isPointInPolygonMock = (
-  point: { latitude: number; longitude: number },
-  polygon: { latitude: number; longitude: number }[],
-): boolean => {
-  const x = point.longitude;
-  const y = point.latitude;
-  let inside = false;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-    const xi = polygon[i].longitude,
-      yi = polygon[i].latitude;
-    const xj = polygon[j].longitude,
-      yj = polygon[j].latitude;
-
-    // parantheses for test runner to understand the logic
-    const intersect =
-      yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
-
-    if (intersect) inside = !inside;
-  }
-  return inside;
-};
-
-import { polygonFromGeoJSON } from "../../utils/geo";
-
+jest.unmock("../../utils/geo");
 describe("geo utils", () => {
+  const { isPointInPolygon, polygonFromGeoJSON } = require("../../utils/geo");
   const squarePolygon = [
     { latitude: 0, longitude: 0 },
     { latitude: 0, longitude: 10 },
@@ -41,12 +16,12 @@ describe("geo utils", () => {
 
   test("isPointInPolygon identifies point inside", () => {
     const point = { latitude: 5, longitude: 5 };
-    expect(isPointInPolygonMock(point, squarePolygon)).toBe(true);
+    expect(isPointInPolygon(point, squarePolygon)).toBe(true);
   });
 
   test("isPointInPolygon identifies point outside", () => {
     const point = { latitude: 15, longitude: 15 };
-    expect(isPointInPolygonMock(point, squarePolygon)).toBe(false);
+    expect(isPointInPolygon(point, squarePolygon)).toBe(false);
   });
 
   test("isPointInPolygon handles complex shapes (U-shape)", () => {
@@ -60,11 +35,7 @@ describe("geo utils", () => {
       { latitude: 8, longitude: 2 },
       { latitude: 0, longitude: 2 },
     ];
-    expect(isPointInPolygonMock({ latitude: 9, longitude: 5 }, uShape)).toBe(
-      true,
-    );
-    expect(isPointInPolygonMock({ latitude: 5, longitude: 5 }, uShape)).toBe(
-      false,
-    );
+    expect(isPointInPolygon({ latitude: 9, longitude: 5 }, uShape)).toBe(true);
+    expect(isPointInPolygon({ latitude: 5, longitude: 5 }, uShape)).toBe(false);
   });
 });

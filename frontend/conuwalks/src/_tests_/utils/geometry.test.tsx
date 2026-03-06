@@ -2,7 +2,7 @@ import {
   calculatePolygonCenter,
   distanceMetersBetween,
   toRadians,
-} from "@/src/utils/geometry";
+} from "../../utils/geometry";
 
 describe("geometry utils", () => {
   const coord1 = { latitude: 45.495, longitude: -73.578 };
