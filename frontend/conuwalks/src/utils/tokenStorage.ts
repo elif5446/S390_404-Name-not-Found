@@ -3,6 +3,10 @@ import { GoogleSignin } from "@react-native-google-signin/google-signin";
 
 const TOKEN_KEY = "@auth_tokens";
 const USER_INFO_KEY = "@user_info";
+const CLASS_REMINDER_LEAD_TIME_KEY = "@class_reminder_lead_time";
+const DISMISSED_CLASS_EVENT_IDS_KEY = "@dismissed_class_event_ids";
+const VALID_REMINDER_MINUTES = [0, 5, 10, 15, 30] as const;
+export const DEFAULT_CLASS_REMINDER_LEAD_TIME_MINUTES = 10;
 
 export interface AuthTokens {
   accessToken: string;
@@ -74,6 +78,8 @@ export const clearTokens = async (): Promise<void> => {
   try {
     await AsyncStorage.removeItem(TOKEN_KEY);
     await AsyncStorage.removeItem(USER_INFO_KEY);
+    await AsyncStorage.removeItem(CLASS_REMINDER_LEAD_TIME_KEY);
+    await AsyncStorage.removeItem(DISMISSED_CLASS_EVENT_IDS_KEY);
     console.log("Local tokens and user info cleared");
 
     try {
@@ -101,4 +107,68 @@ export const isTokenValid = (tokens: AuthTokens | null): boolean => {
   }
 
   return true;
+};
+
+export const saveClassReminderLeadTime = async (
+  minutes: number,
+): Promise<boolean> => {
+  try {
+    if (!VALID_REMINDER_MINUTES.includes(minutes as any)) {
+      throw new Error(`Invalid reminder value: ${minutes}`);
+    }
+
+    await AsyncStorage.setItem(CLASS_REMINDER_LEAD_TIME_KEY, String(minutes));
+    return true;
+  } catch (error) {
+    console.error("Error saving class reminder lead time:", error);
+    return false;
+  }
+};
+
+export const getClassReminderLeadTime = async (): Promise<number> => {
+  try {
+    const raw = await AsyncStorage.getItem(CLASS_REMINDER_LEAD_TIME_KEY);
+    if (!raw) return DEFAULT_CLASS_REMINDER_LEAD_TIME_MINUTES;
+
+    const parsed = Number(raw);
+    if (!VALID_REMINDER_MINUTES.includes(parsed as any)) {
+      return DEFAULT_CLASS_REMINDER_LEAD_TIME_MINUTES;
+    }
+
+    return parsed;
+  } catch (error) {
+    console.error("Error reading class reminder lead time:", error);
+    return DEFAULT_CLASS_REMINDER_LEAD_TIME_MINUTES;
+  }
+};
+
+export const getDismissedClassEventIds = async (): Promise<string[]> => {
+  try {
+    const raw = await AsyncStorage.getItem(DISMISSED_CLASS_EVENT_IDS_KEY);
+    if (!raw) return [];
+
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed.filter((value) => typeof value === "string");
+  } catch (error) {
+    console.error("Error reading dismissed class event ids:", error);
+    return [];
+  }
+};
+
+export const saveDismissedClassEventIds = async (
+  ids: string[],
+): Promise<boolean> => {
+  try {
+    const uniqueIds = Array.from(new Set(ids.filter((id) => typeof id === "string")));
+    await AsyncStorage.setItem(
+      DISMISSED_CLASS_EVENT_IDS_KEY,
+      JSON.stringify(uniqueIds),
+    );
+    return true;
+  } catch (error) {
+    console.error("Error saving dismissed class event ids:", error);
+    return false;
+  }
 };
