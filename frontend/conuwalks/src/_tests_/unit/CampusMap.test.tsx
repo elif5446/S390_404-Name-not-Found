@@ -376,6 +376,10 @@ describe("CampusMap", () => {
     jest.clearAllMocks();
     (useUserLocation as jest.Mock).mockReturnValue(makeUserLocation());
     (useDirections as jest.Mock).mockReturnValue(makeDirections());
+    // Restore geometry/geo mocks to baseline so tests don't bleed mock state
+    (distanceMetersBetween as jest.Mock).mockReturnValue(100);
+    (calculatePolygonCenter as jest.Mock).mockReturnValue({ latitude: 45.495, longitude: -73.578 });
+    (isPointInPolygon as jest.Mock).mockReturnValue(false);
     // Call rAF callbacks synchronously so effects that use it resolve immediately
     global.requestAnimationFrame = jest.fn((cb: FrameRequestCallback) => {
       cb(0);
@@ -555,13 +559,21 @@ describe("CampusMap", () => {
     });
 
     it("is hidden when showDirections is true even if a building is selected", () => {
-      (useDirections as jest.Mock).mockReturnValue(
-        makeDirections({ showDirections: true }),
-      );
-      render(<CampusMap />);
+      // showDirections=false on initial render so the polygon inside MapView is
+      // accessible (RTNL v13 hides map children when importantForAccessibility
+      // is set to no-hide-descendants, which happens when showDirections=true).
+      const { rerender } = render(<CampusMap />);
 
       act(() => {
         fireEvent.press(screen.getByTestId("polygon-Hall Building"));
+      });
+
+      // Switch showDirections to true – popup must now be hidden.
+      (useDirections as jest.Mock).mockReturnValue(
+        makeDirections({ showDirections: true }),
+      );
+      act(() => {
+        rerender(<CampusMap />);
       });
 
       expect(screen.queryByTestId("additional-info-popup")).toBeNull();
@@ -853,11 +865,15 @@ describe("CampusMap", () => {
     });
 
     it("does not show IndoorMapOverlay when the long-pressed building has no indoor data", () => {
-      // LOY/AD doesn't have indoor data in the mock — isPointInPolygon returns true
-      // only for the first call (SGW feature), second call (LOY) returns false
+      // The user-location effect on mount calls isPointInPolygon twice (SGW then
+      // LOY).  The long-press handler then calls it twice more.  We consume those
+      // four calls with explicit once-values so the long press resolves to the LOY
+      // "AD" building, which has no entry in INDOOR_DATA → overlay must stay hidden.
       (isPointInPolygon as jest.Mock)
-        .mockReturnValueOnce(false) // SGW H → not inside
-        .mockReturnValueOnce(false); // LOY AD → not inside
+        .mockReturnValueOnce(false) // user-location effect: SGW H
+        .mockReturnValueOnce(false) // user-location effect: LOY AD
+        .mockReturnValueOnce(false) // long press: SGW H → not inside
+        .mockReturnValueOnce(true); // long press: LOY AD → inside, but no indoor data
 
       render(<CampusMap />);
       act(() => {
