@@ -3,7 +3,7 @@ import { AccessibilityInfo } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import { SGWBuildingMetadata } from "@/src/data/metadata/SGW.BuildingMetaData";
 import { LoyolaBuildingMetadata } from "@/src/data/metadata/LOY.BuildingMetadata";
-import { AccessibilityIconDef, BuildingMetadata } from "../types/Building";
+import { AccessibilityIconDef, BuildingMetadata } from "../indoors/types/Building";
 
 export const useBuildingData = (buildingId: string, campus: "SGW" | "LOY") => {
   const [buildingInfo, setBuildingInfo] = useState<BuildingMetadata | null>(
