@@ -21,6 +21,7 @@ jobs:
         with:
           node-version: "20"
           cache: "npm"
+          cache-dependency-path: frontend/conuwalks/package-lock.json
 
       - name: Install Dependencies
         working-directory: frontend/conuwalks
@@ -32,32 +33,34 @@ jobs:
         run: npm test -- --coverage --coverageReporters="json" --coverageReporters="json-summary" --coverageReporters="text"
 
       - name: Generate Markdown Report
-        id: generate_report
         run: |
           DATE=$(date +'%Y-%m-%d %H:%M')
           REPORT_FILE="Coverage-Reports.md"
           JSON_PATH="frontend/conuwalks/coverage/coverage-summary.json"
+
+          if [ ! -f "$JSON_PATH" ]; then
+            echo "Coverage file not found at $JSON_PATH"
+            exit 1
+          fi
 
           echo "# Code Coverage Report" > $REPORT_FILE
           echo "Last updated: \`$DATE\`" >> $REPORT_FILE
           echo -e "\n| File | % Stmts | % Branch | % Funcs | % Lines |" >> $REPORT_FILE
           echo "| :--- | :--- | :--- | :--- | :--- |" >> $REPORT_FILE
 
-          # the Global Total Row
-          TOTAL_STMTS=$(jq ".total.statements.pct" coverage/coverage-summary.json)
-          TOTAL_BRANCH=$(jq ".total.branches.pct" coverage/coverage-summary.json)
-          TOTAL_FUNCS=$(jq ".total.functions.pct" coverage/coverage-summary.json)
-          TOTAL_LINES=$(jq ".total.lines.pct" coverage/coverage-summary.json)
+          TOTAL_STMTS=$(jq ".total.statements.pct" "$JSON_PATH")
+          TOTAL_BRANCH=$(jq ".total.branches.pct" "$JSON_PATH")
+          TOTAL_FUNCS=$(jq ".total.functions.pct" "$JSON_PATH")
+          TOTAL_LINES=$(jq ".total.lines.pct" "$JSON_PATH")
 
           echo "| **All files** | **$TOTAL_STMTS%** | **$TOTAL_BRANCH%** | **$TOTAL_FUNCS%** | **$TOTAL_LINES%** |" >> $REPORT_FILE
 
-          # Individual File Rows
-          jq -r 'to_entries[] | select(.key != "total") | "\(.key)|\(.value.statements.pct)%|\(.value.branches.pct)%|\(.value.functions.pct)%|\(.value.lines.pct)%"' coverage/coverage-summary.json | while read -r line; do
+          jq -r 'to_entries[] | select(.key != "total") | "\(.key)|\(.value.statements.pct)%|\(.value.branches.pct)%|\(.value.functions.pct)%|\(.value.lines.pct)%"' "$JSON_PATH" | while read -r line; do
             echo "| $line |" >> $REPORT_FILE
           done
 
           echo -e "\n*Automatically generated from the latest tests on the \`dev\` branch.*" >> $REPORT_FILE
-
+          
       - name: Push to Wiki
         env:
           WIKI_URL: https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git
@@ -76,5 +79,5 @@ jobs:
             echo "No changes in coverage. Skipping push."
           else
             git commit -m "docs: update coverage report table"
-            git push origin main
+            git push origin HEAD:master
           fi
