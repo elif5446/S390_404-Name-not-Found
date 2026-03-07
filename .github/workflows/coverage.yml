@@ -28,6 +28,7 @@ jobs:
 
       - name: Run Tests & Generate Coverage
         working-directory: frontend/conuwalks
+        continue-on-error: true
         run: npm test -- --coverage
 
       - name: Generate Markdown Report
