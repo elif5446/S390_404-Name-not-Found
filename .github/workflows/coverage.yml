@@ -23,9 +23,11 @@ jobs:
           cache: "npm"
 
       - name: Install Dependencies
+        working-directory: frontend/conuwalks
         run: npm install
 
       - name: Run Tests & Generate Coverage
+        working-directory: frontend/conuwalks
         run: npm test -- --coverage
 
       - name: Generate Markdown Report
@@ -72,5 +74,5 @@ jobs:
             echo "No changes in coverage. Skipping push."
           else
             git commit -m "docs: update coverage report table"
-            git push origin master
+            git push origin main
           fi
