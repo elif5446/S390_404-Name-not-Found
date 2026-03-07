@@ -24,7 +24,6 @@ global.structuredClone = jest.fn((obj) => JSON.parse(JSON.stringify(obj)));
 
 // Mock react-native-maps
 jest.mock("react-native-maps", () => {
-  const React = require("react");
   const { View } = require("react-native");
 
   const MockMapView = ({ children, testID, ...props }) => (
@@ -105,7 +104,6 @@ console.error = (...args) => {
 
 // Mock @react-native-segmented-control/segmented-control (iOS)
 jest.mock("@react-native-segmented-control/segmented-control", () => {
-  const React = require("react");
   const { View, TouchableOpacity, Text } = require("react-native");
 
   return {
@@ -134,7 +132,6 @@ jest.mock("@react-native-segmented-control/segmented-control", () => {
 
 // Mock react-native-paper (Android)
 jest.mock("react-native-paper", () => {
-  const React = require("react");
   const { View, TouchableOpacity, Text } = require("react-native");
 
   return {
@@ -159,7 +156,6 @@ jest.mock("react-native-paper", () => {
 
 // Mock expo-blur
 jest.mock("expo-blur", () => {
-  const React = require("react");
   const { View } = require("react-native");
 
   return {
@@ -182,24 +178,22 @@ jest.mock("react-native-safe-area-context", () => ({
   SafeAreaProvider: ({ children }) => children,
 }));
 
-// Mock @react-native-google-signin/google-signin
-jest.mock("@react-native-google-signin/google-signin", () => ({
-  GoogleSignin: {
-    configure: jest.fn(),
-    signIn: jest.fn(),
-    signOut: jest.fn(),
-    isSignedIn: jest.fn(() => false),
-    getTokens: jest.fn(() => ({
-      accessToken: "mock-token",
-      idToken: "mock-id-token",
-    })),
-    getCurrentUser: jest.fn(() => null),
-  },
-  statusCodes: {
-    SIGN_IN_CANCELLED: "SIGN_IN_CANCELLED",
-    IN_PROGRESS: "IN_PROGRESS",
-    PLAY_SERVICES_NOT_AVAILABLE: "PLAY_SERVICES_NOT_AVAILABLE",
-  },
+jest.mock("expo-auth-session/providers/google", () => ({
+  useAuthRequest: jest.fn(() => [
+    { url: "https://accounts.google.com/o/oauth2/v2/auth" },
+    null,
+    jest.fn(),
+  ]),
+}));
+
+jest.mock("expo-auth-session", () => ({
+  makeRedirectUri: jest.fn(() => "exp://localhost:19000"),
+  dismiss: jest.fn(),
+}));
+
+jest.mock("expo-web-browser", () => ({
+  maybeCompleteAuthSession: jest.fn(),
+  openAuthSessionAsync: jest.fn(),
 }));
 
 jest.mock("@react-native-async-storage/async-storage", () => ({
