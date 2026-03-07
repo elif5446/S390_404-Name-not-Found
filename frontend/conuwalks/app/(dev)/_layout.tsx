@@ -2,6 +2,7 @@ import { Stack, useRouter, useSegments } from "expo-router";
 import { useEffect, useState, useRef } from "react";
 import { View, ActivityIndicator } from "react-native";
 import { getTokens, isTokenValid } from "@/src/utils/tokenStorage";
+import UpcomingClassBanner from "@/src/components/UpcomingClassBanner";
 
 export default function DevLayout() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -78,9 +79,26 @@ export default function DevLayout() {
   }
 
   return (
-    <Stack>
-      <Stack.Screen name="home" options={{ headerShown: false }} />
-      <Stack.Screen name="login" options={{ headerShown: false }} />
-    </Stack>
+    <View style={{ flex: 1 }}>
+      <Stack>
+        <Stack.Screen name="home" options={{ headerShown: false }} />
+        <Stack.Screen name="login" options={{ headerShown: false }} />
+      </Stack>
+
+      {segments[segments.length - 1] !== "login" && (
+        <View
+          style={{
+            position: "absolute",
+            top: 50,
+            left: 0,
+            right: 0,
+            zIndex: 20,
+          }}
+          pointerEvents="box-none"
+        >
+          <UpcomingClassBanner />
+        </View>
+      )}
+    </View>
   );
 }
