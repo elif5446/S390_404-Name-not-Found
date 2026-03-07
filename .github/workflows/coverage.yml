@@ -29,13 +29,14 @@ jobs:
       - name: Run Tests & Generate Coverage
         working-directory: frontend/conuwalks
         continue-on-error: true
-        run: npm test -- --coverage
+        run: run: npm test -- --coverage --coverageReporters="json" --coverageReporters="json-summary" --coverageReporters="text"
 
       - name: Generate Markdown Report
         id: generate_report
         run: |
           DATE=$(date +'%Y-%m-%d %H:%M')
           REPORT_FILE="Coverage-Reports.md"
+          JSON_PATH="frontend/conuwalks/coverage/coverage-summary.json"
 
           echo "# Code Coverage Report" > $REPORT_FILE
           echo "Last updated: \`$DATE\`" >> $REPORT_FILE
