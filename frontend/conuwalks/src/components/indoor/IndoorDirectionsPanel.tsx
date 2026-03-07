@@ -12,18 +12,24 @@ import POIBadge from "./POIBadge";
 interface Props {
   poi: POI;
   startingRoom: string;
+  sourcePOI?: POI | null;
   onClose: () => void;
 }
 
 const IndoorDirectionsPanel: React.FC<Props> = ({
   poi,
   startingRoom,
+  sourcePOI,
   onClose,
 }) => {
   const [avoidStairs, setAvoidStairs] = useState(false);
   const [avoidElevator, setAvoidElevator] = useState(false);
 
-  const { steps, estimatedMinutes } = getDirectionsForPOI(poi, startingRoom);
+  const { steps, estimatedMinutes } = getDirectionsForPOI(
+    poi,
+    startingRoom,
+    sourcePOI,
+  );
 
   return (
     <View style={S.panel}>
@@ -83,8 +89,8 @@ const IndoorDirectionsPanel: React.FC<Props> = ({
 
       {/* Starting room card */}
       <View style={S.infoCard}>
-        <Text style={S.infoCardRoomNum}>{startingRoom}</Text>
-        <Text style={S.infoCardLabel}>Starting Room</Text>
+        <Text style={S.infoCardRoomNum}>{sourcePOI ? sourcePOI.room : startingRoom}</Text>
+        <Text style={S.infoCardLabel}>{sourcePOI ? sourcePOI.description : "Starting Room"}</Text>
       </View>
 
       {/* Destination POI card */}
@@ -171,6 +177,8 @@ function getCategoryIcon(
   switch (cat) {
     case "LAB":
       return "desktop-outline";
+    case "ROOM":
+      return "business-outline";
     case "WC_F":
       return "person-outline";
     case "WC_M":

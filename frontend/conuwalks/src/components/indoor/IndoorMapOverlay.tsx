@@ -16,10 +16,19 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { ReactNativeZoomableView } from "@openspacelabs/react-native-zoomable-view";
 import { BuildingIndoorConfig } from "@/src/indoors/types/FloorPlans";
+import { POI, POICategory } from "@/src/types/poi";
+import { getPOIsForFloor, getCategoriesForFloor } from "@/src/data/poiData";
 
 import MapContent from "./IndoorMap";
 import FloorPicker from "./FloorPicker";
+import POIBadge from "./POIBadge";
+import POIFilterPanel from "./POIFilterPanel";
+import IndoorDirectionsPanel from "./IndoorDirectionsPanel";
 import { styles } from "@/src/styles/IndoorMap.styles";
+import { POI_PALETTE } from "@/src/styles/IndoorPOI.styles";
+
+/** Simulated starting room — in a real app this comes from the user's location */
+const DEFAULT_STARTING_ROOM = "833";
 
 const calculateGeographicHeight = (
   bounds:
@@ -39,7 +48,6 @@ const calculateGeographicHeight = (
 
   if (latDiff < 0.00001 || lonDiff < 0.00001) return screenHeight;
 
-  // Adjust longitude for latitude (Geographic projection correction)
   const latRadians = (northEast.latitude * Math.PI) / 180;
   const lonScale = Math.cos(latRadians);
   const geographicRatio = (lonDiff * lonScale) / latDiff;
@@ -61,39 +69,79 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
   const zoomRef = useRef<ReactNativeZoomableView>(null);
   const isMounted = useRef(true);
 
+  // ── POI state ────────────────────────────────────────────────────────────
+  const [routeTargetMode, setRouteTargetMode] = useState<"SOURCE" | "DESTINATION">("DESTINATION");
+  const [sourcePOI, setSourcePOI] = useState<POI | null>(null);
+  const [destinationPOI, setDestinationPOI] = useState<POI | null>(null);
+
+  const poisForFloor = useMemo(
+    () => getPOIsForFloor(buildingData.id, currentLevel),
+    [buildingData.id, currentLevel],
+  );
+
+  const categoriesForFloor = useMemo(
+    () => getCategoriesForFloor(buildingData.id, currentLevel),
+    [buildingData.id, currentLevel],
+  );
+
+  const [activeCategories, setActiveCategories] = useState<Set<POICategory>>(
+    () => new Set(categoriesForFloor),
+  );
+
+  // Re-initialise filters when the floor changes
+  useEffect(() => {
+    setActiveCategories(new Set(getCategoriesForFloor(buildingData.id, currentLevel)));
+    setSourcePOI(null);
+    setDestinationPOI(null);
+  }, [currentLevel, buildingData.id]);
+
+  const handleToggleCategory = useCallback((cat: POICategory) => {
+    setActiveCategories((prev) => {
+      const next = new Set(prev);
+      if (next.has(cat)) next.delete(cat);
+      else next.add(cat);
+      return next;
+    });
+  }, []);
+
+  const handleSelectPOI = useCallback(
+    (poi: POI) => {
+      if (routeTargetMode === "SOURCE") {
+        setSourcePOI(poi);
+      } else {
+        setDestinationPOI(poi);
+      }
+    },
+    [routeTargetMode],
+  );
+
+  const handleCloseDirections = useCallback(() => setDestinationPOI(null), []);
+
+  // ── Floor data ────────────────────────────────────────────────────────────
   const activeFloor = useMemo(
     () => buildingData.floors.find((f) => f.level === currentLevel),
     [buildingData.floors, currentLevel],
   );
 
-  // calculate Aspect Ratio strictly based on Geodata
-  // returns a safe height or defaults to screen height if data is missing
   const contentHeight = useMemo(
     () => calculateGeographicHeight(activeFloor?.bounds, width, height),
     [activeFloor, width, height],
   );
 
-  // inital fade in
+  // ── Animations ────────────────────────────────────────────────────────────
   useEffect(() => {
     isMounted.current = true;
-
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 400,
       useNativeDriver: true,
     }).start();
-
-    return () => {
-      isMounted.current = false;
-    };
+    return () => { isMounted.current = false; };
   }, [fadeAnim]);
 
-  // floor transtion
   useEffect(() => {
     if (!isMounted.current) return;
-
     zoomRef.current?.zoomTo(1);
-
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 250,
@@ -104,16 +152,12 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
   const handleFloorChange = useCallback(
     (level: number) => {
       if (level === currentLevel) return;
-
       Animated.timing(fadeAnim, {
         toValue: 0,
         duration: 150,
         useNativeDriver: true,
       }).start(({ finished }) => {
-        // once the old map is entirely invisible, swap the state data
-        if (finished && isMounted.current) {
-          setCurrentLevel(level);
-        }
+        if (finished && isMounted.current) setCurrentLevel(level);
       });
     },
     [currentLevel, fadeAnim],
@@ -130,72 +174,241 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
     );
   }
 
+  const visiblePOIs = poisForFloor.filter((p) => activeCategories.has(p.category));
+
   return (
     <View style={styles.container}>
-      {/* Map Area */}
-      <View style={styles.mapContainer}>
-        <Animated.View style={[styles.mapCanvas, { opacity: fadeAnim }]}>
-          <ReactNativeZoomableView
-            ref={zoomRef}
-            maxZoom={3.0}
-            minZoom={1.0}
-            zoomStep={0.5}
-            initialZoom={1.0}
-            bindToBorders={true}
-            visualTouchFeedbackEnabled={false} // Disables tap ripple effects
-            contentWidth={width}
-            contentHeight={contentHeight}
-          >
-            <MapContent
-              floor={activeFloor}
-              width={width}
-              height={contentHeight}
-            />
-          </ReactNativeZoomableView>
-        </Animated.View>
-      </View>
+      {/* ── Map area ───────────────────────────────────────────────────────── */}
+      <View style={{ flex: 1, position: "relative" }}>
+        <View style={styles.mapContainer}>
+          <Animated.View style={[styles.mapCanvas, { opacity: fadeAnim }]}>
+            <ReactNativeZoomableView
+              ref={zoomRef}
+              maxZoom={3.0}
+              minZoom={1.0}
+              zoomStep={0.5}
+              initialZoom={1.0}
+              bindToBorders={true}
+              visualTouchFeedbackEnabled={false}
+              contentWidth={width}
+              contentHeight={contentHeight}
+            >
+              <View style={{ width, height: contentHeight }}>
+                <MapContent
+                  floor={activeFloor}
+                  width={width}
+                  height={contentHeight}
+                />
 
-      <SafeAreaView style={styles.headerWrapper} edges={["top"]}>
-        <View
-          style={styles.headerContent}
-          accessible={true}
-          accessibilityLabel={`${buildingData.name} Floor ${activeFloor.label}`}
-        >
-          <Text
-            style={styles.buildingTitle}
-            numberOfLines={1}
-            accessibilityRole="header"
-          >
-            {buildingData.name}
-          </Text>
-          <View style={styles.floorBadge}>
-            <Text style={styles.floorTitle}>Floor {activeFloor.label}</Text>
-          </View>
+                {/* POI badges rendered in map content coordinates */}
+                {visiblePOIs.map((poi) => {
+                  const selectionType =
+                    destinationPOI?.id === poi.id
+                      ? "destination"
+                      : sourcePOI?.id === poi.id
+                        ? "source"
+                        : undefined;
+
+                  return (
+                    <POIBadge
+                      key={poi.id}
+                      poi={poi}
+                      left={poi.mapPosition.x * width - 17}
+                      top={poi.mapPosition.y * contentHeight - 17}
+                      selectionType={selectionType}
+                      onPress={handleSelectPOI}
+                    />
+                  );
+                })}
+
+                {/* Route overlay in map content coordinates */}
+                {destinationPOI ? (
+                  <RouteDotsOverlay
+                    sourcePOI={sourcePOI}
+                    destinationPOI={destinationPOI}
+                    mapWidth={width}
+                    mapHeight={contentHeight}
+                  />
+                ) : null}
+              </View>
+            </ReactNativeZoomableView>
+          </Animated.View>
         </View>
-      </SafeAreaView>
 
-      <FloorPicker
-        floors={buildingData.floors}
-        currentFloor={currentLevel}
-        onFloorSelect={handleFloorChange}
-      />
-
-      <View style={styles.footerContainer}>
-        <TouchableOpacity
-          onPress={onExit}
-          style={styles.exitButton}
-          activeOpacity={0.8}
-          accessibilityLabel="Exit Map"
-          accessibilityRole="button"
+        {/* Header chrome */}
+        <SafeAreaView
+          style={styles.headerWrapper}
+          edges={["top"]}
         >
-          <View style={styles.iconCircle}>
-            <Ionicons name="close" size={30} color="#FFFFFF" />
+          <View
+            style={styles.headerContent}
+            accessible={true}
+            accessibilityLabel={`${buildingData.name} Floor ${activeFloor.label}`}
+          >
+            <Text
+              style={styles.buildingTitle}
+              numberOfLines={1}
+              accessibilityRole="header"
+            >
+              {buildingData.name}
+            </Text>
+            <View style={styles.floorBadge}>
+              <Text style={styles.floorTitle}>Floor {activeFloor.label}</Text>
+            </View>
           </View>
-          <Text style={styles.exitText}>Exit</Text>
-        </TouchableOpacity>
+        </SafeAreaView>
+
+        <FloorPicker
+          floors={buildingData.floors}
+          currentFloor={currentLevel}
+          onFloorSelect={handleFloorChange}
+        />
+
+        <View style={{
+          position: "absolute",
+          bottom: 20,
+          left: 16,
+          zIndex: 6000,
+        }}>
+          <TouchableOpacity
+            onPress={onExit}
+            style={{ alignItems: "center" }}
+            activeOpacity={0.8}
+            accessibilityLabel="Exit Map"
+            accessibilityRole="button"
+          >
+            <View style={{
+              width: 44,
+              height: 44,
+              borderRadius: 22,
+              backgroundColor: "#912F40",
+              justifyContent: "center",
+              alignItems: "center",
+              borderWidth: 2,
+              borderColor: "#fff",
+            }}>
+              <Ionicons name="close" size={22} color="#FFFFFF" />
+            </View>
+            <Text style={{
+              color: "#912F40",
+              fontSize: 11,
+              fontWeight: "700",
+              marginTop: 2,
+            }}>Exit</Text>
+          </TouchableOpacity>
+        </View>
       </View>
+
+      {/* ── Bottom panel: directions OR POI list ──────────────────────────── */}
+      {destinationPOI ? (
+        <IndoorDirectionsPanel
+          poi={destinationPOI}
+          startingRoom={DEFAULT_STARTING_ROOM}
+          sourcePOI={sourcePOI}
+          onClose={handleCloseDirections}
+        />
+      ) : (
+        <POIFilterPanel
+          pois={poisForFloor}
+          categories={categoriesForFloor}
+          activeCategories={activeCategories}
+          floorLabel={activeFloor.label}
+          targetMode={routeTargetMode}
+          sourcePOI={sourcePOI}
+          destinationPOI={destinationPOI}
+          onTargetModeChange={setRouteTargetMode}
+          onToggleCategory={handleToggleCategory}
+          onSelectPOI={handleSelectPOI}
+        />
+      )}
     </View>
   );
 };
 
+// ── Route dots overlay ────────────────────────────────────────────────────────
+interface RouteDotsProps {
+  sourcePOI: POI | null;
+  destinationPOI: POI;
+  mapWidth: number;
+  mapHeight: number;
+}
+
+const DOT_COUNT = 14;
+
+const RouteDotsOverlay: React.FC<RouteDotsProps> = ({
+  sourcePOI,
+  destinationPOI,
+  mapWidth,
+  mapHeight,
+}) => {
+  const startX = sourcePOI ? sourcePOI.mapPosition.x * mapWidth : mapWidth * 0.5;
+  const startY = sourcePOI ? sourcePOI.mapPosition.y * mapHeight : mapHeight * 0.88;
+  const endX = destinationPOI.mapPosition.x * mapWidth;
+  const endY = destinationPOI.mapPosition.y * mapHeight;
+
+  const dots: { x: number; y: number }[] = [];
+  for (let i = 0; i <= DOT_COUNT; i++) {
+    const t = i / DOT_COUNT;
+    dots.push({ x: startX + (endX - startX) * t, y: startY + (endY - startY) * t });
+  }
+
+  return (
+    <>
+      {dots.map((d, idx) => (
+        <View
+          key={idx}
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            left: d.x - 5,
+            top: d.y - 5,
+            width: 10,
+            height: 10,
+            borderRadius: 5,
+            backgroundColor: POI_PALETTE.pink,
+            opacity: 0.82,
+          }}
+        />
+      ))}
+      {/* Start marker */}
+      <View
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          left: startX - 10,
+          top: startY - 10,
+          width: 20,
+          height: 20,
+          borderRadius: 10,
+          backgroundColor: sourcePOI ? "#3A7BD5" : POI_PALETTE.pink,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Text style={{ color: "#fff", fontSize: 9, fontWeight: "800" }}>
+          {sourcePOI ? "S" : "A"}
+        </Text>
+      </View>
+      {/* Destination marker */}
+      <View
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          left: endX - 10,
+          top: endY - 10,
+          width: 20,
+          height: 20,
+          borderRadius: 10,
+          backgroundColor: POI_PALETTE.pink,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Text style={{ color: "#fff", fontSize: 9, fontWeight: "800" }}>B</Text>
+      </View>
+    </>
+  );
+};
+
 export default IndoorMapOverlay;
+

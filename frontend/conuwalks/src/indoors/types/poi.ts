@@ -4,6 +4,7 @@ export type POICategory =
   | "WC_A"
   | "WC_SHARED"
   | "LAB"
+  | "ROOM"
   | "PRINT"
   | "IT";
 

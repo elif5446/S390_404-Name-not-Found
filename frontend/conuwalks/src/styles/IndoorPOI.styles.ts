@@ -69,6 +69,54 @@ export const poiPanelStyles = StyleSheet.create({
       android: { elevation: 8 },
     }),
   },
+  targetModeRow: {
+    flexDirection: "row",
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    gap: 8,
+  },
+  modeChipActive: {
+    backgroundColor: POI_PALETTE.pink,
+    borderRadius: 14,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  modeChipInactive: {
+    backgroundColor: POI_PALETTE.pillGray,
+    borderRadius: 14,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  modeChipTextActive: {
+    color: POI_PALETTE.white,
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  modeChipTextInactive: {
+    color: POI_PALETTE.textMid,
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  searchRow: {
+    marginHorizontal: 14,
+    marginTop: 10,
+    marginBottom: 4,
+    backgroundColor: POI_PALETTE.white,
+    borderWidth: 1,
+    borderColor: POI_PALETTE.pillGray,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: Platform.OS === "ios" ? 9 : 5,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 12,
+    color: POI_PALETTE.textDark,
+    paddingVertical: 0,
+  },
   filterRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -112,6 +160,7 @@ export const poiPanelStyles = StyleSheet.create({
     backgroundColor: POI_PALETTE.cardBg,
     borderRadius: 14,
     paddingVertical: 4,
+    maxHeight: 290,
     ...Platform.select({
       ios: {
         shadowColor: "#000",
@@ -122,6 +171,25 @@ export const poiPanelStyles = StyleSheet.create({
       android: { elevation: 2 },
     }),
   },
+  listToggleRow: {
+    marginHorizontal: 10,
+    marginTop: 2,
+    marginBottom: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: POI_PALETTE.cardBg,
+    borderWidth: 1,
+    borderColor: POI_PALETTE.pillGray,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  listToggleTitle: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: POI_PALETTE.textDark,
+  },
   listHeader: {
     fontSize: 10,
     fontWeight: "700",
@@ -130,6 +198,12 @@ export const poiPanelStyles = StyleSheet.create({
     marginHorizontal: 14,
     marginTop: 10,
     marginBottom: 4,
+  },
+  listScroll: {
+    maxHeight: 245,
+  },
+  listScrollContent: {
+    paddingBottom: 6,
   },
   listRow: {
     flexDirection: "row",
@@ -157,6 +231,34 @@ export const poiPanelStyles = StyleSheet.create({
     borderRadius: 8,
     paddingVertical: 3,
     paddingHorizontal: 8,
+  },
+  rolePillSource: {
+    fontSize: 9,
+    fontWeight: "700",
+    color: POI_PALETTE.white,
+    backgroundColor: "#3A7BD5",
+    borderRadius: 8,
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    marginRight: 6,
+  },
+  rolePillDestination: {
+    fontSize: 9,
+    fontWeight: "700",
+    color: POI_PALETTE.white,
+    backgroundColor: POI_PALETTE.pink,
+    borderRadius: 8,
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    marginRight: 6,
+  },
+  emptyState: {
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
+  emptyStateText: {
+    fontSize: 12,
+    color: POI_PALETTE.textMuted,
   },
 });
 
