@@ -8,7 +8,7 @@ import {
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { IndoorHotspot, IndoorDestination } from "./types/hotspot";
+import { IndoorHotspot, IndoorDestination } from "@/src/indoors/types/hotspot";
 import { bottomPanelStyles as styles } from "./styles/IndoorBottomPanel.styles";
 
 interface Props {

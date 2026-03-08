@@ -16,7 +16,7 @@ import IndoorBottomPanel from "./IndoorBottomPanel";
 import IndoorRoomLabels from "./IndoorRoomLabels";
 import { styles } from "@/src/styles/IndoorMap.styles";
 import { navConfigRegistry } from "@/src/indoors/data/navConfigRegistry";
-import { IndoorHotspot, IndoorDestination } from "./types/hotspot";
+import { IndoorHotspot, IndoorDestination } from "@/src/indoors/types/hotspot";
 
 const calculateGeographicHeight = (
   bounds:

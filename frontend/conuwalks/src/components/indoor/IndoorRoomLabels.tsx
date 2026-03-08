@@ -1,6 +1,6 @@
 import React from "react";
 import { Pressable, Text } from "react-native";
-import { IndoorHotspot, IndoorDestination } from "./types/hotspot";
+import { IndoorHotspot, IndoorDestination } from "@/src/indoors/types/hotspot";
 
 interface Props {
   hotspots: IndoorHotspot[];
