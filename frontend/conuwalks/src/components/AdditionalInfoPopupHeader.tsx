@@ -12,7 +12,10 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { SymbolView } from "expo-symbols";
 import { styles, themedStyles } from "@/src/styles/additionalInfoPopup";
 import { MetroIcon } from "./MetroIcon";
-import { BuildingMetadata, AccessibilityIconDef } from "../indoors/types/Building";
+import {
+  BuildingMetadata,
+  AccessibilityIconDef,
+} from "../indoors/types/Building";
 import BottomSheetDragHandle from "./ui/BottomSheetDragHandle";
 import PlatformIcon from "./ui/PlatformIcon";
 
@@ -111,6 +114,7 @@ const AdditionalInfoPopupHeader: React.FC<AdditionalInfoPopupHeaderProps> = ({
               accessibilityRole="button"
               accessibilityLabel={`Directions, ${directionsEtaLabel || "--"}`}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              testID="directions-button"
             >
               <View style={styles.directionsArrowCircle}>
                 <MaterialIcons

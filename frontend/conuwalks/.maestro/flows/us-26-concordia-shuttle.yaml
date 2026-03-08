@@ -1,0 +1,79 @@
+appId: com.conuwalks.app
+tags:
+  - feature
+  - directions
+---
+- runFlow: 
+    file: ../subflows/launch.yaml
+    env:
+        USERNAME: "${USERNAME}"
+        PASSWORD: "${PASSWORD}"
+
+- tapOn: "Loyola"
+- waitForAnimationToEnd
+
+- doubleTapOn:
+    point: 50%, 50%
+- waitForAnimationToEnd
+
+- tapOn: 
+    point: 15%, 55% 
+    # text: "SP" 
+- assertVisible: "Richard J. Renaud Science Complex"
+
+- tapOn:
+    id: "directions-button"
+- assertVisible: "Directions"
+- tapOn:
+    point: 30%, 70%
+
+- assertVisible: "Leave now.*"
+- tapOn: "Leave now.*"
+- assertVisible: "Set time"
+
+- runScript:
+    file: ../scripts/generateNextWeekDay.js
+- tapOn: 
+    id: "picker-day-${output.setDate}"
+
+- repeat:
+    while:
+      notVisible: 
+        id: "picker-hour-9"
+    commands:
+      - swipe:
+          start: 63%, 75%
+          end: 63%, 65%
+          duration: 800
+- tapOn:
+    id: "picker-hour-9"
+
+- repeat:
+    while:
+      notVisible: 
+        id: "picker-minute-0"
+    commands:
+      - swipe:
+          start: 90%, 75%
+          end: 90%, 65%
+          duration: 800
+- tapOn:
+    id: "picker-minute-0"
+- tapOn: "Set time"
+- waitForAnimationToEnd
+
+- assertVisible: "Concordia Shuttle"
+- tapOn:
+    rightOf: "Concordia Shuttle"
+    id: "navigate-button"
+
+- waitForAnimationToEnd
+
+- assertVisible: ".*ETA"
+- assertVisible: 
+    id: "cancel-navigation-button"
+
+- tapOn:
+    id: "cancel-navigation-button"
+- tapOn:
+    id: "close-popup-button"

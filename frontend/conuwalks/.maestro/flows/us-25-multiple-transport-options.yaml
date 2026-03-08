@@ -1,0 +1,85 @@
+appId: com.conuwalks.app
+tags:
+  - feature
+  - directions
+---
+- runFlow: 
+    file: ../subflows/launch.yaml
+    env:
+        USERNAME: "${USERNAME}"
+        PASSWORD: "${PASSWORD}"
+
+
+- doubleTapOn:
+    point: 50%, 50%
+
+- waitForAnimationToEnd
+
+- tapOn:
+    point: 45%, 30%
+- waitForAnimationToEnd
+- assertVisible: "Henry F. Hall Building.*"
+- tapOn:
+    id: "directions-button"
+
+- assertVisible: "Directions"
+- assertVisible: "Current Location"
+- assertVisible: "Henry F. Hall Building"
+
+- tapOn:
+    point: 30%, 70%
+- tapOn:
+    point: 15%, 70%
+- assertVisible: 
+    id: "route-walking"
+- tapOn:
+    id: "navigate-button"
+- waitForAnimationToEnd
+- assertVisible: "Walking.*"
+- assertVisible: 
+    id: "cancel-navigation-button"
+- tapOn:
+    id: "cancel-navigation-button"
+- waitForAnimationToEnd
+
+- tapOn:
+    point: 30%, 70%
+- assertVisible: 
+    id: "route-transit"
+- tapOn:
+    id: "navigate-button"
+- waitForAnimationToEnd
+- assertVisible: "Transit.*"
+- assertVisible: 
+    id: "cancel-navigation-button"
+- tapOn:
+    id: "cancel-navigation-button"
+- waitForAnimationToEnd
+
+- tapOn:
+    point: 65%, 70%
+- assertVisible: 
+    id: "route-bicycling"
+- tapOn:
+    id: "navigate-button"
+- waitForAnimationToEnd
+- assertVisible: "Bicycling.*"
+- assertVisible: 
+    id: "cancel-navigation-button"
+- tapOn:
+    id: "cancel-navigation-button"
+- waitForAnimationToEnd
+
+- tapOn:
+    point: 85%, 70%
+- assertVisible: 
+    id: "route-driving"
+- tapOn:
+    id: "navigate-button"
+- waitForAnimationToEnd
+- assertVisible: "Driving.*"
+- assertVisible: 
+    id: "cancel-navigation-button"
+- tapOn:
+    id: "cancel-navigation-button"
+- waitForAnimationToEnd

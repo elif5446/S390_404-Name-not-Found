@@ -86,6 +86,7 @@ const DestinationHeader: React.FC<DestinationHeaderProps> = ({
                 accessibilityRole="button"
                 accessibilityLabel="Close directions"
                 accessibilityHint="Closes the directions panel"
+                testID="close-popup-button"
               >
                 {Platform.OS === "ios" ? (
                   <View
@@ -139,6 +140,7 @@ const DestinationHeader: React.FC<DestinationHeaderProps> = ({
                   accessibilityRole="button"
                   accessibilityLabel={`Select ${option.mode} mode`}
                   accessibilityHint={`Updates routes for ${option.mode} transportation`}
+                  testID={`route-${option.mode}`}
                 >
                   <PlatformIcon
                     materialName={option.icon}

@@ -65,6 +65,7 @@ const WheelPicker = ({
   width,
   isDark,
   loop = false,
+  testIDPrefix,
 }: any) => {
   const flatListRef = useRef<FlatList>(null);
   const REPEAT_COUNT = loop ? 3 : 1;
@@ -132,6 +133,7 @@ const WheelPicker = ({
           <TouchableOpacity
             activeOpacity={0.6}
             style={styles.wheelItem}
+            testID={`${testIDPrefix}${item.value}`}
             onPress={() => {
               flatListRef.current?.scrollToOffset({
                 offset: loopedIndex * ITEM_HEIGHT,
@@ -279,6 +281,7 @@ export default function TimeSelectorModal({
               width="50%"
               isDark={isDark}
               loop={false}
+              testIDPrefix="picker-day-"
             />
             <WheelPicker
               data={HOURS}
@@ -287,6 +290,7 @@ export default function TimeSelectorModal({
               width="25%"
               isDark={isDark}
               loop={true}
+              testIDPrefix="picker-hour-"
             />
             <WheelPicker
               data={MINUTES}
@@ -295,6 +299,7 @@ export default function TimeSelectorModal({
               width="25%"
               isDark={isDark}
               loop={true}
+              testIDPrefix="picker-minute-"
             />
           </View>
 
