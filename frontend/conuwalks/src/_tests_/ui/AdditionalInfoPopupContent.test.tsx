@@ -2,7 +2,7 @@ import React from "react";
 import { Platform, ScrollView } from "react-native";
 import { render, screen, fireEvent, act } from "@testing-library/react-native";
 import PopupContent from "../../components/AdditionalInfoPopupContent";
-import { BuildingMetadata } from "../../types/Building";
+import { BuildingMetadata } from "../../indoors/types/Building";
 
 //  mock external icon libraries
 jest.mock("@expo/vector-icons/MaterialIcons", () => "MaterialIcons");

@@ -1,5 +1,4 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { GoogleSignin } from "@react-native-google-signin/google-signin";
 
 const TOKEN_KEY = "@auth_tokens";
 const USER_INFO_KEY = "@user_info";
@@ -19,7 +18,7 @@ export interface UserInfo {
 
 export const saveTokens = async (tokens: AuthTokens): Promise<boolean> => {
   try {
-    if (!tokens || !tokens.accessToken) {
+    if (!tokens?.accessToken) {
       throw new Error("Invalid tokens provided");
     }
     await AsyncStorage.setItem(TOKEN_KEY, JSON.stringify(tokens));
@@ -72,19 +71,25 @@ export const getTokens = async (): Promise<AuthTokens | null> => {
 
 export const clearTokens = async (): Promise<void> => {
   try {
+    const tokenString = await AsyncStorage.getItem(TOKEN_KEY);
+    
     await AsyncStorage.removeItem(TOKEN_KEY);
     await AsyncStorage.removeItem(USER_INFO_KEY);
     console.log("Local tokens and user info cleared");
 
-    try {
-      await GoogleSignin.signOut();
-      console.log("Google Sign-Out successful");
-    } catch (googleError) {
-      // the user wasn't signed in, or the native bridge fails, we just log it.
-      console.log(
-        "Note: Google Sign-Out threw an error (likely already signed out):",
-        googleError,
-      );
+    if (tokenString) {
+      const { accessToken } = JSON.parse(tokenString);
+      if (accessToken) {
+        try {
+          await fetch(`https://accounts.google.com/o/oauth2/revoke?token=${accessToken}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+          });
+          console.log("Google Token Revoked successfully");
+        } catch (revokeError) {
+          console.error("Note: Could not revoke token remotely, but local data is cleared.", revokeError);
+        }
+      }
     }
   } catch (error) {
     console.error("Error clearing tokens:", error);
@@ -92,7 +97,7 @@ export const clearTokens = async (): Promise<void> => {
 };
 
 export const isTokenValid = (tokens: AuthTokens | null): boolean => {
-  if (!tokens || !tokens.accessToken) return false;
+  if (!tokens?.accessToken) return false;
 
   if (tokens.expiryDate) {
     const now = Date.now();

@@ -1,0 +1,83 @@
+name: Code Coverage in Wiki
+
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+jobs:
+  update-wiki-coverage:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/conuwalks/package-lock.json
+
+      - name: Install Dependencies
+        working-directory: frontend/conuwalks
+        run: npm install
+
+      - name: Run Tests & Generate Coverage
+        working-directory: frontend/conuwalks
+        continue-on-error: true
+        run: npm test -- --coverage --coverageReporters="json" --coverageReporters="json-summary" --coverageReporters="text"
+
+      - name: Generate Markdown Report
+        run: |
+          DATE=$(date +'%Y-%m-%d %H:%M')
+          REPORT_FILE="Coverage-Reports.md"
+          JSON_PATH="frontend/conuwalks/coverage/coverage-summary.json"
+
+          if [ ! -f "$JSON_PATH" ]; then
+            echo "Coverage file not found at $JSON_PATH"
+            exit 1
+          fi
+
+          echo "# Code Coverage Report" > $REPORT_FILE
+          echo "Last updated: \`$DATE\`" >> $REPORT_FILE
+          echo -e "\n| File | % Stmts | % Branch | % Funcs | % Lines |" >> $REPORT_FILE
+          echo "| :--- | :--- | :--- | :--- | :--- |" >> $REPORT_FILE
+
+          TOTAL_STMTS=$(jq ".total.statements.pct" "$JSON_PATH")
+          TOTAL_BRANCH=$(jq ".total.branches.pct" "$JSON_PATH")
+          TOTAL_FUNCS=$(jq ".total.functions.pct" "$JSON_PATH")
+          TOTAL_LINES=$(jq ".total.lines.pct" "$JSON_PATH")
+
+          echo "| **All files** | **$TOTAL_STMTS%** | **$TOTAL_BRANCH%** | **$TOTAL_FUNCS%** | **$TOTAL_LINES%** |" >> $REPORT_FILE
+
+          jq -r 'to_entries[] | select(.key != "total") | "\(.key)|\(.value.statements.pct)%|\(.value.branches.pct)%|\(.value.functions.pct)%|\(.value.lines.pct)%"' "$JSON_PATH" | while read -r line; do
+            echo "| $line |" >> $REPORT_FILE
+          done
+
+          echo -e "\n*Automatically generated from the latest tests on the \`dev\` branch.*" >> $REPORT_FILE
+          
+      - name: Push to Wiki
+        env:
+          WIKI_URL: https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.wiki.git
+        run: |
+          git clone $WIKI_URL wiki_repo
+
+          cp Coverage-Reports.md wiki_repo/Coverage-Reports.md
+
+          cd wiki_repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add Coverage-Reports.md
+
+          if git diff-index --quiet HEAD; then
+            echo "No changes in coverage. Skipping push."
+          else
+            git commit -m "docs: update coverage report table"
+            git push origin HEAD:master
+          fi

@@ -2,7 +2,7 @@ import React from "react";
 import { Platform } from "react-native";
 import { render, screen, fireEvent } from "@testing-library/react-native";
 import PopupHeader from "../../components/AdditionalInfoPopupHeader";
-import { BuildingMetadata, AccessibilityIconDef } from "../../types/Building";
+import { BuildingMetadata, AccessibilityIconDef } from "../../indoors/types/Building";
 
 // mock the native/external icon components
 jest.mock("@expo/vector-icons/MaterialIcons", () => "MaterialIcons");

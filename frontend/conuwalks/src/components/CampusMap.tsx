@@ -50,7 +50,7 @@ import { INDOOR_DATA } from "@/src/data/indoorData";
 import { LoyolaBuildingMetadata } from "@/src/data/metadata/LOY.BuildingMetadata";
 import { SGWBuildingMetadata } from "@/src/data/metadata/SGW.BuildingMetaData";
 import IndoorMapOverlay from "./indoor/IndoorMapOverlay";
-import DirectionsSearchPanel from "./DirectionsSearchPanel"
+import DirectionsSearchPanel from "./DirectionsSearchPanel";
 
 import BuildingTheme from "@/src/styles/BuildingTheme";
 import styles from "@/src/styles/campusMap";
@@ -466,8 +466,10 @@ const CampusMap: React.FC<CampusMapProps> = ({
   }, [showDirections, isNavigationActive]);
 
   const recenterButtonTop =
-    insets.top + (isNavigationActive && routeData ? 118 : 84 + searchPanelHeight);
-  const isSheetVisibleForAccessibility = (selectedBuilding.visible && !showDirections) || showDirections;
+    insets.top +
+    (isNavigationActive && routeData ? 118 : 84 + searchPanelHeight);
+  const isSheetVisibleForAccessibility =
+    (selectedBuilding.visible && !showDirections) || showDirections;
 
   const modeLabelMap: Record<
     "walking" | "driving" | "transit" | "bicycling",
@@ -668,19 +670,23 @@ const CampusMap: React.FC<CampusMapProps> = ({
     userLocation?.longitude,
   ]);
 
-  const [userLocationBuildingId, setUserLocationBuildingId] = useState<string | null>(null);
+  const [userLocationBuildingId, setUserLocationBuildingId] = useState<
+    string | null
+  >(null);
   useEffect(() => {
     if (!userLocation) {
       if (userLocationBuildingId !== null) setUserLocationBuildingId(null);
       return;
     }
     const findBuildingId = (geojson: typeof SGW | typeof LOY) => {
-      const feature = geojson.features.find(item => {
+      const feature = geojson.features.find((item) => {
         const currentFeature = item as GeoJsonFeature;
         if (currentFeature.geometry.type !== "Polygon") {
           return false;
         }
-        const polygonCoords = polygonFromGeoJSON(currentFeature.geometry.coordinates[0]);
+        const polygonCoords = polygonFromGeoJSON(
+          currentFeature.geometry.coordinates[0],
+        );
         return isPointInPolygon(userLocation, polygonCoords);
       });
       return (feature?.properties as { id?: string } | undefined)?.id ?? null;
@@ -690,7 +696,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
       setUserLocationBuildingId(currentId);
     }
   }, [userLocation]);
-  
+
   // memoize the polygon lists so they don't re-calculate on every render
   const { sgwPolygons, loyPolygons } = useMemo(() => {
     const generatePolygons = (geojson: any, campus: "SGW" | "LOY") => {
@@ -718,90 +724,89 @@ const CampusMap: React.FC<CampusMapProps> = ({
           const isSelected =
             selectedBuilding.visible && selectedBuilding.name === buildingId;
           const isDestination = destinationBuildingId === buildingId;
-          const hasSelection = selectedBuilding.visible && !!selectedBuilding.name;
+          const hasSelection =
+            selectedBuilding.visible && !!selectedBuilding.name;
           const dimOthers = hasSelection && !isSelected; // dim everything except selected
           // Calculate center point of building for directions
           const centerCoordinates = calculatePolygonCenter(coordinates);
           const markerKey = `${campus}-${buildingId}`;
 
-          
-return (
-  <React.Fragment key={buildingId}>
-    {}
-    <Polygon
-      key={`${campus}-${buildingId}-base`}
-      coordinates={coordinates}
-      fillColor={
-        isSelected
-          ? color + "F0"
-          : isDestination
-            ? color + "C8"
-            : dimOthers
-              ? color + "55"
-              : color + "90"
-      }
-      strokeColor={
-          "rgba(0,0,0,0.12)"
-      }
-      strokeWidth={1}
-      tappable
-      onPress={() => handleBuildingPress(buildingId, campus, centerCoordinates)}
-      accessibilityLabel={name}
-      accessibilityRole="button"
-      zIndex={3}
-    />
+          return (
+            <React.Fragment key={buildingId}>
+              {}
+              <Polygon
+                key={`${campus}-${buildingId}-base`}
+                coordinates={coordinates}
+                fillColor={
+                  isSelected
+                    ? color + "F0"
+                    : isDestination
+                      ? color + "C8"
+                      : dimOthers
+                        ? color + "55"
+                        : color + "90"
+                }
+                strokeColor={"rgba(0,0,0,0.12)"}
+                strokeWidth={1}
+                tappable
+                onPress={() =>
+                  handleBuildingPress(buildingId, campus, centerCoordinates)
+                }
+                accessibilityLabel={name}
+                accessibilityRole="button"
+                zIndex={3}
+              />
 
-    {}
-{isSelected && (
-  <>
-    {}
-    <Polygon
-      key={`${campus}-${buildingId}-selected-outer`}
-      coordinates={coordinates}
-      fillColor="transparent"
-      strokeColor="#515351ff"
-      strokeWidth={5}
-      tappable
-      onPress={() =>
-        handleBuildingPress(buildingId, campus, centerCoordinates)
-      }
-      zIndex={5}
-    />
+              {}
+              {isSelected && (
+                <>
+                  {}
+                  <Polygon
+                    key={`${campus}-${buildingId}-selected-outer`}
+                    coordinates={coordinates}
+                    fillColor="transparent"
+                    strokeColor="#515351ff"
+                    strokeWidth={5}
+                    tappable
+                    onPress={() =>
+                      handleBuildingPress(buildingId, campus, centerCoordinates)
+                    }
+                    zIndex={5}
+                  />
 
-    {}
-    <Polygon
-      key={`${campus}-${buildingId}-selected-inner`}
-      coordinates={coordinates}
-      fillColor="transparent"
-      strokeColor="#FFFFFF"
-      strokeWidth={2}
-      tappable
-      onPress={() =>
-        handleBuildingPress(buildingId, campus, centerCoordinates)
-      }
-      zIndex={6}
-    />
-  </>
-)}
+                  {}
+                  <Polygon
+                    key={`${campus}-${buildingId}-selected-inner`}
+                    coordinates={coordinates}
+                    fillColor="transparent"
+                    strokeColor="#FFFFFF"
+                    strokeWidth={2}
+                    tappable
+                    onPress={() =>
+                      handleBuildingPress(buildingId, campus, centerCoordinates)
+                    }
+                    zIndex={6}
+                  />
+                </>
+              )}
 
-    {}
-    {isDestination && !isSelected && (
-      <Marker
-        key={`${campus}-${buildingId}-dest-pin`}
-        coordinate={centerCoordinates}
-        anchor={{ x: 0.5, y:0.5 }}
-        zIndex={1000}
-        onPress={() =>
-          handleBuildingPress(buildingId, campus, centerCoordinates)
-        }
-        accessibilityLabel={`${name} destination`}
-        accessibilityRole="button"
-        flat
-      >
-        <MaterialIcons name="place" size={26} color="#B03060" />
-      </Marker>
-    )}
-
+              {}
+              {isDestination && !isSelected && (
+                <Marker
+                  key={`${campus}-${buildingId}-dest-pin`}
+                  coordinate={centerCoordinates}
+                  anchor={{ x: 0.5, y: 0.5 }}
+                  zIndex={1000}
+                  onPress={() =>
+                    handleBuildingPress(buildingId, campus, centerCoordinates)
+                  }
+                  accessibilityLabel={`${name} destination`}
+                  accessibilityRole="button"
+                  flat
+                >
+                  <MaterialIcons name="place" size={26} color="#B03060" />
+                </Marker>
+              )}
 
               <Marker
                 ref={(markerRef) => {
@@ -1260,10 +1265,18 @@ return (
         onClose={handleCloseDestinationPopup}
       />
 
-      {showDirections && !isNavigationActive &&
+      {showDirections && !isNavigationActive && (
         <View
-          onLayout={event => {const { height } = event.nativeEvent.layout; setSearchPanelHeight(height);}}
-          style={{top: insets.top + 63, position: "absolute", left: 20, right: 20}}
+          onLayout={(event) => {
+            const { height } = event.nativeEvent.layout;
+            setSearchPanelHeight(height);
+          }}
+          style={{
+            top: insets.top + 63,
+            position: "absolute",
+            left: 20,
+            right: 20,
+          }}
         >
           <DirectionsSearchPanel
             startBuildingId={startBuildingId}
@@ -1275,7 +1288,7 @@ return (
             userLocationBuildingId={userLocationBuildingId}
           />
         </View>
-      }
+      )}
 
       {/* Right Controls Panel: User Profile + Location Recenter */}
       {userInfo && onSignOut && (

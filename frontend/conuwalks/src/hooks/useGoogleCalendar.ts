@@ -1,23 +1,9 @@
 import { useState, useEffect } from "react";
 import { GoogleCalendarApi, CalendarEvent } from "../api/calendarApi";
-import { getTokens, isTokenValid, saveTokens } from "../utils/tokenStorage";
-import { GoogleSignin } from "@react-native-google-signin/google-signin";
-
-import { LaunchArguments } from "react-native-launch-arguments";
+import { getTokens, isTokenValid, clearTokens } from "../utils/tokenStorage";
 import { MOCK_CALENDAR_EVENTS } from "../_tests_/mock/mockCalendarData";
 
-const checkIsMockEnv = () => {
-  if (process.env.EXPO_PUBLIC_MOCK_CALENDAR === "true") {
-    return true;
-  }
-
-  try {
-    const isMock = LaunchArguments.value().isMockCalendarEnabled;
-    return !!isMock;
-  } catch (e) {
-    return false;
-  }
-};
+const checkIsMockEnv = () => process.env.EXPO_PUBLIC_MOCK_CALENDAR === "true";
 
 export const useGoogleCalendar = () => {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -35,38 +21,28 @@ export const useGoogleCalendar = () => {
       setIsAuthenticated(!!tokens && isTokenValid(tokens));
     };
 
-    if (!isMock) {
+    if (isMock) {
+      setIsAuthenticated(true);
+    } else {
       checkAuthStatus();
     }
-  }, []);
+  }, [isMock]);
 
   const getApiInstance = async (): Promise<GoogleCalendarApi | null> => {
     if (isMock) return null;
-
     try {
-      // Only try GoogleSignin in non-test environments
-      if (process.env.NODE_ENV !== 'test') {
-        const freshTokens = await GoogleSignin.getTokens();
-        if (freshTokens && freshTokens.accessToken) {
-          // Save the fresh token for future use
-          await saveTokens({
-            accessToken: freshTokens.accessToken,
-            idToken: freshTokens.idToken,
-          });
-          return new GoogleCalendarApi(freshTokens.accessToken);
-        }
+      const tokens = await getTokens();
+      if (!tokens || !isTokenValid(tokens)) {
+        await clearTokens();
+        setError("Not authenticated or token expired");
+        return null;
       }
-    } catch (signInError) {
-      // GoogleSignin failed or in test env, try stored tokens
-    }
-
-    // Fallback to stored tokens
-    const tokens = await getTokens();
-    if (!tokens || !isTokenValid(tokens)) {
-      setError("Not authenticated or token expired");
+      return new GoogleCalendarApi(tokens.accessToken);
+    } catch (error) {
+      console.error("Error retrieving API instance:", error);
+      setError("Authentication error occurred.");
       return null;
     }
-    return new GoogleCalendarApi(tokens.accessToken);
   };
 
   // Fetch upcoming events
@@ -184,6 +160,6 @@ export const useGoogleCalendar = () => {
     fetchUpcomingEvents,
     fetchCalendars,
     createEvent,
-    deleteEvent,
+    deleteEvent
   };
 };

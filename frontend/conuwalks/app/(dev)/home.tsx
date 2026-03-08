@@ -1,9 +1,4 @@
-import {
-  View,
-  StatusBar,
-  Alert,
-  ActivityIndicator,
-} from "react-native";
+import { View, StatusBar, Alert, ActivityIndicator } from "react-native";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
 import CampusMap from "@/src/components/CampusMap";
@@ -107,7 +102,9 @@ export default function DevHomeScreen() {
           </>
         )}
 
-        {selectedView === "calendar" && <ScheduleView onNavigateToClass={() => setSelectedView("map")} />}
+        {selectedView === "calendar" && (
+          <ScheduleView onNavigateToClass={() => setSelectedView("map")} />
+        )}
       </View>
 
       <StatusGradient />

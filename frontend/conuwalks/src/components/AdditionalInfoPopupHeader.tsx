@@ -12,7 +12,7 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { SymbolView } from "expo-symbols";
 import { styles, themedStyles } from "@/src/styles/additionalInfoPopup";
 import { MetroIcon } from "./MetroIcon";
-import { BuildingMetadata, AccessibilityIconDef } from "../types/Building";
+import { BuildingMetadata, AccessibilityIconDef } from "../indoors/types/Building";
 import BottomSheetDragHandle from "./ui/BottomSheetDragHandle";
 import PlatformIcon from "./ui/PlatformIcon";
 

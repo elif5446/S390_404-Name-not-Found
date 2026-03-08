@@ -4,7 +4,11 @@ export default {
     slug: "conuwalks",
     version: "1.0.0",
     orientation: "portrait",
-    scheme: "com.conuwalks.app",
+    scheme: [
+      `com.googleusercontent.apps.${process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID.split(".apps.googleusercontent.com")[0]}`,
+      `com.googleusercontent.apps.${process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID.split(".apps.googleusercontent.com")[0]}`,
+      "com.conuwalks.app"
+    ],
     userInterfaceStyle: "automatic",
     newArchEnabled: true,
     ios: {
@@ -38,13 +42,6 @@ export default {
     },
     plugins: [
       "expo-router",
-      [
-        "@react-native-google-signin/google-signin",
-        {
-          iosUrlScheme:
-            "com.googleusercontent.apps.340257679752-6mrlm3n1q8fhplnoj08dvd7fil8a547n",
-        },
-      ],
       [
         "expo-splash-screen",
         {
