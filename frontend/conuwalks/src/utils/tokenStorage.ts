@@ -5,8 +5,25 @@ const TOKEN_KEY = "@auth_tokens";
 const USER_INFO_KEY = "@user_info";
 const CLASS_REMINDER_LEAD_TIME_KEY = "@class_reminder_lead_time";
 const DISMISSED_CLASS_EVENT_IDS_KEY = "@dismissed_class_event_ids";
-const VALID_REMINDER_MINUTES = [0, 5, 10, 15, 30] as const;
 export const DEFAULT_CLASS_REMINDER_LEAD_TIME_MINUTES = 10;
+export const MIN_CLASS_REMINDER_LEAD_TIME_MINUTES = 0;
+export const MAX_CLASS_REMINDER_LEAD_TIME_MINUTES = 180;
+
+const normalizeReminderMinutes = (value: unknown): number | null => {
+  const parsed = Number(value);
+
+  if (!Number.isFinite(parsed)) return null;
+
+  const rounded = Math.round(parsed);
+  if (
+    rounded < MIN_CLASS_REMINDER_LEAD_TIME_MINUTES ||
+    rounded > MAX_CLASS_REMINDER_LEAD_TIME_MINUTES
+  ) {
+    return null;
+  }
+
+  return rounded;
+};
 
 export interface AuthTokens {
   accessToken: string;
@@ -113,11 +130,15 @@ export const saveClassReminderLeadTime = async (
   minutes: number,
 ): Promise<boolean> => {
   try {
-    if (!VALID_REMINDER_MINUTES.includes(minutes as any)) {
+    const normalizedMinutes = normalizeReminderMinutes(minutes);
+    if (normalizedMinutes === null) {
       throw new Error(`Invalid reminder value: ${minutes}`);
     }
 
-    await AsyncStorage.setItem(CLASS_REMINDER_LEAD_TIME_KEY, String(minutes));
+    await AsyncStorage.setItem(
+      CLASS_REMINDER_LEAD_TIME_KEY,
+      String(normalizedMinutes),
+    );
     return true;
   } catch (error) {
     console.error("Error saving class reminder lead time:", error);
@@ -130,12 +151,12 @@ export const getClassReminderLeadTime = async (): Promise<number> => {
     const raw = await AsyncStorage.getItem(CLASS_REMINDER_LEAD_TIME_KEY);
     if (!raw) return DEFAULT_CLASS_REMINDER_LEAD_TIME_MINUTES;
 
-    const parsed = Number(raw);
-    if (!VALID_REMINDER_MINUTES.includes(parsed as any)) {
+    const normalized = normalizeReminderMinutes(raw);
+    if (normalized === null) {
       return DEFAULT_CLASS_REMINDER_LEAD_TIME_MINUTES;
     }
 
-    return parsed;
+    return normalized;
   } catch (error) {
     console.error("Error reading class reminder lead time:", error);
     return DEFAULT_CLASS_REMINDER_LEAD_TIME_MINUTES;

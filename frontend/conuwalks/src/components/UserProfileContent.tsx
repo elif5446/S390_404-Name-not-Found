@@ -1,13 +1,21 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+} from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { openNotificationSettings, openAppearanceSettings } from "@/src/utils/openSystemSettings";
 import {
   getClassReminderLeadTime,
   saveClassReminderLeadTime,
+  MAX_CLASS_REMINDER_LEAD_TIME_MINUTES,
+  MIN_CLASS_REMINDER_LEAD_TIME_MINUTES,
 } from "@/src/utils/tokenStorage";
 
-const REMINDER_OPTIONS_MINUTES = [0, 5, 10, 15, 30];
+const REMINDER_OPTIONS_MINUTES = [0, 5, 10, 15, 30, 45, 60];
 
 const ProfileSection = ({ title, children, mode }: any) => (
   <View style={styles.section}>
@@ -36,6 +44,7 @@ const ProfileSection = ({ title, children, mode }: any) => (
 const UserProfileContent = ({ userInfo, onSignOut, mode }: any) => {
   const textColor = mode === "dark" ? "#FFF" : "#333";
   const [reminderLeadTime, setReminderLeadTime] = useState<number>(10);
+  const [customReminderInput, setCustomReminderInput] = useState("");
 
   useEffect(() => {
     let mounted = true;
@@ -44,6 +53,9 @@ const UserProfileContent = ({ userInfo, onSignOut, mode }: any) => {
       const value = await getClassReminderLeadTime();
       if (mounted) {
         setReminderLeadTime(value);
+        if (!REMINDER_OPTIONS_MINUTES.includes(value)) {
+          setCustomReminderInput(String(value));
+        }
       }
     };
 
@@ -64,6 +76,13 @@ const UserProfileContent = ({ userInfo, onSignOut, mode }: any) => {
       setReminderLeadTime(fallback);
     }
   };
+
+  const parsedCustomReminder = Number(customReminderInput);
+  const isCustomReminderValid =
+    customReminderInput.trim().length > 0 &&
+    Number.isFinite(parsedCustomReminder) &&
+    parsedCustomReminder >= MIN_CLASS_REMINDER_LEAD_TIME_MINUTES &&
+    parsedCustomReminder <= MAX_CLASS_REMINDER_LEAD_TIME_MINUTES;
 
   return (
     <View style={styles.container}>
@@ -94,7 +113,7 @@ const UserProfileContent = ({ userInfo, onSignOut, mode }: any) => {
         </View>
 
         <View style={styles.optionWrap}>
-          {REMINDER_OPTIONS_MINUTES.map((minutes) => {
+          {[...REMINDER_OPTIONS_MINUTES, ...(REMINDER_OPTIONS_MINUTES.includes(reminderLeadTime) ? [] : [reminderLeadTime])].map((minutes) => {
             const selected = reminderLeadTime === minutes;
             const label = minutes === 0 ? "Off" : `${minutes}m`;
 
@@ -133,6 +152,48 @@ const UserProfileContent = ({ userInfo, onSignOut, mode }: any) => {
             );
           })}
         </View>
+
+        <View style={styles.customReminderRow}>
+          <TextInput
+            value={customReminderInput}
+            onChangeText={setCustomReminderInput}
+            keyboardType="number-pad"
+            placeholder="Custom minutes"
+            placeholderTextColor={mode === "dark" ? "#8B8B8B" : "#9A9A9A"}
+            style={[
+              styles.customReminderInput,
+              {
+                color: textColor,
+                borderColor:
+                  mode === "dark"
+                    ? "rgba(255,255,255,0.2)"
+                    : "rgba(0,0,0,0.15)",
+                backgroundColor:
+                  mode === "dark"
+                    ? "rgba(255,255,255,0.06)"
+                    : "rgba(0,0,0,0.03)",
+              },
+            ]}
+            accessibilityLabel="Custom class reminder minutes"
+          />
+          <TouchableOpacity
+            style={[
+              styles.applyButton,
+              { opacity: isCustomReminderValid ? 1 : 0.5 },
+            ]}
+            disabled={!isCustomReminderValid}
+            onPress={() => {
+              handleReminderChange(Math.round(parsedCustomReminder));
+            }}
+            accessibilityRole="button"
+            accessibilityLabel="Apply custom class reminder"
+          >
+            <Text style={styles.applyButtonText}>Apply</Text>
+          </TouchableOpacity>
+        </View>
+        <Text style={[styles.rangeText, { color: mode === "dark" ? "#AFAFAF" : "#666" }]}> 
+          {`Set any value from ${MIN_CLASS_REMINDER_LEAD_TIME_MINUTES} to ${MAX_CLASS_REMINDER_LEAD_TIME_MINUTES} minutes`}
+        </Text>
 
         <TouchableOpacity style={styles.row} onPress={() => openNotificationSettings()}>
           <MaterialIcons name="settings" size={22} color="#B03060" />
@@ -179,6 +240,38 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingHorizontal: 10,
     paddingVertical: 7,
+  },
+  customReminderRow: {
+    flexDirection: "row",
+    gap: 8,
+    paddingHorizontal: 14,
+    alignItems: "center",
+    paddingBottom: 8,
+  },
+  customReminderInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  applyButton: {
+    backgroundColor: "#B03060",
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  applyButtonText: {
+    color: "#FFF",
+    fontWeight: "700",
+    fontSize: 13,
+  },
+  rangeText: {
+    fontSize: 12,
+    paddingHorizontal: 14,
+    paddingBottom: 10,
   },
   signOutBtn: {
     flexDirection: "row",

@@ -4,6 +4,8 @@ import { act } from "react";
 import { PanResponder } from "react-native";
 import UpcomingClassBanner from "../../components/UpcomingClassBanner";
 import { useGoogleCalendar } from "@/src/hooks/useGoogleCalendar";
+import { useDirections } from "@/src/context/DirectionsContext";
+import { useUserLocation } from "@/src/hooks/useUserLocation";
 import {
   getClassReminderLeadTime,
   getDismissedClassEventIds,
@@ -11,6 +13,12 @@ import {
 } from "@/src/utils/tokenStorage";
 
 jest.mock("@/src/hooks/useGoogleCalendar");
+jest.mock("@/src/context/DirectionsContext", () => ({
+  useDirections: jest.fn(),
+}));
+jest.mock("@/src/hooks/useUserLocation", () => ({
+  useUserLocation: jest.fn(),
+}));
 jest.mock("@expo/vector-icons/MaterialIcons", () => "MaterialIcons");
 jest.mock("@/src/utils/tokenStorage", () => ({
   getClassReminderLeadTime: jest.fn(),
@@ -27,9 +35,15 @@ jest.spyOn(PanResponder, "create").mockImplementation((config) => {
 });
 
 const mockUseGoogleCalendar = useGoogleCalendar as jest.Mock;
+const mockUseDirections = useDirections as jest.Mock;
+const mockUseUserLocation = useUserLocation as jest.Mock;
 const mockGetClassReminderLeadTime = getClassReminderLeadTime as jest.Mock;
 const mockGetDismissedClassEventIds = getDismissedClassEventIds as jest.Mock;
 const mockSaveDismissedClassEventIds = saveDismissedClassEventIds as jest.Mock;
+
+const mockSetStartPoint = jest.fn();
+const mockSetDestination = jest.fn();
+const mockSetShowDirections = jest.fn();
 
 const getFromNow = (minutes: number) => {
   const d = new Date();
@@ -69,6 +83,14 @@ describe("UpcomingClassBanner", () => {
     mockGetClassReminderLeadTime.mockResolvedValue(30);
     mockGetDismissedClassEventIds.mockResolvedValue([]);
     mockSaveDismissedClassEventIds.mockResolvedValue(true);
+    mockUseDirections.mockReturnValue({
+      setStartPoint: mockSetStartPoint,
+      setDestination: mockSetDestination,
+      setShowDirections: mockSetShowDirections,
+    });
+    mockUseUserLocation.mockReturnValue({
+      location: { latitude: 45.497, longitude: -73.579 },
+    });
   });
 
   it("renders nothing when there are no events", () => {
@@ -128,6 +150,56 @@ describe("UpcomingClassBanner", () => {
     render(<UpcomingClassBanner />);
     await waitFor(() => {
       expect(screen.getByTestId("banner-bell-icon")).toBeTruthy();
+    });
+  });
+
+  it("routes to in-app live navigation when Navigate is pressed", async () => {
+    buildBaseMock([
+      {
+        id: "nav-event",
+        summary: "COMP 346",
+        start: { dateTime: getFromNow(10) },
+        end: { dateTime: getFromNow(70) },
+        location: "H-820",
+      },
+    ]);
+
+    render(<UpcomingClassBanner />);
+
+    const navigateButton = await waitFor(() =>
+      screen.getByTestId("banner-navigate-button"),
+    );
+    fireEvent.press(navigateButton);
+
+    await waitFor(() => {
+      expect(mockSetStartPoint).toHaveBeenCalled();
+      expect(mockSetDestination).toHaveBeenCalled();
+      expect(mockSetShowDirections).toHaveBeenCalledWith(true);
+      expect(screen.queryByTestId("upcoming-class-banner")).toBeNull();
+    });
+  });
+
+  it("calls onNavigateToClass callback after setting directions", async () => {
+    const onNavigateToClass = jest.fn();
+    buildBaseMock([
+      {
+        id: "nav-event-callback",
+        summary: "COMP 346",
+        start: { dateTime: getFromNow(10) },
+        end: { dateTime: getFromNow(70) },
+        location: "H-820",
+      },
+    ]);
+
+    render(<UpcomingClassBanner onNavigateToClass={onNavigateToClass} />);
+
+    const navigateButton = await waitFor(() =>
+      screen.getByTestId("banner-navigate-button"),
+    );
+    fireEvent.press(navigateButton);
+
+    await waitFor(() => {
+      expect(onNavigateToClass).toHaveBeenCalled();
     });
   });
 
@@ -256,13 +328,14 @@ describe("UpcomingClassBanner", () => {
 
   it("keeps a dismissed class hidden after remount", async () => {
     mockGetClassReminderLeadTime.mockResolvedValue(30);
+    const firstEvent = createClassEvent("first", "CLASS 3:09", 9);
+    const secondEvent = createClassEvent("second", "CLASS 3:12", 12);
+    const firstDismissKey = `${firstEvent.id}::${firstEvent.start.dateTime}`;
+
     mockGetDismissedClassEventIds
       .mockResolvedValueOnce([])
-      .mockResolvedValueOnce(["first"]);
-    buildBaseMock([
-      createClassEvent("first", "CLASS 3:09", 9),
-      createClassEvent("second", "CLASS 3:12", 12),
-    ]);
+      .mockResolvedValueOnce([firstDismissKey]);
+    buildBaseMock([firstEvent, secondEvent]);
 
     const firstRender = render(<UpcomingClassBanner />);
 
@@ -274,7 +347,7 @@ describe("UpcomingClassBanner", () => {
 
     await waitFor(() => {
       expect(mockSaveDismissedClassEventIds).toHaveBeenCalledWith(
-        expect.arrayContaining(["first"]),
+        expect.arrayContaining([expect.stringContaining("first")]),
       );
       expect(screen.getByText(/Next Class: CLASS 3:12/i)).toBeTruthy();
     });
@@ -285,6 +358,29 @@ describe("UpcomingClassBanner", () => {
     await waitFor(() => {
       expect(screen.queryByText(/Next Class: CLASS 3:09/i)).toBeNull();
       expect(screen.getByText(/Next Class: CLASS 3:12/i)).toBeTruthy();
+    });
+  });
+
+  it("dismisses only a single occurrence when event id repeats at another time", async () => {
+    mockGetClassReminderLeadTime.mockResolvedValue(60);
+    mockGetDismissedClassEventIds.mockResolvedValue([]);
+
+    const repeatedId = "repeat-1";
+    buildBaseMock([
+      createClassEvent(repeatedId, "CLASS 6:20", 20),
+      createClassEvent(repeatedId, "CLASS 6:38", 38),
+    ]);
+
+    render(<UpcomingClassBanner />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Next Class: CLASS 6:20/i)).toBeTruthy();
+    });
+
+    fireEvent.press(screen.getByTestId("banner-close-button"));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Next Class: CLASS 6:38/i)).toBeTruthy();
     });
   });
 

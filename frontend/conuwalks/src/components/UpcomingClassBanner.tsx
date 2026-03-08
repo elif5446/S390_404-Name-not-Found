@@ -1,10 +1,24 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, PanResponder, View, Text, TouchableOpacity } from "react-native";
+import {
+  Animated,
+  PanResponder,
+  View,
+  Text,
+  TouchableOpacity,
+} from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { useGoogleCalendar } from "@/src/hooks/useGoogleCalendar";
 import { parseLocation } from "@/src/hooks/useBuildingEvents";
-import { SGWBuildingMetadata } from "@/src/data/metadata/SGW.BuildingMetaData";
-import { LoyolaBuildingMetadata } from "@/src/data/metadata/LOY.BuildingMetadata";
+import { useDirections } from "@/src/context/DirectionsContext";
+import { useUserLocation } from "@/src/hooks/useUserLocation";
+import {
+  SGWBuildingMetadata,
+  SGWBuildingSearchMetadata,
+} from "@/src/data/metadata/SGW.BuildingMetaData";
+import {
+  LoyolaBuildingMetadata,
+  LoyolaBuildingSearchMetadata,
+} from "@/src/data/metadata/LOY.BuildingMetadata";
 import {
   getClassReminderLeadTime,
   DEFAULT_CLASS_REMINDER_LEAD_TIME_MINUTES,
@@ -16,8 +30,19 @@ const BANNER_BG = "#FFD6DF";
 const BANNER_ACCENT = "#B03060";
 const DISMISS_THRESHOLD = -30; // px upward swipe needed to dismiss
 
-const UpcomingClassBanner: React.FC = () => {
+const buildDismissKey = (eventId: string, startStr: string | null): string =>
+  startStr ? `${eventId}::${startStr}` : eventId;
+
+interface UpcomingClassBannerProps {
+  onNavigateToClass?: () => void;
+}
+
+const UpcomingClassBanner: React.FC<UpcomingClassBannerProps> = ({
+  onNavigateToClass,
+}) => {
   const { events, fetchUpcomingEvents } = useGoogleCalendar();
+  const { location: userLocation } = useUserLocation();
+  const { setStartPoint, setDestination, setShowDirections } = useDirections();
   const [dismissedEventIds, setDismissedEventIds] = useState<string[]>([]);
   const dismissedEventIdsRef = useRef<string[]>([]);
   const [reminderLeadTimeMinutes, setReminderLeadTimeMinutes] = useState(
@@ -79,10 +104,11 @@ const UpcomingClassBanner: React.FC = () => {
     return events
       .filter((e) => {
         const startStr = e.start?.dateTime || e.start?.date;
+        const dismissKey = buildDismissKey(e.id, startStr || null);
         return (
           startStr &&
           new Date(startStr).getTime() > now &&
-          !dismissedEventIds.includes(e.id)
+          !dismissedEventIds.includes(dismissKey)
         );
       })
       .sort((a, b) => {
@@ -139,9 +165,11 @@ const UpcomingClassBanner: React.FC = () => {
   const dismissCurrentBanner = () => {
     if (nextEventIdRef.current) {
       const dismissedId = nextEventIdRef.current;
-      const nextIds = dismissedEventIdsRef.current.includes(dismissedId)
+      const dismissedStartStr = nextEvent?.start?.dateTime || nextEvent?.start?.date || null;
+      const dismissedKey = buildDismissKey(dismissedId, dismissedStartStr);
+      const nextIds = dismissedEventIdsRef.current.includes(dismissedKey)
         ? dismissedEventIdsRef.current
-        : [...dismissedEventIdsRef.current, dismissedId];
+        : [...dismissedEventIdsRef.current, dismissedKey];
 
       dismissedEventIdsRef.current = nextIds;
       setDismissedEventIds(nextIds);
@@ -190,10 +218,33 @@ const UpcomingClassBanner: React.FC = () => {
   const buildingMeta = buildingCode
     ? SGWBuildingMetadata[buildingCode] ?? LoyolaBuildingMetadata[buildingCode] ?? null
     : null;
+  const buildingCoordinates = buildingCode
+    ? SGWBuildingSearchMetadata[buildingCode]?.coordinates ??
+      LoyolaBuildingSearchMetadata[buildingCode]?.coordinates ??
+      null
+    : null;
 
   const locationLabel = buildingMeta && roomNumber
     ? `${buildingMeta.name} \u2013 Room ${roomNumber}`
     : nextEvent.location ?? null;
+
+  const handleNavigatePress = async () => {
+    if (!buildingCode || !buildingCoordinates) {
+      dismissCurrentBanner();
+      return;
+    }
+
+    const destinationName = buildingMeta?.name || buildingCode;
+
+    if (userLocation) {
+      setStartPoint("USER", userLocation, "My Location");
+    }
+
+    setDestination(buildingCode, buildingCoordinates, destinationName);
+    setShowDirections(true);
+    onNavigateToClass?.();
+    dismissCurrentBanner();
+  };
 
   return (
     <Animated.View
@@ -245,6 +296,32 @@ const UpcomingClassBanner: React.FC = () => {
         <Text style={{ fontSize: 13, color: BANNER_ACCENT, fontWeight: "500" }}>
           {`Starts at ${timeLabel}`}
         </Text>
+        <TouchableOpacity
+          onPress={handleNavigatePress}
+          accessibilityRole="button"
+          accessibilityLabel="Navigate to next class"
+          testID="banner-navigate-button"
+          style={{
+            marginTop: 8,
+            alignSelf: "flex-start",
+            backgroundColor: "rgba(176,48,96,0.14)",
+            borderWidth: 1,
+            borderColor: "rgba(176,48,96,0.28)",
+            borderRadius: 999,
+            paddingHorizontal: 10,
+            paddingVertical: 5,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 12,
+              fontWeight: "700",
+              color: BANNER_ACCENT,
+            }}
+          >
+            Navigate
+          </Text>
+        </TouchableOpacity>
       </View>
       <TouchableOpacity
         onPress={dismissCurrentBanner}
