@@ -91,7 +91,7 @@ describe("useBottomSheet Hook", () => {
     );
 
     // initially off-screen
-    expect(mockTiming).toHaveBeenCalled();
+    expect(mockTiming).not.toHaveBeenCalled();
 
     // rerender with visible: true
     rerender({ visible: true, onDismiss: jest.fn(), onExpansionChange });

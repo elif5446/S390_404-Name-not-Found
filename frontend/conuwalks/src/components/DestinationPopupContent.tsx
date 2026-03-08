@@ -115,6 +115,7 @@ const DestinationContent: React.FC<DestinationContentProps> = ({
                 accessibilityRole="button"
                 accessibilityLabel={`Start navigation for route ${index + 1}`}
                 accessibilityHint="Begins turn by turn navigation with this route"
+                testID="navigate-button"
               >
                 <PlatformIcon
                   materialName="subdirectory-arrow-right"

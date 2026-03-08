@@ -8,6 +8,7 @@ jest.mock("../../utils/tokenStorage", () => ({
   getTokens: jest.fn(),
   isTokenValid: jest.fn(),
   saveTokens: jest.fn(),
+  clearTokens: jest.fn()
 }));
 
 jest.mock("../../api/calendarApi", () => ({
@@ -139,6 +140,7 @@ describe("fetchUpcomingEvents", () => {
 
   it("sets error when not authenticated", async () => {
     mockGetTokens.mockResolvedValue(null);
+    (require("../../utils/tokenStorage").clearTokens as jest.Mock).mockResolvedValue(undefined);
 
     const { result } = renderHook(() => useGoogleCalendar());
 
