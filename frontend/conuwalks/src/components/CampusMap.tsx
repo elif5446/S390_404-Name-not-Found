@@ -1227,6 +1227,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
               accessibilityRole="button"
               accessibilityLabel="End trip"
               accessibilityHint="Ends active navigation and closes route guidance"
+              testID="cancel-navigation-button"
             >
               <PlatformIcon
                 materialName="close"
