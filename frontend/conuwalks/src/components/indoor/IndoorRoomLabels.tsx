@@ -1,21 +1,6 @@
 import React from "react";
 import { Pressable, Text } from "react-native";
-
-type IndoorHotspot = {
-  id: string;
-  x: number;
-  y: number;
-  floorLevel: number;
-  label: string;
-};
-
-type IndoorDestination = {
-  id: string;
-  x: number;
-  y: number;
-  floorLevel: number;
-  label?: string;
-};
+import { IndoorHotspot, IndoorDestination } from "./types/hotspot";
 
 interface Props {
   hotspots: IndoorHotspot[];
@@ -69,7 +54,7 @@ const IndoorRoomLabels: React.FC<Props> = ({
                 style={{
                   fontSize: 12,
                   fontWeight: "600",
-                  color: isSelected ? "#E5486B" : "#8B857D",
+                  color: isSelected ? "#E5486B" : "#322f2fff",
                 }}
               >
                 {spot.label.replace("Room ", "")}
