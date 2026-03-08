@@ -52,12 +52,12 @@ export const bottomPanelStyles = StyleSheet.create({
     borderColor: "#E4DDD3",
   },
   destinationCardFocusedBorder: {
-    borderColor: "#E5486B",
+    borderColor: "#B03060",
   },
   startValueText: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#E5486B",
+  color: "#B03060",
   },
   cardLabelText: {
     fontSize: 16,
@@ -69,7 +69,7 @@ export const bottomPanelStyles = StyleSheet.create({
   destinationInput: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#E5486B",
+    color: "#B03060",
     paddingVertical: 0,
   },
   destinationRightSide: {
@@ -85,7 +85,7 @@ export const bottomPanelStyles = StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: "#E5486B",
+    backgroundColor: "#B03060",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -142,7 +142,7 @@ export const bottomPanelStyles = StyleSheet.create({
   exitButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#D9385E",
+    backgroundColor: "#B03060",
     borderRadius: 14,
     paddingHorizontal: 14,
     paddingVertical: 10,

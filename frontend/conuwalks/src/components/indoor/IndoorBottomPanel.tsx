@@ -29,7 +29,6 @@ const IndoorBottomPanel: React.FC<Props> = ({
   setShowSearchResults,
   filteredRooms,
   onSelectDestination,
-  onClearDestination,
   onExit,
 }) => {
   const [isDestinationFocused, setIsDestinationFocused] = useState(false);
@@ -69,8 +68,9 @@ const IndoorBottomPanel: React.FC<Props> = ({
             </View>
 
             <View style={styles.destinationRightSide}>
+              {searchQuery.length === 0 && (
               <Text style={styles.destinationLabel}>Destination</Text>
-
+              )}
               <TouchableOpacity activeOpacity={0.8} style={styles.arrowButton}>
                 <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
               </TouchableOpacity>
@@ -112,16 +112,11 @@ const IndoorBottomPanel: React.FC<Props> = ({
               size={18}
               color="#7A746C"
             />
+          
             <Text style={styles.directionsText}>Directions</Text>
           </TouchableOpacity>
 
           <View style={styles.rightActions}>
-            {searchQuery.length > 0 && (
-              <Pressable onPress={onClearDestination}>
-                <Ionicons name="close-circle" size={20} color="#9A948C" />
-              </Pressable>
-            )}
-
             <TouchableOpacity
               onPress={onExit}
               activeOpacity={0.8}
