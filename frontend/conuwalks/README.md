@@ -6,7 +6,7 @@ Setup `.env.local` with:
 
 - `GOOGLE_MAPS_API_KEY`
 - `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY`
-- `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_I`
+- `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`
 - `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID`
 - `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID`
 
@@ -56,14 +56,6 @@ References:
 
 You will need 3 keys in an .env file with 3 client IDs: Web, iOS and Android. Contact the team to get these IDs.
 
-A development build must be set up for Android and iOS because Expo Go and Google Calendar are not compatible.
-Scanning the QR Code won't work, you will need to open a simulator on your computer. There is a link just above to help.
-   Install:
-   `npx expo install expo-dev-client`
-   OR
-   `eas build --platform all --profile development` THEN `eas build --platform ios --profile development-simulator`
-   Run the app: `npx expo start --dev-client`
-
 To run the app on an Android emulator, you need to generate (or get) a SHA-1 fingerprint (different for every device) and the owner of the Cloud Console (Elif Sag Sesen) must register your device as an Android client.
 
 Method 1:
@@ -82,8 +74,6 @@ eas credentials
 ```
 
 Look for the line SHA1.
-
-Make sure that the file 'google.services.json' is in your project root directory. Contact the team if it is not there.
 
 :warning: Google Login Credentials:
 
