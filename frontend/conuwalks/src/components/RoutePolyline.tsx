@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useCallback } from "react";
-import { Platform } from "react-native";
-import { LatLng, Polyline } from "react-native-maps";
+import React, { useEffect, useRef, useCallback, useMemo, useState } from "react";
+import { Platform, View } from "react-native";
+import { LatLng, Polyline, Marker } from "react-native-maps";
 import { useDirections, DirectionStep } from "@/src/context/DirectionsContext";
 import { getDirections, decodePolyline } from "@/src/api/directions";
 import { getShuttleRouteIfApplicable } from "@/src/api/shuttleEngine";
@@ -11,7 +11,6 @@ const getStepColorAndStyle = (step: DirectionStep, isIOS: boolean) => {
   if (mode === "WALK" || mode === "WALKING") {
     return {
       color: "#B03060",
-      dash: isIOS ? [1, 6] : [1, 8],
       width: isIOS ? 3 : 4,
       isWalk: true,
     };
@@ -21,7 +20,7 @@ const getStepColorAndStyle = (step: DirectionStep, isIOS: boolean) => {
   const shortName = (step.transitLineShortName || "").toLowerCase();
   const longName = (step.transitLineName || "").toLowerCase();
 
-  let color = "#888888";
+  let color = "#000000";
 
   if (type.includes("shuttle")) {
     color = "#B03060";
@@ -52,13 +51,56 @@ const getStepColorAndStyle = (step: DirectionStep, isIOS: boolean) => {
     color = "#A970FF"; // Light Purple for public buses
   }
 
-  return { color, dash: null, width: 5, isWalk: false };
+  return { color, width: 5, isWalk: false };
 };
 
 interface RoutePolylineProps {
   startLocation?: LatLng;
   zIndex?: number;
 }
+
+const TransferNodeMarker = ({
+  coordinate,
+  color,
+  zIndex,
+}: {
+  coordinate: LatLng;
+  color: string;
+  zIndex: number;
+}) => {
+  const [trackChanges, setTrackChanges] = useState(true);
+
+  return (
+    <Marker
+      coordinate={coordinate}
+      anchor={{ x: 0.5, y: 0.5 }}
+      zIndex={zIndex}
+      tracksViewChanges={trackChanges}
+      flat
+    >
+      <View
+        onLayout={() => {
+          if (trackChanges) {
+            setTimeout(() => setTrackChanges(false), 250);
+          }
+        }}
+        style={{
+          width: 20,
+          height: 20,
+          borderRadius: 10,
+          backgroundColor: "#FFFFFF",
+          borderWidth: 4,
+          borderColor: color,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.3,
+          shadowRadius: 1.5,
+          elevation: 2,
+        }}
+      />
+    </Marker>
+  );
+};
 
 /**
  * Component to render the route polyline on the map
@@ -95,7 +137,15 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
   const requestKey =
     effectiveStartLocation && destinationCoords
       ? `${effectiveStartLocation.latitude.toFixed(4)},${effectiveStartLocation.longitude.toFixed(4)}->${destinationCoords.latitude.toFixed(4)},${destinationCoords.longitude.toFixed(4)}:${travelMode}:${timeMode}:${targetTime ? targetTime.getTime() : "now"}`
-      : null;
+      : null; // This ensures that reopening the same destination won't be falsely blocked.
+
+  // flush the request cache when the route is dismissed or destination is cleared
+  useEffect(() => {
+    if (!shouldShowRoute || !destinationCoords) {
+      lastFetchedKeyRef.current = null;
+      blockedRequestKeyRef.current = null;
+    }
+  }, [shouldShowRoute, destinationCoords]);
 
   // Fetch directions when destination, start, or travel mode changes
   const fetchRoute = useCallback(async () => {
@@ -284,7 +334,6 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
 
   useEffect(() => {
     blockedRequestKeyRef.current = null;
-
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
@@ -306,6 +355,46 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
     };
   }, []);
 
+  const isIOS = Platform.OS === "ios";
+  const walkDash = isIOS ? [1, 6] : [1, 8];
+
+  const transferNodes = useMemo(() => {
+    if (travelMode !== "transit" || !routeData || !routeData.steps) return [];
+
+    const nodes = [];
+    for (let i = 0; i < routeData.steps.length - 1; i++) {
+      const currentStep = routeData.steps[i];
+      const nextStep = routeData.steps[i + 1];
+
+      // distinguish specific vehicles so a Bus to Metro transfer is recognized
+      const currentMode =
+        (currentStep.travelMode === "TRANSIT"
+          ? currentStep.transitVehicleType
+          : currentStep.travelMode) || "UNKNOWN";
+      const nextMode =
+        (nextStep.travelMode === "TRANSIT"
+          ? nextStep.transitVehicleType
+          : nextStep.travelMode) || "UNKNOWN";
+
+      // mode changes, it's a transfer point
+      if (currentMode !== nextMode && currentStep.endLocation) {
+        const currentStyle = getStepColorAndStyle(currentStep, isIOS);
+        const nextStyle = getStepColorAndStyle(nextStep, isIOS);
+
+        const nodeColor = !currentStyle.isWalk
+          ? currentStyle.color
+          : nextStyle.color;
+
+        nodes.push({
+          key: `transfer-${routeData.id}-${i}`,
+          coordinate: currentStep.endLocation,
+          color: nodeColor,
+        });
+      }
+    }
+    return nodes;
+  }, [routeData, travelMode, isIOS]);
+
   if (!shouldShowRoute || !routeData || routeData.polylinePoints.length === 0) {
     return null;
   }
@@ -323,22 +412,47 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
             if (!step.polylinePoints || step.polylinePoints.length === 0)
               return null;
 
-            const style = getStepColorAndStyle(step, Platform.OS === "ios");
+            const style = getStepColorAndStyle(step, isIOS);
+            const stepKey = `transit-step-${travelMode}-${routeData.id}-${idx}`;
+
+            if (style.isWalk) {
+              return (
+                <Polyline
+                  key={`${stepKey}-walk`}
+                  coordinates={step.polylinePoints}
+                  strokeColor={style.color}
+                  strokeWidth={style.width}
+                  lineDashPattern={walkDash as number[]}
+                  lineCap="round"
+                  lineJoin="round"
+                  zIndex={zIndex}
+                  geodesic
+                />
+              );
+            }
 
             return (
               <Polyline
-                key={`transit-step-${travelMode}-${routeData.id}-${idx}`}
+                key={`${stepKey}-solid`}
                 coordinates={step.polylinePoints}
                 strokeColor={style.color}
                 strokeWidth={style.width}
-                lineDashPattern={style.dash as any}
-                lineCap={style.isWalk ? "round" : "butt"}
+                lineCap="butt"
                 lineJoin="round"
-                zIndex={zIndex + (style.isWalk ? 0 : 1)} // Draw vehicles on top of walk dots
+                zIndex={zIndex + 1}
                 geodesic
               />
             );
           })}
+
+          {transferNodes.map((node) => (
+            <TransferNodeMarker
+              key={node.key}
+              coordinate={node.coordinate}
+              color={node.color}
+              zIndex={zIndex + 3} 
+            />
+          ))}
         </>
       );
     }
@@ -354,21 +468,32 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
     isWalking = false;
   }
 
-  const defaultDash = isWalking
-    ? Platform.OS === "ios"
-      ? [1, 6]
-      : [1, 8]
-    : undefined;
+  const routeKey = `route-${travelMode}-${routeData.id}`;
+
+  if (isWalking) {
+    return (
+      <Polyline
+        key={`${routeKey}-walk`}
+        coordinates={routeData.polylinePoints}
+        strokeColor={mainColor}
+        strokeWidth={isIOS ? 3 : 4}
+        lineDashPattern={walkDash as number[]}
+        lineCap="round"
+        lineJoin="round"
+        zIndex={zIndex}
+        geodesic
+      />
+    );
+  }
 
   return (
     <Polyline
-      key={`route-${travelMode}-${routeData.id}`}
+      key={`${routeKey}-solid`}
       coordinates={routeData.polylinePoints}
       strokeColor={mainColor}
-      strokeWidth={isWalking ? (Platform.OS === "ios" ? 3 : 4) : 5}
-      lineDashPattern={defaultDash as any}
-      lineCap={isWalking ? "round" : "butt"}
-      lineJoin={isWalking ? "round" : "miter"}
+      strokeWidth={5}
+      lineCap="butt"
+      lineJoin="miter"
       zIndex={zIndex}
       geodesic
     />

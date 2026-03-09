@@ -186,6 +186,13 @@ const CampusMap: React.FC<CampusMapProps> = ({
   const destinationPopupRef = useRef<DestinationPopupHandle>(null);
   const preNavigationRegionRef = useRef<Region | null>(null);
   const [trackLocationMarker, setTrackLocationMarker] = useState(true);
+  const [trackDestMarker, setTrackDestMarker] = useState(true);
+
+  useEffect(() => {
+    if (destinationBuildingId) {
+      setTrackDestMarker(true);
+    }
+  }, [destinationBuildingId]);
 
   // handle restoring the camera view when navigation ends
   useEffect(() => {
@@ -273,9 +280,18 @@ const CampusMap: React.FC<CampusMapProps> = ({
         500,
       );
 
-      clearDestination();
-      setSelectedBuilding((prev) => ({ ...prev, visible: false }));
+      // do if we just acted in schedule view
+      if (!showDirections && !isNavigationActive) {
+        destinationPopupRef.current?.dismiss();
+        setTimeout(() => {
+          clearDestination();
+          setSelectedBuilding((prev) => ({ ...prev, visible: false }));
+        }, 250);
+      }
     }
+    // explicitly exclude showDirections/isNavigationActive from deps
+    // to not run every time the popup is opened or closed
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialLat, initialLng, clearDestination]);
 
   // Handle building tap to show additional info and set destination
@@ -808,6 +824,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
                   coordinate={centerCoordinates}
                   anchor={{ x: 0.5, y: 0.5 }}
                   zIndex={1000}
+                  tracksViewChanges={trackDestMarker}
                   onPress={() =>
                     handleBuildingPress(buildingId, campus, centerCoordinates)
                   }
@@ -815,7 +832,16 @@ const CampusMap: React.FC<CampusMapProps> = ({
                   accessibilityRole="button"
                   flat
                 >
-                  <MaterialIcons name="place" size={26} color="#B03060" />
+                  <View
+                    onLayout={() => {
+                      if (trackDestMarker) {
+                        // Wait 250ms for the MaterialIcon to load, then freeze it
+                        setTimeout(() => setTrackDestMarker(false), 250);
+                      }
+                    }}
+                  >
+                    <MaterialIcons name="place" size={26} color="#B03060" />
+                  </View>
                 </Marker>
               )}
 
@@ -870,6 +896,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
     handleBuildingPress,
     selectedBuilding.name,
     selectedBuilding.visible,
+    trackDestMarker,
   ]);
 
   const mapID = useMemo(() => {
