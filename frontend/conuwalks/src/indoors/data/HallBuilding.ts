@@ -138,7 +138,6 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
         {nodeAId: "H_8_N8", nodeBId: "H_8_N7", accessible: true},
         {nodeAId: "H_8_N7", nodeBId: "H_8_N21", accessible: true},
         {nodeAId: "H_8_N21", nodeBId: "H_8_N6", accessible: true},
-        {nodeAId: "", nodeBId: "", accessible: true},
 
         //hall to class 
         { nodeAId: "H_8_N3", nodeBId: "H_801", accessible: true },
@@ -253,6 +252,6 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
   interFloorEdges: [
     // edges that connect floors
     { nodeAId: "H_8_ELEVATOR", nodeBId: "H_9_ELEVATOR", accessible: true},
-    {nodeAId: "H_8_STAIRS", nodeBId: "H_9_STAIRS", accessible: false}
+    {nodeAId: "H_8_STAIRS_1", nodeBId: "H_9_STAIRS", accessible: false}
   ]
 };
