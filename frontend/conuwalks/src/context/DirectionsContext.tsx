@@ -57,11 +57,11 @@ export interface DirectionsContextType {
   destinationLabel: string | null;
   destinationRoom: string | null;
   setDestination: (
-      buildingId: string,
-      coords: LatLng,
-      label: string,
-      room?: string | null,
-    ) => void;
+    buildingId: string,
+    coords: LatLng,
+    label: string,
+    room?: string | null,
+  ) => void;
   setStartRoom: (room: string | null) => void;
   setDestinationRoom: (room: string | null) => void;
   clearDestination: () => void;
@@ -162,11 +162,12 @@ export const DirectionsProvider: React.FC<DirectionsProviderProps> = ({
   );
 
   const setDestination = useCallback(
-          buildingId: string,
-          coords: LatLng,
-          label: string,
-          room: string | null = null,
-        ) => {
+    (
+      buildingId: string,
+      coords: LatLng,
+      label: string,
+      room: string | null = null,
+    ) => {
       setDestinationBuildingId(buildingId);
       setDestinationCoords(coords);
       setDestinationLabel(label);
@@ -267,7 +268,7 @@ export const DirectionsProvider: React.FC<DirectionsProviderProps> = ({
   }, []);
 
   // Memoize the context value to prevent layout thrashing across the app
- const value: DirectionsContextType = React.useMemo(
+  const value: DirectionsContextType = React.useMemo(
     () => ({
       startBuildingId,
       startCoords,

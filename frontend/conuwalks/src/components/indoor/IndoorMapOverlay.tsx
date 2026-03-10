@@ -10,28 +10,34 @@ import {
   Text,
   Animated,
   useWindowDimensions,
- TouchableOpacity,
   Platform,
+  ScrollView,
+  TouchableOpacity,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
 import { ReactNativeZoomableView } from "@openspacelabs/react-native-zoomable-view";
-import Svg, { Polyline as SvgPolyline, Circle, G } from "react-native-svg";
+import Svg, { Polyline as SvgPolyline, G } from "react-native-svg";
 import { IndoorMapService } from "@/src/indoors/services/IndoorMapService";
 
 import { BuildingIndoorConfig } from "@/src/indoors/types/FloorPlans";
 import { Route } from "@/src/indoors/types/Routes";
-import { hallBuildingNavConfig } from "@/src/indoors/data/HallBuilding";
-import { Node, BuildingNavConfig } from "@/src/indoors/types/Navigation";
+import { Node } from "@/src/indoors/types/Navigation";
 
 import MapContent from "./IndoorMap";
-import FloorPicker from "./FloorPicker";
 import DestinationMarker from "./DestinationMarker";
 import IndoorBottomPanel from "./IndoorTopPanel";
 import IndoorRoomLabels from "./IndoorRoomLabels";
 import { styles } from "@/src/styles/IndoorMap.styles";
 import { navConfigRegistry } from "@/src/indoors/data/navConfigRegistry";
 import { IndoorHotspot, IndoorDestination } from "@/src/indoors/types/hotspot";
+
+import IndoorSearchSheet, {
+  IndoorSearchSheetHandle,
+} from "./IndoorSearchSheet";
+import IndoorDirectionsSheet from "./IndoorDirectionsSheet";
+import { Ionicons } from "@expo/vector-icons";
+
+type IndoorState = "search" | "preview" | "navigating";
 
 const calculateGeographicHeight = (
   bounds:
@@ -41,30 +47,29 @@ const calculateGeographicHeight = (
       }
     | undefined,
   screenWidth: number,
-  screenHeight: number,
+  fallbackHeight: number,
 ): number => {
-  if (!bounds) return screenHeight;
+  if (!bounds) return fallbackHeight;
 
   const { northEast, southWest } = bounds;
   const latDiff = Math.abs(northEast.latitude - southWest.latitude);
   const lonDiff = Math.abs(northEast.longitude - southWest.longitude);
 
-  if (latDiff < 0.00001 || lonDiff < 0.00001) return screenHeight;
+  if (latDiff < 0.00001 || lonDiff < 0.00001) return fallbackHeight;
 
   const latRadians = (northEast.latitude * Math.PI) / 180;
   const lonScale = Math.cos(latRadians);
   const geographicRatio = (lonDiff * lonScale) / latDiff;
 
   const calculatedHeight = screenWidth / geographicRatio;
-  return isFinite(calculatedHeight) ? calculatedHeight : screenHeight;
+  return isFinite(calculatedHeight) ? calculatedHeight : fallbackHeight;
 };
-
-
 
 interface Props {
   buildingData: BuildingIndoorConfig;
   startRoomId?: string | null;
   destinationRoomId?: string | null;
+  isNavigationActive?: boolean;
   onSetStartRoom?: (roomLabel: string) => void;
   onSetDestinationRoom?: (roomLabel: string) => void;
   onExit: () => void;
@@ -74,13 +79,17 @@ const IndoorMapOverlay: React.FC<Props> = ({
   buildingData,
   startRoomId,
   destinationRoomId,
+  isNavigationActive,
   onSetStartRoom,
   onSetDestinationRoom,
   onExit,
 }) => {
   const { width, height } = useWindowDimensions();
+  const MAP_SECTION_MAX_HEIGHT = height * 0.5;
   const [currentLevel, setCurrentLevel] = useState(buildingData.defaultFloor);
-  const [destination, setDestination] = useState<IndoorDestination | null>(null);
+  const [destination, setDestination] = useState<IndoorDestination | null>(
+    null,
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
 
@@ -88,53 +97,68 @@ const IndoorMapOverlay: React.FC<Props> = ({
   const zoomRef = useRef<ReactNativeZoomableView>(null);
   const isMounted = useRef(true);
 
-const [indoorRoute, setIndoorRoute] = useState<Route | null>(null);
-  const [activeNodeIndex, setActiveNodeIndex] = useState(0);
+  const [indoorRoute, setIndoorRoute] = useState<Route | null>(null);
   const [baseStartNode, setBaseStartNode] = useState<Node | null>(null);
 
   const indoorService = useRef(new IndoorMapService()).current;
+  const [isFloorMenuOpen, setIsFloorMenuOpen] = useState(false);
+  const [panelState, setPanelState] = useState<IndoorState>(
+    isNavigationActive && destinationRoomId ? "navigating" : "search",
+  );
+  const searchSheetRef = useRef<IndoorSearchSheetHandle>(null);
 
-  // calculate route on mount
+  // Initial Load & Start Node setup
   useEffect(() => {
     const navConfig = navConfigRegistry[buildingData.id];
     if (!navConfig) {
       console.warn(
-        `[IndoorRouting] No navigation config found for building ID: ${buildingData.id}`,
+        `[IndoorRouting] No navigation config found for: ${buildingData.id}`,
       );
       return;
     }
 
     indoorService.loadBuilding(navConfig);
-    let startNode = startRoomId
+
+    let sNode = startRoomId
       ? indoorService.getNodeByRoomNumber(buildingData.id, startRoomId)
-      : indoorService.getEntranceNode();
+      : indoorService.getEntranceNode() || indoorService.getStartNode();
 
-    let endNode = destinationRoomId
-      ? indoorService.getNodeByRoomNumber(buildingData.id, destinationRoomId)
-      : indoorService.getEntranceNode();
+    setBaseStartNode(sNode);
+  }, [buildingData.id, startRoomId, indoorService]);
 
-    // Fallback to default start if nothing is set
-    if (!startNode) startNode = indoorService.getStartNode();
+  // Dynamic Route Calculation
+  useEffect(() => {
+    if (!baseStartNode) return;
 
-    setBaseStartNode(startNode);
+    let targetId: string | null = null;
+    if (destination) {
+      targetId = destination.id;
+    } else if (destinationRoomId) {
+      const node = indoorService.getNodeByRoomNumber(
+        buildingData.id,
+        destinationRoomId,
+      );
+      if (node) targetId = node.id;
+    }
 
-    if (startNode && endNode && startNode.id !== endNode.id) {
+    if (targetId && baseStartNode.id !== targetId) {
       try {
-        const route = indoorService.getRoute(startNode.id, endNode.id);
+        const route = indoorService.getRoute(baseStartNode.id, targetId);
         setIndoorRoute(route);
-
-        // Auto-switch to the floor where the route starts
-        const startFloorLevel = buildingData.floors.find(
-          (f) => f.id === startNode!.floorId,
-        )?.level;
-        if (startFloorLevel) setCurrentLevel(startFloorLevel);
       } catch (err) {
-        console.warn("Could not calculate indoor route:", err);
+        console.warn("Pathfinder failed:", err);
+        setIndoorRoute(null);
       }
     } else {
       setIndoorRoute(null);
     }
-  }, [buildingData.id, startRoomId, destinationRoomId, indoorService]);
+  }, [
+    baseStartNode,
+    destination,
+    destinationRoomId,
+    buildingData.id,
+    indoorService,
+  ]);
 
   const activeFloor = useMemo(
     () => buildingData.floors.find((f) => f.level === currentLevel),
@@ -142,8 +166,13 @@ const [indoorRoute, setIndoorRoute] = useState<Route | null>(null);
   );
 
   const contentHeight = useMemo(
-    () => calculateGeographicHeight(activeFloor?.bounds, width, height),
-    [activeFloor, width, height],
+    () =>
+      calculateGeographicHeight(
+        activeFloor?.bounds,
+        width,
+        MAP_SECTION_MAX_HEIGHT,
+      ),
+    [activeFloor, width, MAP_SECTION_MAX_HEIGHT],
   );
 
   const SVG_SIZE = 1024;
@@ -155,11 +184,17 @@ const [indoorRoute, setIndoorRoute] = useState<Route | null>(null);
   const renderedWidth = useMemo(() => SVG_SIZE * scale, [scale]);
   const renderedHeight = useMemo(() => SVG_SIZE * scale, [scale]);
 
-  const offsetX = useMemo(() => (width - renderedWidth) / 2, [width, renderedWidth]);
+  const offsetX = useMemo(
+    () => (width - renderedWidth) / 2,
+    [width, renderedWidth],
+  );
   const offsetY = useMemo(
     () => (contentHeight - renderedHeight) / 2,
     [contentHeight, renderedHeight],
   );
+
+  const panBufferX = width * 2;
+  const panBufferY = Math.max(contentHeight * 2, height * 2);
 
   const hotspots = useMemo<IndoorHotspot[]>(() => {
     const navConfig = navConfigRegistry[buildingData.id];
@@ -197,49 +232,6 @@ const [indoorRoute, setIndoorRoute] = useState<Route | null>(null);
     });
   }, [hotspots, searchQuery]);
 
-  const handleSetDestination = useCallback((item: IndoorDestination) => {
-    setDestination(item);
-    setCurrentLevel(item.floorLevel);
-    setSearchQuery(item.label ?? item.id);
-    setShowSearchResults(false);
-  }, []);
-
-  const handleClearDestination = useCallback(() => {
-    setDestination(null);
-    setSearchQuery("");
-    setShowSearchResults(false);
-  }, []);
-const handleSvgPress = useCallback(
-    (event: any) => {
-      if (!activeFloor) return;
-      // Get tap coordinates relative to the SVG view
-      const { locationX, locationY } = event.nativeEvent;
-
-      // Scale tap based on ZoomableView scaling if necessary, or let SVG handle intrinsic coordinates
-      const nearestNode = indoorService.getNearestRoomNode(
-        activeFloor.id,
-        locationX,
-        locationY,
-      );
-
-      if (nearestNode && nearestNode.label) {
-        // If we don't have a start room yet, set it as start. Otherwise, set it as destination.
-        if (!startRoomId && onSetStartRoom) {
-          onSetStartRoom(nearestNode.label);
-        } else if (onSetDestinationRoom) {
-          onSetDestinationRoom(nearestNode.label);
-        }
-      }
-    },
-    [
-      activeFloor,
-      indoorService,
-      startRoomId,
-      onSetStartRoom,
-      onSetDestinationRoom,
-    ],
-  );
-
   const isNodeOnFloor = (
     nodeFloorId: string | undefined,
     floor: typeof activeFloor,
@@ -256,7 +248,6 @@ const handleSvgPress = useCallback(
     let currentSegment: typeof indoorRoute.nodes = [];
 
     indoorRoute.nodes.forEach((node) => {
-      // Changed to use our safe floor matcher
       if (isNodeOnFloor(node.floorId, activeFloor)) {
         currentSegment.push(node);
       } else if (currentSegment.length > 0) {
@@ -271,16 +262,6 @@ const handleSvgPress = useCallback(
     return segments;
   }, [indoorRoute, activeFloor]);
 
-  const destinationNode = indoorRoute?.nodes[indoorRoute.nodes.length - 1];
-  const isDestinationOnThisFloor = isNodeOnFloor(
-    destinationNode?.floorId,
-    activeFloor,
-  );
-  const displayNode = indoorRoute
-    ? indoorRoute.nodes[activeNodeIndex]
-    : baseStartNode;
-  const isUserOnThisFloor = isNodeOnFloor(displayNode?.floorId, activeFloor);
-
   const handleFloorChange = useCallback(
     (level: number) => {
       if (level === currentLevel) return;
@@ -290,7 +271,6 @@ const handleSvgPress = useCallback(
         duration: 150,
         useNativeDriver: true,
       }).start(({ finished }) => {
-        // once the old map is entirely invisible, swap the state data
         if (finished && isMounted.current) {
           setCurrentLevel(level);
         }
@@ -299,27 +279,52 @@ const handleSvgPress = useCallback(
     [currentLevel, fadeAnim],
   );
 
+  const handleMapInteraction = useCallback(() => {
+    if (panelState === "search") {
+      searchSheetRef.current?.minimize();
+    }
+  }, [panelState]);
+
+  const handleSetDestination = useCallback((item: IndoorDestination) => {
+    setDestination(item);
+    setCurrentLevel(item.floorLevel);
+    setSearchQuery(item.label ?? item.id);
+    setShowSearchResults(false);
+    setPanelState("preview");
+  }, []);
+
+  const handleClearDestination = useCallback(() => {
+    setDestination(null);
+    setSearchQuery("");
+    setShowSearchResults(false);
+    setPanelState("search");
+  }, []);
+
+  const handleStartNavigation = useCallback(() => {
+    setPanelState("navigating");
+
+    if (baseStartNode) {
+      const startFloorLevel = buildingData.floors.find(
+        (f) => f.id === baseStartNode.floorId,
+      )?.level;
+      if (startFloorLevel !== undefined) {
+        handleFloorChange(startFloorLevel);
+      }
+    }
+  }, [baseStartNode, buildingData.floors, handleFloorChange]);
+
+  const handleCancelNavigation = useCallback(() => {
+    handleClearDestination();
+  }, [handleClearDestination]);
+
   useEffect(() => {
-      isMounted.current = true;
-      return () => {
-        isMounted.current = false;
-      };
-    }, []);
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
-    // inital fade in
-    useEffect(() => {
-      if (!isMounted.current) return;
-
-      zoomRef.current?.zoomTo(1);
-
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }).start();
-    }, [currentLevel, fadeAnim]);
-
-
+  // inital fade in
   useEffect(() => {
     if (!isMounted.current) return;
 
@@ -327,7 +332,7 @@ const handleSvgPress = useCallback(
 
     Animated.timing(fadeAnim, {
       toValue: 1,
-      duration: 250,
+      duration: 300,
       useNativeDriver: true,
     }).start();
   }, [currentLevel, fadeAnim]);
@@ -341,84 +346,211 @@ const handleSvgPress = useCallback(
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.mapContainer}>
-        <Animated.View style={[styles.mapCanvas, { opacity: fadeAnim }]}>
-          <ReactNativeZoomableView
-            ref={zoomRef}
-            maxZoom={3.0}
-            minZoom={1.0}
-            zoomStep={0.5}
-            initialZoom={1.0}
-            bindToBorders={true}
-            visualTouchFeedbackEnabled={false}
-            contentWidth={width}
-            contentHeight={contentHeight}
-          >
-            <View style={{ width, height: contentHeight }}>
-              <MapContent
-                floor={activeFloor}
-                width={width}
-                height={contentHeight}
-              />
+    <View style={[styles.container]} pointerEvents="auto">
+      <View style={styles.mapSection}>
+        <SafeAreaView style={styles.headerWrapper} edges={["top"]}>
+          <View style={styles.headerContent}>
+            <Text style={styles.buildingTitle} numberOfLines={1}>
+              {buildingData.name}
+            </Text>
 
-              <IndoorRoomLabels
-                hotspots={hotspots}
-                currentLevel={currentLevel}
-                destination={destination}
-                offsetX={offsetX}
-                offsetY={offsetY}
-                scale={scale}
-                onSelectDestination={handleSetDestination}
-              />
-
-              {destination && destination.floorLevel === currentLevel && (
-                <DestinationMarker
-                  x={offsetX + destination.x * scale - 6}
-                  y={offsetY + destination.y * scale + 2}
-                />
-              )}
-            </View>
-          </ReactNativeZoomableView>
-        </Animated.View>
-      </View>
-  <TouchableOpacity
-  // style={styles.floatingBackButton}
- style={{
-    position: "absolute",
-    top: 67,
-    left: 16,
-    zIndex: 9999,
-    elevation: 20,
-    padding: 8,
-  }}  onPress={onExit}
->
-  <Ionicons name="arrow-back" size={24} color="#0d0d0dff" />
-</TouchableOpacity>
-
-      <SafeAreaView style={styles.headerWrapper} edges={["top"]}>
-        <View
-          style={styles.headerContent}
-          accessible={true}
-          accessibilityLabel={`${buildingData.name} Floor ${activeFloor.label}`}
-        >
-          <Text
-            style={styles.buildingTitle}
-            numberOfLines={1}
-            accessibilityRole="header"
-          >
-            {buildingData.name}
-          </Text>
-          <View style={styles.floorBadge}>
-            <Text style={styles.floorTitle}>Floor {activeFloor.label}</Text>
+            <TouchableOpacity
+              style={styles.currentFloorButton}
+              onPress={() => setIsFloorMenuOpen(!isFloorMenuOpen)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.currentFloorText}>
+                Floor {activeFloor.label}{" "}
+                <Text style={{ fontSize: 11 }}>▼</Text>
+              </Text>
+            </TouchableOpacity>
           </View>
-        </View>
-      </SafeAreaView>
 
-      <FloorPicker
-        floors={buildingData.floors}
-        currentFloor={currentLevel}
-        onFloorSelect={handleFloorChange}
+          {/* NEW: The Dropdown Menu List */}
+          {isFloorMenuOpen && (
+            <View style={styles.floorDropdownMenu}>
+              <ScrollView
+                style={{ maxHeight: 200 }}
+                bounces={false}
+                showsVerticalScrollIndicator={false}
+              >
+                {buildingData.floors.map((floor) => {
+                  const isActive = floor.level === currentLevel;
+                  return (
+                    <TouchableOpacity
+                      key={floor.id}
+                      style={[
+                        styles.dropdownItem,
+                        isActive && styles.dropdownItemActive,
+                      ]}
+                      onPress={() => {
+                        handleFloorChange(floor.level);
+                        setIsFloorMenuOpen(false); // Close menu on select
+                      }}
+                    >
+                      <Text
+                        style={[
+                          styles.dropdownItemText,
+                          isActive && styles.dropdownItemTextActive,
+                        ]}
+                      >
+                        Floor {floor.label}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+          )}
+        </SafeAreaView>
+
+        <View
+          style={styles.mapContainer}
+          onStartShouldSetResponderCapture={() => {
+            handleMapInteraction();
+            return false;
+          }}
+        >
+          <Animated.View style={[styles.mapCanvas, { opacity: fadeAnim }]}>
+            <ReactNativeZoomableView
+              ref={zoomRef}
+              maxZoom={5.0}
+              minZoom={0.5}
+              zoomStep={0.5}
+              initialZoom={1.0}
+              bindToBorders={true}
+              visualTouchFeedbackEnabled={false}
+              contentWidth={panBufferX}
+              contentHeight={panBufferY}
+            >
+              <View
+                style={{
+                  width: panBufferX,
+                  height: panBufferY,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <View style={{ width, height: contentHeight }}>
+                  <MapContent
+                    floor={activeFloor}
+                    width={width}
+                    height={contentHeight}
+                  />
+                  <Svg
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      width: "100%",
+                      height: "100%",
+                    }}
+                    viewBox={`0 0 ${width} ${contentHeight}`}
+                    pointerEvents="none"
+                  >
+                    <G
+                      transform={`translate(${offsetX}, ${offsetY}) scale(${scale})`}
+                    >
+                      {(panelState === "preview" ||
+                        panelState === "navigating") &&
+                        activeFloorSegments.map((segment, idx) => (
+                          <SvgPolyline
+                            key={`route-segment-${idx}`}
+                            points={segment
+                              .map((n) => `${n.x},${n.y}`)
+                              .join(" ")}
+                            fill="none"
+                            stroke="#B03060"
+                            strokeWidth={8 / scale}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeDasharray={`0, ${12 / scale}`}
+                          />
+                        ))}
+                    </G>
+                  </Svg>
+
+                  <IndoorRoomLabels
+                    hotspots={hotspots}
+                    currentLevel={currentLevel}
+                    destination={destination}
+                    offsetX={offsetX}
+                    offsetY={offsetY}
+                    scale={scale}
+                    onSelectDestination={handleSetDestination}
+                  />
+
+                  {destination && destination.floorLevel === currentLevel && (
+                    <DestinationMarker
+                      x={offsetX + destination.x * scale - 6}
+                      y={offsetY + destination.y * scale + 2}
+                    />
+                  )}
+
+                  {baseStartNode &&
+                    baseStartNode.floorId === activeFloor.id && (
+                      <View
+                        style={{
+                          position: "absolute",
+                          left: offsetX + baseStartNode.x * scale - 12,
+                          top: offsetY + baseStartNode.y * scale - 12,
+                          width: 24,
+                          height: 24,
+                          borderRadius: 12,
+                          backgroundColor: "#4285F4",
+                          borderWidth: 3,
+                          borderColor: "#FFFFFF",
+                          shadowColor: "#000",
+                          shadowOffset: { width: 0, height: 2 },
+                          shadowOpacity: 0.25,
+                          shadowRadius: 3,
+                          elevation: 4,
+                          zIndex: 1005,
+                        }}
+                      />
+                    )}
+                </View>
+              </View>
+            </ReactNativeZoomableView>
+          </Animated.View>
+        </View>
+      </View>
+      <TouchableOpacity
+        // style={styles.floatingBackButton}
+        style={{
+          position: "absolute",
+          top: 67,
+          left: 16,
+          zIndex: 9999,
+          elevation: 20,
+          padding: 8,
+        }}
+        onPress={onExit}
+      >
+        <Ionicons name="arrow-back" size={24} color="#0d0d0dff" />
+      </TouchableOpacity>
+
+      {panelState === "navigating" && (
+        <View style={styles.activeNavOverlay}>
+          <TouchableOpacity
+            style={styles.endNavButton}
+            onPress={handleCancelNavigation}
+          >
+            <Ionicons name="close" size={26} color="#FFF" />
+          </TouchableOpacity>
+        </View>
+      )}
+
+      <IndoorSearchSheet
+        ref={searchSheetRef}
+        visible={panelState === "search"}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        showSearchResults={showSearchResults}
+        setShowSearchResults={setShowSearchResults}
+        filteredRooms={filteredRooms}
+        onSelectDestination={handleSetDestination}
+        onExit={onExit}
       />
 
       <IndoorBottomPanel
@@ -430,9 +562,14 @@ const handleSvgPress = useCallback(
         onSelectDestination={handleSetDestination}
         onClearDestination={handleClearDestination}
       />
+      <IndoorDirectionsSheet
+        visible={panelState === "preview"}
+        destinationLabel={destination?.label || "Selected Room"}
+        onStartNavigation={handleStartNavigation}
+        onCancel={handleClearDestination}
+      />
     </View>
   );
-  
 };
 
 export default IndoorMapOverlay;

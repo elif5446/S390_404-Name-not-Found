@@ -14,7 +14,7 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
         {id: "H_8_N4", floorId: "H_8", x: 549, y: 211, type: "hallway"},
         {id: "H_8_N5", floorId: "H_8", x: 549, y: 394, type: "hallway"},
         {id: "H_8_N6", floorId: "H_8", x: 549, y: 795, type: "hallway"},
-        {id: "H_8_N7", floorId: "H_8", x: 306, y: 394, type: "hallway"},
+        {id: "H_8_N7", floorId: "H_8", x: 306, y: 394, type: "hallway", isEntrance: true},
 
         //rooms 
         {id: "H_847", floorId: "H_8", x: 188, y: 844, type: "room", label: "Room 847"},

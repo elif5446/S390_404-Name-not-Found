@@ -209,7 +209,9 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
   const geofenceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const confirmedBuildingIdRef = useRef<string | null>(null);
-
+  const [manuallyExitedBuildingId, setManuallyExitedBuildingId] = useState<
+    string | null
+  >(null);
 
   // handle restoring the camera view when navigation ends
   useEffect(() => {
@@ -246,10 +248,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
     setSelectedBuilding((prev) => ({ ...prev, visible: false }));
     setIndoorBuildingId(buildingId);
   }, [setShowDirections, setIsNavigationActive, clearRouteData]);
-
-  // Calculate circle radius based on zoom level (longitudeDelta)
-  // Larger longitudeDelta = zoomed out = bigger circle
-  //   const circleRadius = Math.max(2.5, mapRegion.longitudeDelta * 2000);
 
   // Create a ref to the MapView so we can control it
   const mapRef = useRef<MapView>(null);
@@ -396,6 +394,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
     if (foundId && INDOOR_DATA[foundId]) {
       setIndoorBuildingId(foundId);
+      setManuallyExitedBuildingId(null);
       setSelectedBuilding((prev) => ({ ...prev, visible: false }));
     }
   }, []);
@@ -770,25 +769,71 @@ const CampusMap: React.FC<CampusMapProps> = ({
     };
   }, [userLocation]);
 
-  // auto-trigger entry/exit based on User Location & Navigation State
-    useEffect(() => {
-      if (
-        isNavigationActive &&
-        userLocationBuildingId &&
-        INDOOR_DATA[userLocationBuildingId]
-      ) {
-        if (indoorBuildingId !== userLocationBuildingId) {
-          setIndoorBuildingId(userLocationBuildingId);
-        }
-      } else if (
-        !userLocationBuildingId &&
-        indoorBuildingId &&
-        isNavigationActive
-      ) {
-        setIndoorBuildingId(null);
-      }
-    }, [userLocationBuildingId, isNavigationActive, indoorBuildingId]);
+  const destinationCenter = useMemo(() => {
+    if (!destinationBuildingId) return null;
+    const findCenter = (geojson: typeof SGW | typeof LOY) => {
+      const feature = geojson.features.find(
+        (f) => (f as GeoJsonFeature).properties.id === destinationBuildingId,
+      ) as GeoJsonFeature | undefined;
+      return feature && feature.geometry.type === "Polygon"
+        ? calculatePolygonCenter(feature.geometry.coordinates[0])
+        : null;
+    };
+    return findCenter(SGW) || findCenter(LOY);
+  }, [destinationBuildingId]);
 
+  // auto-trigger entry/exit based on User Location & Navigation State
+  useEffect(() => {
+    if (!isNavigationActive) {
+      if (indoorBuildingId && !userLocationBuildingId) {
+        setIndoorBuildingId(null);
+        setManuallyExitedBuildingId(null);
+      }
+      return;
+    }
+
+    let targetBuildingId = userLocationBuildingId;
+
+    // proximity fallback
+    if (
+      !targetBuildingId &&
+      destinationBuildingId &&
+      destinationCenter &&
+      userLocation
+    ) {
+      const dist = distanceMetersBetween(userLocation, destinationCenter);
+      if (dist <= 20) {
+        targetBuildingId = destinationBuildingId;
+      }
+    }
+
+    if (targetBuildingId && INDOOR_DATA[targetBuildingId]) {
+      if (
+        indoorBuildingId !== targetBuildingId &&
+        manuallyExitedBuildingId !== targetBuildingId
+      ) {
+        setIndoorBuildingId(targetBuildingId);
+      }
+    } else if (!targetBuildingId && indoorBuildingId) {
+      setIndoorBuildingId(null);
+      setManuallyExitedBuildingId(null);
+    }
+  }, [
+    userLocation,
+    userLocationBuildingId,
+    isNavigationActive,
+    indoorBuildingId,
+    manuallyExitedBuildingId,
+    destinationBuildingId,
+    destinationCenter,
+  ]);
+
+  const handleIndoorExit = useCallback(() => {
+    if (indoorBuildingId) {
+      setManuallyExitedBuildingId(indoorBuildingId);
+    }
+    setIndoorBuildingId(null);
+  }, [indoorBuildingId]);
 
   // memoize the polygon lists so they don't re-calculate on every render
   const { sgwPolygons, loyPolygons } = useMemo(() => {
@@ -1106,7 +1151,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
         ))}
       </MapView>
 
-      {selectedTransitStop && (
+      {selectedTransitStop && !indoorBuildingId && (
         <View
           style={{
             position: "absolute",
@@ -1178,7 +1223,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
         </View>
       )}
 
-      {isNavigationActive && routeData && (
+      {isNavigationActive && routeData && !indoorBuildingId && (
         <View
           style={{
             position: "absolute",
@@ -1258,7 +1303,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
         </View>
       )}
 
-      {isNavigationActive && routeData && (
+      {isNavigationActive && routeData && !indoorBuildingId && (
         <View
           style={{
             position: "absolute",
@@ -1354,26 +1399,27 @@ const CampusMap: React.FC<CampusMapProps> = ({
         <IndoorMapOverlay
           buildingData={INDOOR_DATA[indoorBuildingId]}
           startRoomId={startRoom}
-            destinationRoomId={destinationRoom}
-            onSetStartRoom={(roomLabel) => {
-              setStartPoint(
-                indoorBuildingId,
-                selectedBuilding.coords || mapCenter,
-                indoorBuildingId,
-                roomLabel,
-              );
-              setShowDirections(true);
-            }}
-            onSetDestinationRoom={(roomLabel) => {
-              setDestination(
-                indoorBuildingId,
-                selectedBuilding.coords || mapCenter,
-                indoorBuildingId,
-                roomLabel,
-              );
-              setShowDirections(true);
-            }}
-          onExit={() => setIndoorBuildingId(null)}
+          destinationRoomId={destinationRoom}
+          isNavigationActive={isNavigationActive}
+          onSetStartRoom={(roomLabel) => {
+            setStartPoint(
+              indoorBuildingId,
+              selectedBuilding.coords || mapCenter,
+              indoorBuildingId,
+              roomLabel,
+            );
+            setShowDirections(true);
+          }}
+          onSetDestinationRoom={(roomLabel) => {
+            setDestination(
+              indoorBuildingId,
+              selectedBuilding.coords || mapCenter,
+              indoorBuildingId,
+              roomLabel,
+            );
+            setShowDirections(true);
+          }}
+          onExit={handleIndoorExit}
         />
       )}
 

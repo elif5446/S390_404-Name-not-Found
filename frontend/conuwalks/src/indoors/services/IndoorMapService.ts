@@ -2,28 +2,25 @@ import { BuildingNavConfig, Node } from "../types/Navigation";
 import { Route, UserLocation } from "../types/Routes";
 import { Graph } from "./Graph";
 import { PathFinder } from "./PathFinder";
-
-//use this file to load The Building Data, to find the fastest path.
-//Return:S
-//     route{
-//     Nodes:Node[]
-//     distance: number (can be converted to time later)
-//     }
+import { IndoorLocationTracker } from "./IndoorLocationTracker";
 
 export class IndoorMapService {
   private graph: Graph;
   private pathFinder: PathFinder;
+  private locationTracker: IndoorLocationTracker;
 
   constructor() {
     this.graph = new Graph();
     this.pathFinder = new PathFinder(this.graph);
+    this.locationTracker = new IndoorLocationTracker(this.graph);
   }
 
   loadBuilding(config: BuildingNavConfig): void {
     //this will reset the graph everytime a new building is pressed
     this.graph = new Graph();
     this.pathFinder = new PathFinder(this.graph);
-    
+    this.locationTracker.setGraph(this.graph);
+
     //load the floors
     for (const floor of config.floors) {
       for (const node of floor.nodes) {
@@ -42,15 +39,31 @@ export class IndoorMapService {
         this.graph.addEdge(edge);
       }
     }
+
+    if (config.defaultStartNodeId) {
+      try {
+        this.locationTracker.setDefaultLocation(config.defaultStartNodeId);
+      } catch (e) {
+        console.warn(`Failed to set default location: ${e}`);
+      }
+    }
   }
 
   getGraph(): Graph {
     return this.graph;
   }
-  
+
   //you can find a route by giving a start and end node
-  getRoute(startNodeId: string, endNodeId: string, accessibleOnly: boolean = false): Route {
-    return this.pathFinder.findShortestPath(startNodeId, endNodeId,accessibleOnly);
+  getRoute(
+    startNodeId: string,
+    endNodeId: string,
+    accessibleOnly: boolean = false,
+  ): Route {
+    return this.pathFinder.findShortestPath(
+      startNodeId,
+      endNodeId,
+      accessibleOnly,
+    );
   }
 
   setUserLocation(nodeId: string): void {
@@ -58,14 +71,11 @@ export class IndoorMapService {
     if (!initialUserLocation) {
       throw new Error(`Node: ${nodeId} does not exist in the graph`);
     }
-    this.userLocation = {
-      nodeId: initialUserLocation.id,
-      floorId: initialUserLocation.floorId,
-    };
+    this.locationTracker.setUserLocation(nodeId);
   }
 
   getUserLocation(): UserLocation | null {
-    return this.userLocation;
+    return this.locationTracker.getUserLocation();
   }
 
   //find shortest route by giving only an end node (will use the default location or preset location as starting node)
@@ -73,11 +83,12 @@ export class IndoorMapService {
     endNodeId: string,
     accessibleOnly: boolean = false,
   ): Route {
-    if (!this.userLocation) {
+    const userLoc = this.getUserLocation();
+    if (!userLoc) {
       throw new Error("IndoorMapService: user location not set");
     }
     return this.pathFinder.findShortestPath(
-      this.userLocation.nodeId,
+      userLoc.nodeId,
       endNodeId,
       accessibleOnly,
     );
@@ -85,8 +96,7 @@ export class IndoorMapService {
 
   //this will get the default start node for the building that is being loaded
   getStartNode(): Node | null {
-    if (!this.userLocation) return null;
-    return this.graph.getNode(this.userLocation.nodeId) ?? null;
+    return this.locationTracker.getStartNode();
   }
 
   // resolves a raw room string (e.g. "847") to a node ID (e.g. "H_847")
