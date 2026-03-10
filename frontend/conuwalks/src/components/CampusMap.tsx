@@ -207,6 +207,10 @@ const CampusMap: React.FC<CampusMapProps> = ({
     }
   }, [destinationBuildingId]);
 
+  const geofenceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const confirmedBuildingIdRef = useRef<string | null>(null);
+
+
   // handle restoring the camera view when navigation ends
   useEffect(() => {
     if (isNavigationActive) {
@@ -738,11 +742,53 @@ const CampusMap: React.FC<CampusMapProps> = ({
       });
       return (feature?.properties as { id?: string } | undefined)?.id ?? null;
     };
-    const currentId = findBuildingId(SGW) || findBuildingId(LOY);
-    if (currentId !== userLocationBuildingId) {
-      setUserLocationBuildingId(currentId);
+    const rawCurrentId = findBuildingId(SGW) || findBuildingId(LOY);
+
+    if (rawCurrentId === confirmedBuildingIdRef.current) {
+      if (geofenceTimeoutRef.current) {
+        clearTimeout(geofenceTimeoutRef.current);
+        geofenceTimeoutRef.current = null;
+      }
+      return;
     }
+
+    if (!geofenceTimeoutRef.current) {
+      geofenceTimeoutRef.current = setTimeout(() => {
+        console.log(
+          `[Geofence] Confirmed transition to: ${rawCurrentId || "Outside"}`,
+        );
+        confirmedBuildingIdRef.current = rawCurrentId;
+        setUserLocationBuildingId(rawCurrentId);
+        geofenceTimeoutRef.current = null;
+      }, 3000);
+    }
+
+    return () => {
+      if (geofenceTimeoutRef.current) {
+        clearTimeout(geofenceTimeoutRef.current);
+      }
+    };
   }, [userLocation]);
+
+  // auto-trigger entry/exit based on User Location & Navigation State
+    useEffect(() => {
+      if (
+        isNavigationActive &&
+        userLocationBuildingId &&
+        INDOOR_DATA[userLocationBuildingId]
+      ) {
+        if (indoorBuildingId !== userLocationBuildingId) {
+          setIndoorBuildingId(userLocationBuildingId);
+        }
+      } else if (
+        !userLocationBuildingId &&
+        indoorBuildingId &&
+        isNavigationActive
+      ) {
+        setIndoorBuildingId(null);
+      }
+    }, [userLocationBuildingId, isNavigationActive, indoorBuildingId]);
+
 
   // memoize the polygon lists so they don't re-calculate on every render
   const { sgwPolygons, loyPolygons } = useMemo(() => {
@@ -1307,6 +1353,26 @@ const CampusMap: React.FC<CampusMapProps> = ({
       {indoorBuildingId && INDOOR_DATA[indoorBuildingId] && (
         <IndoorMapOverlay
           buildingData={INDOOR_DATA[indoorBuildingId]}
+          startRoomId={startRoom}
+            destinationRoomId={destinationRoom}
+            onSetStartRoom={(roomLabel) => {
+              setStartPoint(
+                indoorBuildingId,
+                selectedBuilding.coords || mapCenter,
+                indoorBuildingId,
+                roomLabel,
+              );
+              setShowDirections(true);
+            }}
+            onSetDestinationRoom={(roomLabel) => {
+              setDestination(
+                indoorBuildingId,
+                selectedBuilding.coords || mapCenter,
+                indoorBuildingId,
+                roomLabel,
+              );
+              setShowDirections(true);
+            }}
           onExit={() => setIndoorBuildingId(null)}
         />
       )}

@@ -24,7 +24,7 @@ export const MOCK_CALENDAR_EVENTS = [
     summary: "COMP 346 - Operating Systems",
     start: { dateTime: getTodayAt(10, 30) },
     end: { dateTime: getTodayAt(11, 45) },
-    location: "H 820",
+    location: "H 801",
     status: "confirmed",
   },
   {
@@ -32,7 +32,7 @@ export const MOCK_CALENDAR_EVENTS = [
     summary: "ENGR 202 - Sustainable Development",
     start: { dateTime: getTodayAt(13, 0) },
     end: { dateTime: getTodayAt(14, 15) },
-    location: "SGW H-937",
+    location: "SGW H-964",
     status: "confirmed",
   },
   {
@@ -48,7 +48,7 @@ export const MOCK_CALENDAR_EVENTS = [
     summary: "COMP 363 - Databases",
     start: { dateTime: getFromNow(5) },
     end: { dateTime: getFromNow(65) },
-    location: "SGW H-937",
+    location: "SGW H-964",
     status: "confirmed",
   },
   {
@@ -56,7 +56,7 @@ export const MOCK_CALENDAR_EVENTS = [
     summary: 'SOEN 390 - Software Engineering Team Project',
     start: { dateTime: getFromNow(5) },
     end: { dateTime: getFromNow(65) },
-    location: 'H-820', 
+    location: 'H-801',
     status: 'confirmed',
   },
   {

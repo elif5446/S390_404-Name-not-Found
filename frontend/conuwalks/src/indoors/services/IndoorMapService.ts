@@ -53,4 +53,75 @@ export class IndoorMapService {
     return this.pathFinder.findShortestPath(startNodeId, endNodeId,accessibleOnly);
   }
 
+  setUserLocation(nodeId: string): void {
+    const initialUserLocation = this.graph.getNode(nodeId);
+    if (!initialUserLocation) {
+      throw new Error(`Node: ${nodeId} does not exist in the graph`);
+    }
+    this.userLocation = {
+      nodeId: initialUserLocation.id,
+      floorId: initialUserLocation.floorId,
+    };
+  }
+
+  getUserLocation(): UserLocation | null {
+    return this.userLocation;
+  }
+
+  //find shortest route by giving only an end node (will use the default location or preset location as starting node)
+  getRouteFromCurrentLocation(
+    endNodeId: string,
+    accessibleOnly: boolean = false,
+  ): Route {
+    if (!this.userLocation) {
+      throw new Error("IndoorMapService: user location not set");
+    }
+    return this.pathFinder.findShortestPath(
+      this.userLocation.nodeId,
+      endNodeId,
+      accessibleOnly,
+    );
+  }
+
+  //this will get the default start node for the building that is being loaded
+  getStartNode(): Node | null {
+    if (!this.userLocation) return null;
+    return this.graph.getNode(this.userLocation.nodeId) ?? null;
+  }
+
+  // resolves a raw room string (e.g. "847") to a node ID (e.g. "H_847")
+  getNodeByRoomNumber(buildingId: string, roomNumber: string): Node | null {
+    const cleanRoom = roomNumber.replace(/\s+/g, "").toUpperCase();
+    const targetId = `${buildingId}_${cleanRoom}`;
+    return this.graph.getNode(targetId) || null;
+  }
+
+  // finds the nearest room/poi node given cartesian x/y coordinates
+  getNearestRoomNode(floorId: string, x: number, y: number): Node | null {
+    const nodesOnFloor = this.graph
+      .getAllNodes()
+      .filter(
+        (n) => n.floorId === floorId && (n.type === "room" || n.type === "poi"),
+      );
+
+    let nearestNode: Node | null = null;
+    let minDistance = Infinity;
+
+    for (const node of nodesOnFloor) {
+      const distance = Math.sqrt(
+        Math.pow(node.x - x, 2) + Math.pow(node.y - y, 2),
+      );
+      if (distance < minDistance) {
+        minDistance = distance;
+        nearestNode = node;
+      }
+    }
+
+    return minDistance < 100 ? nearestNode : null;
+  }
+
+  getEntranceNode(): Node | null {
+    const entrances = this.graph.getEntranceNodes();
+    return entrances.length > 0 ? entrances[0] : null;
+  }
 }

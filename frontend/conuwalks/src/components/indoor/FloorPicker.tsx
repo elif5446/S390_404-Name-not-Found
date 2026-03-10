@@ -33,12 +33,12 @@ const FloorPicker: React.FC<Props> = ({ floors, currentFloor, onFloorSelect }) =
                 style={[styles.floorButton, isActive && styles.activeButton]}
                 onPress={() => onFloorSelect(floor.level)}
                 activeOpacity={0.7}
-                accessibilityLabel={`Floor ${floor.label}`}
+                accessibilityLabel={`Floor ${floor.level}`}
                 accessibilityRole="button"
                 accessibilityState={{ selected: isActive }}
               >
                 <Text style={[styles.pickerText, isActive && styles.activePickerText]}>
-                  {floor.label}
+                  {floor.level}
                 </Text>
               </TouchableOpacity>
             );

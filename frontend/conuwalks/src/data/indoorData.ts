@@ -14,7 +14,7 @@ export const INDOOR_DATA: Record<string, BuildingIndoorConfig> = {
     defaultFloor: 8,
     floors: [
       {
-        id: "8",
+        id: "H_8",
         level: 8,
         label: "8",
         type: "svg" as const,
@@ -26,7 +26,7 @@ export const INDOOR_DATA: Record<string, BuildingIndoorConfig> = {
         },
       },
       {
-        id: "9",
+        id: "H_9",
         level: 9,
         label: "9",
         type: "svg" as const,
@@ -45,7 +45,7 @@ export const INDOOR_DATA: Record<string, BuildingIndoorConfig> = {
     defaultFloor: 1,
     floors: [
       {
-        id: "S1",
+        id: "MB_S1",
         level: 1,
         label: "S1",
         type: "svg" as const,
@@ -56,7 +56,7 @@ export const INDOOR_DATA: Record<string, BuildingIndoorConfig> = {
         },
       },
       {
-        id: "1",
+        id: "MB_1",
         level: 2,
         label: "1",
         type: "svg" as const,
@@ -74,7 +74,7 @@ export const INDOOR_DATA: Record<string, BuildingIndoorConfig> = {
     defaultFloor: 1,
     floors: [
       {
-        id: "1",
+        id: "VL_1",
         level: 1,
         label: "1",
         type: "svg" as const,
@@ -85,7 +85,7 @@ export const INDOOR_DATA: Record<string, BuildingIndoorConfig> = {
         },
       },
       {
-        id: "2",
+        id: "VL_2",
         level: 2,
         label: "2",
         type: "svg" as const,

@@ -11,10 +11,19 @@ import {
   Animated,
   useWindowDimensions,
  TouchableOpacity,
-} from "react-native";import { SafeAreaView } from "react-native-safe-area-context";
+  Platform,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { ReactNativeZoomableView } from "@openspacelabs/react-native-zoomable-view";
+import Svg, { Polyline as SvgPolyline, Circle, G } from "react-native-svg";
+import { IndoorMapService } from "@/src/indoors/services/IndoorMapService";
+
 import { BuildingIndoorConfig } from "@/src/indoors/types/FloorPlans";
+import { Route } from "@/src/indoors/types/Routes";
+import { hallBuildingNavConfig } from "@/src/indoors/data/HallBuilding";
+import { Node, BuildingNavConfig } from "@/src/indoors/types/Navigation";
+
 import MapContent from "./IndoorMap";
 import FloorPicker from "./FloorPicker";
 import DestinationMarker from "./DestinationMarker";
@@ -54,10 +63,21 @@ const calculateGeographicHeight = (
 
 interface Props {
   buildingData: BuildingIndoorConfig;
+  startRoomId?: string | null;
+  destinationRoomId?: string | null;
+  onSetStartRoom?: (roomLabel: string) => void;
+  onSetDestinationRoom?: (roomLabel: string) => void;
   onExit: () => void;
 }
 
-const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
+const IndoorMapOverlay: React.FC<Props> = ({
+  buildingData,
+  startRoomId,
+  destinationRoomId,
+  onSetStartRoom,
+  onSetDestinationRoom,
+  onExit,
+}) => {
   const { width, height } = useWindowDimensions();
   const [currentLevel, setCurrentLevel] = useState(buildingData.defaultFloor);
   const [destination, setDestination] = useState<IndoorDestination | null>(null);
@@ -67,6 +87,54 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const zoomRef = useRef<ReactNativeZoomableView>(null);
   const isMounted = useRef(true);
+
+const [indoorRoute, setIndoorRoute] = useState<Route | null>(null);
+  const [activeNodeIndex, setActiveNodeIndex] = useState(0);
+  const [baseStartNode, setBaseStartNode] = useState<Node | null>(null);
+
+  const indoorService = useRef(new IndoorMapService()).current;
+
+  // calculate route on mount
+  useEffect(() => {
+    const navConfig = navConfigRegistry[buildingData.id];
+    if (!navConfig) {
+      console.warn(
+        `[IndoorRouting] No navigation config found for building ID: ${buildingData.id}`,
+      );
+      return;
+    }
+
+    indoorService.loadBuilding(navConfig);
+    let startNode = startRoomId
+      ? indoorService.getNodeByRoomNumber(buildingData.id, startRoomId)
+      : indoorService.getEntranceNode();
+
+    let endNode = destinationRoomId
+      ? indoorService.getNodeByRoomNumber(buildingData.id, destinationRoomId)
+      : indoorService.getEntranceNode();
+
+    // Fallback to default start if nothing is set
+    if (!startNode) startNode = indoorService.getStartNode();
+
+    setBaseStartNode(startNode);
+
+    if (startNode && endNode && startNode.id !== endNode.id) {
+      try {
+        const route = indoorService.getRoute(startNode.id, endNode.id);
+        setIndoorRoute(route);
+
+        // Auto-switch to the floor where the route starts
+        const startFloorLevel = buildingData.floors.find(
+          (f) => f.id === startNode!.floorId,
+        )?.level;
+        if (startFloorLevel) setCurrentLevel(startFloorLevel);
+      } catch (err) {
+        console.warn("Could not calculate indoor route:", err);
+      }
+    } else {
+      setIndoorRoute(null);
+    }
+  }, [buildingData.id, startRoomId, destinationRoomId, indoorService]);
 
   const activeFloor = useMemo(
     () => buildingData.floors.find((f) => f.level === currentLevel),
@@ -141,20 +209,116 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
     setSearchQuery("");
     setShowSearchResults(false);
   }, []);
+const handleSvgPress = useCallback(
+    (event: any) => {
+      if (!activeFloor) return;
+      // Get tap coordinates relative to the SVG view
+      const { locationX, locationY } = event.nativeEvent;
+
+      // Scale tap based on ZoomableView scaling if necessary, or let SVG handle intrinsic coordinates
+      const nearestNode = indoorService.getNearestRoomNode(
+        activeFloor.id,
+        locationX,
+        locationY,
+      );
+
+      if (nearestNode && nearestNode.label) {
+        // If we don't have a start room yet, set it as start. Otherwise, set it as destination.
+        if (!startRoomId && onSetStartRoom) {
+          onSetStartRoom(nearestNode.label);
+        } else if (onSetDestinationRoom) {
+          onSetDestinationRoom(nearestNode.label);
+        }
+      }
+    },
+    [
+      activeFloor,
+      indoorService,
+      startRoomId,
+      onSetStartRoom,
+      onSetDestinationRoom,
+    ],
+  );
+
+  const isNodeOnFloor = (
+    nodeFloorId: string | undefined,
+    floor: typeof activeFloor,
+  ) => {
+    if (!floor || !nodeFloorId) return false;
+    if (nodeFloorId === floor.id) return true;
+    const extractedLevel = parseInt(nodeFloorId.split("_").pop() || "", 10);
+    return extractedLevel === floor.level;
+  };
+
+  const activeFloorSegments = useMemo(() => {
+    if (!indoorRoute || !activeFloor) return [];
+    const segments: (typeof indoorRoute.nodes)[] = [];
+    let currentSegment: typeof indoorRoute.nodes = [];
+
+    indoorRoute.nodes.forEach((node) => {
+      // Changed to use our safe floor matcher
+      if (isNodeOnFloor(node.floorId, activeFloor)) {
+        currentSegment.push(node);
+      } else if (currentSegment.length > 0) {
+        segments.push(currentSegment);
+        currentSegment = [];
+      }
+    });
+    if (currentSegment.length > 0) {
+      segments.push(currentSegment);
+    }
+
+    return segments;
+  }, [indoorRoute, activeFloor]);
+
+  const destinationNode = indoorRoute?.nodes[indoorRoute.nodes.length - 1];
+  const isDestinationOnThisFloor = isNodeOnFloor(
+    destinationNode?.floorId,
+    activeFloor,
+  );
+  const displayNode = indoorRoute
+    ? indoorRoute.nodes[activeNodeIndex]
+    : baseStartNode;
+  const isUserOnThisFloor = isNodeOnFloor(displayNode?.floorId, activeFloor);
+
+  const handleFloorChange = useCallback(
+    (level: number) => {
+      if (level === currentLevel) return;
+
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        // once the old map is entirely invisible, swap the state data
+        if (finished && isMounted.current) {
+          setCurrentLevel(level);
+        }
+      });
+    },
+    [currentLevel, fadeAnim],
+  );
 
   useEffect(() => {
-    isMounted.current = true;
+      isMounted.current = true;
+      return () => {
+        isMounted.current = false;
+      };
+    }, []);
 
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 400,
-      useNativeDriver: true,
-    }).start();
+    // inital fade in
+    useEffect(() => {
+      if (!isMounted.current) return;
 
-    return () => {
-      isMounted.current = false;
-    };
-  }, [fadeAnim]);
+      zoomRef.current?.zoomTo(1);
+
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }, [currentLevel, fadeAnim]);
+
 
   useEffect(() => {
     if (!isMounted.current) return;
@@ -167,23 +331,6 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
       useNativeDriver: true,
     }).start();
   }, [currentLevel, fadeAnim]);
-
-  const handleFloorChange = useCallback(
-    (level: number) => {
-      if (level === currentLevel) return;
-
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 150,
-        useNativeDriver: true,
-      }).start(({ finished }) => {
-        if (finished && isMounted.current) {
-          setCurrentLevel(level);
-        }
-      });
-    },
-    [currentLevel, fadeAnim],
-  );
 
   if (!activeFloor) {
     return (

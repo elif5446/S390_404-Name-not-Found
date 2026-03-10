@@ -56,7 +56,12 @@ export interface DirectionsContextType {
   destinationCoords: LatLng | null;
   destinationLabel: string | null;
   destinationRoom: string | null;
-  setDestination: (buildingId: string, coords: LatLng, label: string) => void;
+  setDestination: (
+      buildingId: string,
+      coords: LatLng,
+      label: string,
+      room?: string | null,
+    ) => void;
   setStartRoom: (room: string | null) => void;
   setDestinationRoom: (room: string | null) => void;
   clearDestination: () => void;
@@ -157,10 +162,15 @@ export const DirectionsProvider: React.FC<DirectionsProviderProps> = ({
   );
 
   const setDestination = useCallback(
-    (buildingId: string, coords: LatLng, label: string) => {
+          buildingId: string,
+          coords: LatLng,
+          label: string,
+          room: string | null = null,
+        ) => {
       setDestinationBuildingId(buildingId);
       setDestinationCoords(coords);
       setDestinationLabel(label);
+      setDestinationRoomState(room);
     },
     [],
   );
@@ -257,54 +267,83 @@ export const DirectionsProvider: React.FC<DirectionsProviderProps> = ({
   }, []);
 
   // Memoize the context value to prevent layout thrashing across the app
-  const value: DirectionsContextType = React.useMemo(() => ({
-    startBuildingId,
-    startCoords,
-    startLabel,
-    startRoom,
-    setStartPoint,
-    destinationBuildingId,
-    destinationCoords,
-    destinationLabel,
-    destinationRoom,
-    setDestination,
-    setStartRoom,
-    setDestinationRoom,
-    clearDestination,
-    routes,
-    setRoutes,
-    selectedRouteIndex,
-    setSelectedRouteIndex,
-    routeData,
-    setRouteData,
-    clearRouteData,
-    travelMode: travelModeState,
-    setTravelMode,
-    showDirections,
-    setShowDirections,
-    isNavigationActive,
-    setIsNavigationActive,
-    loading,
-    setLoading,
-    error,
-    setError,
-    resetDirections,
-    timeMode,
-    setTimeMode,
-    targetTime,
-    setTargetTime,
-  }), [
-    startBuildingId, startCoords, startLabel, startRoom,
-    destinationBuildingId, destinationCoords, destinationLabel, destinationRoom,
-    routes, selectedRouteIndex, routeData, travelModeState,
-    showDirections, isNavigationActive, loading, error, 
-    timeMode, targetTime,
-    // setters are stable (wrapped in useCallback)
-    setStartPoint, setDestination, setStartRoom, setDestinationRoom, clearDestination,
-    setRoutes, setSelectedRouteIndex, setRouteData, clearRouteData, setTravelMode,
-    setShowDirections, setIsNavigationActive, setLoading, setError, resetDirections,
-    setTimeMode, setTargetTime
-  ]);
+ const value: DirectionsContextType = React.useMemo(
+    () => ({
+      startBuildingId,
+      startCoords,
+      startLabel,
+      startRoom,
+      destinationBuildingId,
+      destinationCoords,
+      destinationLabel,
+      destinationRoom,
+      setStartPoint,
+      setDestination,
+      setStartRoom,
+      setDestinationRoom,
+      clearDestination,
+      routes,
+      setRoutes,
+      selectedRouteIndex,
+      setSelectedRouteIndex,
+      routeData,
+      setRouteData,
+      clearRouteData,
+      travelMode: travelModeState,
+      setTravelMode,
+      showDirections,
+      setShowDirections,
+      isNavigationActive,
+      setIsNavigationActive,
+      loading,
+      setLoading,
+      error,
+      setError,
+      resetDirections,
+      timeMode,
+      setTimeMode,
+      targetTime,
+      setTargetTime,
+    }),
+    [
+      startBuildingId,
+      startCoords,
+      startLabel,
+      startRoom,
+      destinationBuildingId,
+      destinationCoords,
+      destinationLabel,
+      destinationRoom,
+      routes,
+      selectedRouteIndex,
+      routeData,
+      travelModeState,
+      showDirections,
+      isNavigationActive,
+      loading,
+      error,
+      timeMode,
+      targetTime,
+      // setters are stable (wrapped in useCallback)
+      setStartPoint,
+      setDestination,
+      setStartRoom,
+      setDestinationRoom,
+      clearDestination,
+      setRoutes,
+      setSelectedRouteIndex,
+      setRouteData,
+      clearRouteData,
+      setTravelMode,
+      setShowDirections,
+      setIsNavigationActive,
+      setLoading,
+      setError,
+      resetDirections,
+      setTimeMode,
+      setTargetTime,
+    ],
+  );
 
   return (
     <DirectionsContext.Provider value={value}>
