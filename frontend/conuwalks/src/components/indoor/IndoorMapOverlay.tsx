@@ -5,8 +5,14 @@ import React, {
   useMemo,
   useCallback,
 } from "react";
-import { View, Text, Animated, useWindowDimensions } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  View,
+  Text,
+  Animated,
+  useWindowDimensions,
+ TouchableOpacity,
+} from "react-native";import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import { ReactNativeZoomableView } from "@openspacelabs/react-native-zoomable-view";
 import { BuildingIndoorConfig } from "@/src/indoors/types/FloorPlans";
 import MapContent from "./IndoorMap";
@@ -229,6 +235,19 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
           </ReactNativeZoomableView>
         </Animated.View>
       </View>
+  <TouchableOpacity
+  // style={styles.floatingBackButton}
+ style={{
+    position: "absolute",
+    top: 67,
+    left: 16,
+    zIndex: 9999,
+    elevation: 20,
+    padding: 8,
+  }}  onPress={onExit}
+>
+  <Ionicons name="arrow-back" size={24} color="#0d0d0dff" />
+</TouchableOpacity>
 
       <SafeAreaView style={styles.headerWrapper} edges={["top"]}>
         <View
@@ -263,10 +282,10 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
         filteredRooms={filteredRooms}
         onSelectDestination={handleSetDestination}
         onClearDestination={handleClearDestination}
-        onExit={onExit}
       />
     </View>
   );
+  
 };
 
 export default IndoorMapOverlay;
