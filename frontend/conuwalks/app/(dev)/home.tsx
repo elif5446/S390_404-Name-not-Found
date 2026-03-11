@@ -1,14 +1,10 @@
-import {
-  View,
-  StatusBar,
-  Alert,
-  ActivityIndicator,
-} from "react-native";
+import { View, StatusBar, Alert, ActivityIndicator } from "react-native";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
 import CampusMap from "@/src/components/CampusMap";
 import StatusGradient from "@/src/components/StatusGradient";
 import SegmentedToggle from "@/src/components/SegmentedToggle";
+import UpcomingClassBanner from "@/src/components/UpcomingClassBanner";
 import { clearTokens, getUserInfo } from "@/src/utils/tokenStorage";
 import { styles } from "@/src/styles/home";
 import { useDirections } from "@/src/context/DirectionsContext";
@@ -107,10 +103,26 @@ export default function DevHomeScreen() {
           </>
         )}
 
-        {selectedView === "calendar" && <ScheduleView onNavigateToClass={() => setSelectedView("map")} />}
+        {selectedView === "calendar" && (
+          <ScheduleView onNavigateToClass={() => setSelectedView("map")} />
+        )}
       </View>
 
       <StatusGradient />
+      {!isNavigationActive && (
+        <View
+          style={{
+            position: "absolute",
+            top: 50,
+            left: 0,
+            right: 0,
+            zIndex: 20,
+          }}
+          pointerEvents="box-none"
+        >
+          <UpcomingClassBanner onNavigateToClass={() => setSelectedView("map")} />
+        </View>
+      )}
       {!isNavigationActive && selectedView === "map" && (
         <SegmentedToggle campus={campus} setCampus={setCampus} />
       )}

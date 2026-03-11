@@ -1,0 +1,50 @@
+appId: com.conuwalks.app
+tags:
+  - feature
+  - navigation
+  - cross-campus
+---
+- runFlow: 
+    file: ../subflows/launch.yaml
+    env:
+        USERNAME: "${USERNAME}"
+        PASSWORD: "${PASSWORD}"
+
+- doubleTapOn:
+    point: 50%, 50%
+
+- waitForAnimationToEnd
+- tapOn: "Loyola"
+- waitForAnimationToEnd
+
+- doubleTapOn:
+    point: 50%, 50%
+
+- waitForAnimationToEnd
+
+- tapOn: 
+    point: 15%, 55% 
+    # text: "SP" 
+
+- assertVisible: "Richard J. Renaud Science Complex"
+- tapOn:
+    id: "directions-button"
+
+- assertVisible: "Directions"
+- assertVisible: "Current Location"
+- assertVisible: "Richard J. Renaud Science Complex"
+
+- tapOn:
+    point: 30%, 70%
+- tapOn:
+    id: "navigate-button"
+- waitForAnimationToEnd
+
+- assertVisible: "Transit.*"
+- assertVisible: ".*ETA"
+
+- assertVisible: 
+    id: "cancel-navigation-button"
+- tapOn:
+    id: "cancel-navigation-button"
+- assertNotVisible: "Transit.*"
