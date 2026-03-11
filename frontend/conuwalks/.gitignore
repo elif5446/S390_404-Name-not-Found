@@ -57,3 +57,4 @@ frontend/conuwalks/build/
 node_modules/
 
 .idea
+yarn.lock
