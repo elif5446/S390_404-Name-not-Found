@@ -18,7 +18,7 @@ import { BuildingIndoorConfig } from "@/src/indoors/types/FloorPlans";
 import MapContent from "./IndoorMap";
 import FloorPicker from "./FloorPicker";
 import DestinationMarker from "./DestinationMarker";
-import IndoorBottomPanel from "./IndoorBottomPanel";
+import IndoorBottomPanel from "./IndoorTopPanel";
 import IndoorRoomLabels from "./IndoorRoomLabels";
 import { styles } from "@/src/styles/IndoorMap.styles";
 import { navConfigRegistry } from "@/src/indoors/data/navConfigRegistry";
