@@ -5,7 +5,7 @@ import {
   render,
   screen,
 } from "@testing-library/react-native";
-import { ActivityIndicator } from "react-native";
+import { ActivityIndicator, Platform } from "react-native";
 import CampusMap from "../../components/CampusMap";
 import { useUserLocation } from "@/src/hooks/useUserLocation";
 import { useDirections } from "@/src/context/DirectionsContext";
@@ -15,9 +15,9 @@ import {
   distanceMetersBetween,
 } from "@/src/utils/geometry";
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   Module mocks (hoisted by Jest before imports)
-   ───────────────────────────────────────────────────────────────────────────── */
+
+   //Module mocks (hoisted by Jest before imports)
+  
 
 jest.mock("@/src/hooks/useUserLocation");
 jest.mock("@/src/context/DirectionsContext");
@@ -127,7 +127,14 @@ jest.mock("react-native-maps", () => {
 
   const MockMapView = React.forwardRef(
     (
-      { children, onLongPress, onPress, onPanDrag, onRegionChangeComplete }: any,
+      {
+        children,
+        onLongPress,
+        onPress,
+        onPanDrag,
+        onRegionChangeComplete,
+        googleMapId,
+      }: any,
       ref: any,
     ) => {
       React.useImperativeHandle(ref, () => ({
@@ -135,7 +142,10 @@ jest.mock("react-native-maps", () => {
         animateToRegion: jest.fn(),
       }));
       return (
-        <View testID="map-view">
+        <View
+          testID="map-view"
+          accessibilityLabel={String(googleMapId ?? "none")}
+        >
           {children}
           {onPress && (
             <TouchableOpacity testID="map-press-trigger" onPress={onPress} />
@@ -283,9 +293,9 @@ jest.mock("@/src/components/indoor/IndoorMapOverlay", () => {
   };
 });
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   Test helpers
-   ───────────────────────────────────────────────────────────────────────────── */
+
+   //Test helpers
+
 
 const USER_LOCATION = { latitude: 45.495, longitude: -73.578 };
 
@@ -376,9 +386,8 @@ const TRANSIT_ROUTE_DATA = {
   ],
 };
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   Test suite
-   ───────────────────────────────────────────────────────────────────────────── */
+  // Test suite
+ 
 
 describe("CampusMap", () => {
   let rafSpy: jest.SpyInstance;
@@ -406,7 +415,7 @@ describe("CampusMap", () => {
     rafSpy.mockRestore();
   });
 
-  /* ── Basic rendering ─────────────────────────────────────────────────────── */
+  // ── Basic rendering 
 
   describe("Basic rendering", () => {
     it("renders without crashing", () => {
@@ -441,7 +450,7 @@ describe("CampusMap", () => {
     });
   });
 
-  /* ── User location display ───────────────────────────────────────────────── */
+  // User location display 
 
   describe("User location display", () => {
     it("renders the current-location marker when location is available", () => {
@@ -479,7 +488,7 @@ describe("CampusMap", () => {
     });
   });
 
-  /* ── Right controls panel ────────────────────────────────────────────────── */
+  //  Right controls panel 
 
   describe("RightControlsPanel", () => {
     it("renders when userInfo and onSignOut are provided", () => {
@@ -495,7 +504,7 @@ describe("CampusMap", () => {
     });
   });
 
-  /* ── Building interaction ────────────────────────────────────────────────── */
+  // Building interaction 
 
   describe("Building interaction", () => {
     it("pressing a building polygon shows AdditionalInfoPopup", () => {
@@ -569,7 +578,7 @@ describe("CampusMap", () => {
     });
   });
 
-  /* ── AdditionalInfoPopup visibility ─────────────────────────────────────── */
+  // AdditionalInfoPopup visibility 
 
   describe("AdditionalInfoPopup", () => {
     it("is hidden by default", () => {
@@ -616,7 +625,7 @@ describe("CampusMap", () => {
     });
   });
 
-  /* ── DestinationPopup visibility ─────────────────────────────────────────── */
+  // DestinationPopup visibility
 
   describe("DestinationPopup", () => {
     it("is hidden by default", () => {
@@ -633,7 +642,7 @@ describe("CampusMap", () => {
     });
   });
 
-  /* ── DirectionsSearchPanel ───────────────────────────────────────────────── */
+  // DirectionsSearchPanel visibility
 
   describe("DirectionsSearchPanel", () => {
     it("is rendered when showDirections is true and not navigating", () => {
@@ -662,7 +671,7 @@ describe("CampusMap", () => {
     });
   });
 
-  /* ── Navigation banner & footer ─────────────────────────────────────────── */
+  // Navigation banner & footer
 
   describe("Navigation UI", () => {
     it("renders navigation header and footer when isNavigationActive and routeData exist", () => {
@@ -729,7 +738,7 @@ describe("CampusMap", () => {
     });
   });
 
-  /* ── Navigation step advancement ────────────────────────────────────────── */
+  //Navigation step advancement 
 
   describe("Navigation step advancement", () => {
     it("advances to the next step when within threshold of current step end", async () => {
@@ -768,7 +777,7 @@ describe("CampusMap", () => {
     });
   });
 
-  /* ── Transit stop markers ────────────────────────────────────────────────── */
+  // Transit stop markers 
 
   describe("Transit stop markers", () => {
     it("renders board and exit markers for each transit step", () => {
@@ -858,7 +867,7 @@ describe("CampusMap", () => {
     });
   });
 
-  /* ── Indoor map overlay ─────────────────────────────────────────────────── */
+  // Indoor map overlay 
 
   describe("Indoor map overlay", () => {
     it("does not render IndoorMapOverlay by default", () => {
@@ -913,7 +922,7 @@ describe("CampusMap", () => {
     });
   });
 
-  /* ── Map press / pan-drag ────────────────────────────────────────────────── */
+  //  Map press / pan-drag 
 
   describe("Map press", () => {
     it("hides the transit stop callout on map press", () => {
@@ -944,7 +953,7 @@ describe("CampusMap", () => {
     });
   });
 
-  /* ── ETA label computation ───────────────────────────────────────────────── */
+  //  ETA label computation 
 
   describe("ETA label computation", () => {
     it("shows '--' when there is no user location", () => {
@@ -999,19 +1008,25 @@ describe("CampusMap", () => {
     });
   });
 
-  /* ── Color-scheme aware map ID ───────────────────────────────────────────── */
+  //  Color-scheme aware map ID 
 
   describe("Map color scheme", () => {
     it("renders correctly in dark color scheme", () => {
       const { default: useColorScheme } = require("react-native/Libraries/Utilities/useColorScheme");
+      const darkMapId = "eb0ccd6d2f7a95e23f1ec398";
       (useColorScheme as jest.Mock).mockReturnValueOnce("dark");
+
       render(<CampusMap />);
-      // Both branches of mapID ternary are exercised; component must render
-      expect(screen.getByTestId("map-view")).toBeTruthy();
+
+      expect(useColorScheme).toHaveBeenCalled();
+      const mapView = screen.getByTestId("map-view");
+      const expectedGoogleMapId =
+        Platform.OS === "android" ? darkMapId : "none";
+      expect(mapView.props.accessibilityLabel).toBe(expectedGoogleMapId);
     });
   });
 
-  /* ── Navigation camera-restore effect ───────────────────────────────────── */
+  //  Navigation camera-restore effect 
 
   describe("Navigation camera restore", () => {
     it("stores the pre-navigation region and restores it when navigation ends", () => {
@@ -1051,7 +1066,7 @@ describe("CampusMap", () => {
     });
   });
 
-  /* ── Auto-pan on campus switch ───────────────────────────────────────────── */
+  // Auto-pan on campus switch
 
   describe("Auto-pan on campus change", () => {
     it("clears destination and hides building popup when initial location changes", () => {
@@ -1084,7 +1099,7 @@ describe("CampusMap", () => {
     });
   });
 
-  /* ── searchPanelHeight effect ────────────────────────────────────────────── */
+  // searchPanelHeight effect
 
   describe("searchPanelHeight reset", () => {
     it("resets search panel height to 0 when showDirections becomes false", () => {
@@ -1103,7 +1118,7 @@ describe("CampusMap", () => {
     });
   });
 
-  /* ── userLocationBuildingId effect ──────────────────────────────────────── */
+  // userLocationBuildingId effect
 
   describe("User location inside building detection", () => {
     it("detects when user is inside an SGW building", async () => {
@@ -1128,7 +1143,7 @@ describe("CampusMap", () => {
     });
   });
 
-  /* ── Transit stop cleanup when navigation ends ───────────────────────────── */
+  // Transit stop cleanup when navigation ends
 
   describe("Transit stop state cleanup", () => {
     it("clears transit stop selection when navigation becomes inactive", () => {
