@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { IndoorHotspot, IndoorDestination } from "@/src/indoors/types/hotspot";
-import { bottomPanelStyles as styles } from "./styles/IndoorTopPanel.styles";
+import { bottomPanelStyles as styles } from "@/src/components/indoor/styles/IndoorTopPanel.styles";
 
 interface Props {
   searchQuery: string;
