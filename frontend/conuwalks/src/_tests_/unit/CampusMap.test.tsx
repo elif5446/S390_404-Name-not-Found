@@ -21,6 +21,9 @@ import {
 
 jest.mock("@/src/hooks/useUserLocation");
 jest.mock("@/src/context/DirectionsContext");
+jest.mock("react-native/Libraries/Utilities/useColorScheme", () => ({
+  default: jest.fn(),
+}));
 
 jest.mock("@/src/utils/geometry", () => ({
   calculatePolygonCenter: jest.fn(() => ({
@@ -200,9 +203,9 @@ jest.mock("react-native-maps", () => {
 
 jest.mock("@/src/components/AdditionalInfoPopup", () => {
   const React = require("react");
-  const { View } = require("react-native");
+  const { View, TouchableOpacity } = require("react-native");
   const Mock = React.forwardRef(
-    ({ visible, directionsEtaLabel, onDirectionsTrigger }: any, ref: any) => {
+    ({ visible, directionsEtaLabel, onDirectionsTrigger, onExpansionChange }: any, ref: any) => {
       React.useImperativeHandle(ref, () => ({
         minimize: jest.fn(),
         collapse: jest.fn(),
@@ -214,6 +217,12 @@ jest.mock("@/src/components/AdditionalInfoPopup", () => {
             testID="eta-display"
             accessibilityLabel={String(directionsEtaLabel)}
           />
+          {onExpansionChange && (
+            <TouchableOpacity
+              testID="expansion-change-trigger"
+              onPress={() => onExpansionChange(true)}
+            />
+          )}
         </View>
       );
     },
@@ -372,6 +381,8 @@ const TRANSIT_ROUTE_DATA = {
    ───────────────────────────────────────────────────────────────────────────── */
 
 describe("CampusMap", () => {
+  let rafSpy: jest.SpyInstance;
+
   beforeEach(() => {
     jest.clearAllMocks();
     (useUserLocation as jest.Mock).mockReturnValue(makeUserLocation());
@@ -380,11 +391,19 @@ describe("CampusMap", () => {
     (distanceMetersBetween as jest.Mock).mockReturnValue(100);
     (calculatePolygonCenter as jest.Mock).mockReturnValue({ latitude: 45.495, longitude: -73.578 });
     (isPointInPolygon as jest.Mock).mockReturnValue(false);
-    // Call rAF callbacks synchronously so effects that use it resolve immediately
-    global.requestAnimationFrame = jest.fn((cb: FrameRequestCallback) => {
-      cb(0);
-      return 0;
-    });
+    // Call rAF callbacks synchronously so effects that use it resolve immediately.
+    // Using spyOn ensures the original is restored after each test, preventing
+    // global state leakage into other test files.
+    rafSpy = jest
+      .spyOn(global, "requestAnimationFrame")
+      .mockImplementation((cb: FrameRequestCallback) => {
+        cb(0);
+        return 0;
+      });
+  });
+
+  afterEach(() => {
+    rafSpy.mockRestore();
   });
 
   /* ── Basic rendering ─────────────────────────────────────────────────────── */
@@ -582,8 +601,18 @@ describe("CampusMap", () => {
     it("notifies parent when expansion changes", () => {
       const onExpansion = jest.fn();
       render(<CampusMap onInfoPopupExpansionChange={onExpansion} />);
-      // The callback itself is wired through the component; rendering without crash confirms wiring
-      expect(screen.getByTestId("map-view")).toBeTruthy();
+
+      // Select a building to make the popup visible
+      act(() => {
+        fireEvent.press(screen.getByTestId("polygon-Hall Building"));
+      });
+
+      // Trigger the expansion change via the mock button
+      act(() => {
+        fireEvent.press(screen.getByTestId("expansion-change-trigger"));
+      });
+
+      expect(onExpansion).toHaveBeenCalledWith(true);
     });
   });
 
@@ -974,10 +1003,8 @@ describe("CampusMap", () => {
 
   describe("Map color scheme", () => {
     it("renders correctly in dark color scheme", () => {
-      const csModule = require("react-native/Libraries/Utilities/useColorScheme");
-      if (csModule && typeof csModule.default?.mockReturnValueOnce === "function") {
-        csModule.default.mockReturnValueOnce("dark");
-      }
+      const { default: useColorScheme } = require("react-native/Libraries/Utilities/useColorScheme");
+      (useColorScheme as jest.Mock).mockReturnValueOnce("dark");
       render(<CampusMap />);
       // Both branches of mapID ternary are exercised; component must render
       expect(screen.getByTestId("map-view")).toBeTruthy();
@@ -1043,12 +1070,16 @@ describe("CampusMap", () => {
       });
       expect(screen.getByTestId("additional-info-popup")).toBeTruthy();
 
+      // Clear the mock so we can specifically test the rerender-triggered call
+      mockClearDestination.mockClear();
+
       // Switching campus location clears it
       rerender(
         <CampusMap initialLocation={{ latitude: 45.458, longitude: -73.64 }} />,
       );
 
-      expect(mockClearDestination).toHaveBeenCalled();
+      // clearDestination must have been called due to the location change (not just initial mount)
+      expect(mockClearDestination).toHaveBeenCalledTimes(1);
       expect(screen.queryByTestId("additional-info-popup")).toBeNull();
     });
   });
@@ -1057,8 +1088,9 @@ describe("CampusMap", () => {
 
   describe("searchPanelHeight reset", () => {
     it("resets search panel height to 0 when showDirections becomes false", () => {
-      const dirs = makeDirections({ showDirections: true });
-      (useDirections as jest.Mock).mockReturnValue(dirs);
+      (useDirections as jest.Mock).mockReturnValue(
+        makeDirections({ showDirections: true }),
+      );
       const { rerender } = render(<CampusMap />);
 
       (useDirections as jest.Mock).mockReturnValue(
