@@ -1014,15 +1014,19 @@ describe("CampusMap", () => {
     it("renders correctly in dark color scheme", () => {
       const { default: useColorScheme } = require("react-native/Libraries/Utilities/useColorScheme");
       const darkMapId = "eb0ccd6d2f7a95e23f1ec398";
-      (useColorScheme as jest.Mock).mockReturnValueOnce("dark");
+      (useColorScheme as jest.Mock).mockReturnValue("dark");
+      const originalPlatformOS = Platform.OS;
+      (Platform as any).OS = "android";
 
-      render(<CampusMap />);
+      try {
+        render(<CampusMap />);
 
-      expect(useColorScheme).toHaveBeenCalled();
-      const mapView = screen.getByTestId("map-view");
-      const expectedGoogleMapId =
-        Platform.OS === "android" ? darkMapId : "none";
-      expect(mapView.props.accessibilityLabel).toBe(expectedGoogleMapId);
+        expect(useColorScheme).toHaveBeenCalled();
+        const mapView = screen.getByTestId("map-view");
+        expect(mapView.props.accessibilityLabel).toBe(darkMapId);
+      } finally {
+        (Platform as any).OS = originalPlatformOS;
+      }
     });
   });
 
