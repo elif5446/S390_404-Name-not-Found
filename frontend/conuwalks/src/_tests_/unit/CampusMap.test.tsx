@@ -1014,7 +1014,7 @@ describe("CampusMap", () => {
     it("renders correctly in dark color scheme", () => {
       const { default: useColorScheme } = require("react-native/Libraries/Utilities/useColorScheme");
       const darkMapId = "eb0ccd6d2f7a95e23f1ec398";
-      (useColorScheme as jest.Mock).mockReturnValue("dark");
+      (useColorScheme as jest.Mock).mockReturnValueOnce("dark");
       const originalPlatformOS = Platform.OS;
       (Platform as any).OS = "android";
 
