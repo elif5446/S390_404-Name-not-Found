@@ -8,18 +8,21 @@ import React, {
 import {
   View,
   Text,
-  TouchableOpacity,
   Animated,
   useWindowDimensions,
-} from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+ TouchableOpacity,
+} from "react-native";import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { ReactNativeZoomableView } from "@openspacelabs/react-native-zoomable-view";
 import { BuildingIndoorConfig } from "@/src/indoors/types/FloorPlans";
-
 import MapContent from "./IndoorMap";
 import FloorPicker from "./FloorPicker";
+import DestinationMarker from "./DestinationMarker";
+import IndoorBottomPanel from "./IndoorTopPanel";
+import IndoorRoomLabels from "./IndoorRoomLabels";
 import { styles } from "@/src/styles/IndoorMap.styles";
+import { navConfigRegistry } from "@/src/indoors/data/navConfigRegistry";
+import { IndoorHotspot, IndoorDestination } from "@/src/indoors/types/hotspot";
 
 const calculateGeographicHeight = (
   bounds:
@@ -39,7 +42,6 @@ const calculateGeographicHeight = (
 
   if (latDiff < 0.00001 || lonDiff < 0.00001) return screenHeight;
 
-  // Adjust longitude for latitude (Geographic projection correction)
   const latRadians = (northEast.latitude * Math.PI) / 180;
   const lonScale = Math.cos(latRadians);
   const geographicRatio = (lonDiff * lonScale) / latDiff;
@@ -47,6 +49,8 @@ const calculateGeographicHeight = (
   const calculatedHeight = screenWidth / geographicRatio;
   return isFinite(calculatedHeight) ? calculatedHeight : screenHeight;
 };
+
+
 
 interface Props {
   buildingData: BuildingIndoorConfig;
@@ -56,6 +60,9 @@ interface Props {
 const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
   const { width, height } = useWindowDimensions();
   const [currentLevel, setCurrentLevel] = useState(buildingData.defaultFloor);
+  const [destination, setDestination] = useState<IndoorDestination | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearchResults, setShowSearchResults] = useState(false);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const zoomRef = useRef<ReactNativeZoomableView>(null);
@@ -66,14 +73,75 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
     [buildingData.floors, currentLevel],
   );
 
-  // calculate Aspect Ratio strictly based on Geodata
-  // returns a safe height or defaults to screen height if data is missing
   const contentHeight = useMemo(
     () => calculateGeographicHeight(activeFloor?.bounds, width, height),
     [activeFloor, width, height],
   );
 
-  // inital fade in
+  const SVG_SIZE = 1024;
+
+  const scale = useMemo(() => {
+    return Math.min(width / SVG_SIZE, contentHeight / SVG_SIZE);
+  }, [width, contentHeight]);
+
+  const renderedWidth = useMemo(() => SVG_SIZE * scale, [scale]);
+  const renderedHeight = useMemo(() => SVG_SIZE * scale, [scale]);
+
+  const offsetX = useMemo(() => (width - renderedWidth) / 2, [width, renderedWidth]);
+  const offsetY = useMemo(
+    () => (contentHeight - renderedHeight) / 2,
+    [contentHeight, renderedHeight],
+  );
+
+  const hotspots = useMemo<IndoorHotspot[]>(() => {
+    const navConfig = navConfigRegistry[buildingData.id];
+
+    if (!navConfig) return [];
+
+    return navConfig.floors.flatMap((floor) =>
+      floor.nodes
+        .filter((node) => node.type === "room")
+        .map((node) => ({
+          id: node.id,
+          x: node.x,
+          y: node.y,
+          floorLevel: parseInt(node.floorId.split("_")[1], 10),
+          label: node.label ?? node.id,
+        })),
+    );
+  }, [buildingData.id]);
+
+  const filteredRooms = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+
+    if (!query) return [];
+
+    return hotspots.filter((spot) => {
+      const fullLabel = spot.label.toLowerCase();
+      const shortLabel = spot.label.replace("Room ", "").toLowerCase();
+      const id = spot.id.toLowerCase();
+
+      return (
+        fullLabel.includes(query) ||
+        shortLabel.includes(query) ||
+        id.includes(query)
+      );
+    });
+  }, [hotspots, searchQuery]);
+
+  const handleSetDestination = useCallback((item: IndoorDestination) => {
+    setDestination(item);
+    setCurrentLevel(item.floorLevel);
+    setSearchQuery(item.label ?? item.id);
+    setShowSearchResults(false);
+  }, []);
+
+  const handleClearDestination = useCallback(() => {
+    setDestination(null);
+    setSearchQuery("");
+    setShowSearchResults(false);
+  }, []);
+
   useEffect(() => {
     isMounted.current = true;
 
@@ -88,7 +156,6 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
     };
   }, [fadeAnim]);
 
-  // floor transtion
   useEffect(() => {
     if (!isMounted.current) return;
 
@@ -110,7 +177,6 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
         duration: 150,
         useNativeDriver: true,
       }).start(({ finished }) => {
-        // once the old map is entirely invisible, swap the state data
         if (finished && isMounted.current) {
           setCurrentLevel(level);
         }
@@ -123,16 +189,12 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
     return (
       <View style={styles.container}>
         <Text>No floor data available.</Text>
-        <TouchableOpacity onPress={onExit} style={{ padding: 20 }}>
-          <Text>Exit</Text>
-        </TouchableOpacity>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      {/* Map Area */}
       <View style={styles.mapContainer}>
         <Animated.View style={[styles.mapCanvas, { opacity: fadeAnim }]}>
           <ReactNativeZoomableView
@@ -142,18 +204,50 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
             zoomStep={0.5}
             initialZoom={1.0}
             bindToBorders={true}
-            visualTouchFeedbackEnabled={false} // Disables tap ripple effects
+            visualTouchFeedbackEnabled={false}
             contentWidth={width}
             contentHeight={contentHeight}
           >
-            <MapContent
-              floor={activeFloor}
-              width={width}
-              height={contentHeight}
-            />
+            <View style={{ width, height: contentHeight }}>
+              <MapContent
+                floor={activeFloor}
+                width={width}
+                height={contentHeight}
+              />
+
+              <IndoorRoomLabels
+                hotspots={hotspots}
+                currentLevel={currentLevel}
+                destination={destination}
+                offsetX={offsetX}
+                offsetY={offsetY}
+                scale={scale}
+                onSelectDestination={handleSetDestination}
+              />
+
+              {destination && destination.floorLevel === currentLevel && (
+                <DestinationMarker
+                  x={offsetX + destination.x * scale - 6}
+                  y={offsetY + destination.y * scale + 2}
+                />
+              )}
+            </View>
           </ReactNativeZoomableView>
         </Animated.View>
       </View>
+  <TouchableOpacity
+  // style={styles.floatingBackButton}
+ style={{
+    position: "absolute",
+    top: 67,
+    left: 16,
+    zIndex: 9999,
+    elevation: 20,
+    padding: 8,
+  }}  onPress={onExit}
+>
+  <Ionicons name="arrow-back" size={24} color="#0d0d0dff" />
+</TouchableOpacity>
 
       <SafeAreaView style={styles.headerWrapper} edges={["top"]}>
         <View
@@ -180,22 +274,18 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
         onFloorSelect={handleFloorChange}
       />
 
-      <View style={styles.footerContainer}>
-        <TouchableOpacity
-          onPress={onExit}
-          style={styles.exitButton}
-          activeOpacity={0.8}
-          accessibilityLabel="Exit Map"
-          accessibilityRole="button"
-        >
-          <View style={styles.iconCircle}>
-            <Ionicons name="close" size={30} color="#FFFFFF" />
-          </View>
-          <Text style={styles.exitText}>Exit</Text>
-        </TouchableOpacity>
-      </View>
+      <IndoorBottomPanel
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        showSearchResults={showSearchResults}
+        setShowSearchResults={setShowSearchResults}
+        filteredRooms={filteredRooms}
+        onSelectDestination={handleSetDestination}
+        onClearDestination={handleClearDestination}
+      />
     </View>
   );
+  
 };
 
 export default IndoorMapOverlay;
