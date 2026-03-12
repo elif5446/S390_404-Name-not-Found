@@ -9,6 +9,10 @@ import React, {
   useEffect,
 } from "react";
 import {
+  Modal, 
+  TextInput,
+  FlatList, 
+  Pressable, 
   StyleSheet,
   View,
   Text,
@@ -54,6 +58,9 @@ import DirectionsSearchPanel from "./DirectionsSearchPanel";
 
 import BuildingTheme from "@/src/styles/BuildingTheme";
 import styles from "@/src/styles/campusMap";
+import BuildingSearchButton from "../components/BuildingSearchButton"; 
+
+
 
 // Convert GeoJSON coordinates to LatLng
 const polygonFromGeoJSON = (coordinates: number[][]): LatLng[] =>
@@ -135,6 +142,9 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
   const INITIAL_DELTA = 0.008;
 
+  // State to control building search popup
+const [buildingSearchVisible, setBuildingSearchVisible] = useState(false);
+const buildingSearchInputRef = useRef<TextInput>(null);
   // Get directions context for destination setting
   const {
     destinationBuildingId,
@@ -187,7 +197,44 @@ const CampusMap: React.FC<CampusMapProps> = ({
   const preNavigationRegionRef = useRef<Region | null>(null);
   const [trackLocationMarker, setTrackLocationMarker] = useState(true);
 
-  // handle restoring the camera view when navigation ends
+  const [searchQuery, setSearchQuery] = useState("");
+
+// Combine all buildings from SGW and LOY
+const allBuildings = useMemo(() => {
+const sgw = Object.entries(SGWBuildingMetadata).map(([id, meta]) => ({
+    // Use the ID that matches the GeoJSON 'id' property
+    id: id, 
+    name: meta.name,
+    campus: "SGW",
+  }));
+  const loy = Object.entries(LoyolaBuildingMetadata).map(([id, meta]) => ({
+    id,
+    name: meta.name,
+    campus: "LOY",
+  }));
+  return [...sgw, ...loy];
+}, []);
+
+// Filter buildings based on the search query
+const filteredBuildings = useMemo(() => {
+  if (!searchQuery) return allBuildings;
+  return allBuildings.filter((b) =>
+    b.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+}, [searchQuery, allBuildings]);
+  // Handlers for building search
+const handleOpenBuildingSearch = () => {
+  setBuildingSearchVisible(true);
+  // optionally hide directions panel if open
+  setShowDirections(false);
+};
+
+const handleCloseBuildingSearch = () => {
+  setBuildingSearchVisible(false);
+};
+
+
+// handle restoring the camera view when navigation ends
   useEffect(() => {
     if (isNavigationActive) {
       if (!preNavigationRegionRef.current) {
@@ -316,7 +363,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
     },
     [setIsNavigationActive, setShowDirections, clearRouteData, setDestination],
   );
-
+  
   const handleClosePopup = useCallback(() => {
     setIsInfoPopupExpanded(false);
     setSelectedBuilding((prev) => ({ ...prev, visible: false }));
@@ -1236,10 +1283,91 @@ const CampusMap: React.FC<CampusMapProps> = ({
                 color="#FFFFFF"
               />
             </TouchableOpacity>
-          </View>
+          </View>        
         </View>
       )}
+      
+      /* --- Add building search button overlay --- */
+  <BuildingSearchButton onPress={handleOpenBuildingSearch} />
 
+{/* ---------------- Building Search Modal ---------------- */}
+<Modal
+  visible={buildingSearchVisible}
+  animationType="slide"
+  transparent
+  onRequestClose={() => setBuildingSearchVisible(false)}
+>
+  <View
+    style={{
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.3)",
+      justifyContent: "center",
+      paddingHorizontal: 20,
+    }}
+  >
+    <View
+      style={{
+        backgroundColor: colorScheme === "dark" ? "#1C1C1E" : "#FFFFFF",
+        borderRadius: 16,
+        padding: 16,
+      }}
+    >
+      <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8 }}>
+        Search Building
+      </Text>
+      <TextInput
+        ref={buildingSearchInputRef}
+        placeholder="Type building name..."
+        style={{
+          borderWidth: 1,
+          borderColor: "#ccc",
+          borderRadius: 8,
+          padding: 8,
+          color: colorScheme === "dark" ? "#FFFFFF" : "#000000",
+        }}
+        onChangeText={(text) => setSearchQuery(text)}
+      />
+    <FlatList
+  data={filteredBuildings}
+  keyExtractor={(item) => item.id}
+  renderItem={({ item }) => (
+    <Pressable
+      onPress={() => {
+        setBuildingSearchVisible(false);
+
+        // Cast item.campus to the literal type
+        const campusKey = item.campus as "SGW" | "LOY";
+        // Call the same handler as when tapping a building
+        handleBuildingPress(item.id, campusKey);
+      }}
+      style={{ paddingVertical: 10 }}
+    >
+      <Text
+        style={{
+          fontSize: 14,
+          color: colorScheme === "dark" ? "#FFFFFF" : "#000000",
+        }}
+      >
+        {item.name}
+      </Text>
+    </Pressable>
+  )}
+/>
+      <TouchableOpacity
+        onPress={() => {
+          // Close the search modal
+          setBuildingSearchVisible(false);
+
+          // Trigger the building selection
+         // handleSelectBuildingFromSearch(building.id, building.campus);
+        }}
+        style={{ marginTop: 12, alignSelf: "flex-end" }}
+      >
+        <Text style={{ color: "#B03060", fontWeight: "600" }}>Close</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+</Modal>
       {indoorBuildingId && INDOOR_DATA[indoorBuildingId] && (
         <IndoorMapOverlay
           buildingData={INDOOR_DATA[indoorBuildingId]}
