@@ -34,16 +34,20 @@ export const styles = StyleSheet.create({
   },
   headerContent: {
     flexDirection: "row",
-    justifyContent: "center",
+    justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 10,
+  },
+  headerTitleWrap: {
+    flex: 1,
+    justifyContent: "center",
   },
   buildingTitle: {
-    fontSize: 20,
+    fontSize: 19,
     fontWeight: "800",
     color: THEME.text,
-    maxWidth: width * 0.6,
+    maxWidth: width * 0.56,
   },
   floorBadge: {
     paddingVertical: 4,
@@ -54,6 +58,41 @@ export const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "800",
     color: THEME.text,
+  },
+  headerFloorToggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  headerFloorToggle: {
+    minWidth: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1,
+    borderColor: "#C6C6C8",
+    backgroundColor: "#ECECF1",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerFloorToggleActive: {
+    minWidth: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1,
+    borderColor: THEME.secondary,
+    backgroundColor: THEME.secondary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerFloorToggleText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#4A4A53",
+  },
+  headerFloorToggleTextActive: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: THEME.white,
   },
 
   // map area 

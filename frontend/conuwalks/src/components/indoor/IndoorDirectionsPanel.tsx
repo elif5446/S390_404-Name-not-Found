@@ -16,6 +16,11 @@ interface Props {
   onClose: () => void;
 }
 
+const formatRoomWithBuilding = (room: string): string => {
+  const value = room.trim();
+  return /^h\s*-/i.test(value) ? value.toUpperCase() : `H-${value}`;
+};
+
 const IndoorDirectionsPanel: React.FC<Props> = ({
   poi,
   startingRoom,
@@ -89,7 +94,9 @@ const IndoorDirectionsPanel: React.FC<Props> = ({
 
       {/* Starting room card */}
       <View style={S.infoCard}>
-        <Text style={S.infoCardRoomNum}>{sourcePOI ? sourcePOI.room : startingRoom}</Text>
+        <Text style={S.infoCardRoomNum}>
+          {formatRoomWithBuilding(sourcePOI ? sourcePOI.room : startingRoom)}
+        </Text>
         <Text style={S.infoCardLabel}>{sourcePOI ? sourcePOI.description : "Starting Room"}</Text>
       </View>
 

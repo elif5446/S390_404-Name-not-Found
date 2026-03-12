@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   Animated,
   useWindowDimensions,
+  LayoutChangeEvent,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -20,7 +21,6 @@ import { POI, POICategory } from "@/src/types/poi";
 import { getPOIsForFloor, getCategoriesForFloor } from "@/src/data/poiData";
 
 import MapContent from "./IndoorMap";
-import FloorPicker from "./FloorPicker";
 import POIBadge from "./POIBadge";
 import POIFilterPanel from "./POIFilterPanel";
 import IndoorDirectionsPanel from "./IndoorDirectionsPanel";
@@ -28,7 +28,8 @@ import { styles } from "@/src/styles/IndoorMap.styles";
 import { POI_PALETTE } from "@/src/styles/IndoorPOI.styles";
 
 /** Simulated starting room — in a real app this comes from the user's location */
-const DEFAULT_STARTING_ROOM = "833";
+const DEFAULT_STARTING_ROOM = "841";
+const MAP_POI_BADGE_SIZE = 18;
 
 const calculateGeographicHeight = (
   bounds:
@@ -64,12 +65,13 @@ interface Props {
 const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
   const { width, height } = useWindowDimensions();
   const [currentLevel, setCurrentLevel] = useState(buildingData.defaultFloor);
+  const [headerHeight, setHeaderHeight] = useState(72);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const zoomRef = useRef<ReactNativeZoomableView>(null);
   const isMounted = useRef(true);
 
-  // ── POI state ────────────────────────────────────────────────────────────
+  //  POI state 
   const [routeTargetMode, setRouteTargetMode] = useState<"SOURCE" | "DESTINATION">("DESTINATION");
   const [sourcePOI, setSourcePOI] = useState<POI | null>(null);
   const [destinationPOI, setDestinationPOI] = useState<POI | null>(null);
@@ -80,8 +82,18 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
   );
 
   const categoriesForFloor = useMemo(
-    () => getCategoriesForFloor(buildingData.id, currentLevel),
+    () => getCategoriesForFloor(buildingData.id, currentLevel).filter((c) => c !== "ROOM"),
     [buildingData.id, currentLevel],
+  );
+
+  const roomPOIs = useMemo(
+    () => poisForFloor.filter((p) => p.category === "ROOM"),
+    [poisForFloor],
+  );
+
+  const nonRoomPOIs = useMemo(
+    () => poisForFloor.filter((p) => p.category !== "ROOM"),
+    [poisForFloor],
   );
 
   const [activeCategories, setActiveCategories] = useState<Set<POICategory>>(
@@ -90,7 +102,7 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
 
   // Re-initialise filters when the floor changes
   useEffect(() => {
-    setActiveCategories(new Set(getCategoriesForFloor(buildingData.id, currentLevel)));
+    setActiveCategories(new Set(getCategoriesForFloor(buildingData.id, currentLevel).filter((c) => c !== "ROOM")));
     setSourcePOI(null);
     setDestinationPOI(null);
   }, [currentLevel, buildingData.id]);
@@ -117,7 +129,7 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
 
   const handleCloseDirections = useCallback(() => setDestinationPOI(null), []);
 
-  // ── Floor data ────────────────────────────────────────────────────────────
+  //  Floor data 
   const activeFloor = useMemo(
     () => buildingData.floors.find((f) => f.level === currentLevel),
     [buildingData.floors, currentLevel],
@@ -128,7 +140,7 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
     [activeFloor, width, height],
   );
 
-  // ── Animations ────────────────────────────────────────────────────────────
+  //  Animations 
   useEffect(() => {
     isMounted.current = true;
     Animated.timing(fadeAnim, {
@@ -174,13 +186,16 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
     );
   }
 
-  const visiblePOIs = poisForFloor.filter((p) => activeCategories.has(p.category));
+  const visiblePOIs = [
+    ...roomPOIs,
+    ...nonRoomPOIs.filter((p) => activeCategories.has(p.category)),
+  ];
 
   return (
     <View style={styles.container}>
-      {/* ── Map area ───────────────────────────────────────────────────────── */}
+      {/*  Map area  */}
       <View style={{ flex: 1, position: "relative" }}>
-        <View style={styles.mapContainer}>
+        <View style={[styles.mapContainer, { marginTop: headerHeight }]}>
           <Animated.View style={[styles.mapCanvas, { opacity: fadeAnim }]}>
             <ReactNativeZoomableView
               ref={zoomRef}
@@ -213,8 +228,9 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
                     <POIBadge
                       key={poi.id}
                       poi={poi}
-                      left={poi.mapPosition.x * width - 17}
-                      top={poi.mapPosition.y * contentHeight - 17}
+                      left={poi.mapPosition.x * width - MAP_POI_BADGE_SIZE / 2}
+                      top={poi.mapPosition.y * contentHeight - MAP_POI_BADGE_SIZE / 2}
+                      size={MAP_POI_BADGE_SIZE}
                       selectionType={selectionType}
                       onPress={handleSelectPOI}
                     />
@@ -239,30 +255,48 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
         <SafeAreaView
           style={styles.headerWrapper}
           edges={["top"]}
+          onLayout={(event: LayoutChangeEvent) => {
+            const nextHeight = Math.ceil(event.nativeEvent.layout.height);
+            if (nextHeight > 0 && nextHeight !== headerHeight) {
+              setHeaderHeight(nextHeight);
+            }
+          }}
         >
           <View
             style={styles.headerContent}
             accessible={true}
             accessibilityLabel={`${buildingData.name} Floor ${activeFloor.label}`}
           >
-            <Text
-              style={styles.buildingTitle}
-              numberOfLines={1}
-              accessibilityRole="header"
-            >
-              {buildingData.name}
-            </Text>
-            <View style={styles.floorBadge}>
-              <Text style={styles.floorTitle}>Floor {activeFloor.label}</Text>
+            <View style={styles.headerTitleWrap}>
+              <Text
+                style={styles.buildingTitle}
+                numberOfLines={1}
+                accessibilityRole="header"
+              >
+                {buildingData.name}
+              </Text>
+            </View>
+            <View style={styles.headerFloorToggleRow}>
+              {buildingData.floors.map((floor) => {
+                const isActive = floor.level === currentLevel;
+                return (
+                  <TouchableOpacity
+                    key={floor.level}
+                    onPress={() => handleFloorChange(floor.level)}
+                    style={isActive ? styles.headerFloorToggleActive : styles.headerFloorToggle}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isActive }}
+                    accessibilityLabel={`Switch to floor ${floor.label}`}
+                  >
+                    <Text style={isActive ? styles.headerFloorToggleTextActive : styles.headerFloorToggleText}>
+                      {floor.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           </View>
         </SafeAreaView>
-
-        <FloorPicker
-          floors={buildingData.floors}
-          currentFloor={currentLevel}
-          onFloorSelect={handleFloorChange}
-        />
 
         <View style={{
           position: "absolute",
@@ -299,7 +333,7 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
         </View>
       </View>
 
-      {/* ── Bottom panel: directions OR POI list ──────────────────────────── */}
+      {/* Bottom panel: directions OR POI list  */}
       {destinationPOI ? (
         <IndoorDirectionsPanel
           poi={destinationPOI}
@@ -309,7 +343,7 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
         />
       ) : (
         <POIFilterPanel
-          pois={poisForFloor}
+          pois={nonRoomPOIs}
           categories={categoriesForFloor}
           activeCategories={activeCategories}
           floorLabel={activeFloor.label}

@@ -36,21 +36,34 @@ const POIFilterPanel: React.FC<Props> = ({
   const [query, setQuery] = useState("");
   const [listExpanded, setListExpanded] = useState(false);
 
+  const normalize = (value: string) => value.trim().toLowerCase().replace(/\s+/g, " ");
+  const queryNormalized = normalize(query);
+  const queryRoom = queryNormalized.replace(/^h\s*-\s*/i, "").replace(/^room\s+/i, "");
+
   // Show only POIs whose category is active
   const visiblePOIs = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
     return pois
       .filter((p) => activeCategories.has(p.category))
       .filter((p) => {
-        if (!normalizedQuery) return true;
+        if (!queryNormalized) return true;
+
+        const roomOnly = p.room.toLowerCase();
+        const roomWithBuilding = `h-${roomOnly}`;
+        const desc = p.description.toLowerCase();
+        const label = p.label.toLowerCase();
+        const category = CATEGORY_LABELS[p.category].toLowerCase();
+
         return (
-          p.description.toLowerCase().includes(normalizedQuery) ||
-          p.room.toLowerCase().includes(normalizedQuery) ||
-          p.label.toLowerCase().includes(normalizedQuery) ||
-          CATEGORY_LABELS[p.category].toLowerCase().includes(normalizedQuery)
+          desc.includes(queryNormalized) ||
+          label.includes(queryNormalized) ||
+          category.includes(queryNormalized) ||
+          roomOnly.includes(queryNormalized) ||
+          roomWithBuilding.includes(queryNormalized) ||
+          roomOnly.includes(queryRoom) ||
+          roomWithBuilding.includes(queryRoom)
         );
       });
-  }, [activeCategories, pois, query]);
+  }, [activeCategories, pois, queryNormalized, queryRoom]);
 
   useEffect(() => {
     // Auto-open list when searching so users immediately see matches.
@@ -101,7 +114,7 @@ const POIFilterPanel: React.FC<Props> = ({
         />
       </View>
 
-      {/* ── Filter chips ──────────────────────────────────────── */}
+      {/*  Filter chips  */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -141,7 +154,7 @@ const POIFilterPanel: React.FC<Props> = ({
         />
       </TouchableOpacity>
 
-      {/* ── POI list card (collapsible) ───────────────────────────────────── */}
+      {/*  POI list card (collapsible)  */}
       {listExpanded ? (
         <View style={S.listCard}>
           <Text style={S.listHeader}>
