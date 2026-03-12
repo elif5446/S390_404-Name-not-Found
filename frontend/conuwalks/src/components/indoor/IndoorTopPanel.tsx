@@ -68,7 +68,11 @@ const IndoorBottomPanel: React.FC<Props> = ({
             value={searchQuery}
             onChangeText={(text) => {
               setSearchQuery(text);
-              setShowSearchResults(true);
+              const hasText = text.trim().length > 0;
+              setShowSearchResults(hasText);
+              if (!hasText) {
+                onClearDestination();
+              }
             }}
             onFocus={() => {
               if(searchQuery.length > 0){
