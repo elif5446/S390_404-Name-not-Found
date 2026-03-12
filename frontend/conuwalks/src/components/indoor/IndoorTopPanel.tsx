@@ -71,7 +71,9 @@ const IndoorBottomPanel: React.FC<Props> = ({
               setShowSearchResults(true);
             }}
             onFocus={() => {
+              if(searchQuery.length > 0){
               setShowSearchResults(true);
+              }
             }}
             returnKeyType="search"
           />
