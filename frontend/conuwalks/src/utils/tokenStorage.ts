@@ -4,6 +4,7 @@ const TOKEN_KEY = "@auth_tokens";
 const USER_INFO_KEY = "@user_info";
 const CLASS_REMINDER_LEAD_TIME_KEY = "@class_reminder_lead_time";
 const DISMISSED_CLASS_EVENT_IDS_KEY = "@dismissed_class_event_ids";
+const WHEELCHAIR_ACCESSIBLE_DIRECTIONS_AND_NAVIGATION = "@wheelchair_accessible_directions_and_navigation";
 export const DEFAULT_CLASS_REMINDER_LEAD_TIME_MINUTES = 10;
 export const MIN_CLASS_REMINDER_LEAD_TIME_MINUTES = 0;
 export const MAX_CLASS_REMINDER_LEAD_TIME_MINUTES = 180;
@@ -98,6 +99,7 @@ export const clearTokens = async (): Promise<void> => {
     await AsyncStorage.removeItem(USER_INFO_KEY);
     await AsyncStorage.removeItem(CLASS_REMINDER_LEAD_TIME_KEY);
     await AsyncStorage.removeItem(DISMISSED_CLASS_EVENT_IDS_KEY);
+    await AsyncStorage.removeItem(WHEELCHAIR_ACCESSIBLE_DIRECTIONS_AND_NAVIGATION);
     console.log("Local tokens and user info cleared");
 
     if (tokenString) {
@@ -195,6 +197,29 @@ export const saveDismissedClassEventIds = async (
     return true;
   } catch (error) {
     console.error("Error saving dismissed class event ids:", error);
+    return false;
+  }
+};
+
+export const saveWheelchairAccessibilityPreference = async (mode: boolean): Promise<boolean> => {
+  try {
+    await AsyncStorage.setItem(
+      WHEELCHAIR_ACCESSIBLE_DIRECTIONS_AND_NAVIGATION,
+      String(mode)
+    );
+    return true;
+  } catch (error) {
+    console.error("Error saving Wheelchair-Accessiblity Preference:", error);
+    return false;
+  }
+}
+
+export const getWheelchairAccessibilityPreference = async (): Promise<boolean> => {
+  try {
+    const accessiblity = await AsyncStorage.getItem(WHEELCHAIR_ACCESSIBLE_DIRECTIONS_AND_NAVIGATION);
+    return Boolean(accessiblity);
+  } catch (error) {
+    console.error("Error reading dismissed class event ids:", error);
     return false;
   }
 };

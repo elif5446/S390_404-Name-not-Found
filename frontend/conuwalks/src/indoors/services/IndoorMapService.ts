@@ -2,6 +2,7 @@ import { BuildingNavConfig, Node } from "../types/Navigation";
 import { Route, UserLocation } from "../types/Routes";
 import { Graph } from "./Graph";
 import { PathFinder } from "./PathFinder";
+import { getWheelchairAccessibilityPreference } from "@/src/utils/tokenStorage";
 
 //use this file to load The Building Data, to find the fastest path.
 //Return:S
@@ -49,8 +50,9 @@ export class IndoorMapService {
   }
   
   //you can find a route by giving a start and end node
-  getRoute(startNodeId: string, endNodeId: string, accessibleOnly: boolean = false): Route {
-    return this.pathFinder.findShortestPath(startNodeId, endNodeId,accessibleOnly);
+  async getRoute(startNodeId: string, endNodeId: string, accessibleOnly: boolean | null = null): Promise<Route> {
+    const wheelchairOnly = accessibleOnly ?? await getWheelchairAccessibilityPreference();
+    return this.pathFinder.findShortestPath(startNodeId, endNodeId, wheelchairOnly);
   }
 
 }
