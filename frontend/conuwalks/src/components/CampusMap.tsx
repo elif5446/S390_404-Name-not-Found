@@ -1431,7 +1431,8 @@ const handleCloseBuildingSearch = () => {
           indoorBuildingId={indoorBuildingId}
           isInfoPopupExpanded={isInfoPopupExpanded}
           handleOpenBuildingSearch={handleOpenBuildingSearch}
-          isDirections={destinationPopupRef != null}
+          isDirections={showDirections}
+          isNavigation={isNavigationActive}
         />
       )}
 

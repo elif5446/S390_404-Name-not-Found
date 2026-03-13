@@ -22,7 +22,8 @@ interface Props {
   indoorBuildingId?: string | null;
   isInfoPopupExpanded?: boolean;
   handleOpenBuildingSearch: () => void;
-  isDirections: boolean
+  isDirections: boolean;
+  isNavigation: boolean;
 }
 
 const RightControlsPanel: React.FC<Props> = ({
@@ -34,7 +35,8 @@ const RightControlsPanel: React.FC<Props> = ({
   indoorBuildingId = null,
   isInfoPopupExpanded = false,
   handleOpenBuildingSearch,
-  isDirections
+  isDirections,
+  isNavigation
 }) => {
   const mode = useColorScheme() || "light";
   const [isProfileExpanded, setIsProfileExpanded] = useState(false);
@@ -64,7 +66,7 @@ const RightControlsPanel: React.FC<Props> = ({
       >
         {/* User Profile Icon */}
         {!isDirections && <>
-        <TouchableOpacity
+        {!isNavigation && <TouchableOpacity
           onPress={() => setIsProfileExpanded(!isProfileExpanded)}
           style={{
             width: userIconSize,
@@ -103,7 +105,7 @@ const RightControlsPanel: React.FC<Props> = ({
             />
           )}
           <MaterialIcons name="person" size={24} color="#B03060" />
-        </TouchableOpacity>
+        </TouchableOpacity>}
 
         {/* Location Recenter Button */}
         {showLocationButton && (
@@ -130,6 +132,7 @@ const RightControlsPanel: React.FC<Props> = ({
               shadowRadius: 4,
               elevation: Platform.OS === "ios" ? 0 : 4,
               marginBottom: buttonSpacing,
+              marginTop: isNavigation ? 50 : 0
             }}
             pointerEvents="auto"
             accessible={true}
@@ -160,9 +163,10 @@ const RightControlsPanel: React.FC<Props> = ({
               <MaterialIcons name="navigation" size={20} color="#B03060" />
             )}
           </TouchableOpacity>
-        )}</>}
+        )}
         {/* Search Button */}
-        {!isDirections && <BuildingSearchButton onPress={handleOpenBuildingSearch} buttonSize={buttonSize} mode={mode} buttonSpacing={buttonSpacing} />}
+        {!isNavigation && <BuildingSearchButton onPress={handleOpenBuildingSearch} buttonSize={buttonSize} mode={mode} buttonSpacing={buttonSpacing} />}
+        </>}
       </View>
       <UserProfilePopup
         visible={isProfileExpanded}
