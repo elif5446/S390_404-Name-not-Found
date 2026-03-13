@@ -1,55 +1,107 @@
 import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { POI, POICategory } from "@/src/types/poi";
 import { poiBadgeStyles, POI_PALETTE } from "@/src/styles/IndoorPOI.styles";
 
 //Category: icon name + background colour 
+type IconLib = "ion" | "mci";
+
 const CATEGORY_CONFIG: Record<
   POICategory,
-  { icon: keyof typeof Ionicons.glyphMap; bg: string; iconColor: string }
+  {
+    icon: string;
+    iconLib: IconLib;
+    bg: string;
+    iconColor: string;
+  }
 > = {
   LAB: {
     icon: "desktop-outline",
+    iconLib: "ion",
     bg: POI_PALETTE.labBg,
     iconColor: POI_PALETTE.iconDark,
   },
   ROOM: {
     icon: "business-outline",
+    iconLib: "ion",
     bg: POI_PALETTE.wcShared,
+    iconColor: POI_PALETTE.iconDark,
+  },
+  STAIRS: {
+    icon: "stairs",
+    iconLib: "mci",
+    bg: POI_PALETTE.stairsBg,
+    iconColor: POI_PALETTE.iconDark,
+  },
+  ELEVATOR: {
+    icon: "elevator",
+    iconLib: "mci",
+    bg: POI_PALETTE.elevatorBg,
     iconColor: POI_PALETTE.iconDark,
   },
   WC_F: {
     icon: "female-outline",
+    iconLib: "ion",
     bg: POI_PALETTE.wcF,
     iconColor: POI_PALETTE.pink,
   },
   WC_M: {
     icon: "male-outline",
+    iconLib: "ion",
     bg: POI_PALETTE.wcM,
     iconColor: "#3A7BD5",
   },
   WC_A: {
     icon: "accessibility-outline",
+    iconLib: "ion",
     bg: POI_PALETTE.wcA,
     iconColor: POI_PALETTE.white,
   },
   WC_SHARED: {
     icon: "people-outline",
+    iconLib: "ion",
     bg: POI_PALETTE.wcShared,
     iconColor: POI_PALETTE.iconDark,
   },
   PRINT: {
     icon: "print-outline",
+    iconLib: "ion",
     bg: POI_PALETTE.printBg,
     iconColor: POI_PALETTE.iconDark,
   },
   IT: {
     icon: "help-circle-outline",
+    iconLib: "ion",
     bg: POI_PALETTE.itBg,
     iconColor: POI_PALETTE.iconDark,
   },
 };
+
+function renderCategoryIcon(
+  iconLib: IconLib,
+  icon: string,
+  size: number,
+  color: string,
+) {
+  if (iconLib === "mci") {
+    return (
+      <MaterialCommunityIcons
+        name={icon as keyof typeof MaterialCommunityIcons.glyphMap}
+        size={size}
+        color={color}
+      />
+    );
+  }
+
+  return (
+    <Ionicons
+      name={icon as keyof typeof Ionicons.glyphMap}
+      size={size}
+      color={color}
+    />
+  );
+}
 
 interface Props {
   poi: POI;
@@ -95,6 +147,7 @@ const POIBadge: React.FC<Props> = ({
 }) => {
   const cfg = CATEGORY_CONFIG[poi.category];
   const isRoom = poi.category === "ROOM";
+  const isVerticalTransport = poi.category === "STAIRS" || poi.category === "ELEVATOR";
   const isCompactIconOnly = !isRoom && (poi.room === "805" || poi.room === "809");
   const hideTopMarker = !isRoom && (poi.room === "805" || poi.room === "809");
   const isDestination = selectionType === "destination";
@@ -110,6 +163,10 @@ const POIBadge: React.FC<Props> = ({
   const iconBadgeShiftDown = poi.room === "805" ? 5 : poi.room === "809" ? 1 : 0;
   const markerShiftUp = poi.room === "836" ? -6 : poi.room === "809" ? -3 : 0;
   const markerShiftRight = poi.room === "836" ? 2 : poi.room === "809" ? 16 : 0;
+  const markerZIndex = poi.category === "ELEVATOR" ? 40 : poi.category === "STAIRS" ? 30 : 10;
+  const markerHitSlop = isVerticalTransport
+    ? { top: 14, bottom: 14, left: 14, right: 14 }
+    : { top: 8, bottom: 8, left: 8, right: 8 };
 
   if (isRoom) {
     const offset = getRoomLabelOffset(poi.room);
@@ -203,13 +260,14 @@ const POIBadge: React.FC<Props> = ({
         left: anchorLeft - markerSize / 2 + markerShiftRight,
         top: anchorTop - markerSize / 2 - 3 + markerShiftUp,
         alignItems: "center",
+        zIndex: markerZIndex,
       }}
       pointerEvents="box-none"
     >
       <TouchableOpacity
         onPress={() => onPress?.(poi)}
         activeOpacity={0.75}
-        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        hitSlop={markerHitSlop}
         style={[
           poiBadgeStyles.badge,
           isRoom
@@ -238,10 +296,12 @@ const POIBadge: React.FC<Props> = ({
         accessibilityLabel={`${poi.description} – Room ${poi.room}`}
         accessibilityRole="button"
       >
-        {!isRoom && !hideTopMarker ? <Ionicons name={cfg.icon} size={markerIconSize} color={iconColor} /> : null}
+        {!isRoom && !hideTopMarker
+          ? renderCategoryIcon(cfg.iconLib, cfg.icon, markerIconSize, iconColor)
+          : null}
       </TouchableOpacity>
 
-      {!isCompactIconOnly ? (
+      {!isCompactIconOnly && !isVerticalTransport ? (
         <View
           style={{
             marginTop: poi.room === "805" ? -1 : poi.room === "809" ? 0 : 2,

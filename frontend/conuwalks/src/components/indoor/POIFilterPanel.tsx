@@ -1,12 +1,16 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, TouchableOpacity, ScrollView, TextInput } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { POI, POICategory } from "@/src/types/poi";
 import { CATEGORY_LABELS } from "@/src/data/poiData";
 import {
   poiPanelStyles as S,
   POI_PALETTE,
 } from "@/src/styles/IndoorPOI.styles";
+
+type CategoryIcon =
+  | { lib: "ion"; name: keyof typeof Ionicons.glyphMap }
+  | { lib: "mci"; name: keyof typeof MaterialCommunityIcons.glyphMap };
 
 interface Props {
   pois: POI[];
@@ -168,43 +172,55 @@ const POIFilterPanel: React.FC<Props> = ({
               showsVerticalScrollIndicator={true}
               nestedScrollEnabled
             >
-              {visiblePOIs.map((poi, idx) => (
-                <TouchableOpacity
-                  key={poi.id}
-                  onPress={() => onSelectPOI(poi)}
-                  style={[
-                    S.listRow,
-                    idx === visiblePOIs.length - 1 && S.listRowLast,
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Navigate to ${poi.description}, Room ${poi.room}`}
-                >
-                  <View
-                    style={{
-                      width: 26,
-                      height: 26,
-                      borderRadius: 8,
-                      backgroundColor: getBadgeBg(poi.category),
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Ionicons
-                      name={getCategoryIcon(poi.category)}
-                      size={14}
-                      color={getCategoryIconColor(poi.category)}
-                    />
-                  </View>
+              {visiblePOIs.map((poi, idx) => {
+                const categoryIcon = getCategoryIcon(poi.category);
 
-                  <Text style={S.listRowDesc}>{poi.description}</Text>
-                  {sourcePOI?.id === poi.id ? (
-                    <Text style={S.rolePillSource}>Source</Text>
-                  ) : destinationPOI?.id === poi.id ? (
-                    <Text style={S.rolePillDestination}>Destination</Text>
-                  ) : null}
-                  <Text style={S.listRowRoom}>H-{poi.room}</Text>
-                </TouchableOpacity>
-              ))}
+                return (
+                  <TouchableOpacity
+                    key={poi.id}
+                    onPress={() => onSelectPOI(poi)}
+                    style={[
+                      S.listRow,
+                      idx === visiblePOIs.length - 1 && S.listRowLast,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Navigate to ${poi.description}, Room ${poi.room}`}
+                  >
+                    <View
+                      style={{
+                        width: 26,
+                        height: 26,
+                        borderRadius: 8,
+                        backgroundColor: getBadgeBg(poi.category),
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      {categoryIcon.lib === "ion" ? (
+                        <Ionicons
+                          name={categoryIcon.name}
+                          size={14}
+                          color={getCategoryIconColor(poi.category)}
+                        />
+                      ) : (
+                        <MaterialCommunityIcons
+                          name={categoryIcon.name}
+                          size={14}
+                          color={getCategoryIconColor(poi.category)}
+                        />
+                      )}
+                    </View>
+
+                    <Text style={S.listRowDesc}>{poi.description}</Text>
+                    {sourcePOI?.id === poi.id ? (
+                      <Text style={S.rolePillSource}>Source</Text>
+                    ) : destinationPOI?.id === poi.id ? (
+                      <Text style={S.rolePillDestination}>Destination</Text>
+                    ) : null}
+                    <Text style={S.listRowRoom}>H-{poi.room}</Text>
+                  </TouchableOpacity>
+                );
+              })}
             </ScrollView>
           ) : (
             <View style={S.emptyState}>
@@ -222,6 +238,10 @@ function getBadgeBg(cat: POICategory): string {
   switch (cat) {
     case "ROOM":
       return POI_PALETTE.wcShared;
+    case "STAIRS":
+      return POI_PALETTE.stairsBg;
+    case "ELEVATOR":
+      return POI_PALETTE.elevatorBg;
     case "WC_F":
       return POI_PALETTE.wcF;
     case "WC_M":
@@ -233,32 +253,40 @@ function getBadgeBg(cat: POICategory): string {
   }
 }
 
-function getCategoryIcon(cat: POICategory): keyof typeof Ionicons.glyphMap {
+function getCategoryIcon(cat: POICategory): CategoryIcon {
   switch (cat) {
     case "LAB":
-      return "desktop-outline";
+      return { lib: "ion", name: "desktop-outline" };
     case "ROOM":
-      return "business-outline";
+      return { lib: "ion", name: "business-outline" };
+    case "STAIRS":
+      return { lib: "mci", name: "stairs" };
+    case "ELEVATOR":
+      return { lib: "mci", name: "elevator" };
     case "WC_F":
-      return "female-outline";
+      return { lib: "ion", name: "female-outline" };
     case "WC_M":
-      return "male-outline";
+      return { lib: "ion", name: "male-outline" };
     case "WC_A":
-      return "accessibility-outline";
+      return { lib: "ion", name: "accessibility-outline" };
     case "WC_SHARED":
-      return "people-outline";
+      return { lib: "ion", name: "people-outline" };
     case "PRINT":
-      return "print-outline";
+      return { lib: "ion", name: "print-outline" };
     case "IT":
-      return "help-circle-outline";
+      return { lib: "ion", name: "help-circle-outline" };
     default:
-      return "location-outline";
+      return { lib: "ion", name: "location-outline" };
   }
 }
 
 function getCategoryIconColor(cat: POICategory): string {
   switch (cat) {
     case "ROOM":
+      return POI_PALETTE.iconDark;
+    case "STAIRS":
+      return POI_PALETTE.iconDark;
+    case "ELEVATOR":
       return POI_PALETTE.iconDark;
     case "WC_F":
       return POI_PALETTE.pink;

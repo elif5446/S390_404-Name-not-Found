@@ -18,6 +18,8 @@ export const POI_PALETTE = {
   wcShared: "#EDEAE4",// neutral     – shared WC
   wcA: "#E8445A",     // pink badge  – accessible WC
   labBg: "#EDEAE4",   // neutral     – lab badge
+  stairsBg: "#EDEAE4",
+  elevatorBg: "#EDEAE4",
   printBg: "#EDEAE4",
   itBg: "#EDEAE4",
 };

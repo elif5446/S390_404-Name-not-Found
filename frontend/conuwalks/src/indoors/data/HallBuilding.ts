@@ -1,4 +1,5 @@
-import { BuildingNavConfig } from '../types/Navigation';
+import { BuildingNavConfig, Node } from '../types/Navigation';
+
 
 export const hallBuildingNavConfig: BuildingNavConfig = {
   buildingId: "H", //needs to match the id of the BuildingIndoorConfig
@@ -223,9 +224,6 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
         //halways 
         {id: "H_9_N1", floorId: "H_9", x: 307, y: 399, type: "hallway"},
 
-        //rooms 
-        {id: "H_964", floorId: "H_9", x: 290, y: 433, type: "room"},
-
         //POI
 
 
@@ -237,9 +235,7 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
       edges: [
         //hall to hall
 
-        //hall to class 
-        {nodeAId: "H_9_N1", nodeBId: "H_964", accessible: true},
-
+      
         //hall to POI
 
         //hall to interfloor connection 

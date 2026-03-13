@@ -27,7 +27,7 @@ import IndoorDirectionsPanel from "./IndoorDirectionsPanel";
 import { styles } from "@/src/styles/IndoorMap.styles";
 import { POI_PALETTE } from "@/src/styles/IndoorPOI.styles";
 
-/** Simulated starting room — in a real app this comes from the user's location */
+// Simulated starting room
 const DEFAULT_STARTING_ROOM = "841";
 const MAP_POI_BADGE_SIZE = 18;
 
