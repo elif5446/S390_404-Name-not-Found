@@ -722,7 +722,22 @@ const handleCloseBuildingSearch = () => {
     userLocation?.latitude,
     userLocation?.longitude,
   ]);
-
+  const zoomToBuilding = useCallback((coords: LatLng) => {
+    if (!mapRef.current) return;
+  
+    mapRef.current.animateCamera(
+      {
+        center: {
+          latitude: coords.latitude,
+          longitude: coords.longitude,
+        },
+        zoom: 17.5,   // adjust if you want closer/further
+        pitch: 0,
+        heading: 0,
+      },
+      { duration: 700 } // smooth slide animation
+    );
+  }, []);
   const [userLocationBuildingId, setUserLocationBuildingId] = useState<
     string | null
   >(null);
@@ -1339,6 +1354,10 @@ const handleCloseBuildingSearch = () => {
 
         // Cast item.campus to the literal type
         const campusKey = item.campus as "SGW" | "LOY";
+          // Zoom the map to the building
+  if (item.coordinates) {
+    zoomToBuilding(item.coordinates);
+  }
         // Call the same handler as when tapping a building
         handleBuildingPress(item.id, campusKey, item.coordinates);
       }}
