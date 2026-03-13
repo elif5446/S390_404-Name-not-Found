@@ -54,8 +54,8 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
         setDestination,
         userLocationBuildingId
     }) => {
-    const { events } = useGoogleCalendar();
-    const { todayEvents } = useBuildingEvents(userLocationBuildingId ?? "", SGWBuildingSearchMetadata[userLocationBuildingId ?? ""] ? "SGW" : "LOY");
+    const { events, fetchUpcomingEvents } = useGoogleCalendar();
+    const { todayEvents, refresh } = useBuildingEvents(userLocationBuildingId ?? "", SGWBuildingSearchMetadata[userLocationBuildingId ?? ""] ? "SGW" : "LOY");
     const [startPointText, setStartPointText] = useState(`${SGWBuildingSearchMetadata[startBuildingId || guessRoomLocation(events)?.buildingCode || ""]?.name || LoyolaBuildingSearchMetadata[startBuildingId || guessRoomLocation(events)?.buildingCode || ""]?.name || SGWBuildingSearchMetadata[guessRoomLocation(events)?.buildingCode || ""]?.name || LoyolaBuildingSearchMetadata[guessRoomLocation(events)?.buildingCode || ""]?.name || ""} ${startRoom || guessRoomLocation(events)?.roomNumber || ""}`.trim());
     const [stableStartPointText, setStableStartPointText] = useState(startPointText);
     const [destinationText, setDestinationText] = useState(`${SGWBuildingSearchMetadata[destinationBuildingId || guessFutureRoomLocation(events)?.buildingCode || ""]?.name || LoyolaBuildingSearchMetadata[destinationBuildingId || guessFutureRoomLocation(events)?.buildingCode || ""]?.name || SGWBuildingSearchMetadata[guessFutureRoomLocation(events)?.buildingCode || ""]?.name || LoyolaBuildingSearchMetadata[guessFutureRoomLocation(events)?.buildingCode || ""]?.name || ""} ${destinationRoom || guessFutureRoomLocation(events)?.roomNumber || ""}`.trim());
@@ -69,6 +69,8 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
     const CURRENT_LOCATION = "Current Location";
 
     useEffect(() => {
+        refresh();
+        fetchUpcomingEvents();
         if (startPointText.length === 0) {
             setStartPointText(CURRENT_LOCATION);
             setStableStartPointText(CURRENT_LOCATION)
