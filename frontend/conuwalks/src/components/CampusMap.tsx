@@ -23,7 +23,6 @@ import {
 } from "react-native";
 import MapView, {
   LatLng,
-  Circle,
   Region,
   Marker,
   PROVIDER_GOOGLE,
@@ -51,14 +50,13 @@ import { isPointInPolygon } from "@/src/utils/geo";
 import SGW from "@/src/data/campus/SGW.geojson";
 import LOY from "@/src/data/campus/LOY.geojson";
 import { INDOOR_DATA } from "@/src/data/indoorData";
-import { LoyolaBuildingMetadata } from "@/src/data/metadata/LOY.BuildingMetadata";
-import { SGWBuildingMetadata } from "@/src/data/metadata/SGW.BuildingMetaData";
+import { LoyolaBuildingMetadata, LoyolaBuildingSearchMetadata } from "@/src/data/metadata/LOY.BuildingMetadata";
+import { SGWBuildingMetadata, SGWBuildingSearchMetadata } from "@/src/data/metadata/SGW.BuildingMetaData";
 import IndoorMapOverlay from "./indoor/IndoorMapOverlay";
 import DirectionsSearchPanel from "./DirectionsSearchPanel";
 
 import BuildingTheme from "@/src/styles/BuildingTheme";
-import styles from "@/src/styles/campusMap";
-import BuildingSearchButton from "../components/BuildingSearchButton"; 
+import styles from "@/src/styles/campusMap"; 
 
 
 
@@ -201,17 +199,25 @@ const buildingSearchInputRef = useRef<TextInput>(null);
 
 // Combine all buildings from SGW and LOY
 const allBuildings = useMemo(() => {
-const sgw = Object.entries(SGWBuildingMetadata).map(([id, meta]) => ({
-    // Use the ID that matches the GeoJSON 'id' property
-    id: id, 
-    name: meta.name,
-    campus: "SGW",
-  }));
-  const loy = Object.entries(LoyolaBuildingMetadata).map(([id, meta]) => ({
-    id,
-    name: meta.name,
-    campus: "LOY",
-  }));
+  const sgw = Object
+    .entries(SGWBuildingSearchMetadata)
+    .filter(([id, _]) => Object.entries(SGWBuildingMetadata).map(([id, _]) => id).includes(id))
+    .map(([id, meta]) => ({
+      // Use the ID that matches the GeoJSON 'id' property
+      id: id,
+      name: meta.name,
+      campus: "SGW",
+      coordinates: meta.coordinates
+    }));
+  const loy = Object
+    .entries(LoyolaBuildingSearchMetadata)
+    .filter(([id, _]) => Object.entries(LoyolaBuildingMetadata).map(([id, _]) => id).includes(id))
+    .map(([id, meta]) => ({
+      id,
+      name: meta.name,
+      campus: "LOY",
+      coordinates: meta.coordinates
+    }));
   return [...sgw, ...loy];
 }, []);
 
@@ -932,7 +938,6 @@ const handleCloseBuildingSearch = () => {
         onPress={handleMapPress}
         onPanDrag={handleMapPanDrag}
         tintColor="#FF2D55"
-        pitchEnabled={false} // no 3d
         mapType={Platform.OS === "ios" ? "mutedStandard" : "standard"}
         showsPointsOfInterest={false}
         showsTraffic={false}
@@ -1286,9 +1291,6 @@ const handleCloseBuildingSearch = () => {
           </View>        
         </View>
       )}
-      
-      /* --- Add building search button overlay --- */
-  <BuildingSearchButton onPress={handleOpenBuildingSearch} />
 
 {/* ---------------- Building Search Modal ---------------- */}
 <Modal
@@ -1338,7 +1340,7 @@ const handleCloseBuildingSearch = () => {
         // Cast item.campus to the literal type
         const campusKey = item.campus as "SGW" | "LOY";
         // Call the same handler as when tapping a building
-        handleBuildingPress(item.id, campusKey);
+        handleBuildingPress(item.id, campusKey, item.coordinates);
       }}
       style={{ paddingVertical: 10 }}
     >
@@ -1419,7 +1421,7 @@ const handleCloseBuildingSearch = () => {
         </View>
       )}
 
-      {/* Right Controls Panel: User Profile + Location Recenter */}
+      {/* Right Controls Panel: User Profile + Location Recenter + Search Button */}
       {userInfo && onSignOut && (
         <RightControlsPanel
           userInfo={userInfo}
@@ -1428,6 +1430,8 @@ const handleCloseBuildingSearch = () => {
           onLocationPress={handleLocationPress}
           indoorBuildingId={indoorBuildingId}
           isInfoPopupExpanded={isInfoPopupExpanded}
+          handleOpenBuildingSearch={handleOpenBuildingSearch}
+          isDirections={destinationPopupRef != null}
         />
       )}
 

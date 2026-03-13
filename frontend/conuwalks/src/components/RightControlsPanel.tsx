@@ -2,10 +2,6 @@ import React, { useState } from "react";
 import {
   View,
   TouchableOpacity,
-  Image,
-  Text,
-  Button,
-  Alert,
   Platform,
   useColorScheme,
   ActivityIndicator,
@@ -15,6 +11,7 @@ import { SymbolView } from "expo-symbols";
 import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import UserProfilePopup from "./UserProfilePopup";
+import BuildingSearchButton from "../components/BuildingSearchButton";
 
 interface Props {
   userInfo: any;
@@ -24,6 +21,8 @@ interface Props {
   locationLoading?: boolean;
   indoorBuildingId?: string | null;
   isInfoPopupExpanded?: boolean;
+  handleOpenBuildingSearch: () => void;
+  isDirections: boolean
 }
 
 const RightControlsPanel: React.FC<Props> = ({
@@ -34,6 +33,8 @@ const RightControlsPanel: React.FC<Props> = ({
   locationLoading = false,
   indoorBuildingId = null,
   isInfoPopupExpanded = false,
+  handleOpenBuildingSearch,
+  isDirections
 }) => {
   const mode = useColorScheme() || "light";
   const [isProfileExpanded, setIsProfileExpanded] = useState(false);
@@ -47,11 +48,10 @@ const RightControlsPanel: React.FC<Props> = ({
   const buttonSize = 50;
   const buttonSpacing = 12;
   const userIconSize = 50;
-  const containerPadding = 8;
 
   return (
     <>
-      {/* Controls panel, user icon + location button stacked */}
+      {/* Controls panel, user icon + location button + search button stacked */}
       <View
         style={{
           position: "absolute",
@@ -63,6 +63,7 @@ const RightControlsPanel: React.FC<Props> = ({
         pointerEvents="box-none"
       >
         {/* User Profile Icon */}
+        {!isDirections && <>
         <TouchableOpacity
           onPress={() => setIsProfileExpanded(!isProfileExpanded)}
           style={{
@@ -159,7 +160,9 @@ const RightControlsPanel: React.FC<Props> = ({
               <MaterialIcons name="navigation" size={20} color="#B03060" />
             )}
           </TouchableOpacity>
-        )}
+        )}</>}
+        {/* Search Button */}
+        {!isDirections && <BuildingSearchButton onPress={handleOpenBuildingSearch} buttonSize={buttonSize} mode={mode} buttonSpacing={buttonSpacing} />}
       </View>
       <UserProfilePopup
         visible={isProfileExpanded}
