@@ -5,7 +5,7 @@ import {
   render,
   screen,
 } from "@testing-library/react-native";
-import { ActivityIndicator, Platform } from "react-native";
+import { Platform } from "react-native";
 import CampusMap from "../../components/CampusMap";
 import { useUserLocation } from "@/src/hooks/useUserLocation";
 import { useDirections } from "@/src/context/DirectionsContext";

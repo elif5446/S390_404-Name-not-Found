@@ -1,18 +1,7 @@
 import React from "react";
 import { render, fireEvent, waitFor } from "@testing-library/react-native";
+import * as Google from "expo-auth-session/providers/google";
 import GoogleCalendarAuth from "../../screens/GoogleCalendarAuth";
-
-const mockPromptAsync = jest.fn();
-
-jest.mock("expo-auth-session/providers/google", () => ({
-  __esModule: true,
-  useAuthRequest: jest.fn(() => [{ type: "request" }, null, mockPromptAsync]),
-}));
-
-jest.mock("expo-web-browser", () => ({
-  maybeCompleteAuthSession: jest.fn(),
-}));
-
 // mock token storage utilities
 jest.mock("../../utils/tokenStorage", () => ({
   getTokens: jest.fn(() => Promise.resolve(null)),
@@ -23,8 +12,15 @@ jest.mock("../../utils/tokenStorage", () => ({
 }));
 
 describe("GoogleCalendarAuth", () => {
+  const promptAsyncMock = jest.fn();
+
   beforeEach(() => {
     jest.clearAllMocks();
+    (Google.useAuthRequest as jest.Mock).mockReturnValue([
+      { url: "https://accounts.google.com/o/oauth2/v2/auth" },
+      null,
+      promptAsyncMock,
+    ]);
   });
 
   beforeAll(() => {
@@ -54,7 +50,7 @@ describe("GoogleCalendarAuth", () => {
     fireEvent.press(button);
 
     await waitFor(() => {
-      expect(mockPromptAsync).toHaveBeenCalled();
+      expect(promptAsyncMock).toHaveBeenCalled();
     });
   });
 });
