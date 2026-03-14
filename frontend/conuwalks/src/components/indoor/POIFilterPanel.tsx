@@ -217,7 +217,7 @@ const POIFilterPanel: React.FC<Props> = ({
                     ) : destinationPOI?.id === poi.id ? (
                       <Text style={S.rolePillDestination}>Destination</Text>
                     ) : null}
-                    <Text style={S.listRowRoom}>H-{poi.room}</Text>
+                    <Text style={S.listRowRoom}>{formatPoiRoomLabel(poi)}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -297,6 +297,13 @@ function getCategoryIconColor(cat: POICategory): string {
     default:
       return POI_PALETTE.iconDark;
   }
+}
+
+function formatPoiRoomLabel(poi: POI): string {
+  if (poi.category === "STAIRS" && /^S\d+$/i.test(poi.room)) {
+    return `H${poi.floor}-${poi.room.toUpperCase()}`;
+  }
+  return `H-${poi.room}`;
 }
 
 export default POIFilterPanel;

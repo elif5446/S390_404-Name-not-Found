@@ -6,6 +6,33 @@ import { poiBadgeStyles, POI_PALETTE } from "@/src/styles/IndoorPOI.styles";
 
 //Category: icon name + background colour 
 type IconLib = "ion" | "mci";
+type IconOffset = { x: number; y: number };
+
+// Fine-tune icon placement by room number 
+//  adjust entries as needed
+const ICON_POSITION_OVERRIDES: Record<string, IconOffset> = {
+  "801": { x: -7, y: -4 },
+  "803" : {x: -5, y: -3 },
+  "805": { x: 0, y: 0 },
+  "807":{x:-1, y:-4},
+  "811": { x: -3, y: -2},
+  "813" : {x: -4, y: -2},
+  "815" : {x: -1, y: -2},
+  "817" : {x:3, y: -2},
+  "819" : {x:4, y: 2},
+  "821" : {x:4, y: 5},
+  "823" : {x:4, y: 5},
+  "825" : {x:6, y: 6},
+  "827" : {x:6, y: 5},
+  "829" : {x:6, y: -1},  
+  "809": { x: 0, y: 0 },
+  "836": { x: 19, y: -2 },
+  "E1": { x: 12, y: 15 },
+  "S1": { x: 17, y: 20 },
+  "S2": { x: 13, y: 15 },
+  "S3": { x: 13, y: 15 },
+  "S4": { x: 11, y: 18 },
+};
 
 const CATEGORY_CONFIG: Record<
   POICategory,
@@ -122,7 +149,7 @@ function getRoomLabelOffset(room: string): { x: number; y: number } {
     "805.03": { x: -4, y: 1 },
     "805.02": { x: 1, y: 0 },
     "805.01": { x: 1, y: 4 },
-    "836": { x: 2, y: 8 }, 
+    "836": { x: -5, y: -6 },
     "852": { x: -4, y: 3 },
   };
 
@@ -154,7 +181,9 @@ const POIBadge: React.FC<Props> = ({
   const isSource = selectionType === "source";
   const bg = isDestination ? POI_PALETTE.pink : isSource ? "#3A7BD5" : cfg.bg;
   const iconColor = isDestination || isSource ? POI_PALETTE.white : cfg.iconColor;
-  const markerSize = isCompactIconOnly ? 12 : size;
+  const isElevator = poi.category === "ELEVATOR";
+  const isStairsS1 = poi.category === "STAIRS" && poi.room === "S1";
+  const markerSize = isCompactIconOnly ? 12 : isElevator ? 14 : isStairsS1 ? 15 : size;
   const markerIconSize = isCompactIconOnly ? 8 : markerSize * 0.56;
   const radius = markerSize * 0.42;
   const anchorLeft = left + size / 2;
@@ -163,6 +192,11 @@ const POIBadge: React.FC<Props> = ({
   const iconBadgeShiftDown = poi.room === "805" ? 5 : poi.room === "809" ? 1 : 0;
   const markerShiftUp = poi.room === "836" ? -6 : poi.room === "809" ? -3 : 0;
   const markerShiftRight = poi.room === "836" ? 2 : poi.room === "809" ? 16 : 0;
+  const labShiftRight = poi.category === "LAB" ? 10 : 0;
+  const labShiftUp = poi.category === "LAB" ? -10 : 0;
+  const transportShiftLeft = isVerticalTransport ? -12 : 0;
+  const transportShiftUp = isVerticalTransport ? -12 : 0;
+  const manualRoomOffset = ICON_POSITION_OVERRIDES[poi.room] ?? { x: 0, y: 0 };
   const markerZIndex = poi.category === "ELEVATOR" ? 40 : poi.category === "STAIRS" ? 30 : 10;
   const markerHitSlop = isVerticalTransport
     ? { top: 14, bottom: 14, left: 14, right: 14 }
@@ -257,8 +291,21 @@ const POIBadge: React.FC<Props> = ({
     <View
       style={{
         position: "absolute",
-        left: anchorLeft - markerSize / 2 + markerShiftRight,
-        top: anchorTop - markerSize / 2 - 3 + markerShiftUp,
+        left:
+          anchorLeft -
+          markerSize / 2 +
+          markerShiftRight +
+          transportShiftLeft +
+          labShiftRight +
+          manualRoomOffset.x,
+        top:
+          anchorTop -
+          markerSize / 2 -
+          3 +
+          markerShiftUp +
+          transportShiftUp +
+          labShiftUp +
+          manualRoomOffset.y,
         alignItems: "center",
         zIndex: markerZIndex,
       }}
@@ -301,21 +348,6 @@ const POIBadge: React.FC<Props> = ({
           : null}
       </TouchableOpacity>
 
-      {!isCompactIconOnly && !isVerticalTransport ? (
-        <View
-          style={{
-            marginTop: poi.room === "805" ? -1 : poi.room === "809" ? 0 : 2,
-            backgroundColor: "rgba(255,255,255,0.9)",
-            borderRadius: 5,
-            paddingHorizontal: 3,
-            paddingVertical: 1,
-          }}
-        >
-          <Text style={{ fontSize: 8, fontWeight: "700", color: POI_PALETTE.textDark }}>
-            {poi.room}
-          </Text>
-        </View>
-      ) : null}
     </View>
   );
 };
