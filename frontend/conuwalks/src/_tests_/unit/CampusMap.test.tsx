@@ -473,14 +473,12 @@ describe("CampusMap", () => {
       expect(screen.queryByLabelText("Current Location")).toBeNull();
     });
 
-    it("renders loading state safely while location is loading", () => {
+    it("shows ActivityIndicator while location is loading", () => {
       (useUserLocation as jest.Mock).mockReturnValue(
-        makeUserLocation({ loading: true, location: null }),
+        makeUserLocation({ loading: true }),
       );
       render(<CampusMap />);
-      expect(screen.getByTestId("map-view")).toBeTruthy();
-      expect(screen.queryByLabelText("Current Location")).toBeNull();
-      expect(screen.queryByText("Location permission denied")).toBeNull();
+      expect(screen.UNSAFE_getByType(ActivityIndicator)).toBeTruthy();
     });
 
     it("shows an error banner when location permission is denied", () => {
