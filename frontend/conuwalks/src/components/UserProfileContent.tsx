@@ -216,7 +216,7 @@ const UserProfileContent = ({ userInfo, onSignOut, mode }: any) => {
           accessibilityRole="switch"
           accessibilityLabel="Wheelchair-Accessible Directions and Navigation"
           accessibilityHint="Toggle to enable wheelchair accessible routes"
-          accessibilityState={{ checked: isWheelchairAccessible }}
+          accessibilityState={{ checked: !!isWheelchairAccessible }}
           style={{flexDirection: "row", justifyContent: "space-between", paddingVertical: 20, alignItems:"center", paddingHorizontal:15}}
         >
           <View style={{flexDirection: "row", justifyContent: "space-between", alignItems:"center"}}>
@@ -227,7 +227,7 @@ const UserProfileContent = ({ userInfo, onSignOut, mode }: any) => {
                 tintColor="#B03060"
                 fallback={<MaterialIcons name="accessible-forward" size={24} />}
               />
-            : <MaterialIcons name="accessible-forward" size={24} tintColor="#B03060"/>}
+            : <MaterialIcons name="accessible-forward" size={24} tintColor="#B03060" color="#B03060"/>}
             <View style={{flexDirection: "column", paddingLeft:10}}>
               <Text style={[styles.rowText, { color: textColor }]}>
                 {`Wheelchair-Accessible\nDirections & Navigation`}
@@ -242,12 +242,12 @@ const UserProfileContent = ({ userInfo, onSignOut, mode }: any) => {
           />
         </View>
 
-        <TouchableOpacity style={styles.row} onPress={() => openNotificationSettings()}>
+        <TouchableOpacity style={[styles.row, Platform.OS === 'ios' ? {paddingTop: 35} : {}]} onPress={() => openNotificationSettings()}>
           <MaterialIcons name="settings" size={22} color="#B03060" />
           <Text style={[styles.rowText, { color: textColor }]}>System Notification Settings</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.row} onPress={() => openAppearanceSettings()}>
+        <TouchableOpacity style={[styles.row, {paddingBottom: 0}]} onPress={() => openAppearanceSettings()}>
           <MaterialIcons name="dark-mode" size={22} color="#B03060" />
           <Text style={[styles.rowText, { color: textColor }]}>Appearance</Text>
         </TouchableOpacity>
@@ -263,7 +263,7 @@ const UserProfileContent = ({ userInfo, onSignOut, mode }: any) => {
 
 const styles = StyleSheet.create({
   container: { paddingHorizontal: 20 },
-  section: { marginBottom: 25 },
+  section: { marginBottom: Platform.OS === 'ios' ? 25 : 10 },
   sectionTitle: {
     fontSize: 13,
     fontWeight: "700",
@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 0,
     gap: 10,
   },
   signOutText: { color: "#FFF", fontWeight: "700", fontSize: 16 },

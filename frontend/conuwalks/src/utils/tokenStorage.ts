@@ -209,7 +209,7 @@ export const saveWheelchairAccessibilityPreference = async (mode: boolean): Prom
     );
     return true;
   } catch (error) {
-    console.error("Error saving Wheelchair-Accessiblity Preference:", error);
+    console.error("Error saving wheelchair accessiblity preference:", error);
     return false;
   }
 }
@@ -217,9 +217,9 @@ export const saveWheelchairAccessibilityPreference = async (mode: boolean): Prom
 export const getWheelchairAccessibilityPreference = async (): Promise<boolean> => {
   try {
     const accessiblity = await AsyncStorage.getItem(WHEELCHAIR_ACCESSIBLE_DIRECTIONS_AND_NAVIGATION);
-    return Boolean(accessiblity);
+    return accessiblity === "true";
   } catch (error) {
-    console.error("Error reading dismissed class event ids:", error);
+    console.error("Error reading wheelchair accessiblity preference:", error);
     return false;
   }
 };
