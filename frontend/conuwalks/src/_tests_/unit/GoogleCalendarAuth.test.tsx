@@ -1,7 +1,17 @@
 import React from "react";
 import { render, fireEvent, waitFor } from "@testing-library/react-native";
-import * as Google from "expo-auth-session/providers/google";
+import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import GoogleCalendarAuth from "../../screens/GoogleCalendarAuth";
+
+// mock GoogleSignin module
+jest.mock("@react-native-google-signin/google-signin", () => ({
+  GoogleSignin: {
+    configure: jest.fn(),
+    hasPlayServices: jest.fn(() => Promise.resolve(true)),
+    signIn: jest.fn(() => Promise.resolve({ user: { name: "Test User" } })),
+  },
+  statusCodes: { SIGN_IN_CANCELLED: "1" },
+}));
 
 // mock token storage utilities
 jest.mock("../../utils/tokenStorage", () => ({
@@ -13,17 +23,6 @@ jest.mock("../../utils/tokenStorage", () => ({
 }));
 
 describe("GoogleCalendarAuth", () => {
-  const promptAsyncMock = jest.fn();
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    (Google.useAuthRequest as jest.Mock).mockReturnValue([
-      { url: "https://accounts.google.com/o/oauth2/v2/auth" },
-      null,
-      promptAsyncMock,
-    ]);
-  });
-
   beforeAll(() => {
     process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID = "test-web-id";
     process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID = "test-ios-id";
@@ -40,7 +39,7 @@ describe("GoogleCalendarAuth", () => {
     expect(getByText(/Get Started with Google Calendar/i)).toBeTruthy();
   });
 
-  it("calls promptAsync when button is pressed", async () => {
+  it("calls GoogleSignin.signIn when button is pressed", async () => {
     const { getByText } = render(<GoogleCalendarAuth />);
 
     const button = await waitFor(() =>
@@ -50,7 +49,7 @@ describe("GoogleCalendarAuth", () => {
     fireEvent.press(button);
 
     await waitFor(() => {
-      expect(promptAsyncMock).toHaveBeenCalled();
+      expect(GoogleSignin.signIn).toHaveBeenCalled();
     });
   });
 });
