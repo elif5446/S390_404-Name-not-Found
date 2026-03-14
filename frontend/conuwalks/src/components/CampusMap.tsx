@@ -1318,15 +1318,16 @@ const handleCloseBuildingSearch = () => {
     style={{
       flex: 1,
       backgroundColor: "rgba(0,0,0,0.3)",
-      justifyContent: "center",
+      justifyContent: "flex-start",
       paddingHorizontal: 20,
+      paddingVertical: 50
     }}
   >
     <View
       style={{
         backgroundColor: colorScheme === "dark" ? "#1C1C1E" : "#FFFFFF",
         borderRadius: 16,
-        padding: 16,
+        padding: 16
       }}
     >
       <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8 }}>
@@ -1360,6 +1361,8 @@ const handleCloseBuildingSearch = () => {
   }
         // Call the same handler as when tapping a building
         handleBuildingPress(item.id, campusKey, item.coordinates);
+
+        setSearchQuery("");
       }}
       style={{ paddingVertical: 10 }}
     >
