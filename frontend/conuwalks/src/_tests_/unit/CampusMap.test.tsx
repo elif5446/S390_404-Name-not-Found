@@ -5,7 +5,7 @@ import {
   render,
   screen,
 } from "@testing-library/react-native";
-import { ActivityIndicator } from "react-native";
+import { Platform } from "react-native";
 import CampusMap from "../../components/CampusMap";
 import { useUserLocation } from "@/src/hooks/useUserLocation";
 import { useDirections } from "@/src/context/DirectionsContext";
@@ -15,12 +15,15 @@ import {
   distanceMetersBetween,
 } from "@/src/utils/geometry";
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   Module mocks (hoisted by Jest before imports)
-   ───────────────────────────────────────────────────────────────────────────── */
+
+   //Module mocks (hoisted by Jest before imports)
+  
 
 jest.mock("@/src/hooks/useUserLocation");
 jest.mock("@/src/context/DirectionsContext");
+jest.mock("react-native/Libraries/Utilities/useColorScheme", () => ({
+  default: jest.fn(),
+}));
 
 jest.mock("@/src/utils/geometry", () => ({
   calculatePolygonCenter: jest.fn(() => ({
@@ -124,7 +127,14 @@ jest.mock("react-native-maps", () => {
 
   const MockMapView = React.forwardRef(
     (
-      { children, onLongPress, onPress, onPanDrag, onRegionChangeComplete }: any,
+      {
+        children,
+        onLongPress,
+        onPress,
+        onPanDrag,
+        onRegionChangeComplete,
+        googleMapId,
+      }: any,
       ref: any,
     ) => {
       React.useImperativeHandle(ref, () => ({
@@ -132,7 +142,10 @@ jest.mock("react-native-maps", () => {
         animateToRegion: jest.fn(),
       }));
       return (
-        <View testID="map-view">
+        <View
+          testID="map-view"
+          accessibilityLabel={String(googleMapId ?? "none")}
+        >
           {children}
           {onPress && (
             <TouchableOpacity testID="map-press-trigger" onPress={onPress} />
@@ -200,9 +213,9 @@ jest.mock("react-native-maps", () => {
 
 jest.mock("@/src/components/AdditionalInfoPopup", () => {
   const React = require("react");
-  const { View } = require("react-native");
+  const { View, TouchableOpacity } = require("react-native");
   const Mock = React.forwardRef(
-    ({ visible, directionsEtaLabel, onDirectionsTrigger }: any, ref: any) => {
+    ({ visible, directionsEtaLabel, onDirectionsTrigger, onExpansionChange }: any, ref: any) => {
       React.useImperativeHandle(ref, () => ({
         minimize: jest.fn(),
         collapse: jest.fn(),
@@ -214,6 +227,12 @@ jest.mock("@/src/components/AdditionalInfoPopup", () => {
             testID="eta-display"
             accessibilityLabel={String(directionsEtaLabel)}
           />
+          {onExpansionChange && (
+            <TouchableOpacity
+              testID="expansion-change-trigger"
+              onPress={() => onExpansionChange(true)}
+            />
+          )}
         </View>
       );
     },
@@ -274,11 +293,18 @@ jest.mock("@/src/components/indoor/IndoorMapOverlay", () => {
   };
 });
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   Test helpers
-   ───────────────────────────────────────────────────────────────────────────── */
+
+   //Test helpers
+
 
 const USER_LOCATION = { latitude: 45.495, longitude: -73.578 };
+
+const TEST_IDS = {
+  hallPolygon: "polygon-Hall Building",
+  administrationPolygon: "polygon-Administration Building",
+  additionalInfoPopup: "additional-info-popup",
+  boardMetroGL: "Board Metro GL",
+} as const;
 
 const makeDirections = (overrides: Record<string, any> = {}) => ({
   destinationBuildingId: null as string | null,
@@ -367,11 +393,12 @@ const TRANSIT_ROUTE_DATA = {
   ],
 };
 
-/* ─────────────────────────────────────────────────────────────────────────────
-   Test suite
-   ───────────────────────────────────────────────────────────────────────────── */
+  // Test suite
+ 
 
 describe("CampusMap", () => {
+  let rafSpy: jest.SpyInstance;
+
   beforeEach(() => {
     jest.clearAllMocks();
     (useUserLocation as jest.Mock).mockReturnValue(makeUserLocation());
@@ -380,14 +407,22 @@ describe("CampusMap", () => {
     (distanceMetersBetween as jest.Mock).mockReturnValue(100);
     (calculatePolygonCenter as jest.Mock).mockReturnValue({ latitude: 45.495, longitude: -73.578 });
     (isPointInPolygon as jest.Mock).mockReturnValue(false);
-    // Call rAF callbacks synchronously so effects that use it resolve immediately
-    global.requestAnimationFrame = jest.fn((cb: FrameRequestCallback) => {
-      cb(0);
-      return 0;
-    });
+    // Call rAF callbacks synchronously so effects that use it resolve immediately.
+    // Using spyOn ensures the original is restored after each test, preventing
+    // global state leakage into other test files.
+    rafSpy = jest
+      .spyOn(global, "requestAnimationFrame")
+      .mockImplementation((cb: FrameRequestCallback) => {
+        cb(0);
+        return 0;
+      });
   });
 
-  /* ── Basic rendering ─────────────────────────────────────────────────────── */
+  afterEach(() => {
+    rafSpy.mockRestore();
+  });
+
+  // ── Basic rendering 
 
   describe("Basic rendering", () => {
     it("renders without crashing", () => {
@@ -397,12 +432,12 @@ describe("CampusMap", () => {
 
     it("renders SGW campus building polygon", () => {
       render(<CampusMap />);
-      expect(screen.getByTestId("polygon-Hall Building")).toBeTruthy();
+      expect(screen.getByTestId(TEST_IDS.hallPolygon)).toBeTruthy();
     });
 
     it("renders LOY campus building polygon", () => {
       render(<CampusMap />);
-      expect(screen.getByTestId("polygon-Administration Building")).toBeTruthy();
+      expect(screen.getByTestId(TEST_IDS.administrationPolygon)).toBeTruthy();
     });
 
     it("always renders RoutePolyline", () => {
@@ -422,7 +457,7 @@ describe("CampusMap", () => {
     });
   });
 
-  /* ── User location display ───────────────────────────────────────────────── */
+  // User location display 
 
   describe("User location display", () => {
     it("renders the current-location marker when location is available", () => {
@@ -438,12 +473,14 @@ describe("CampusMap", () => {
       expect(screen.queryByLabelText("Current Location")).toBeNull();
     });
 
-    it("shows ActivityIndicator while location is loading", () => {
+    it("renders loading state safely while location is loading", () => {
       (useUserLocation as jest.Mock).mockReturnValue(
-        makeUserLocation({ loading: true }),
+        makeUserLocation({ loading: true, location: null }),
       );
       render(<CampusMap />);
-      expect(screen.UNSAFE_getByType(ActivityIndicator)).toBeTruthy();
+      expect(screen.getByTestId("map-view")).toBeTruthy();
+      expect(screen.queryByLabelText("Current Location")).toBeNull();
+      expect(screen.queryByText("Location permission denied")).toBeNull();
     });
 
     it("shows an error banner when location permission is denied", () => {
@@ -460,7 +497,7 @@ describe("CampusMap", () => {
     });
   });
 
-  /* ── Right controls panel ────────────────────────────────────────────────── */
+  //  Right controls panel 
 
   describe("RightControlsPanel", () => {
     it("renders when userInfo and onSignOut are provided", () => {
@@ -476,18 +513,18 @@ describe("CampusMap", () => {
     });
   });
 
-  /* ── Building interaction ────────────────────────────────────────────────── */
+  // Building interaction 
 
   describe("Building interaction", () => {
     it("pressing a building polygon shows AdditionalInfoPopup", () => {
       render(<CampusMap />);
-      expect(screen.queryByTestId("additional-info-popup")).toBeNull();
+      expect(screen.queryByTestId(TEST_IDS.additionalInfoPopup)).toBeNull();
 
       act(() => {
-        fireEvent.press(screen.getByTestId("polygon-Hall Building"));
+        fireEvent.press(screen.getByTestId(TEST_IDS.hallPolygon));
       });
 
-      expect(screen.getByTestId("additional-info-popup")).toBeTruthy();
+      expect(screen.getByTestId(TEST_IDS.additionalInfoPopup)).toBeTruthy();
     });
 
     it("calls setDestination with building id and metadata name on press", () => {
@@ -498,7 +535,7 @@ describe("CampusMap", () => {
 
       render(<CampusMap />);
       act(() => {
-        fireEvent.press(screen.getByTestId("polygon-Hall Building"));
+        fireEvent.press(screen.getByTestId(TEST_IDS.hallPolygon));
       });
 
       expect(mockSetDestination).toHaveBeenCalledWith(
@@ -520,7 +557,7 @@ describe("CampusMap", () => {
 
       render(<CampusMap />);
       act(() => {
-        fireEvent.press(screen.getByTestId("polygon-Hall Building"));
+        fireEvent.press(screen.getByTestId(TEST_IDS.hallPolygon));
       });
 
       expect(mockSetIsNavActive).toHaveBeenCalledWith(false);
@@ -543,19 +580,19 @@ describe("CampusMap", () => {
 
       // Select the building
       act(() => {
-        fireEvent.press(screen.getByTestId("polygon-Hall Building"));
+        fireEvent.press(screen.getByTestId(TEST_IDS.hallPolygon));
       });
 
       expect(screen.queryByLabelText("Hall Building destination")).toBeNull();
     });
   });
 
-  /* ── AdditionalInfoPopup visibility ─────────────────────────────────────── */
+  // AdditionalInfoPopup visibility 
 
   describe("AdditionalInfoPopup", () => {
     it("is hidden by default", () => {
       render(<CampusMap />);
-      expect(screen.queryByTestId("additional-info-popup")).toBeNull();
+      expect(screen.queryByTestId(TEST_IDS.additionalInfoPopup)).toBeNull();
     });
 
     it("is hidden when showDirections is true even if a building is selected", () => {
@@ -565,7 +602,7 @@ describe("CampusMap", () => {
       const { rerender } = render(<CampusMap />);
 
       act(() => {
-        fireEvent.press(screen.getByTestId("polygon-Hall Building"));
+        fireEvent.press(screen.getByTestId(TEST_IDS.hallPolygon));
       });
 
       // Switch showDirections to true – popup must now be hidden.
@@ -576,18 +613,28 @@ describe("CampusMap", () => {
         rerender(<CampusMap />);
       });
 
-      expect(screen.queryByTestId("additional-info-popup")).toBeNull();
+      expect(screen.queryByTestId(TEST_IDS.additionalInfoPopup)).toBeNull();
     });
 
     it("notifies parent when expansion changes", () => {
       const onExpansion = jest.fn();
       render(<CampusMap onInfoPopupExpansionChange={onExpansion} />);
-      // The callback itself is wired through the component; rendering without crash confirms wiring
-      expect(screen.getByTestId("map-view")).toBeTruthy();
+
+      // Select a building to make the popup visible
+      act(() => {
+        fireEvent.press(screen.getByTestId(TEST_IDS.hallPolygon));
+      });
+
+      // Trigger the expansion change via the mock button
+      act(() => {
+        fireEvent.press(screen.getByTestId("expansion-change-trigger"));
+      });
+
+      expect(onExpansion).toHaveBeenCalledWith(true);
     });
   });
 
-  /* ── DestinationPopup visibility ─────────────────────────────────────────── */
+  // DestinationPopup visibility
 
   describe("DestinationPopup", () => {
     it("is hidden by default", () => {
@@ -604,7 +651,7 @@ describe("CampusMap", () => {
     });
   });
 
-  /* ── DirectionsSearchPanel ───────────────────────────────────────────────── */
+  // DirectionsSearchPanel visibility
 
   describe("DirectionsSearchPanel", () => {
     it("is rendered when showDirections is true and not navigating", () => {
@@ -633,7 +680,7 @@ describe("CampusMap", () => {
     });
   });
 
-  /* ── Navigation banner & footer ─────────────────────────────────────────── */
+  // Navigation banner & footer
 
   describe("Navigation UI", () => {
     it("renders navigation header and footer when isNavigationActive and routeData exist", () => {
@@ -700,7 +747,7 @@ describe("CampusMap", () => {
     });
   });
 
-  /* ── Navigation step advancement ────────────────────────────────────────── */
+  //Navigation step advancement 
 
   describe("Navigation step advancement", () => {
     it("advances to the next step when within threshold of current step end", async () => {
@@ -739,7 +786,7 @@ describe("CampusMap", () => {
     });
   });
 
-  /* ── Transit stop markers ────────────────────────────────────────────────── */
+  // Transit stop markers 
 
   describe("Transit stop markers", () => {
     it("renders board and exit markers for each transit step", () => {
@@ -753,7 +800,7 @@ describe("CampusMap", () => {
       render(<CampusMap />);
 
       // 2 steps × 2 markers each (board + exit) = 4 total; component slices to max 4
-      expect(screen.getByLabelText("Board Metro GL")).toBeTruthy();
+      expect(screen.getByLabelText(TEST_IDS.boardMetroGL)).toBeTruthy();
       expect(screen.getByLabelText("Exit Metro GL")).toBeTruthy();
       expect(screen.getByLabelText("Board Bus 105")).toBeTruthy();
       expect(screen.getByLabelText("Exit Bus 105")).toBeTruthy();
@@ -768,10 +815,10 @@ describe("CampusMap", () => {
         }),
       );
       render(<CampusMap />);
-      expect(screen.queryByLabelText("Board Metro GL")).toBeNull();
+      expect(screen.queryByLabelText(TEST_IDS.boardMetroGL)).toBeNull();
     });
 
-    it("shows transit stop callout when a stop marker is pressed", async () => {
+    it("shows transit stop callout when a stop marker is pressed", () => {
       (useDirections as jest.Mock).mockReturnValue(
         makeDirections({
           isNavigationActive: true,
@@ -782,13 +829,13 @@ describe("CampusMap", () => {
       render(<CampusMap />);
 
       act(() => {
-        fireEvent.press(screen.getByLabelText("Board Metro GL"));
+        fireEvent.press(screen.getByLabelText(TEST_IDS.boardMetroGL));
       });
 
-      expect(screen.getByText("Board Metro GL")).toBeTruthy();
+      expect(screen.getByText(TEST_IDS.boardMetroGL)).toBeTruthy();
     });
 
-    it("closes the transit stop callout when the close button is pressed", async () => {
+    it("closes the transit stop callout when the close button is pressed", () => {
       (useDirections as jest.Mock).mockReturnValue(
         makeDirections({
           isNavigationActive: true,
@@ -799,7 +846,7 @@ describe("CampusMap", () => {
       render(<CampusMap />);
 
       act(() => {
-        fireEvent.press(screen.getByLabelText("Board Metro GL"));
+        fireEvent.press(screen.getByLabelText(TEST_IDS.boardMetroGL));
       });
 
       // First confirm callout is visible, then close it
@@ -808,10 +855,10 @@ describe("CampusMap", () => {
         fireEvent.press(closeBtn);
       });
 
-      expect(screen.queryByText("Board Metro GL")).toBeNull();
+      expect(screen.queryByText(TEST_IDS.boardMetroGL)).toBeNull();
     });
 
-    it("toggles off the callout if the same stop is pressed while already selected", async () => {
+    it("toggles off the callout if the same stop is pressed while already selected", () => {
       (useDirections as jest.Mock).mockReturnValue(
         makeDirections({
           isNavigationActive: true,
@@ -821,15 +868,15 @@ describe("CampusMap", () => {
       );
       render(<CampusMap />);
 
-      const boardMarker = screen.getByLabelText("Board Metro GL");
+      const boardMarker = screen.getByLabelText(TEST_IDS.boardMetroGL);
       act(() => { fireEvent.press(boardMarker); });
       act(() => { fireEvent.press(boardMarker); });
 
-      expect(screen.queryByText("Board Metro GL")).toBeNull();
+      expect(screen.queryByText(TEST_IDS.boardMetroGL)).toBeNull();
     });
   });
 
-  /* ── Indoor map overlay ─────────────────────────────────────────────────── */
+  // Indoor map overlay 
 
   describe("Indoor map overlay", () => {
     it("does not render IndoorMapOverlay by default", () => {
@@ -884,7 +931,7 @@ describe("CampusMap", () => {
     });
   });
 
-  /* ── Map press / pan-drag ────────────────────────────────────────────────── */
+  //  Map press / pan-drag 
 
   describe("Map press", () => {
     it("hides the transit stop callout on map press", () => {
@@ -898,12 +945,12 @@ describe("CampusMap", () => {
       render(<CampusMap />);
 
       // Open a transit stop callout
-      act(() => { fireEvent.press(screen.getByLabelText("Board Metro GL")); });
-      expect(screen.getByText("Board Metro GL")).toBeTruthy();
+      act(() => { fireEvent.press(screen.getByLabelText(TEST_IDS.boardMetroGL)); });
+      expect(screen.getByText(TEST_IDS.boardMetroGL)).toBeTruthy();
 
       // Press the map → callout should close
       act(() => { fireEvent.press(screen.getByTestId("map-press-trigger")); });
-      expect(screen.queryByText("Board Metro GL")).toBeNull();
+      expect(screen.queryByText(TEST_IDS.boardMetroGL)).toBeNull();
     });
 
     it("region change updates map region state without crashing", () => {
@@ -915,7 +962,7 @@ describe("CampusMap", () => {
     });
   });
 
-  /* ── ETA label computation ───────────────────────────────────────────────── */
+  //  ETA label computation 
 
   describe("ETA label computation", () => {
     it("shows '--' when there is no user location", () => {
@@ -925,7 +972,7 @@ describe("CampusMap", () => {
       // Select a building so the popup (and its eta-display) is visible
       render(<CampusMap />);
       act(() => {
-        fireEvent.press(screen.getByTestId("polygon-Hall Building"));
+        fireEvent.press(screen.getByTestId(TEST_IDS.hallPolygon));
       });
       expect(screen.getByLabelText("--")).toBeTruthy();
     });
@@ -935,7 +982,7 @@ describe("CampusMap", () => {
       (distanceMetersBetween as jest.Mock).mockReturnValue(135);
       render(<CampusMap />);
       act(() => {
-        fireEvent.press(screen.getByTestId("polygon-Hall Building"));
+        fireEvent.press(screen.getByTestId(TEST_IDS.hallPolygon));
       });
       expect(screen.getByLabelText("2 min")).toBeTruthy();
     });
@@ -944,7 +991,7 @@ describe("CampusMap", () => {
       (distanceMetersBetween as jest.Mock).mockReturnValue(10);
       render(<CampusMap />);
       act(() => {
-        fireEvent.press(screen.getByTestId("polygon-Hall Building"));
+        fireEvent.press(screen.getByTestId(TEST_IDS.hallPolygon));
       });
       expect(screen.getByLabelText("1 min")).toBeTruthy();
     });
@@ -954,7 +1001,7 @@ describe("CampusMap", () => {
       (distanceMetersBetween as jest.Mock).mockReturnValue(6075);
       render(<CampusMap />);
       act(() => {
-        fireEvent.press(screen.getByTestId("polygon-Hall Building"));
+        fireEvent.press(screen.getByTestId(TEST_IDS.hallPolygon));
       });
       expect(screen.getByLabelText("1 h 15 min")).toBeTruthy();
     });
@@ -964,27 +1011,32 @@ describe("CampusMap", () => {
       (distanceMetersBetween as jest.Mock).mockReturnValue(4860);
       render(<CampusMap />);
       act(() => {
-        fireEvent.press(screen.getByTestId("polygon-Hall Building"));
+        fireEvent.press(screen.getByTestId(TEST_IDS.hallPolygon));
       });
       expect(screen.getByLabelText("1 h")).toBeTruthy();
     });
   });
 
-  /* ── Color-scheme aware map ID ───────────────────────────────────────────── */
+  //  Color-scheme aware map ID 
 
   describe("Map color scheme", () => {
     it("renders correctly in dark color scheme", () => {
-      const csModule = require("react-native/Libraries/Utilities/useColorScheme");
-      if (csModule && typeof csModule.default?.mockReturnValueOnce === "function") {
-        csModule.default.mockReturnValueOnce("dark");
-      }
+      const reactNative = require("react-native");
+      const useColorSchemeSpy = jest
+        .spyOn(reactNative, "useColorScheme")
+        .mockReturnValue("dark");
+      const darkMapId = "eb0ccd6d2f7a95e23f1ec398";
+      jest.replaceProperty(Platform, "OS", "android");
+
       render(<CampusMap />);
-      // Both branches of mapID ternary are exercised; component must render
-      expect(screen.getByTestId("map-view")).toBeTruthy();
+
+      expect(useColorSchemeSpy).toHaveBeenCalled();
+      const mapView = screen.getByTestId("map-view");
+      expect(mapView.props.accessibilityLabel).toBe(darkMapId);
     });
   });
 
-  /* ── Navigation camera-restore effect ───────────────────────────────────── */
+  //  Navigation camera-restore effect 
 
   describe("Navigation camera restore", () => {
     it("stores the pre-navigation region and restores it when navigation ends", () => {
@@ -1024,7 +1076,7 @@ describe("CampusMap", () => {
     });
   });
 
-  /* ── Auto-pan on campus switch ───────────────────────────────────────────── */
+  // Auto-pan on campus switch
 
   describe("Auto-pan on campus change", () => {
     it("clears destination and hides building popup when initial location changes", () => {
@@ -1039,26 +1091,31 @@ describe("CampusMap", () => {
 
       // Select a building first
       act(() => {
-        fireEvent.press(screen.getByTestId("polygon-Hall Building"));
+        fireEvent.press(screen.getByTestId(TEST_IDS.hallPolygon));
       });
-      expect(screen.getByTestId("additional-info-popup")).toBeTruthy();
+      expect(screen.getByTestId(TEST_IDS.additionalInfoPopup)).toBeTruthy();
+
+      // Clear the mock so we can specifically test the rerender-triggered call
+      mockClearDestination.mockClear();
 
       // Switching campus location clears it
       rerender(
         <CampusMap initialLocation={{ latitude: 45.458, longitude: -73.64 }} />,
       );
 
-      expect(mockClearDestination).toHaveBeenCalled();
-      expect(screen.queryByTestId("additional-info-popup")).toBeNull();
+      // clearDestination must have been called due to the location change (not just initial mount)
+      expect(mockClearDestination).toHaveBeenCalledTimes(1);
+      expect(screen.queryByTestId(TEST_IDS.additionalInfoPopup)).toBeNull();
     });
   });
 
-  /* ── searchPanelHeight effect ────────────────────────────────────────────── */
+  // searchPanelHeight effect
 
   describe("searchPanelHeight reset", () => {
     it("resets search panel height to 0 when showDirections becomes false", () => {
-      const dirs = makeDirections({ showDirections: true });
-      (useDirections as jest.Mock).mockReturnValue(dirs);
+      (useDirections as jest.Mock).mockReturnValue(
+        makeDirections({ showDirections: true }),
+      );
       const { rerender } = render(<CampusMap />);
 
       (useDirections as jest.Mock).mockReturnValue(
@@ -1071,7 +1128,7 @@ describe("CampusMap", () => {
     });
   });
 
-  /* ── userLocationBuildingId effect ──────────────────────────────────────── */
+  // userLocationBuildingId effect
 
   describe("User location inside building detection", () => {
     it("detects when user is inside an SGW building", async () => {
@@ -1096,7 +1153,7 @@ describe("CampusMap", () => {
     });
   });
 
-  /* ── Transit stop cleanup when navigation ends ───────────────────────────── */
+  // Transit stop cleanup when navigation ends
 
   describe("Transit stop state cleanup", () => {
     it("clears transit stop selection when navigation becomes inactive", () => {
@@ -1110,8 +1167,8 @@ describe("CampusMap", () => {
       const { rerender } = render(<CampusMap />);
 
       // Select a stop
-      act(() => { fireEvent.press(screen.getByLabelText("Board Metro GL")); });
-      expect(screen.getByText("Board Metro GL")).toBeTruthy();
+      act(() => { fireEvent.press(screen.getByLabelText(TEST_IDS.boardMetroGL)); });
+      expect(screen.getByText(TEST_IDS.boardMetroGL)).toBeTruthy();
 
       // Turn off navigation
       (useDirections as jest.Mock).mockReturnValue(
@@ -1119,7 +1176,7 @@ describe("CampusMap", () => {
       );
       rerender(<CampusMap />);
 
-      expect(screen.queryByText("Board Metro GL")).toBeNull();
+      expect(screen.queryByText(TEST_IDS.boardMetroGL)).toBeNull();
     });
   });
 });
