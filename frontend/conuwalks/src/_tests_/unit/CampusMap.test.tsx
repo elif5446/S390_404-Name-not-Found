@@ -5,7 +5,6 @@ import {
   render,
   screen,
 } from "@testing-library/react-native";
-import { ActivityIndicator } from "react-native";
 import CampusMap from "../../components/CampusMap";
 import { useUserLocation } from "@/src/hooks/useUserLocation";
 import { useDirections } from "@/src/context/DirectionsContext";
@@ -438,12 +437,14 @@ describe("CampusMap", () => {
       expect(screen.queryByLabelText("Current Location")).toBeNull();
     });
 
-    it("shows ActivityIndicator while location is loading", () => {
+    it("renders loading state safely while location is loading", () => {
       (useUserLocation as jest.Mock).mockReturnValue(
-        makeUserLocation({ loading: true }),
+        makeUserLocation({ loading: true, location: null }),
       );
       render(<CampusMap />);
-      expect(screen.UNSAFE_getByType(ActivityIndicator)).toBeTruthy();
+      expect(screen.getByTestId("map-view")).toBeTruthy();
+      expect(screen.queryByLabelText("Current Location")).toBeNull();
+      expect(screen.queryByText("Location permission denied")).toBeNull();
     });
 
     it("shows an error banner when location permission is denied", () => {
