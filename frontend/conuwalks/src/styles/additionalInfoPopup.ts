@@ -125,21 +125,22 @@ const additionalInfoPopupStyles = StyleSheet.create({
     width: 44,
     height: 44,
   },
-  rightHeaderActions: {
-    position: "absolute",
-    right: 20,
-    top: 0,
-    alignItems: "flex-end",
-    justifyContent: "center",
-  },
+rightHeaderActions: {
+  position: "absolute",
+  right: 20,
+  top: 4,
+  alignItems: "flex-end",
+  justifyContent: "flex-start",
+  gap: 8,
+},
   directionsButton: {
     flexDirection: "row",
     alignItems: "center",
     borderRadius: 999,
     backgroundColor: "#B03060",
-    paddingVertical: 4,
-    paddingHorizontal: 3,
-    gap: 5,
+    paddingVertical: 5,
+    paddingHorizontal: 4,
+    gap: 6,
   },
   directionsArrowCircle: {
     width: 18,
@@ -152,12 +153,12 @@ const additionalInfoPopupStyles = StyleSheet.create({
   directionsEtaText: {
     color: "#FFFFFF",
     fontWeight: "700" as const,
-    fontSize: 12,
-    lineHeight: 14,
-    paddingRight: 6,
+    fontSize: 13,
+    lineHeight: 15,
+    paddingRight: 7,
   },
   rightAccessibilityRow: {
-    marginTop: 4,
+    marginTop: 2,
   },
   contentArea: {
     flex: 1,
@@ -229,6 +230,25 @@ const additionalInfoPopupStyles = StyleSheet.create({
     paddingBottom: 24,
   },
 
+openIndoorHeaderButton: {
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "center",
+  backgroundColor: "rgba(255,255,255,0.14)",
+  borderWidth: 1,
+  borderColor: "rgba(255,255,255,0.18)",
+  borderRadius: 999,
+  paddingVertical: 6,
+  paddingHorizontal: 8,
+  minHeight: 30,
+},
+
+openIndoorHeaderButtonText: {
+  color: "#FFFFFF",
+  fontWeight: "600" as const,
+  fontSize: 13,
+  fontFamily: Platform.OS === "ios" ? "System" : "Roboto",
+},
   // Android styles
 });
 
