@@ -65,7 +65,7 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
         {id: "H_843", floorId: "H_8", x: 379, y: 902, type: "room", label: "Room 843"},
         {id: "H_841", floorId: "H_8", x: 475, y: 902, type: "room", label: "Room 841"},
         {id: "H_837", floorId: "H_8", x: 648, y: 902, type: "room", label: "Room 837"},
-        {id: "H_835", floorId: "H_8", x: 740, y: 902, type: "room", label: "Room 845"},
+        {id: "H_835", floorId: "H_8", x: 740, y: 902, type: "room", label: "Room 835"},
         {id: "H_833", floorId: "H_8", x: 832, y: 902, type: "room", label: "Room 833"},
         {id: "H_831", floorId: "H_8", x: 950, y: 902, type: "room", label: "Room 831"},
           
@@ -89,8 +89,8 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
         {id: "H_832.06", floorId: "H_8", x: 650, y: 606, type: "room", label: "Room 832.06"},
         
         //POI
-        {id: "H_8_BATHROOM_1", floorId: "H_8", x: 376, y: 289, type: "bathroom", label: "Bathroom"},
-        {id: "H_8_BATHROOM_2", floorId: "H_8", x: 638, y: 289, type: "bathroom", label: "Bathroom"},
+        {id: "H_8_BATHROOM_1_N", floorId: "H_8", x: 376, y: 289, type: "bathroom", label: "Neutral Washroom"},
+        {id: "H_8_BATHROOM_2_N", floorId: "H_8", x: 638, y: 289, type: "bathroom", label: "Neutral Washroom"},
 
 
 
@@ -101,7 +101,7 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
         {id: "H_8_STAIRS_3", floorId: "H_8", x: 714, y: 727, type: "stairs", label: "Stairwell"},
         {id: "H_8_STAIRS_4", floorId: "H_8", x: 714, y: 289, type: "stairs", label: "Stairwell"},
         {id: "H_8_ESCALATOR_UP", floorId: "H_8", x: 488, y: 431, type: "escalator", label: "Escalator moving up"},
-        {id: "H_8_ESCALATOR_DOWN", floorId: "H_8", x: 488, y: 617, type: "escalator", label: "Escalator moving dowm"},
+        {id: "H_8_ESCALATOR_DOWN", floorId: "H_8", x: 488, y: 617, type: "escalator", label: "Escalator moving down"}, 
 
 
 
@@ -201,8 +201,8 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
 
 
         //hall to POI
-        {nodeAId: "H_8_N17", nodeBId: "H_8_BATHROOM_1", accessible: true},
-        {nodeAId: "H_8_N12", nodeBId: "H_8_BATHROOM_2", accessible: true},
+        {nodeAId: "H_8_N17", nodeBId: "H_8_BATHROOM_1_N", accessible: true},
+        {nodeAId: "H_8_N12", nodeBId: "H_8_BATHROOM_2_N", accessible: true},
 
         //hall to interfloor connection 
         {nodeAId: "H_start", nodeBId: "H_8_ELEVATOR", accessible: true },
@@ -211,7 +211,7 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
         {nodeAId: "H_8_N18", nodeBId: "H_8_ESCALATOR_DOWN", accessible: false},
         {nodeAId: "H_8_N15", nodeBId: "H_8_STAIRS_2", accessible: false},
         {nodeAId: "H_8_N7", nodeBId: "H_8_STAIRS_3", accessible: false},
-        {nodeAId: "H_8_N12", nodeBId: "H_8_STAIRS_4", accessible: true},
+        {nodeAId: "H_8_N12", nodeBId: "H_8_STAIRS_4", accessible: false},
       ]
     },
     {
@@ -256,79 +256,79 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
 
         //rooms 
           //Left side 
-          {id: "H_967", floorId: "H_9", x: 73, y: 166, type: "room"},
-          {id: "H_965", floorId: "H_9", x: 74, y: 328, type: "room"},
-          {id: "H_963", floorId: "H_9", x: 74, y: 440, type: "room"},
-          {id: "H_961.01", floorId: "H_9", x: 32, y: 510, type: "room"},
-          {id: "H_961.02", floorId: "H_9", x: 115, y: 512, type: "room"},
-          {id: "H_961.03", floorId: "H_9", x: 32, y: 581, type: "room"},
-          {id: "H_961.04", floorId: "H_9", x: 115, y: 554, type: "room"},
-          {id: "H_961.06", floorId: "H_9", x: 115, y: 598, type: "room"},
-          {id: "H_961.07", floorId: "H_9", x: 32, y: 644, type: "room"},
-          {id: "H_961.09", floorId: "H_9", x: 32, y: 695, type: "room"},
-          {id: "H_961.11", floorId: "H_9", x: 32, y: 738, type: "room"},
-          {id: "H_961.13", floorId: "H_9", x: 32, y: 785, type: "room"},
-          {id: "H_961.15", floorId: "H_9", x: 32, y: 828, type: "room"},
-          {id: "H_961.17", floorId: "H_9", x: 32, y: 869, type: "room"},
-          {id: "H_961.19", floorId: "H_9", x: 32, y: 933, type: "room"},
+          {id: "H_967", floorId: "H_9", x: 73, y: 166, type: "room", label: "Room 967"},
+          {id: "H_965", floorId: "H_9", x: 74, y: 328, type: "room", label: "Room 965"},
+          {id: "H_963", floorId: "H_9", x: 74, y: 440, type: "room", label: "Room 963"},
+          {id: "H_961.01", floorId: "H_9", x: 32, y: 510, type: "room", label: "Room 961.01"},
+          {id: "H_961.02", floorId: "H_9", x: 115, y: 512, type: "room", label: "Room 961.02"},
+          {id: "H_961.03", floorId: "H_9", x: 32, y: 581, type: "room", label: "Room 961.03"},
+          {id: "H_961.04", floorId: "H_9", x: 115, y: 554, type: "room", label: "Room 961.04"},
+          {id: "H_961.06", floorId: "H_9", x: 115, y: 598, type: "room", label: "Room 961.06"},
+          {id: "H_961.07", floorId: "H_9", x: 32, y: 644, type: "room", label: "Room 961.07"},
+          {id: "H_961.09", floorId: "H_9", x: 32, y: 695, type: "room", label: "Room 961.09"},
+          {id: "H_961.11", floorId: "H_9", x: 32, y: 738, type: "room", label: "Room 961.11"},
+          {id: "H_961.13", floorId: "H_9", x: 32, y: 785, type: "room", label: "Room 961.13"},
+          {id: "H_961.15", floorId: "H_9", x: 32, y: 828, type: "room", label: "Room 961.15"},
+          {id: "H_961.17", floorId: "H_9", x: 32, y: 869, type: "room", label: "Room 961.17"},
+          {id: "H_961.19", floorId: "H_9", x: 32, y: 933, type: "room", label: "Room 961.19"},
 
 
           //Right side
-          {id: "H_917", floorId: "H_9", x: 937, y: 118, type: "room"},
-          {id: "H_919", floorId: "H_9", x: 937, y: 240, type: "room"},
-          {id: "H_921", floorId: "H_9", x: 937, y: 327, type: "room"},
-          {id: "H_923", floorId: "H_9", x: 939, y: 434, type: "room"},
-          {id: "H_925.01", floorId: "H_9", x: 895, y: 536, type: "room"},
-          {id: "H_925.02", floorId: "H_9", x: 966, y: 547, type: "room"},
-          {id: "H_925.03", floorId: "H_9", x: 885, y: 580, type: "room"},
-          {id: "H_927", floorId: "H_9", x: 934, y: 732, type: "room"},
-          {id: "H_927.04", floorId: "H_9", x: 879, y: 641, type: "room"},
-          {id: "H_927.01", floorId: "H_9", x: 978, y: 664, type: "room"},
-          {id: "H_927.03", floorId: "H_9", x: 978, y: 619, type: "room"},
-          {id: "H_931", floorId: "H_9", x: 848, y: 836, type: "room"},
-          {id: "H_929", floorId: "H_9", x: 916, y: 883, type: "room"},
+          {id: "H_917", floorId: "H_9", x: 937, y: 118, type: "room", label: "Room 917"},
+          {id: "H_919", floorId: "H_9", x: 937, y: 240, type: "room", label: "Room 919"},
+          {id: "H_921", floorId: "H_9", x: 937, y: 327, type: "room", label: "Room 921"},
+          {id: "H_923", floorId: "H_9", x: 939, y: 434, type: "room", label: "Room 923"},
+          {id: "H_925.01", floorId: "H_9", x: 895, y: 536, type: "room", label: "Room 925.01"},
+          {id: "H_925.02", floorId: "H_9", x: 966, y: 547, type: "room", label: "Room 925.02"},
+          {id: "H_925.03", floorId: "H_9", x: 885, y: 580, type: "room", label: "Room 925.03"},
+          {id: "H_927", floorId: "H_9", x: 934, y: 732, type: "room", label: "Room 927"},
+          {id: "H_927.04", floorId: "H_9", x: 879, y: 641, type: "room", label: "Room 927.04"},
+          {id: "H_927.01", floorId: "H_9", x: 978, y: 664, type: "room", label: "Room 927.01"},
+          {id: "H_927.03", floorId: "H_9", x: 978, y: 619, type: "room", label: "Room 927.03"},
+          {id: "H_931", floorId: "H_9", x: 848, y: 836, type: "room", label: "Room 931"},
+          {id: "H_929", floorId: "H_9", x: 916, y: 883, type: "room", label: "Room 929"},
 
           //Bottom
-          {id: "H_961.21", floorId: "H_9", x: 81, y: 940, type: "room"},
-          {id: "H_961.23", floorId: "H_9", x: 122, y: 940, type: "room"},
-          {id: "H_961.25", floorId: "H_9", x: 167, y: 940, type: "room"},
-          {id: "H_961.27", floorId: "H_9", x: 212, y: 940, type: "room"},
-          {id: "H_961.29", floorId: "H_9", x: 257, y: 940, type: "room"},
-          {id: "H_961.31", floorId: "H_9", x: 301, y: 940, type: "room"},
-          {id: "H_961.33", floorId: "H_9", x: 346, y: 940, type: "room"},
-          {id: "H_941", floorId: "H_9", x: 423, y: 933, type: "room"},
-          {id: "H_937", floorId: "H_9", x: 543, y: 798, type: "room"},
-          {id: "H_933", floorId: "H_9", x: 753, y: 911, type: "room"},
-          {id: "H_932", floorId: "H_9", x: 738, y: 805, type: "room"},
-          {id: "H_928", floorId: "H_9", x: 789, y: 805, type: "room"},
+          {id: "H_961.21", floorId: "H_9", x: 81, y: 940, type: "room", label: "Room 961.21"},
+          {id: "H_961.23", floorId: "H_9", x: 122, y: 940, type: "room", label: "Room 961.23"},
+          {id: "H_961.25", floorId: "H_9", x: 167, y: 940, type: "room", label: "Room 961.25"},
+          {id: "H_961.27", floorId: "H_9", x: 212, y: 940, type: "room", label: "Room 961.27"},
+          {id: "H_961.29", floorId: "H_9", x: 257, y: 940, type: "room", label: "Room 961.29"},
+          {id: "H_961.31", floorId: "H_9", x: 301, y: 940, type: "room", label: "Room 961.31"},
+          {id: "H_961.33", floorId: "H_9", x: 346, y: 940, type: "room", label: "Room 961.33"},
+          {id: "H_941", floorId: "H_9", x: 423, y: 933, type: "room", label: "Room 941"},
+          {id: "H_937", floorId: "H_9", x: 543, y: 798, type: "room", label: "Room 937"},
+          {id: "H_933", floorId: "H_9", x: 753, y: 911, type: "room", label: "Room 933"},
+          {id: "H_932", floorId: "H_9", x: 738, y: 805, type: "room", label: "Room 932"},
+          {id: "H_928", floorId: "H_9", x: 789, y: 805, type: "room", label: "Room 928"},
 
           //top
-          {id: "H_903", floorId: "H_9", x: 235, y: 112, type: "room"},
-          {id: "H_907", floorId: "H_9", x: 409, y: 112, type: "room"},
-          {id: "H_909", floorId: "H_9", x: 544, y: 112, type: "room"},
-          {id: "H_911", floorId: "H_9", x: 632, y: 112, type: "room"},
-          {id: "H_913", floorId: "H_9", x: 729, y: 112, type: "room"},
-          {id: "H_915", floorId: "H_9", x: 821, y: 113, type: "room"},
+          {id: "H_903", floorId: "H_9", x: 235, y: 112, type: "room", label: "Room 903"},
+          {id: "H_907", floorId: "H_9", x: 409, y: 112, type: "room", label: "Room 907"},
+          {id: "H_909", floorId: "H_9", x: 544, y: 112, type: "room", label: "Room 909"},
+          {id: "H_911", floorId: "H_9", x: 632, y: 112, type: "room", label: "Room 911"},
+          {id: "H_913", floorId: "H_9", x: 729, y: 112, type: "room", label: "Room 913"},
+          {id: "H_915", floorId: "H_9", x: 821, y: 113, type: "room", label: "Room 915"},
 
           //middle
-          {id: "H_964", floorId: "H_9", x: 282, y: 488, type: "room"},
-          {id: "H_968", floorId: "H_9", x: 227, y: 604, type: "room"},
-          {id: "H_966", floorId: "H_9", x: 359, y: 604, type: "room"},
-          {id: "H_962", floorId: "H_9", x: 369, y: 489, type: "room"},
+          {id: "H_964", floorId: "H_9", x: 282, y: 488, type: "room", label: "Room 964"},
+          {id: "H_968", floorId: "H_9", x: 227, y: 604, type: "room", label: "Room 968"},
+          {id: "H_966", floorId: "H_9", x: 359, y: 604, type: "room", label: "Room 966"},
+          {id: "H_962", floorId: "H_9", x: 369, y: 489, type: "room", label: "Room 962"},
 
-          {id: "H_961.14", floorId: "H_9", x: 140, y: 780, type: "room"},
-          {id: "H_961.26", floorId: "H_9", x: 143, y: 857, type: "room"},
-          {id: "H_961.28", floorId: "H_9", x: 218, y: 854, type: "room"},
-          {id: "H_961.30", floorId: "H_9", x: 259, y: 853, type: "room"},
-          {id: "H_943", floorId: "H_9", x: 330, y: 853, type: "room"},
-          {id: "H_945", floorId: "H_9", x: 290, y: 798, type: "room"},
-          {id: "H_920", floorId: "H_9", x: 658, y: 469, type: "room"},
+          {id: "H_961.14", floorId: "H_9", x: 140, y: 780, type: "room", label: "Room 961.14"},
+          {id: "H_961.26", floorId: "H_9", x: 143, y: 857, type: "room", label: "Room 961.26"},
+          {id: "H_961.28", floorId: "H_9", x: 218, y: 854, type: "room", label: "Room 961.28"},
+          {id: "H_961.30", floorId: "H_9", x: 259, y: 853, type: "room", label: "Room 961.30"},
+          {id: "H_943", floorId: "H_9", x: 330, y: 853, type: "room", label: "Room 943"},
+          {id: "H_945", floorId: "H_9", x: 290, y: 798, type: "room", label: "Room 945"},
+          {id: "H_920", floorId: "H_9", x: 658, y: 469, type: "room", label: "Room 920"},
 
 
         //POI
           //bathroom
-          {id: "H_9_BATHROOM_1", floorId: "H_9", x: 355, y: 282, type: "bathroom"},
-          {id: "H_9_BATHROOM_2", floorId: "H_9", x: 629, y: 293, type: "bathroom"},
+          {id: "H_9_BATHROOM_1_W", floorId: "H_9", x: 355, y: 282, type: "bathroom", label: "Womens Washroom"},
+          {id: "H_9_BATHROOM_2_M", floorId: "H_9", x: 629, y: 293, type: "bathroom", label: "Mens Washroom"},
           
 
         //interfloor connections (stais, escalators, elevator)
@@ -340,7 +340,7 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
         {id: "H_9_ELEVATOR", floorId: "H_9", x: 358, y: 356, type: "elevator", label: "Elevator"},
 
         {id: "H_9_ESCALATOR_DOWN", floorId: "H_9", x: 480, y: 444, type: "escalator", label: "Escalator Down"},
-        {id: "H_9_ESCALATOR_UP", floorId: "H_9", x: 515, y: 444, type: "escalator", label: "Escalator UP"},
+        {id: "H_9_ESCALATOR_UP", floorId: "H_9", x: 515, y: 444, type: "escalator", label: "Escalator Up"}, 
 
 
       ],
@@ -349,7 +349,6 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
         {nodeAId: "H_9_N1", nodeBId: "H_9_N25", accessible: true},
         {nodeAId: "H_9_N1", nodeBId: "H_9_N26", accessible: true},
         {nodeAId: "H_9_N26", nodeBId: "H_9_N27", accessible: true},
-        {nodeAId: "H_9_N27", nodeBId: "H_9_N28", accessible: true},
         {nodeAId: "H_9_N27", nodeBId: "H_9_N28", accessible: true},
         {nodeAId: "H_9_N28", nodeBId: "H_9_N29", accessible: true},
         {nodeAId: "H_9_N29", nodeBId: "H_9_N30", accessible: true},
@@ -374,7 +373,6 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
         {nodeAId: "H_9_N32", nodeBId: "H_9_N13", accessible: true},
         {nodeAId: "H_9_N13", nodeBId: "H_9_N14", accessible: true},
         {nodeAId: "H_9_N14", nodeBId: "H_9_N15", accessible: true},
-        {nodeAId: "H_9_N15", nodeBId: "H_9_N16", accessible: true},
         {nodeAId: "H_9_N15", nodeBId: "H_9_N16", accessible: true},
         {nodeAId: "H_9_N16", nodeBId: "H_9_N17", accessible: true},
         {nodeAId: "H_9_N17", nodeBId: "H_9_N18", accessible: true},
@@ -471,8 +469,8 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
         {nodeAId: "H_9_N33", nodeBId: "H_927", accessible: true},
 
         //hall to POI
-        {nodeAId: "H_9_N29", nodeBId: "H_9_BATHROOM_1", accessible: true},
-        {nodeAId: "H_9_N3", nodeBId: "H_9_BATHROOM_2", accessible: true},
+        {nodeAId: "H_9_N29", nodeBId: "H_9_BATHROOM_1_W", accessible: true},
+        {nodeAId: "H_9_N3", nodeBId: "H_9_BATHROOM_2_M", accessible: true},
 
 
         //hall to interfloor connection 
