@@ -7,7 +7,8 @@ import { styles } from "@/src/styles/IndoorMap.styles";
 // ============================================================
 // DEV OVERLAY — delete this section when done mapping
 // ============================================================
-import { hallBuildingNavConfig } from "@/src/indoors/data/HallBuilding";
+//import { hallBuildingNavConfig } from "@/src/indoors/data/HallBuilding";
+import { MBBuildingNavConfig } from "@/src/indoors/data/MBBuilding";
 import Svg, { Line, Circle, Text as SvgText } from "react-native-svg";
 
 const NODE_COLORS: Record<string, string> = {
@@ -21,7 +22,7 @@ const NODE_COLORS: Record<string, string> = {
 };
 
 const DevNavOverlay = ({ floorId, width, height }: { floorId: string; width: number; height: number }) => {
-  const floorConfig = hallBuildingNavConfig.floors.find((f) => f.floorId === floorId);
+const floorConfig = MBBuildingNavConfig.floors.find((f) => f.floorId === floorId);
 
   if (!floorConfig) {
     console.warn(`[DevNavOverlay] No nav config found for floorId: "${floorId}"`);
@@ -90,7 +91,7 @@ interface MapContentProps {
 
 const MapContent = React.memo(({ floor, width, height }: MapContentProps) => {
   // DEV: floor.level is a number (e.g. 8), build the navConfig floorId from it
-  const devFloorId = `H_${floor.level}`;
+  const devFloorId = `MB_${floor.id}`;
 
   // handle SVG Components
   if (floor.type === "svg" && floor.image) {

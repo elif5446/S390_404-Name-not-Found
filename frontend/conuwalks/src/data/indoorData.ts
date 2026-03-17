@@ -3,7 +3,7 @@ import { BuildingIndoorConfig } from "@/src/indoors/types/FloorPlans";
 import H8_SVG from "@/assets/floor/H-8.svg";
 import H9_SVG from "@/assets/floor/H-9.svg";
 import MB1_SVG from "@/assets/floor/MB-1.svg";
-import MBS1_SVG from "@/assets/floor/MB-S2.svg";
+import MBS2_SVG from "@/assets/floor/MB-S2.svg";
 import VL1_SVG from "@/assets/floor/VL-1.svg";
 import VL2_SVG from "@/assets/floor/VL-2.svg";
 
@@ -45,11 +45,11 @@ export const INDOOR_DATA: Record<string, BuildingIndoorConfig> = {
     defaultFloor: 1,
     floors: [
       {
-        id: "S1",
+        id: "S2",
         level: 1,
-        label: "S1",
+        label: "S2",
         type: "svg" as const,
-        image: MBS1_SVG,
+        image: MBS2_SVG,
         bounds: {
           northEast: { latitude: 45.495425, longitude: -73.578806 },
           southWest: { latitude: 45.495133, longitude: -73.579162 },
