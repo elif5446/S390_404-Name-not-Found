@@ -12,7 +12,6 @@ function AppWrapper() {
   const theme = useColorScheme() === 'dark' ? MD3DarkTheme : MD3LightTheme;
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      console.log(`[POSTHOG DEBUG] Transition: ${appState.current} -> ${nextAppState}`);
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
         posthog.capture('app_reopened_to_skip', { // Failure: Bypass
           timestamp: new Date().toISOString()
@@ -40,7 +39,7 @@ export default function RootLayout() {
       options={{
         host: "https://us.i.posthog.com",
         "enableSessionReplay": true,
-        captureAppLifecycleEvents: true // Tracks when app opens/closes
+        captureAppLifecycleEvents: true, // Tracks when app opens/closes
       }}
       autocapture={{
           captureTouches: true, // Tracks taps (misclicks/rage clicks)

@@ -1,3 +1,4 @@
+import { usePostHog } from 'posthog-react-native';
 import React, {
   useEffect,
   useState,
@@ -58,6 +59,7 @@ interface Props {
 }
 
 const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
+  const posthog = usePostHog();
   const { width, height } = useWindowDimensions();
   const [currentLevel, setCurrentLevel] = useState(buildingData.defaultFloor);
   const [destination, setDestination] = useState<IndoorDestination | null>(null);
@@ -179,6 +181,10 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
       }).start(({ finished }) => {
         if (finished && isMounted.current) {
           setCurrentLevel(level);
+          if (buildingData.id == 'MB' && level == 2) {
+            posthog.capture('jmsb_first_floor');
+            posthog.flush();
+          }
         }
       });
     },
