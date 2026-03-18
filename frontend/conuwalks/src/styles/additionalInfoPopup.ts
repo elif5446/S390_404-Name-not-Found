@@ -234,17 +234,14 @@ openIndoorHeaderButton: {
   flexDirection: "row",
   alignItems: "center",
   justifyContent: "center",
-  backgroundColor: "rgba(255,255,255,0.14)",
   borderWidth: 1,
-  borderColor: "rgba(255,255,255,0.18)",
   borderRadius: 999,
-  paddingVertical: 6,
+  paddingVertical: Platform.OS === "android" ? 7 : 6,
   paddingHorizontal: 8,
   minHeight: 30,
 },
 
 openIndoorHeaderButtonText: {
-  color: "#FFFFFF",
   fontWeight: "600" as const,
   fontSize: 13,
   fontFamily: Platform.OS === "ios" ? "System" : "Roboto",
@@ -262,6 +259,15 @@ const themedStyles = {
   }),
   closeButton: (mode: string) => ({
     backgroundColor: mode === "dark" ? "#00000031" : "#85858522",
+  }),
+  openIndoorHeaderButton: (mode: string) => ({
+    backgroundColor:
+      mode === "dark" ? "rgba(255,255,255,0.14)" : "rgba(0,0,0,0.06)",
+    borderColor:
+      mode === "dark" ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.10)",
+  }),
+  openIndoorHeaderButtonText: (mode: string) => ({
+    color: mode === "dark" ? "#FFFFFF" : "#222222",
   }),
 };
 

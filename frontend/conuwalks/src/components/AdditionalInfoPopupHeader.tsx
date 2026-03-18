@@ -115,22 +115,22 @@ const AdditionalInfoPopupHeader: React.FC<AdditionalInfoPopupHeaderProps> = ({
   {showOpenIndoorButton && onOpenIndoorPress && (
 <TouchableOpacity
   onPress={onOpenIndoorPress}
-  style={styles.openIndoorHeaderButton}
+  style={[
+    styles.openIndoorHeaderButton,
+    themedStyles.openIndoorHeaderButton(mode),
+  ]}
   accessibilityRole="button"
   accessibilityLabel="Open indoor map"
+  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
 >
-  <View style={{ flexDirection: "row", alignItems: "center" }}>
-    <Text style={styles.openIndoorHeaderButtonText}>
-      Indoor Map
-    </Text>
-
-    <MaterialIcons
-      name="open-in-full"
-      size={16}
-      color="#FFFFFF"
-      style={{ marginLeft: 6 }}
-    />
-  </View>
+  <Text
+    style={[
+      styles.openIndoorHeaderButtonText,
+      themedStyles.openIndoorHeaderButtonText(mode),
+    ]}
+  >
+    Indoor Map↗
+  </Text>
 </TouchableOpacity>
   )}
 
