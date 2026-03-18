@@ -214,6 +214,17 @@ const CampusMap: React.FC<CampusMapProps> = ({
     [onInfoPopupExpansionChange],
   );
 
+  const handleOpenIndoorMap = useCallback((buildingId: string) => {
+    if (!INDOOR_DATA[buildingId]) return;
+
+    setSelectedTransitStopKey(null);
+    setShowDirections(false);
+    setIsNavigationActive(false);
+    clearRouteData();
+    setSelectedBuilding((prev) => ({ ...prev, visible: false }));
+    setIndoorBuildingId(buildingId);
+  }, [setShowDirections, setIsNavigationActive, clearRouteData]);
+
   // Calculate circle radius based on zoom level (longitudeDelta)
   // Larger longitudeDelta = zoomed out = bigger circle
   //   const circleRadius = Math.max(2.5, mapRegion.longitudeDelta * 2000);
@@ -1260,6 +1271,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
           campus={selectedBuilding.campus}
           onClose={handleClosePopup}
           onDirectionsTrigger={handleDirectionsTrigger}
+          onOpenIndoorPress={() => handleOpenIndoorMap(selectedBuilding.name)}  
+          showOpenIndoorButton={selectedBuilding.name in INDOOR_DATA}        
           directionsEtaLabel={directionsEtaLabel}
           onExpansionChange={handleInfoPopupExpansionChange}
         />
