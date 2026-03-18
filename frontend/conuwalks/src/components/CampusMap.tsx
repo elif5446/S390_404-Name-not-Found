@@ -398,6 +398,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
   const handleOpenDirectionsPopup = useCallback(() => {
     setSelectedBuilding((prev) => ({ ...prev, visible: false }));
     setShowDirections(true);
+    posthog.capture('directions_sheet_open');
+    posthog.flush();
   }, [setShowDirections]);
 
   const handleSetAsDestination = useCallback(() => {

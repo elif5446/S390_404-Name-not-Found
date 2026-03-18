@@ -1,4 +1,3 @@
-import { usePostHog } from 'posthog-react-native';
 import React, {
   useEffect,
   useRef,
@@ -92,7 +91,6 @@ const AdditionalInfoPopup = forwardRef<
     directionsEtaLabel,
     onExpansionChange,
   } = props;
-  const posthog = usePostHog();
 
   const mode = useColorScheme() || "light";
   const { buildingInfo, isCopying, copyAddress, accessibilityIcons } =
@@ -137,8 +135,6 @@ const AdditionalInfoPopup = forwardRef<
     dismiss(undefined, () => {
       onDirectionsTrigger?.();
     });
-    posthog.capture('directions_sheet_open');
-    posthog.flush();
   }, [dismiss, onDirectionsTrigger]);
 
   const handleScroll = useCallback(
