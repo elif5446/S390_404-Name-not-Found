@@ -1,7 +1,7 @@
 import { BuildingIndoorConfig } from "@/src/indoors/types/FloorPlans";
 
 import H1_SVG from "@/assets/floor/H-1.svg";
-import H2_SVG from "@/assets/floor/H-1.svg";
+import H2_SVG from "@/assets/floor/H-2.svg";
 import H8_SVG from "@/assets/floor/H-8.svg";
 import H9_SVG from "@/assets/floor/H-9.svg";
 import MB1_SVG from "@/assets/floor/MB-1.svg";

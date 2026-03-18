@@ -1,6 +1,6 @@
 <svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
 <g clip-path="url(#clip0_1205_2143)">
-<path d="M1024 0H0V1024H1024V0Z" fill="#EAE1D6"/>
+<path d="M1011.5 18.5V996.5H12.5V18.5H1011.5Z" fill="#EAE1D6" stroke="black"/>
 <rect x="379" y="591" width="98" height="148" fill="white" stroke="black" stroke-width="2"/>
 <rect x="370" y="439" width="107" height="153" fill="white" stroke="black" stroke-width="2"/>
 <path d="M216 855.5V830H325V854V855H326C330.184 855 335.118 856.556 338.995 859.144C342.545 861.515 345.025 864.618 345.439 868H326H215H198.412C200.234 863.501 205.405 856.5 215 856.5H216V855.5Z" fill="white" stroke="black" stroke-width="2"/>
@@ -15,10 +15,10 @@
 <path d="M910 636H884V722H910V636Z" fill="white" stroke="black" stroke-width="2"/>
 <path d="M910 636L885 723M885 636L910 723" stroke="black" stroke-width="2"/>
 <path d="M910 636L885 723M885 636L910 723" stroke="black" stroke-width="2"/>
-<path d="M1023 216H934V280H1023V216Z" fill="white" stroke="black" stroke-width="2"/>
+<path d="M1012 216H934V280H1012V216Z" fill="white" stroke="black" stroke-width="2"/>
 <path d="M56 830.5L179.5 439.5H375L485 830.5H56Z" fill="white" stroke="black" stroke-width="2"/>
-<path d="M497.5 142.501L287 142.725V133.5V132.5H286C283.077 132.5 280.955 133.172 279.169 134.672C277.849 135.781 276.762 137.306 275.654 139.19C272.96 133.791 267.382 132.5 264.5 132.5H263.5V133.5V142.727L-18 142.999V-15H1040V143H512.966C512.41 134.925 505.158 130.165 498.816 128.051L497.5 127.613V129V133.5V139V142.501Z" fill="white" stroke="black" stroke-width="2"/>
-<rect x="1" y="142" width="364" height="212" fill="white" stroke="black" stroke-width="2"/>
+<path d="M499.24 142.548L300.28 142.751V134.402V133.497H299.335C296.572 133.497 294.566 134.105 292.878 135.463C291.63 136.466 290.603 137.847 289.556 139.552C287.009 134.665 281.737 133.497 279.013 133.497H278.068V134.402V142.753L12 142.999V0H1012V143H513.858C513.333 135.692 506.478 131.384 500.484 129.47L499.24 129.074V130.329V134.402V139.38V142.548Z" fill="white" stroke="black" stroke-width="2"/>
+<rect x="13" y="142" width="352" height="212" fill="white" stroke="black" stroke-width="2"/>
 <path d="M606 429V538" stroke="black" stroke-width="2"/>
 <path d="M561 536V695" stroke="black" stroke-width="2"/>
 <path d="M560 537H605" stroke="black" stroke-width="2"/>
