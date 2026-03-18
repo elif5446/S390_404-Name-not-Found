@@ -189,7 +189,7 @@ export const MBBuildingNavConfig: BuildingNavConfig = {
         {id:"MB_1_ELEVATOR3", floorId: "MB_1", x: 551, y: 653, type: "elevator", label: "Elevator"},
         {id:"MB_1_ELEVATOR4", floorId: "MB_1", x: 472, y: 569, type: "elevator", label: "Elevator"},
         {id:"MB_1_ELEVATOR5", floorId: "MB_1", x: 513, y: 569, type: "elevator", label: "Elevator"},
-        {id:"MB_1_ELEVATOR6", floorId: "MB_1", x: 511, y: 569, type: "elevator", label: "Elevator"},
+        {id:"MB_1_ELEVATOR6", floorId: "MB_1", x: 551, y: 569, type: "elevator", label: "Elevator"},
 
         {id:"MB_1_STAIRS1", floorId: "MB_1", x: 218, y: 200, type: "stairs", label: "Stairs"},
         {id:"MB_1_STAIRS2", floorId: "MB_1", x: 369, y: 506, type: "stairs", label: "Stairs"},
@@ -222,6 +222,7 @@ export const MBBuildingNavConfig: BuildingNavConfig = {
         {nodeAId: "MB_1_N7", nodeBId: "MB_1_N10", accessible: false},
         {nodeAId: "MB_1_N8", nodeBId: "MB_1_N9", accessible: true},
         {nodeAId: "MB_1_N9", nodeBId: "MB_1_N10", accessible: true},
+        {nodeAId: "MB_1_N6", nodeBId: "MB_1_N4", accessible: true},
 
         //room to hallway
         {nodeAId: "MB_1_N9", nodeBId: "MB_1.210", accessible: false},
@@ -234,8 +235,8 @@ export const MBBuildingNavConfig: BuildingNavConfig = {
 
         //interfloor connections (stairs, escalators, elevator) to hallway
         {nodeAId: "MB_1_STAIRS1", nodeBId: "MB_1_N10", accessible: false},
-        {nodeAId: "MB_1_STAIRS2", nodeBId: "MB_1_N16", accessible: false},
-        {nodeAId: "MB_1_STAIRS2", nodeBId: "MB_1_N14", accessible: false},
+        {nodeAId: "MB_1_STAIRS2", nodeBId: "MB_1_N6", accessible: false},
+        {nodeAId: "MB_1_STAIRS2", nodeBId: "MB_1_N4", accessible: false},
 
         {nodeAId: "MB_1_ESCALATOR_DOWN", nodeBId: "MB_1_N3", accessible: false},
 
@@ -247,8 +248,9 @@ export const MBBuildingNavConfig: BuildingNavConfig = {
         {nodeAId: "MB_1_ELEVATOR6", nodeBId: "MB_1_N5", accessible: true},
 
         //POI to hallway
-        {nodeAId: "MB_1_SECURITY", nodeBId: "MB_1_N1", accessible: true},
-        {nodeAId: "MB_1_SECOND_CUP _CAFE", nodeBId: "MB_1_N1", accessible: true},
+        {nodeAId: "MB_SECURITY", nodeBId: "MB_1_N1", accessible: true},
+        {nodeAId: "MB_SECURITY", nodeBId: "MB_1_N3", accessible: true},
+        {nodeAId: "MB_1_SECOND_CUP_CAFE", nodeBId: "MB_1_N1", accessible: true},
 
         //bathroom to hallway
         {nodeAId: "MB_1_BATHROOM_W", nodeBId: "MB_1_N2", accessible: true},
