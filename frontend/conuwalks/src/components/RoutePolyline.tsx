@@ -1,9 +1,17 @@
-import React, { useEffect, useRef, useCallback, useMemo, useState } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+  useState,
+} from "react";
 import { Platform, View } from "react-native";
 import { LatLng, Polyline, Marker } from "react-native-maps";
 import { useDirections, DirectionStep } from "@/src/context/DirectionsContext";
 import { getDirections, decodePolyline } from "@/src/api/directions";
 import { getShuttleRouteIfApplicable } from "@/src/api/shuttleEngine";
+
+const TRANSFER_NODE_FREEZE_DELAY_MS = 250;
 
 const getStepColorAndStyle = (step: DirectionStep, isIOS: boolean) => {
   const mode = (step.travelMode || "").toUpperCase();
@@ -69,6 +77,16 @@ const TransferNodeMarker = ({
   zIndex: number;
 }) => {
   const [trackChanges, setTrackChanges] = useState(true);
+  const freezeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (freezeTimeoutRef.current) {
+        clearTimeout(freezeTimeoutRef.current);
+        freezeTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   return (
     <Marker
@@ -80,9 +98,16 @@ const TransferNodeMarker = ({
     >
       <View
         onLayout={() => {
-          if (trackChanges) {
-            setTimeout(() => setTrackChanges(false), 250);
+          if (!trackChanges) return;
+
+          if (freezeTimeoutRef.current) {
+            clearTimeout(freezeTimeoutRef.current);
+            freezeTimeoutRef.current = null;
           }
+
+          freezeTimeoutRef.current = setTimeout(() => {
+            setTrackChanges(false);
+          }, TRANSFER_NODE_FREEZE_DELAY_MS);
         }}
         style={{
           width: 20,
@@ -450,7 +475,7 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
               key={node.key}
               coordinate={node.coordinate}
               color={node.color}
-              zIndex={zIndex + 3} 
+              zIndex={zIndex + 3}
             />
           ))}
         </>

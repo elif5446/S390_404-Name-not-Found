@@ -134,6 +134,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
   } = useUserLocation();
 
   const INITIAL_DELTA = 0.008;
+  const ICON_FREEZE_DELAY_MS = 250;
 
   // Get directions context for destination setting
   const {
@@ -187,6 +188,18 @@ const CampusMap: React.FC<CampusMapProps> = ({
   const preNavigationRegionRef = useRef<Region | null>(null);
   const [trackLocationMarker, setTrackLocationMarker] = useState(true);
   const [trackDestMarker, setTrackDestMarker] = useState(true);
+
+  const trackMarkerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  // unmount cleanup logic for dest marker
+  useEffect(() => {
+    return () => {
+      if (trackMarkerTimeoutRef.current) {
+        clearTimeout(trackMarkerTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (destinationBuildingId) {
@@ -269,6 +282,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
   // auto-pan when toggling campuses
   useEffect(() => {
+    let timeoutId;
     if (mapRef.current && initialLat && initialLng) {
       mapRef.current.animateToRegion(
         {
@@ -289,6 +303,12 @@ const CampusMap: React.FC<CampusMapProps> = ({
         }, 250);
       }
     }
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
     // explicitly exclude showDirections/isNavigationActive from deps
     // to not run every time the popup is opened or closed
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -834,10 +854,16 @@ const CampusMap: React.FC<CampusMapProps> = ({
                 >
                   <View
                     onLayout={() => {
-                      if (trackDestMarker) {
-                        // Wait 250ms for the MaterialIcon to load, then freeze it
-                        setTimeout(() => setTrackDestMarker(false), 250);
+                      if (!trackDestMarker) return;
+
+                      if (trackMarkerTimeoutRef.current) {
+                        clearTimeout(trackMarkerTimeoutRef.current);
                       }
+
+                      trackMarkerTimeoutRef.current = setTimeout(() => {
+                        setTrackDestMarker(false);
+                        trackMarkerTimeoutRef.current = null;
+                      }, ICON_FREEZE_DELAY_MS);
                     }}
                   >
                     <MaterialIcons name="place" size={26} color="#B03060" />
