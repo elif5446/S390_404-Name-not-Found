@@ -112,8 +112,9 @@ const AdditionalInfoPopupHeader: React.FC<AdditionalInfoPopupHeaderProps> = ({
           </View>
 
 <View style={styles.rightHeaderActions}>
-  {showOpenIndoorButton && onOpenIndoorPress && (
-<TouchableOpacity
+
+{showOpenIndoorButton && onOpenIndoorPress && (
+ <TouchableOpacity
   onPress={onOpenIndoorPress}
   style={[
     styles.openIndoorHeaderButton,

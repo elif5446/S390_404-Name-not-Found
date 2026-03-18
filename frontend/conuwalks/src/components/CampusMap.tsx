@@ -1267,7 +1267,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
           onClose={handleClosePopup}
           onDirectionsTrigger={handleDirectionsTrigger}
           onOpenIndoorPress={() => handleOpenIndoorMap(selectedBuilding.name)}  
-          showOpenIndoorButton={true}
+          showOpenIndoorButton={selectedBuilding.name in INDOOR_DATA}        
           directionsEtaLabel={directionsEtaLabel}
           onExpansionChange={handleInfoPopupExpansionChange}
         />
