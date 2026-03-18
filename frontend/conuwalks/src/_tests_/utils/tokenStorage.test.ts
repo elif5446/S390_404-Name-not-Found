@@ -1,5 +1,4 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import {
   saveTokens,
   saveUserInfo,
@@ -51,11 +50,35 @@ describe("tokenStorage utils", () => {
     expect(user).not.toBeNull();
   });
 
-  test("clearTokens removes items and signs out of Google", async () => {
+  test("clearTokens removes items and revokes Google token", async () => {
+    const mockTokenString = JSON.stringify({
+      accessToken: "mock-access-token",
+    });
+    (AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce(mockTokenString);
+
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+    });
+
     await clearTokens();
+
     expect(AsyncStorage.removeItem).toHaveBeenCalledWith("@auth_tokens");
     expect(AsyncStorage.removeItem).toHaveBeenCalledWith("@user_info");
-    expect(GoogleSignin.signOut).toHaveBeenCalled();
+    expect(AsyncStorage.removeItem).toHaveBeenCalledWith(
+      "@class_reminder_lead_time",
+    );
+    expect(AsyncStorage.removeItem).toHaveBeenCalledWith(
+      "@dismissed_class_event_ids",
+    );
+
+    // 4. Verify the fetch call was made to Google's revoke endpoint
+    expect(global.fetch).toHaveBeenCalledWith(
+      "https://accounts.google.com/o/oauth2/revoke?token=mock-access-token",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      },
+    );
   });
 
   test("isTokenValid validates expiry and presence", () => {

@@ -18,7 +18,7 @@ export default function DevHomeScreen() {
   const [userInfo, setUserInfo] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-  const { isNavigationActive } = useDirections();
+  const { isNavigationActive, clearDestination } = useDirections();
 
   const [isInfoPopupVisible, setIsInfoPopupVisible] = useState(false);
   const [selectedView, setSelectedView] = useState<"map" | "calendar">("map");
@@ -63,6 +63,14 @@ export default function DevHomeScreen() {
         },
       },
     ]);
+  };
+
+  const handleCampusToggle = (newCampus: "SGW" | "Loyola") => {
+    if (campus !== newCampus) {
+      // ensure the directions popup won't automatically remount on new map load.
+      clearDestination();
+      setCampus(newCampus);
+    }
   };
 
   if (isLoading) {
@@ -120,11 +128,13 @@ export default function DevHomeScreen() {
           }}
           pointerEvents="box-none"
         >
-          <UpcomingClassBanner onNavigateToClass={() => setSelectedView("map")} />
+          <UpcomingClassBanner
+            onNavigateToClass={() => setSelectedView("map")}
+          />
         </View>
       )}
       {!isNavigationActive && selectedView === "map" && (
-        <SegmentedToggle campus={campus} setCampus={setCampus} />
+        <SegmentedToggle campus={campus} setCampus={handleCampusToggle} />
       )}
       {!isNavigationActive && (
         <MapScheduleToggle
