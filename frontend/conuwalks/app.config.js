@@ -55,6 +55,7 @@ export default {
         },
       ],
       "./withMapRenderer.js",
+      "expo-localization"
     ],
     experiments: {
       typedRoutes: true,

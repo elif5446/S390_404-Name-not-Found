@@ -1,3 +1,4 @@
+import { usePostHog } from 'posthog-react-native';
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { AccessibilityInfo } from "react-native";
 import * as Clipboard from "expo-clipboard";
@@ -6,6 +7,7 @@ import { LoyolaBuildingMetadata } from "@/src/data/metadata/LOY.BuildingMetadata
 import { AccessibilityIconDef, BuildingMetadata } from "../indoors/types/Building";
 
 export const useBuildingData = (buildingId: string, campus: "SGW" | "LOY") => {
+  const posthog = usePostHog();
   const [buildingInfo, setBuildingInfo] = useState<BuildingMetadata | null>(
     null,
   );
@@ -36,6 +38,10 @@ export const useBuildingData = (buildingId: string, campus: "SGW" | "LOY") => {
       await Clipboard.setStringAsync(buildingInfo.address);
       setTimeout(() => {
         AccessibilityInfo.announceForAccessibility("Address copied");
+        if (buildingId === 'MB') {
+          posthog.capture('jmsb_address_copied');
+          posthog.flush();
+        }
         setTimeout(() => {
           if (isMounted.current) {
             setIsCopying(false);

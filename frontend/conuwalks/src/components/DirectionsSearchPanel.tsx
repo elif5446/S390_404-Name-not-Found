@@ -1,3 +1,4 @@
+import { usePostHog } from 'posthog-react-native';
 import { BlurView } from "expo-blur"
 import { TextInput, View, InputAccessoryView, ScrollView, TouchableOpacity, Text, Keyboard, Platform } from "react-native"
 import styles from "../styles/directionsSearchPanel"
@@ -54,6 +55,7 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
         setDestination,
         userLocationBuildingId
     }) => {
+    const posthog = usePostHog();
     const { events, fetchUpcomingEvents } = useGoogleCalendar();
     const { todayEvents, refresh } = useBuildingEvents(userLocationBuildingId ?? "", SGWBuildingSearchMetadata[userLocationBuildingId ?? ""] ? "SGW" : "LOY");
     const [startPointText, setStartPointText] = useState(`${SGWBuildingSearchMetadata[startBuildingId || guessRoomLocation(events)?.buildingCode || ""]?.name || LoyolaBuildingSearchMetadata[startBuildingId || guessRoomLocation(events)?.buildingCode || ""]?.name || SGWBuildingSearchMetadata[guessRoomLocation(events)?.buildingCode || ""]?.name || LoyolaBuildingSearchMetadata[guessRoomLocation(events)?.buildingCode || ""]?.name || ""} ${startRoom || guessRoomLocation(events)?.roomNumber || ""}`.trim());
@@ -146,6 +148,9 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
             );
             setDestinationText(properSearch);
             setStableDestinationText(properSearch);
+            posthog.capture('destination_updated_through_searchbar');
+            posthog.flush();
+            posthog.reset();
         } else {
             setDestinationText(stableDestinationText);
         }

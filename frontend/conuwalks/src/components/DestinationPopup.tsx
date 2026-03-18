@@ -1,5 +1,7 @@
+import { usePostHog } from 'posthog-react-native';
 import React, {
   useRef,
+  useEffect,
   useCallback,
   useImperativeHandle,
   forwardRef,
@@ -54,6 +56,7 @@ const DestinationPopup = forwardRef<
     getRouteTransitSummary,
     transitSteps,
   } = useDestinationData(visible);
+  const posthog = usePostHog();
 
   const scrollViewRef = useRef<ScrollView>(null);
 
@@ -111,9 +114,20 @@ const DestinationPopup = forwardRef<
     (index: number) => {
       setSelectedRouteIndex(index);
       if (routes[index]) setRouteData(routes[index]);
+      if (routes[index].isShuttle) {
+        posthog.capture('shuttle_bus_route_selected');
+        posthog.flush();
+      }
     },
     [routes, setSelectedRouteIndex, setRouteData],
   );
+
+  useEffect(() => {
+    if (routes[selectedRouteIndex]?.isShuttle) {
+      posthog.capture('shuttle_bus_route_selected');
+      posthog.flush();
+    }
+  }, [routes, selectedRouteIndex])
 
   const handleStartNavigation = useCallback(
     (routeId: string, index: number) => {

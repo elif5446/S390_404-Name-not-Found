@@ -1,3 +1,4 @@
+import { usePostHog } from 'posthog-react-native';
 import CampusLabels from "@/src/components/campusLabels";
 import RoutePolyline from "@/src/components/RoutePolyline";
 import { CampusConfig } from "@/src/data/campus/campusConfig";
@@ -123,6 +124,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
   userInfo,
   onSignOut,
 }) => {
+  const posthog = usePostHog();
   const insets = useSafeAreaInsets();
   const colorScheme = useColorScheme() || "light";
 
@@ -870,6 +872,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
   return (
     <View style={styles.container}>
       <MapView
+        onMapReady={() => {posthog.capture('map_loaded'); posthog.flush();}}
         key={mapID}
         ref={mapRef}
         provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
