@@ -13,7 +13,7 @@ export const INDOOR_DATA: Record<string, BuildingIndoorConfig> = {
   H: {
     id: "H",
     name: "Hall Building",
-    defaultFloor: 1,
+    defaultFloor: 2,
     floors: [
       {
         id: "1",
