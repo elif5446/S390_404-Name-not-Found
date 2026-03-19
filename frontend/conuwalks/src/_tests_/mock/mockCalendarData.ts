@@ -16,7 +16,7 @@ export const MOCK_CALENDAR_EVENTS = [
     summary: "COMP 371 - Computer Graphics",
     start: { dateTime: getTodayAt(9, 0) },
     end: { dateTime: getTodayAt(10, 15) },
-    location: "SGW MB-S1.230",
+    location: "SGW MB-S2.330",
     status: "confirmed",
   },
   {
@@ -64,7 +64,7 @@ export const MOCK_CALENDAR_EVENTS = [
     summary: 'COMP 346 - Operating Systems',
     start: { dateTime: getFromNow(10) },
     end: { dateTime: getFromNow(70) },
-    location: 'SGW MB-S1.230', 
+    location: 'SGW MB-S2.105', 
     status: 'confirmed',
   },
   {
@@ -72,7 +72,7 @@ export const MOCK_CALENDAR_EVENTS = [
     summary: 'COMP 345 - Advanced C++',
     start: { dateTime: getTodayAt(9, 0) },
     end: { dateTime: getTodayAt(10, 15) },
-    location: 'SGW MB-S1.210', 
+    location: 'SGW MB-S2.210', 
     status: 'confirmed',
   }
 ];

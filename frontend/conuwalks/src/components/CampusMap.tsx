@@ -187,6 +187,9 @@ const CampusMap: React.FC<CampusMapProps> = ({
   const preNavigationRegionRef = useRef<Region | null>(null);
   const [trackLocationMarker, setTrackLocationMarker] = useState(true);
   const [trackDestMarker, setTrackDestMarker] = useState(true);
+  const [userLocationBuildingId, setUserLocationBuildingId] = useState<
+    string | null
+  >(null);
 
   const trackMarkerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -445,39 +448,55 @@ const CampusMap: React.FC<CampusMapProps> = ({
     setShowDirections(true);
   }, [setShowDirections]);
 
-  const handleSetAsDestination = useCallback(() => {
-    if (!selectedBuilding.name || !selectedBuilding.coords) return;
+  const handleSetAsDestination = useCallback(
+    (room?: string) => {
+      if (!selectedBuilding.name || !selectedBuilding.coords) return;
 
-    const buildingMetadata =
-      selectedBuilding.campus === "LOY"
-        ? LoyolaBuildingMetadata[selectedBuilding.name]
-        : SGWBuildingMetadata[selectedBuilding.name];
+      const buildingMetadata =
+        selectedBuilding.campus === "LOY"
+          ? LoyolaBuildingMetadata[selectedBuilding.name]
+          : SGWBuildingMetadata[selectedBuilding.name];
 
-    if (!buildingMetadata) {
-      return;
-    }
+      if (!buildingMetadata) {
+        return;
+      }
 
-    setDestination(
-      selectedBuilding.name,
-      selectedBuilding.coords,
-      buildingMetadata.name,
-    );
-  }, [selectedBuilding, setDestination]);
+      const finalRoom = room || destinationRoom;
 
-  const handleDirectionsTrigger = useCallback(() => {
+      setDestination(
+        selectedBuilding.name,
+        selectedBuilding.coords,
+        buildingMetadata.name,
+        finalRoom,
+      );
+    },
+    [selectedBuilding, setDestination, destinationRoom],
+  );
+
+  const handleDirectionsTrigger = useCallback((room?: string) => {
     setSelectedBuilding((prev) => ({ ...prev, visible: false }));
-    handleSetAsDestination();
+    handleSetAsDestination(room);
 
-    if (userLocation) {
+    if (userLocationBuildingId && startRoom) {
+      setStartPoint(
+        userLocationBuildingId,
+        userLocation || initialLocation,
+        userLocationBuildingId,
+        startRoom,
+      );
+    } else if (userLocation) {
       setStartPoint("USER", userLocation, "Your Location");
     }
 
     handleOpenDirectionsPopup();
   }, [
     handleSetAsDestination,
+    userLocationBuildingId,
+    startRoom,
     userLocation,
-    setStartPoint,
     handleOpenDirectionsPopup,
+    setStartPoint,
+    initialLocation,
   ]);
 
   const handleCloseDestinationPopup = useCallback(() => {
@@ -717,9 +736,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
     userLocation?.longitude,
   ]);
 
-  const [userLocationBuildingId, setUserLocationBuildingId] = useState<
-    string | null
-  >(null);
   useEffect(() => {
     if (!userLocation) {
       if (userLocationBuildingId !== null) setUserLocationBuildingId(null);

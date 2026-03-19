@@ -158,6 +158,12 @@ export const DirectionsProvider: React.FC<DirectionsProviderProps> = ({
       setStartCoords(coords);
       setStartLabel(label);
       setStartRoomState(room);
+
+      // if active, cancel it and show the preview popup
+      setIsNavigationActiveState((prev) => {
+        if (prev) setShowDirectionsState(true);
+        return false;
+      });
     },
     [],
   );
@@ -173,16 +179,34 @@ export const DirectionsProvider: React.FC<DirectionsProviderProps> = ({
       setDestinationCoords(coords);
       setDestinationLabel(label);
       setDestinationRoomState(room);
+
+      // if active, cancel it and show the preview popup
+      setIsNavigationActiveState((prev) => {
+        if (prev) setShowDirectionsState(true);
+        return false;
+      });
     },
     [],
   );
 
   const setStartRoom = useCallback((room: string | null) => {
     setStartRoomState(room);
+
+    // if active, cancel it and show the preview popup
+    setIsNavigationActiveState((prev) => {
+      if (prev) setShowDirectionsState(true);
+      return false;
+    });
   }, []);
 
   const setDestinationRoom = useCallback((room: string | null) => {
     setDestinationRoomState(room);
+
+    // if active, cancel it and show the preview popup
+    setIsNavigationActiveState((prev) => {
+      if (prev) setShowDirectionsState(true);
+      return false;
+    });
   }, []);
 
   const clearDestination = useCallback(() => {
@@ -206,6 +230,14 @@ export const DirectionsProvider: React.FC<DirectionsProviderProps> = ({
       }
       return Math.min(previousIndex, nextRoutes.length - 1);
     });
+
+    // add back indoor route
+    if (nextRoutes.length > 0) {
+      const activeRoute = nextRoutes[0];
+      setRouteDataState({
+        ...activeRoute,
+      });
+    }
   }, []);
 
   const setSelectedRouteIndex = useCallback((index: number) => {

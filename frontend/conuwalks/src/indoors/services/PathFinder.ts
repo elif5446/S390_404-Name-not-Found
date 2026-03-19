@@ -87,9 +87,14 @@ export class PathFinder {
 
   // straight line distance between two nodes (estimates how far we are from the goal)
   private heuristic(nodeA: Node, nodeB: Node): number {
-    return Math.sqrt(
-      Math.pow(nodeB.x - nodeA.x, 2) + Math.pow(nodeB.y - nodeA.y, 2),
+    const spatialDistance = Math.sqrt(
+      Math.pow(nodeB.x - nodeA.x, 2) + Math.pow(nodeB.y - nodeA.y, 2)
     );
+    
+    // add an arbitrary penalty if the floors don't match
+    const floorPenalty = nodeA.floorId !== nodeB.floorId ? 500 : 0;
+    
+    return spatialDistance + floorPenalty;
   }
 
   // finds the node in the open set with the lowest fScore

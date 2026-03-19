@@ -10,7 +10,6 @@ import {
   Text,
   Animated,
   useWindowDimensions,
-  Platform,
   ScrollView,
   TouchableOpacity,
 } from "react-native";
@@ -33,7 +32,6 @@ import { IndoorHotspot, IndoorDestination } from "@/src/indoors/types/hotspot";
 import IndoorSearchSheet, {
   IndoorSearchSheetHandle,
 } from "./IndoorSearchSheet";
-import IndoorDirectionsSheet from "./IndoorDirectionsSheet";
 import { Ionicons } from "@expo/vector-icons";
 
 type IndoorState = "search" | "preview" | "navigating";
@@ -207,18 +205,24 @@ const IndoorMapOverlay: React.FC<Props> = ({
 
     if (!navConfig) return [];
 
-    return navConfig.floors.flatMap((floor) =>
-      floor.nodes
+    return navConfig.floors.flatMap((navFloor) => {
+      const visualFloor = buildingData.floors.find(
+        (f) => f.id === navFloor.floorId,
+      );
+
+      return navFloor.nodes
         .filter((node) => node.type === "room")
         .map((node) => ({
           id: node.id,
           x: node.x,
           y: node.y,
-          floorLevel: parseInt(node.floorId.split("_")[1], 10),
+          floorLevel: visualFloor
+            ? visualFloor.level
+            : buildingData.defaultFloor,
           label: node.label ?? node.id,
-        })),
-    );
-  }, [buildingData.id]);
+        }));
+    });
+  }, [buildingData.id, buildingData.floors, buildingData.defaultFloor]);
 
   const filteredRooms = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -238,15 +242,14 @@ const IndoorMapOverlay: React.FC<Props> = ({
     });
   }, [hotspots, searchQuery]);
 
-  const isNodeOnFloor = (
-    nodeFloorId: string | undefined,
-    floor: typeof activeFloor,
-  ) => {
-    if (!floor || !nodeFloorId) return false;
-    if (nodeFloorId === floor.id) return true;
-    const extractedLevel = parseInt(nodeFloorId.split("_").pop() || "", 10);
-    return extractedLevel === floor.level;
-  };
+  const isNodeOnFloor = useCallback(
+    (nodeFloorId: string | undefined, floor: typeof activeFloor) => {
+      if (!floor || !nodeFloorId) return false;
+
+      return nodeFloorId === floor.id;
+    },
+    [],
+  );
 
   const activeFloorSegments = useMemo(() => {
     if (!indoorRoute || !activeFloor) return [];
@@ -266,7 +269,7 @@ const IndoorMapOverlay: React.FC<Props> = ({
     }
 
     return segments;
-  }, [indoorRoute, activeFloor]);
+  }, [indoorRoute, activeFloor, isNodeOnFloor]);
 
   useEffect(() => {
     if (panelState === "navigating" || isNavigationActive) {
@@ -369,21 +372,27 @@ const IndoorMapOverlay: React.FC<Props> = ({
   ]);
 
   const handleMapInteraction = useCallback(() => {
-    if (panelState === "search") {
-      searchSheetRef.current?.minimize();
-    }
-  }, [panelState]);
-
-  const handleSetDestination = useCallback((item: IndoorDestination) => {
-    setDestination(item);
-    setCurrentLevel(item.floorLevel);
-    setSearchQuery(item.label ?? item.id);
-    setShowSearchResults(false);
-    setPanelState("preview");
-    if (onSetDestinationRoom) {
-      onSetDestinationRoom(item.id);
+    if (searchSheetRef.current) {
+      searchSheetRef.current.minimize();
     }
   }, []);
+
+  const handleSetDestination = useCallback(
+    (item: IndoorDestination) => {
+      setDestination(item);
+      setCurrentLevel(item.floorLevel);
+
+      const labelText = item.label ?? item.id;
+      setSearchQuery(labelText);
+      setShowSearchResults(false);
+      setPanelState("preview");
+      searchSheetRef.current?.minimize();
+      if (onSetDestinationRoom) {
+        onSetDestinationRoom(item.id);
+      }
+    },
+    [onSetDestinationRoom],
+  );
 
   const handleClearDestination = useCallback(() => {
     setDestination(null);
@@ -635,7 +644,7 @@ const IndoorMapOverlay: React.FC<Props> = ({
 
       <IndoorSearchSheet
         ref={searchSheetRef}
-        visible={panelState === "search"}
+        visible={panelState === "search" || panelState === "preview"}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         showSearchResults={showSearchResults}

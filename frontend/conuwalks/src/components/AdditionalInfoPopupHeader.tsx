@@ -111,89 +111,88 @@ const AdditionalInfoPopupHeader: React.FC<AdditionalInfoPopupHeaderProps> = ({
             </View>
           </View>
 
-<View style={styles.rightHeaderActions}>
+          <View style={styles.rightHeaderActions}>
+            {showOpenIndoorButton && onOpenIndoorPress && (
+              <TouchableOpacity
+                onPress={onOpenIndoorPress}
+                style={[
+                  styles.openIndoorHeaderButton,
+                  themedStyles.openIndoorHeaderButton(mode),
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Open indoor map"
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Text
+                  style={[
+                    styles.openIndoorHeaderButtonText,
+                    themedStyles.openIndoorHeaderButtonText(mode),
+                  ]}
+                >
+                  Indoor Map↗
+                </Text>
+              </TouchableOpacity>
+            )}
 
-{showOpenIndoorButton && onOpenIndoorPress && (
- <TouchableOpacity
-  onPress={onOpenIndoorPress}
-  style={[
-    styles.openIndoorHeaderButton,
-    themedStyles.openIndoorHeaderButton(mode),
-  ]}
-  accessibilityRole="button"
-  accessibilityLabel="Open indoor map"
-  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
->
-  <Text
-    style={[
-      styles.openIndoorHeaderButtonText,
-      themedStyles.openIndoorHeaderButtonText(mode),
-    ]}
-  >
-    Indoor Map↗
-  </Text>
-</TouchableOpacity>
-  )}
+            <TouchableOpacity
+              onPress={onDirectionsPress}
+              style={styles.directionsButton}
+              accessibilityRole="button"
+              accessibilityLabel={`Directions, ${directionsEtaLabel || "--"}`}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <View style={styles.directionsArrowCircle}>
+                <MaterialIcons
+                  name="subdirectory-arrow-right"
+                  size={12}
+                  color={campusPink}
+                />
+              </View>
+              <Text style={styles.directionsEtaText}>
+                {directionsEtaLabel || "--"}
+              </Text>
+            </TouchableOpacity>
 
-  <TouchableOpacity
-    onPress={onDirectionsPress}
-    style={styles.directionsButton}
-    accessibilityRole="button"
-    accessibilityLabel={`Directions, ${directionsEtaLabel || "--"}`}
-    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-  >
-    <View style={styles.directionsArrowCircle}>
-      <MaterialIcons
-        name="subdirectory-arrow-right"
-        size={12}
-        color={campusPink}
-      />
-    </View>
-    <Text style={styles.directionsEtaText}>
-      {directionsEtaLabel || "--"}
-    </Text>
-  </TouchableOpacity>
-
-  {accessibilityIcons.length > 0 && (
-    <View
-      style={[
-        styles.accessibilityIconsContainer,
-        styles.rightAccessibilityRow,
-      ]}
-    >
-      {accessibilityIcons.map((icon) => (
-        <View
-          key={icon.key}
-          accessible={true}
-          accessibilityLabel={icon.label}
-        >
-          {icon.key === "metro" ? (
-            <MetroIcon
-              width={25}
-              height={25}
-              color={themedStyles.subtext(mode).color}
-            />
-          ) : Platform.OS === "ios" ? (
-            <SymbolView
-              name={icon.sf}
-              size={25}
-              weight="heavy"
-              tintColor={themedStyles.subtext(mode).color}
-            />
-          ) : (
-            <PlatformIcon
-              materialName={icon.material}
-              iosName={icon.sf}
-              size={25}
-              color={themedStyles.subtext(mode).color}
-              weight="heavy"
-            />
-          )}
-        </View>
-      ))}
-    </View>
-  )}
-</View>
+            {accessibilityIcons.length > 0 && (
+              <View
+                style={[
+                  styles.accessibilityIconsContainer,
+                  styles.rightAccessibilityRow,
+                ]}
+              >
+                {accessibilityIcons.map((icon) => (
+                  <View
+                    key={icon.key}
+                    accessible={true}
+                    accessibilityLabel={icon.label}
+                  >
+                    {icon.key === "metro" ? (
+                      <MetroIcon
+                        width={25}
+                        height={25}
+                        color={themedStyles.subtext(mode).color}
+                      />
+                    ) : Platform.OS === "ios" ? (
+                      <SymbolView
+                        name={icon.sf}
+                        size={25}
+                        weight="heavy"
+                        tintColor={themedStyles.subtext(mode).color}
+                      />
+                    ) : (
+                      <PlatformIcon
+                        materialName={icon.material}
+                        iosName={icon.sf}
+                        size={25}
+                        color={themedStyles.subtext(mode).color}
+                        weight="heavy"
+                      />
+                    )}
+                  </View>
+                ))}
+              </View>
+            )}
+          </View>
         </View>
       </TouchableWithoutFeedback>
     </>
