@@ -95,11 +95,12 @@ export const clearTokens = async (): Promise<void> => {
   try {
     const tokenString = await AsyncStorage.getItem(TOKEN_KEY);
     
-    await AsyncStorage.removeItem(TOKEN_KEY);
-    await AsyncStorage.removeItem(USER_INFO_KEY);
-    await AsyncStorage.removeItem(CLASS_REMINDER_LEAD_TIME_KEY);
-    await AsyncStorage.removeItem(DISMISSED_CLASS_EVENT_IDS_KEY);
-    await AsyncStorage.removeItem(WHEELCHAIR_ACCESSIBLE_DIRECTIONS_AND_NAVIGATION);
+    await AsyncStorage.multiRemove([
+      TOKEN_KEY,
+      USER_INFO_KEY,
+      CLASS_REMINDER_LEAD_TIME_KEY,
+      DISMISSED_CLASS_EVENT_IDS_KEY
+    ]);
     console.log("Local tokens and user info cleared");
 
     if (tokenString) {
