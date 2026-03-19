@@ -5,7 +5,7 @@ import CampusMap from "@/src/components/CampusMap";
 import StatusGradient from "@/src/components/StatusGradient";
 import SegmentedToggle from "@/src/components/SegmentedToggle";
 import UpcomingClassBanner from "@/src/components/UpcomingClassBanner";
-import { clearTokens, getUserInfo } from "@/src/utils/tokenStorage";
+import { clearTokens, getUserInfo, UserInfo } from "@/src/utils/tokenStorage";
 import { styles } from "@/src/styles/home";
 import { useDirections } from "@/src/context/DirectionsContext";
 import { syncShuttleScheduleInBackground } from "@/src/api/shuttleSyncService";
@@ -15,7 +15,7 @@ import ScheduleView from "@/src/components/ScheduleView";
 
 export default function DevHomeScreen() {
   const [campus, setCampus] = useState<"SGW" | "Loyola">("SGW");
-  const [userInfo, setUserInfo] = useState<any>(null);
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const { isNavigationActive } = useDirections();

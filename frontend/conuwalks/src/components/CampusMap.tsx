@@ -1,6 +1,7 @@
 import CampusLabels from "@/src/components/campusLabels";
 import RoutePolyline from "@/src/components/RoutePolyline";
 import { CampusConfig } from "@/src/data/campus/campusConfig";
+import { UserInfo } from "@/src/utils/tokenStorage";
 import React, {
   useState,
   useRef,
@@ -70,7 +71,7 @@ interface CampusMapProps {
     longitude: number;
   };
   onInfoPopupExpansionChange?: (isExpanded: boolean) => void;
-  userInfo?: any;
+  userInfo?: UserInfo | null;
   onSignOut?: () => void;
 }
 
@@ -201,7 +202,7 @@ const buildingSearchInputRef = useRef<TextInput>(null);
 const allBuildings = useMemo(() => {
   const sgw = Object
     .entries(SGWBuildingSearchMetadata)
-    .filter(([id, _]) => Object.entries(SGWBuildingMetadata).map(([id, _]) => id).includes(id))
+    .filter(([id, _]) => id in SGWBuildingMetadata)
     .map(([id, meta]) => ({
       // Use the ID that matches the GeoJSON 'id' property
       id: id,
@@ -211,7 +212,7 @@ const allBuildings = useMemo(() => {
     }));
   const loy = Object
     .entries(LoyolaBuildingSearchMetadata)
-    .filter(([id, _]) => Object.entries(LoyolaBuildingMetadata).map(([id, _]) => id).includes(id))
+    .filter(([id, _]) => id in LoyolaBuildingMetadata)
     .map(([id, meta]) => ({
       id,
       name: meta.name,
