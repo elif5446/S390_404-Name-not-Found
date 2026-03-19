@@ -7,29 +7,53 @@ import { styles } from "@/src/styles/IndoorMap.styles";
 // ============================================================
 // DEV OVERLAY — delete this section when done mapping
 // ============================================================
-//import { hallBuildingNavConfig } from "@/src/indoors/data/HallBuilding";
-import { MBBuildingNavConfig } from "@/src/indoors/data/MBBuilding";
+import { navConfigRegistry } from "@/src/indoors/data/navConfigRegistry";
 import Svg, { Line, Circle, Text as SvgText } from "react-native-svg";
 
 const NODE_COLORS: Record<string, string> = {
-  entrance:  "#00FF00",
-  hallway:   "#00BFFF",
-  room:      "#FFD700",
-  elevator:  "#FF69B4",
-  stairs:    "#FF8C00",
+  entrance: "#00FF00",
+  hallway: "#00BFFF",
+  room: "#FFD700",
+  elevator: "#FF69B4",
+  stairs: "#FF8C00",
   escalator: "#DA70D6",
-  bathroom: "#a369ff"
+  bathroom: "#a369ff",
 };
 
-const DevNavOverlay = ({ floorId, width, height }: { floorId: string; width: number; height: number }) => {
-const floorConfig = MBBuildingNavConfig.floors.find((f) => f.floorId === floorId);
+const DevNavOverlay = ({
+  floorId,
+  width,
+  height,
+}: {
+  floorId: string;
+  width: number;
+  height: number;
+}) => {
+  // Extract building ID dynamically from the floorId (e.g., "H_8" -> "H", "MB_1" -> "MB")
+  const buildingId = floorId.split("_")[0];
+  const buildingConfig = navConfigRegistry[buildingId];
 
-  if (!floorConfig) {
-    console.warn(`[DevNavOverlay] No nav config found for floorId: "${floorId}"`);
+  if (!buildingConfig) {
+    console.warn(
+      `[DevNavOverlay] No nav config found for buildingId: "${buildingId}"`,
+    );
     return null;
   }
 
-  console.log("[DevNavOverlay]", { floorId, nodeCount: floorConfig.nodes.length, edgeCount: floorConfig.edges.length });
+  const floorConfig = buildingConfig.floors.find((f) => f.floorId === floorId);
+
+  if (!floorConfig) {
+    console.warn(
+      `[DevNavOverlay] No nav config found for floorId: "${floorId}"`,
+    );
+    return null;
+  }
+
+  console.log("[DevNavOverlay]", {
+    floorId,
+    nodeCount: floorConfig.nodes.length,
+    edgeCount: floorConfig.edges.length,
+  });
 
   const nodeMap = new Map(floorConfig.nodes.map((n) => [n.id, n]));
 
@@ -38,7 +62,7 @@ const floorConfig = MBBuildingNavConfig.floors.find((f) => f.floorId === floorId
       width={width}
       height={height}
       viewBox="0 0 1024 1024"
-      style={{ position: "absolute", top: 0, left: 0}}
+      style={{ position: "absolute", top: 0, left: 0 }}
       pointerEvents="none"
     >
       {floorConfig.edges.map((edge, i) => {
@@ -48,9 +72,13 @@ const floorConfig = MBBuildingNavConfig.floors.find((f) => f.floorId === floorId
         return (
           <Line
             key={`edge-${i}`}
-            x1={a.x} y1={a.y}
-            x2={b.x} y2={b.y}
-            stroke={edge.accessible ? "rgba(201, 23, 23, 0.8)" : "rgba(255,80,80,0.8)"}
+            x1={a.x}
+            y1={a.y}
+            x2={b.x}
+            y2={b.y}
+            stroke={
+              edge.accessible ? "rgba(201, 23, 23, 0.8)" : "rgba(255,80,80,0.8)"
+            }
             strokeWidth={2}
             strokeDasharray={edge.accessible ? undefined : "5,3"}
           />
@@ -90,8 +118,7 @@ interface MapContentProps {
 }
 
 const MapContent = React.memo(({ floor, width, height }: MapContentProps) => {
-  // DEV: floor.level is a number (e.g. 8), build the navConfig floorId from it
-  const devFloorId = `MB_${floor.id}`;
+  const devFloorId = floor.id;
 
   // handle SVG Components
   if (floor.type === "svg" && floor.image) {
@@ -102,7 +129,11 @@ const MapContent = React.memo(({ floor, width, height }: MapContentProps) => {
       const SvgComponent = floor.image as React.ElementType;
       return (
         <View style={{ width, height, position: "relative" }}>
-          <SvgComponent width={width} height={height} preserveAspectRatio="xMidYMid meet" />
+          <SvgComponent
+            width={width}
+            height={height}
+            preserveAspectRatio="xMidYMid meet"
+          />
           {/* DEV */}
           <DevNavOverlay floorId={devFloorId} width={width} height={height} />
         </View>
@@ -131,7 +162,11 @@ const MapContent = React.memo(({ floor, width, height }: MapContentProps) => {
 
   return (
     <View style={[styles.errorBox, { width, height }]}>
-      <Ionicons name="alert-circle-outline" size={32} color={styles.errorText.color} />
+      <Ionicons
+        name="alert-circle-outline"
+        size={32}
+        color={styles.errorText.color}
+      />
       <Text style={styles.errorText}>Map Image Unavailable</Text>
     </View>
   );

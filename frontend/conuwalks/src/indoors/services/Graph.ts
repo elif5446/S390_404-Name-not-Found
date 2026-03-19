@@ -94,7 +94,7 @@ export class Graph {
 
   //each building will have a specific entrance node to be the initial user location inside the building
   getEntranceNodes(): Node[] {
-    return Array.from(this.nodes.values()).filter((n) => n.isEntrance);
+    return Array.from(this.nodes.values()).filter((n) => n.type === "entrance");
   }
 
     private getTransitionCost(nodeA: Node, nodeB: Node): number {

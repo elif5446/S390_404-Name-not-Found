@@ -101,9 +101,21 @@ export class IndoorMapService {
 
   // resolves a raw room string (e.g. "847") to a node ID (e.g. "H_847")
   getNodeByRoomNumber(buildingId: string, roomNumber: string): Node | null {
-    const cleanRoom = roomNumber.replace(/\s+/g, "").toUpperCase();
-    const targetId = `${buildingId}_${cleanRoom}`;
-    return this.graph.getNode(targetId) || null;
+    const cleanRoom = roomNumber.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+    const allNodes = this.graph.getAllNodes();
+
+    // try an exact match assuming standard prefix "H_964"
+    const exactId = `${buildingId}_${cleanRoom}`;
+    let targetNode = this.graph.getNode(exactId);
+    if (targetNode) return targetNode;
+
+    // fallback: search all nodes for an ID that ends with the target number
+    targetNode = allNodes.find((n) => {
+      const cleanId = n.id.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+      return cleanId.endsWith(cleanRoom);
+    });
+
+    return targetNode || null;
   }
 
   // finds the nearest room/poi node given cartesian x/y coordinates
@@ -133,5 +145,38 @@ export class IndoorMapService {
   getEntranceNode(): Node | null {
     const entrances = this.graph.getEntranceNodes();
     return entrances.length > 0 ? entrances[0] : null;
+  }
+
+  /**
+   * Calculates the estimated walking time in seconds for an indoor route.
+   * @param route The generated indoor Route object
+   * @param pixelToMeterRatio The scale of SVG/Map. (e.g., if 10 pixels = 1 meter, pass 0.1)
+   */
+  public getRouteDurationSeconds(
+    route: Route | null,
+    pixelToMeterRatio: number = 1,
+  ): number {
+    if (!route || !route.totalDistance) return 0;
+
+    const distanceInMeters = route.totalDistance * pixelToMeterRatio;
+    const WALKING_SPEED_MPS = 1.35;
+
+    let baseSeconds = distanceInMeters / WALKING_SPEED_MPS;
+
+    // add a time penalty for floor changes (e.g., 15 seconds per elevator/stair transition)
+    const floorChanges = this.calculateFloorChanges(route);
+    baseSeconds += floorChanges * 15;
+
+    return Math.round(baseSeconds);
+  }
+
+  private calculateFloorChanges(route: Route): number {
+    let changes = 0;
+    for (let i = 1; i < route.nodes.length; i++) {
+      if (route.nodes[i].floorId !== route.nodes[i - 1].floorId) {
+        changes++;
+      }
+    }
+    return changes;
   }
 }

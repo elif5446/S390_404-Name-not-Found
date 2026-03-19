@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { DirectionStep, useDirections } from "@/src/context/DirectionsContext";
 import { getDirections } from "@/src/api/directions";
+import { calculateIndoorPenaltySeconds } from "@/src/indoors/services/indoorRoutingHelper";
+import { formatDurationFromSeconds } from "../utils/time";
 
 export const useDestinationData = (
   visible: boolean,
@@ -13,11 +15,12 @@ export const useDestinationData = (
     selectedRouteIndex,
     routeData,
     travelMode,
-    startCoords,
-    destinationCoords: contextDestination, //renamed for clarity
     startCoords: contextStart,
+    destinationCoords: contextDestination,
     startBuildingId,
+    startRoom,
     destinationBuildingId,
+    destinationRoom,
   } = directions;
 
   const [navigationRouteId, setNavigationRouteId] = useState<string | null>(
@@ -25,8 +28,8 @@ export const useDestinationData = (
   );
   const effectiveDestination = overrideDestination || contextDestination;
   const effectiveStart = overrideStart || contextStart;
-  const [modeDurationCache, setModeDurationCache] = useState<
-    Partial<Record<"walking" | "driving" | "transit" | "bicycling", string>>
+  const [baseModeSecondsCache, setBaseModeSecondsCache] = useState<
+    Partial<Record<"walking" | "driving" | "transit" | "bicycling", number>>
   >({});
 
   const routeScopeKey = `${startBuildingId ?? "-"}->${destinationBuildingId ?? "-"}`;
@@ -60,30 +63,34 @@ export const useDestinationData = (
   }, []);
 
   useEffect(() => {
-    setModeDurationCache({});
+    setBaseModeSecondsCache({});
     setNavigationRouteId(null);
   }, [routeScopeKey]);
 
   useEffect(() => {
     const activeRoute = routes[selectedRouteIndex] || routeData;
-    if (!activeRoute || !activeRoute.requestMode) return;
+    if (
+      !activeRoute ||
+      !activeRoute.requestMode ||
+      activeRoute.baseDurationSeconds == null
+    ) {
+      return;
+    }
 
-    const normalizedDuration = normalizeDurationLabel(activeRoute.duration);
-    setModeDurationCache((prev) => {
-      if (prev[activeRoute.requestMode] === normalizedDuration) return prev;
-      return { ...prev, [activeRoute.requestMode]: normalizedDuration };
+    setBaseModeSecondsCache((prev) => {
+      if (prev[activeRoute.requestMode] === activeRoute.baseDurationSeconds) {
+        return prev;
+      }
+      return {
+        ...prev,
+        [activeRoute.requestMode]: activeRoute.baseDurationSeconds,
+      };
     });
-  }, [
-    routes,
-    selectedRouteIndex,
-    routeData,
-    travelMode,
-    normalizeDurationLabel,
-  ]);
+  }, [routes, selectedRouteIndex, routeData, travelMode]);
 
   useEffect(() => {
     // fix to only trigger fetch if we have both start (user) and the specific destination
-    if (!visible || !startCoords || !effectiveDestination) return;
+    if (!visible || !effectiveStart || !effectiveDestination) return;
 
     let isCancelled = false;
     const allModes: ("walking" | "driving" | "transit" | "bicycling")[] = [
@@ -97,25 +104,27 @@ export const useDestinationData = (
       const results = await Promise.allSettled(
         allModes.map(async (modeKey) => {
           const fetchedRoutes = await getDirections(
-            startCoords,
+            effectiveStart,
             effectiveDestination,
             modeKey,
           );
-          const duration = fetchedRoutes[0]?.duration;
           return {
             modeKey,
-            duration: duration ? normalizeDurationLabel(duration) : null,
+            baseSeconds: fetchedRoutes[0]?.baseDurationSeconds || null,
           };
         }),
       );
 
       if (isCancelled) return;
 
-      setModeDurationCache((prev) => {
+      setBaseModeSecondsCache((prev) => {
         const next = { ...prev };
         results.forEach((result) => {
-          if (result.status === "fulfilled" && result.value.duration) {
-            next[result.value.modeKey] = result.value.duration;
+          if (
+            result.status === "fulfilled" &&
+            result.value.baseSeconds !== null
+          ) {
+            next[result.value.modeKey] = result.value.baseSeconds;
           }
         });
         return next;
@@ -126,17 +135,21 @@ export const useDestinationData = (
     return () => {
       isCancelled = true;
     };
-  }, [
-    visible,
-    effectiveStart,
-    effectiveDestination,
-    routeScopeKey,
-    normalizeDurationLabel,
-  ]);
+  }, [visible, effectiveStart, effectiveDestination, routeScopeKey]);
 
   const getModeDurationLabel = useCallback(
     (modeKey: "walking" | "driving" | "transit" | "bicycling"): string => {
-      if (modeDurationCache[modeKey]) return modeDurationCache[modeKey]!;
+      const baseSeconds = baseModeSecondsCache[modeKey];
+
+      if (baseSeconds) {
+        const indoorPenalty = calculateIndoorPenaltySeconds(
+          startBuildingId,
+          startRoom,
+          destinationBuildingId,
+          destinationRoom,
+        );
+        return formatDurationFromSeconds(baseSeconds + indoorPenalty);
+      }
 
       const activeRoute = routeData || routes[selectedRouteIndex];
       if (
@@ -149,10 +162,14 @@ export const useDestinationData = (
       return "--";
     },
     [
-      modeDurationCache,
+      baseModeSecondsCache,
       routeData,
       routes,
       selectedRouteIndex,
+      startBuildingId,
+      startRoom,
+      destinationBuildingId,
+      destinationRoom,
       normalizeDurationLabel,
     ],
   );

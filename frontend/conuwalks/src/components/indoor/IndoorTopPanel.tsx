@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   View,
@@ -75,8 +74,8 @@ const IndoorBottomPanel: React.FC<Props> = ({
               }
             }}
             onFocus={() => {
-              if(searchQuery.length > 0){
-              setShowSearchResults(true);
+              if (searchQuery.length > 0) {
+                setShowSearchResults(true);
               }
             }}
             returnKeyType="search"
@@ -122,7 +121,9 @@ const IndoorBottomPanel: React.FC<Props> = ({
                     />
 
                     <View style={styles.resultTextContainer}>
-                      <Text style={styles.resultTitle}>{room.label ?? room.id}</Text>
+                      <Text style={styles.resultTitle}>
+                        {room.label ?? room.id}
+                      </Text>
                       {"floorLevel" in room && room.floorLevel !== undefined ? (
                         <Text style={styles.resultSubtitle}>
                           Floor {room.floorLevel}

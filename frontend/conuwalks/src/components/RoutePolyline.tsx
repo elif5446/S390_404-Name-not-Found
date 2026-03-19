@@ -7,9 +7,18 @@ import React, {
 } from "react";
 import { Platform, View } from "react-native";
 import { LatLng, Polyline, Marker } from "react-native-maps";
-import { useDirections, DirectionStep } from "@/src/context/DirectionsContext";
+import {
+  useDirections,
+  DirectionStep,
+  RouteData,
+} from "@/src/context/DirectionsContext";
 import { getDirections, decodePolyline } from "@/src/api/directions";
 import { getShuttleRouteIfApplicable } from "@/src/api/shuttleEngine";
+import { calculateIndoorPenaltySeconds } from "@/src/indoors/services/indoorRoutingHelper";
+import {
+  calculateEtaFromSeconds,
+  formatDurationFromSeconds,
+} from "../utils/time";
 
 const TRANSFER_NODE_FREEZE_DELAY_MS = 250;
 
@@ -148,21 +157,65 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
     setRouteData,
     setLoading,
     setError,
+    startBuildingId,
+    startRoom,
+    destinationBuildingId,
+    destinationRoom,
   } = useDirections();
 
   const isMountedRef = useRef(true);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const blockedRequestKeyRef = useRef<string | null>(null);
   const lastFetchedKeyRef = useRef<string | null>(null);
+  const baseRoutesRef = useRef<RouteData[]>([]);
 
   // Determine the actual start location to use
   const effectiveStartLocation = startLocation || startCoords;
   const shouldShowRoute = showDirections || isNavigationActive;
 
-  const requestKey =
+  const outdoorRequestKey =
     effectiveStartLocation && destinationCoords
       ? `${effectiveStartLocation.latitude.toFixed(4)},${effectiveStartLocation.longitude.toFixed(4)}->${destinationCoords.latitude.toFixed(4)},${destinationCoords.longitude.toFixed(4)}:${travelMode}:${timeMode}:${targetTime ? targetTime.getTime() : "now"}`
       : null; // This ensures that reopening the same destination won't be falsely blocked.
+
+  const indoorRequestKey = `${startBuildingId}_${startRoom}->${destinationBuildingId}_${destinationRoom}`;
+
+  // helper function to apply the indoor time penalty
+  const applyIndoorPatch = useCallback(
+    (routesToPatch: RouteData[]) => {
+      if (!routesToPatch.length) return;
+
+      const indoorPenalty = calculateIndoorPenaltySeconds(
+        startBuildingId,
+        startRoom,
+        destinationBuildingId,
+        destinationRoom,
+      );
+
+      const patchedRoutes = routesToPatch.map((route) => {
+        const newTotalSeconds = route.baseDurationSeconds + indoorPenalty;
+
+        return {
+          ...route,
+          duration: formatDurationFromSeconds(newTotalSeconds),
+          eta: calculateEtaFromSeconds(newTotalSeconds, targetTime, timeMode),
+        };
+      });
+
+      setRoutes(patchedRoutes);
+      setRouteData(patchedRoutes[0]);
+    },
+    [
+      startBuildingId,
+      startRoom,
+      destinationBuildingId,
+      destinationRoom,
+      targetTime,
+      timeMode,
+      setRoutes,
+      setRouteData,
+    ],
+  );
 
   // flush the request cache when the route is dismissed or destination is cleared
   useEffect(() => {
@@ -215,14 +268,14 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
     }
 
     // block duplicate fetches for the same route parameters
-    if (requestKey && lastFetchedKeyRef.current === requestKey) {
+    if (outdoorRequestKey && lastFetchedKeyRef.current === outdoorRequestKey) {
+      applyIndoorPatch(baseRoutesRef.current);
       return;
     }
 
     // block previously failed/blocked requests
-    if (requestKey && blockedRequestKeyRef.current === requestKey) {
+    if (outdoorRequestKey && blockedRequestKeyRef.current === outdoorRequestKey)
       return;
-    }
 
     try {
       if (isMountedRef.current) {
@@ -315,8 +368,11 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
 
       setRoutes(decodedRoutes);
       setRouteData(decodedRoutes[0]);
-      lastFetchedKeyRef.current = requestKey;
+      baseRoutesRef.current = decodedRoutes;
+      lastFetchedKeyRef.current = outdoorRequestKey;
       blockedRequestKeyRef.current = null;
+
+      applyIndoorPatch(decodedRoutes);
 
       if (isMountedRef.current) {
         setLoading(false);
@@ -333,7 +389,8 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
             .toLowerCase()
             .match(/not been used|disabled|legacy api|request denied/)
         ) {
-          if (requestKey) blockedRequestKeyRef.current = requestKey;
+          if (outdoorRequestKey)
+            blockedRequestKeyRef.current = outdoorRequestKey;
         }
 
         setError(errorMessage);
@@ -347,15 +404,23 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
     effectiveStartLocation,
     destinationCoords,
     travelMode,
+    shouldShowRoute,
+    outdoorRequestKey,
+    setRoutes,
+    applyIndoorPatch,
     targetTime,
     timeMode,
-    shouldShowRoute,
-    requestKey,
-    setRoutes,
     setRouteData,
     setLoading,
     setError,
   ]);
+
+  // recalculate when the indoor rooms change
+  useEffect(() => {
+    if (baseRoutesRef.current.length > 0) {
+      applyIndoorPatch(baseRoutesRef.current);
+    }
+  }, [indoorRequestKey, applyIndoorPatch]);
 
   useEffect(() => {
     blockedRequestKeyRef.current = null;

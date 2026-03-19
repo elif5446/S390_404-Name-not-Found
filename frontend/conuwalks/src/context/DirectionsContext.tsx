@@ -28,6 +28,7 @@ export interface RouteData {
   polylinePoints: LatLng[];
   distance: string;
   duration: string;
+  baseDurationSeconds: number;
   eta: string;
   steps: DirectionStep[];
   overviewPolyline: string;

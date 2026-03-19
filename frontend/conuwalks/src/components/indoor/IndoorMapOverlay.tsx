@@ -25,7 +25,6 @@ import { Node } from "@/src/indoors/types/Navigation";
 
 import MapContent from "./IndoorMap";
 import DestinationMarker from "./DestinationMarker";
-import IndoorBottomPanel from "./IndoorTopPanel";
 import IndoorRoomLabels from "./IndoorRoomLabels";
 import { styles } from "@/src/styles/IndoorMap.styles";
 import { navConfigRegistry } from "@/src/indoors/data/navConfigRegistry";
@@ -73,6 +72,7 @@ interface Props {
   onSetStartRoom?: (roomLabel: string) => void;
   onSetDestinationRoom?: (roomLabel: string) => void;
   onExit: () => void;
+  onCancelNavigation?: () => void;
 }
 
 const IndoorMapOverlay: React.FC<Props> = ({
@@ -83,6 +83,7 @@ const IndoorMapOverlay: React.FC<Props> = ({
   onSetStartRoom,
   onSetDestinationRoom,
   onExit,
+  onCancelNavigation,
 }) => {
   const { width, height } = useWindowDimensions();
   const MAP_SECTION_MAX_HEIGHT = height * 0.5;
@@ -106,6 +107,8 @@ const IndoorMapOverlay: React.FC<Props> = ({
     isNavigationActive && destinationRoomId ? "navigating" : "search",
   );
   const searchSheetRef = useRef<IndoorSearchSheetHandle>(null);
+  const isProgrammaticDismissRef = useRef(false);
+  const lastSyncedDestRef = useRef<string | null>(null);
 
   // Initial Load & Start Node setup
   useEffect(() => {
@@ -119,10 +122,13 @@ const IndoorMapOverlay: React.FC<Props> = ({
 
     indoorService.loadBuilding(navConfig);
 
-    let sNode = startRoomId
-      ? indoorService.getNodeByRoomNumber(buildingData.id, startRoomId)
-      : indoorService.getEntranceNode() || indoorService.getStartNode();
-
+    let sNode = null;
+    if (startRoomId) {
+      sNode = indoorService.getNodeByRoomNumber(buildingData.id, startRoomId);
+    }
+    if (!sNode) {
+      sNode = indoorService.getEntranceNode() || indoorService.getStartNode();
+    }
     setBaseStartNode(sNode);
   }, [buildingData.id, startRoomId, indoorService]);
 
@@ -262,6 +268,24 @@ const IndoorMapOverlay: React.FC<Props> = ({
     return segments;
   }, [indoorRoute, activeFloor]);
 
+  useEffect(() => {
+    if (panelState === "navigating" || isNavigationActive) {
+      isProgrammaticDismissRef.current = true;
+      searchSheetRef.current?.dismiss();
+      setTimeout(() => {
+        isProgrammaticDismissRef.current = false;
+      }, 500);
+    } else if (panelState === "search") {
+      searchSheetRef.current?.minimize();
+    }
+  }, [panelState, isNavigationActive]);
+
+  const handleSheetExit = useCallback(() => {
+    if (!isProgrammaticDismissRef.current) {
+      onExit();
+    }
+  }, [onExit]);
+
   const handleFloorChange = useCallback(
     (level: number) => {
       if (level === currentLevel) return;
@@ -279,6 +303,71 @@ const IndoorMapOverlay: React.FC<Props> = ({
     [currentLevel, fadeAnim],
   );
 
+  // auto sync external destination
+  useEffect(() => {
+    if (!destinationRoomId || hotspots.length === 0 || !baseStartNode) return;
+    if (destinationRoomId === lastSyncedDestRef.current) return;
+
+    const cleanInput = destinationRoomId
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+    const isAlreadySynced =
+      destination?.id.toLowerCase().replace(/[^a-z0-9]/g, "") === cleanInput ||
+      (destination?.label || "").toLowerCase().replace(/[^a-z0-9]/g, "") ===
+        cleanInput;
+
+    if (isAlreadySynced) {
+      lastSyncedDestRef.current = destinationRoomId;
+      return;
+    }
+
+    const targetRoom = hotspots.find((spot) => {
+      const spotId = spot.id.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const spotLabel = (spot.label || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "");
+      return (
+        spotId === cleanInput ||
+        spotLabel === cleanInput ||
+        spotId.endsWith(cleanInput) ||
+        spotLabel.endsWith(cleanInput)
+      );
+    });
+
+    if (targetRoom) {
+      setDestination(targetRoom);
+      setSearchQuery(targetRoom.label ?? targetRoom.id);
+      lastSyncedDestRef.current = destinationRoomId;
+
+      if (isNavigationActive) {
+        setPanelState("navigating");
+
+        const startFloorLevel = buildingData.floors.find(
+          (f) => f.id === baseStartNode.floorId,
+        )?.level;
+
+        if (startFloorLevel !== undefined && startFloorLevel !== currentLevel) {
+          setTimeout(() => handleFloorChange(startFloorLevel), 100);
+        }
+      } else {
+        setPanelState("preview");
+
+        if (currentLevel !== targetRoom.floorLevel) {
+          setTimeout(() => handleFloorChange(targetRoom.floorLevel), 100);
+        }
+      }
+    }
+  }, [
+    destinationRoomId,
+    hotspots,
+    isNavigationActive,
+    baseStartNode,
+    buildingData.floors,
+    destination,
+    currentLevel,
+    handleFloorChange,
+  ]);
+
   const handleMapInteraction = useCallback(() => {
     if (panelState === "search") {
       searchSheetRef.current?.minimize();
@@ -291,6 +380,9 @@ const IndoorMapOverlay: React.FC<Props> = ({
     setSearchQuery(item.label ?? item.id);
     setShowSearchResults(false);
     setPanelState("preview");
+    if (onSetDestinationRoom) {
+      onSetDestinationRoom(item.id);
+    }
   }, []);
 
   const handleClearDestination = useCallback(() => {
@@ -315,7 +407,8 @@ const IndoorMapOverlay: React.FC<Props> = ({
 
   const handleCancelNavigation = useCallback(() => {
     handleClearDestination();
-  }, [handleClearDestination]);
+    onCancelNavigation?.();
+  }, [handleClearDestination, onCancelNavigation]);
 
   useEffect(() => {
     isMounted.current = true;
@@ -366,7 +459,6 @@ const IndoorMapOverlay: React.FC<Props> = ({
             </TouchableOpacity>
           </View>
 
-          {/* NEW: The Dropdown Menu List */}
           {isFloorMenuOpen && (
             <View style={styles.floorDropdownMenu}>
               <ScrollView
@@ -550,23 +642,8 @@ const IndoorMapOverlay: React.FC<Props> = ({
         setShowSearchResults={setShowSearchResults}
         filteredRooms={filteredRooms}
         onSelectDestination={handleSetDestination}
-        onExit={onExit}
-      />
-
-      <IndoorBottomPanel
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        showSearchResults={showSearchResults}
-        setShowSearchResults={setShowSearchResults}
-        filteredRooms={filteredRooms}
-        onSelectDestination={handleSetDestination}
         onClearDestination={handleClearDestination}
-      />
-      <IndoorDirectionsSheet
-        visible={panelState === "preview"}
-        destinationLabel={destination?.label || "Selected Room"}
-        onStartNavigation={handleStartNavigation}
-        onCancel={handleClearDestination}
+        onExit={handleSheetExit}
       />
     </View>
   );

@@ -19,7 +19,6 @@ import {
 } from "react-native";
 import MapView, {
   LatLng,
-  Circle,
   Region,
   Marker,
   PROVIDER_GOOGLE,
@@ -192,6 +191,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
   const trackMarkerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
+
   // unmount cleanup logic for dest marker
   useEffect(() => {
     return () => {
@@ -242,12 +242,9 @@ const CampusMap: React.FC<CampusMapProps> = ({
     if (!INDOOR_DATA[buildingId]) return;
 
     setSelectedTransitStopKey(null);
-    setShowDirections(false);
-    setIsNavigationActive(false);
-    clearRouteData();
     setSelectedBuilding((prev) => ({ ...prev, visible: false }));
     setIndoorBuildingId(buildingId);
-  }, [setShowDirections, setIsNavigationActive, clearRouteData]);
+  }, []);
 
   // Create a ref to the MapView so we can control it
   const mapRef = useRef<MapView>(null);
@@ -785,10 +782,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
   // auto-trigger entry/exit based on User Location & Navigation State
   useEffect(() => {
     if (!isNavigationActive) {
-      if (indoorBuildingId && !userLocationBuildingId) {
-        setIndoorBuildingId(null);
-        setManuallyExitedBuildingId(null);
-      }
       return;
     }
 
@@ -802,7 +795,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
       userLocation
     ) {
       const dist = distanceMetersBetween(userLocation, destinationCenter);
-      if (dist <= 20) {
+      if (dist <= 65) {
         targetBuildingId = destinationBuildingId;
       }
     }
@@ -814,9 +807,14 @@ const CampusMap: React.FC<CampusMapProps> = ({
       ) {
         setIndoorBuildingId(targetBuildingId);
       }
-    } else if (!targetBuildingId && indoorBuildingId) {
-      setIndoorBuildingId(null);
-      setManuallyExitedBuildingId(null);
+    } else if (!targetBuildingId) {
+      if (manuallyExitedBuildingId !== null) {
+        setManuallyExitedBuildingId(null);
+      }
+
+      if (indoorBuildingId && indoorBuildingId !== destinationBuildingId) {
+        setIndoorBuildingId(null);
+      }
     }
   }, [
     userLocation,
@@ -1398,8 +1396,10 @@ const CampusMap: React.FC<CampusMapProps> = ({
       {indoorBuildingId && INDOOR_DATA[indoorBuildingId] && (
         <IndoorMapOverlay
           buildingData={INDOOR_DATA[indoorBuildingId]}
-          startRoomId={startRoom}
-          destinationRoomId={destinationRoom}
+          startRoomId={startBuildingId === indoorBuildingId ? startRoom : null}
+          destinationRoomId={
+            destinationBuildingId === indoorBuildingId ? destinationRoom : null
+          }
           isNavigationActive={isNavigationActive}
           onSetStartRoom={(roomLabel) => {
             setStartPoint(
@@ -1420,6 +1420,12 @@ const CampusMap: React.FC<CampusMapProps> = ({
             setShowDirections(true);
           }}
           onExit={handleIndoorExit}
+          onCancelNavigation={() => {
+            setIsNavigationActive(false);
+            setShowDirections(false);
+            clearRouteData();
+            clearDestination();
+          }}
         />
       )}
 
@@ -1431,8 +1437,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
           campus={selectedBuilding.campus}
           onClose={handleClosePopup}
           onDirectionsTrigger={handleDirectionsTrigger}
-          onOpenIndoorPress={() => handleOpenIndoorMap(selectedBuilding.name)}  
-          showOpenIndoorButton={selectedBuilding.name in INDOOR_DATA}        
+          onOpenIndoorPress={() => handleOpenIndoorMap(selectedBuilding.name)}
+          showOpenIndoorButton={selectedBuilding.name in INDOOR_DATA}
           directionsEtaLabel={directionsEtaLabel}
           onExpansionChange={handleInfoPopupExpansionChange}
         />
@@ -1465,6 +1471,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
             destinationRoom={destinationRoom}
             setDestination={setDestination}
             userLocationBuildingId={userLocationBuildingId}
+            isIndoorView={!!indoorBuildingId}
           />
         </View>
       )}

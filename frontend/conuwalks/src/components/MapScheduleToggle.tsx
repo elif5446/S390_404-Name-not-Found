@@ -55,13 +55,8 @@ const MapCalendarToggle: React.FC<Props> = ({
           overflow: "hidden",
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: Platform.OS === "ios" ? 0.18 : 0.22,
           shadowRadius: 4,
-          elevation: Platform.OS === "ios" ? 0 : 4,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
           shadowOpacity: selected === "calendar" ? 0 : 0.18,
-          shadowRadius: 8,
           elevation: selected === "calendar" ? 0 : 6,
         }}
       >

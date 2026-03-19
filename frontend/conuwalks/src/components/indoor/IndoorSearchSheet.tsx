@@ -11,6 +11,7 @@ import {
   StyleSheet,
   useColorScheme,
   AccessibilityActionEvent,
+  FlatList,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
@@ -26,6 +27,7 @@ interface IndoorSearchSheetProps {
   setShowSearchResults: (value: boolean) => void;
   filteredRooms: IndoorHotspot[];
   onSelectDestination: (item: IndoorDestination) => void;
+  onClearDestination: () => void;
   onExit: () => void;
 }
 
@@ -38,6 +40,18 @@ const IndoorSearchSheet = forwardRef<
   IndoorSearchSheetHandle,
   IndoorSearchSheetProps
 >((props, ref) => {
+  const {
+    visible,
+    searchQuery,
+    setSearchQuery,
+    showSearchResults,
+    setShowSearchResults,
+    filteredRooms,
+    onSelectDestination,
+    onClearDestination,
+    onExit,
+  } = props;
+
   const isDark = (useColorScheme() || "light") === "dark";
 
   const {
@@ -51,8 +65,8 @@ const IndoorSearchSheet = forwardRef<
     handlePanResponder,
     scrollAreaPanResponder,
   } = useBottomSheet({
-    visible: props.visible,
-    onDismiss: props.onExit,
+    visible: visible,
+    onDismiss: onExit,
   });
 
   useImperativeHandle(ref, () => ({
@@ -72,7 +86,7 @@ const IndoorSearchSheet = forwardRef<
   return (
     <View
       style={[StyleSheet.absoluteFill, { zIndex: 999 }]}
-      pointerEvents={props.visible ? "box-none" : "none"}
+      pointerEvents={visible ? "box-none" : "none"}
     >
       <Animated.View
         style={[
@@ -128,6 +142,7 @@ const IndoorSearchSheet = forwardRef<
             </View>
           </TouchableOpacity>
         </View>
+
         <View
           style={sheetStyles.contentContainer}
           {...scrollAreaPanResponder.panHandlers}
@@ -170,13 +185,17 @@ const IndoorSearchSheet = forwardRef<
 
               <View style={sheetStyles.inputWrapper}>
                 <TextInput
-                  value={props.searchQuery}
+                  value={searchQuery}
                   onChangeText={(text) => {
-                    props.setSearchQuery(text);
-                    props.setShowSearchResults(text.trim().length > 0);
+                    setSearchQuery(text);
+                    const hasText = text.trim().length > 0;
+                    setShowSearchResults(hasText);
+                    if (!hasText) {
+                      // 2. Bug Fixed: onClearDestination is now in scope
+                      onClearDestination();
+                    }
                   }}
                   onFocus={() => {
-                    // AUTO-EXPAND ON FOCUS
                     snapTo(SNAP_OFFSET);
                   }}
                   placeholder="Where to?"
@@ -192,16 +211,16 @@ const IndoorSearchSheet = forwardRef<
           </View>
 
           {/* Search Results */}
-          {props.showSearchResults && props.filteredRooms.length > 0 && (
+          {showSearchResults && filteredRooms.length > 0 && (
             <View style={sheetStyles.resultsContainer}>
-              <ScrollView
+              <FlatList
+                data={filteredRooms}
+                keyExtractor={(item) => item.id}
                 keyboardShouldPersistTaps="always"
                 showsVerticalScrollIndicator={false}
-              >
-                {props.filteredRooms.map((room) => (
+                renderItem={({ item: room }) => (
                   <Pressable
-                    key={room.id}
-                    onPress={() => props.onSelectDestination(room)}
+                    onPress={() => onSelectDestination(room)}
                     style={[
                       sheetStyles.resultItem,
                       { borderBottomColor: isDark ? "#38383A" : "#E5E5EA" },
@@ -233,8 +252,8 @@ const IndoorSearchSheet = forwardRef<
                       </Text>
                     </View>
                   </Pressable>
-                ))}
-              </ScrollView>
+                )}
+              />
             </View>
           )}
         </View>
@@ -308,13 +327,13 @@ const sheetStyles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#4285F4", // GPS Blue
+    backgroundColor: "#4285F4",
   },
   endDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#B03060", // App Primary
+    backgroundColor: "#B03060",
   },
   line: {
     width: 2,

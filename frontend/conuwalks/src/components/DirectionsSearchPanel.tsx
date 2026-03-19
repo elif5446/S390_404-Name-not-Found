@@ -43,6 +43,7 @@ interface DirectionsSearchProps {
   destinationRoom: string | null;
   setDestination: (buildingId: string, coords: LatLng, label: string, room?: string | null) => void;
   userLocationBuildingId: string | null;
+  isIndoorView?: boolean;
 }
 
 const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
@@ -52,7 +53,8 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
         destinationBuildingId,
         destinationRoom,
         setDestination,
-        userLocationBuildingId
+        userLocationBuildingId,
+        isIndoorView = false
     }) => {
     const { events, fetchUpcomingEvents } = useGoogleCalendar();
     const { todayEvents, refresh } = useBuildingEvents(userLocationBuildingId ?? "", SGWBuildingSearchMetadata[userLocationBuildingId ?? ""] ? "SGW" : "LOY");
@@ -206,7 +208,7 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
     );
 
     return <>
-        <View style={styles.glassWrapper}>
+        <View style={styles.glassWrapper} pointerEvents={isIndoorView ? "none" : "auto"}>
             <BlurView intensity={80} tint="light" style={[styles.blurContainer, {gap: destinationIsHidden !== null ? 0 : 10, paddingBottom: destinationIsHidden !== null ? 5 : 15}]}>
                 {destinationIsHidden !== false && <View style={{flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10}}>
                         <SuggestionIcon
@@ -215,9 +217,10 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
                             color={"#B03060"}
                         />
                         <TextInput
-                            style={styles.input}
+                            style={[styles.input, isIndoorView && styles.disabledInput]}
                             placeholder="Start Point"
                             value={startPointText}
+                            editable={!isIndoorView}
                             onChangeText={text => setStartPointText(text)}
                             clearButtonMode="while-editing"
                             onBlur={() => enterStartPoint()}
@@ -240,9 +243,10 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
                             color={"#B03060"}
                         />
                         <TextInput
-                            style={styles.input}
+                            style={[styles.input, isIndoorView && styles.disabledInput]}
                             placeholder="Destination"
                             value={destinationText}
+                            editable={!isIndoorView}
                             onChangeText={text => setDestinationText(text)}
                             onBlur={() => enterDestination()}
                             onFocus={() => setDestinationIsHidden(false)}
@@ -259,10 +263,10 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
 
                 {destinationIsHidden === true &&
                     <ScrollView keyboardShouldPersistTaps="handled" style={styles.listContainer}>
-                        {searchStartPoint(startPointText, todayEvents, userLocationBuildingId).map(suggestion => {
+                        {searchStartPoint(startPointText, todayEvents, userLocationBuildingId).map((suggestion, index) => {
                             const startText = `${suggestion.buildingName} ${suggestion.roomNumber ?? ""}`.trim();
                             return <TouchableOpacity 
-                                    key={startText} 
+                                    key={`${startText}-${index}`} 
                                     style={styles.listSuggestion}
                                     onPress={() => {
                                         setStartPointText(startText);
@@ -296,10 +300,10 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
                 }
                 {destinationIsHidden === false &&
                     <ScrollView keyboardShouldPersistTaps="handled" style={styles.listContainer}>
-                        {searchDestination(destinationText, events).map(suggestion => {
+                        {searchDestination(destinationText, events).map((suggestion, index) => {
                             const destText = `${suggestion.buildingName} ${suggestion.roomNumber ?? ""}`.trim();
                             return <TouchableOpacity 
-                                key={destText} 
+                                key={`${destText}-${index}`} 
                                 style={styles.listSuggestion}
                                 onPress={() => {
                                     setDestinationText(destText);

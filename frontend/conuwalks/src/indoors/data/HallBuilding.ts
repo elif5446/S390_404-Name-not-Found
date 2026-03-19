@@ -25,7 +25,7 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
         {id: "H_8_N19", floorId: "H_8", x: 175, y: 696, type: "hallway"},
         {id: "H_8_N20", floorId: "H_8", x: 343, y: 163, type: "hallway"},
 
-        {id: "H_8_N7", floorId: "H_8", x: 688, y: 806, type: "hallway", isEntrance: true},
+        {id: "H_8_N7", floorId: "H_8", x: 688, y: 806, type: "hallway"},
         {id: "H_8_N8", floorId: "H_8", x: 849, y: 806, type: "hallway"},
         {id: "H_8_N9", floorId: "H_8", x: 849, y: 555, type: "hallway"},
         {id: "H_8_N10", floorId: "H_8", x: 849, y: 370, type: "hallway"},

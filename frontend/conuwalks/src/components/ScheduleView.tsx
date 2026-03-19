@@ -187,6 +187,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ onNavigateToClass }) => {
 
       const parsed = parseLocation(location);
       const buildingCode = parsed?.buildingCode;
+      const room = parsed?.roomNumber;
 
       if (!buildingCode) return;
 
@@ -204,7 +205,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ onNavigateToClass }) => {
           setStartPoint("USER", userLocation, "Your Location");
         }
 
-        setDestination(buildingCode, coordinates, buildingMetadata.name);
+        setDestination(buildingCode, coordinates, buildingMetadata.name, room);
         setShowDirections(true);
         onNavigateToClass?.();
       }
