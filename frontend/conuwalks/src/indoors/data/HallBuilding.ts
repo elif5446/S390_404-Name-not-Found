@@ -487,6 +487,54 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
 
 
       ]
+    },
+    {
+      floorId: "H_1",
+      nodes :[
+
+        //entrances
+        {id: "H_1_ENTRANCE_1", floorId: "H_1", x: 357, y: 710, type: "entrance", label: "Entrance"},
+        {id: "H_1_ENTRANCE_2", floorId: "H_1", x: 239, y: 707, type: "entrance", label: "Entrance"},
+        {id: "H_1_ENTRANCE_3", floorId: "H_1", x: 983, y: 650, type: "entrance", label: "Entrance"},
+        {id: "H_1_ENTRANCE_4", floorId: "H_1", x: 983, y: 695, type: "entrance", label: "Entrance"},
+
+
+        //POI
+        {id: "H_1_BATHROOM_1_N", floorId: "H_1", x: 456, y: 285, type: "bathroom", label: "Neutral Washroom"},
+
+        //hallways
+        {id: "H_1_N1", floorId: "H_1", x: 372, y: 633, type: "hallway"},
+        {id: "H_1_N2", floorId: "H_1", x: 232, y: 633, type: "hallway"},
+        {id: "H_1_N3", floorId: "H_1", x: 290, y: 532, type: "hallway"},
+        {id: "H_1_N4", floorId: "H_1", x: 535, y: 465, type: "hallway"},
+        {id: "H_1_N5", floorId: "H_1", x: 699, y: 465, type: "hallway"},
+        {id: "H_1_N6", floorId: "H_1", x: 858, y: 465, type: "hallway"},
+        {id: "H_1_N7", floorId: "H_1", x: 860, y: 648, type: "hallway"},
+        {id: "H_1_N8", floorId: "H_1", x: 600, y: 653, type: "hallway"},
+        {id: "H_1_N9", floorId: "H_1", x: 535, y: 207, type: "hallway"},
+
+        //room
+        {id: "H_110", floorId: "H_1", x: 260, y: 344, type: "room", label: "Room 110"},
+
+        //Interfloor connection
+        {id: "H_1_ESCALATOR_1", floorId: "H_1", x: 775, y: 725, type: "escalator", label: "Escalator"},
+        {id: "H_1_ESCALATOR_2_UP", floorId: "H_1", x: 640, y: 620, type: "escalator", label: "Escalator"},
+
+        {id: "H_1_STAIRS_1", floorId: "H_1", x: 775, y: 705, type: "stairs", label: "Stairs"},
+        {id: "H_1_STAIRS_2", floorId: "H_1", x: 590, y: 620, type: "stairs", label: "Stairs"},
+
+        {id: "H_1_ELEVATOR_1", floorId: "H_1", x: 680, y: 570, type: "elevator", label: "Elevator"},
+        {id: "H_1_ELEVATOR_2", floorId: "H_1", x: 725, y: 570, type: "elevator", label: "Elevaror"},
+
+        
+
+
+
+
+      ],
+      edges: [
+
+      ]
     }
 
   ],
