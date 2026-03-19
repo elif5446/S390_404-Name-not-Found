@@ -35,7 +35,7 @@ export const MBBuildingNavConfig: BuildingNavConfig = {
         {id: "MB_S2_BATHROOM_H", floorId: "MB_S2", x: 690, y: 776, type: "bathroom", label: "Handicap Washroom"},
         
         //Food
-        {id: "MB_S2.245", floorId: "MB_S2", x: 442, y: 147, type: "food", label: "Vinh's Cafe"},
+        {id: "MB_vinhs_cafe", floorId: "MB_S2", x: 442, y: 147, type: "food", label: "Vinh's Cafe"},
         {id: "MB_S2_MIC", floorId: "MB_S2", x: 390, y: 274, type: "food", label: "Microwave"},
 
         //Help
@@ -125,7 +125,7 @@ export const MBBuildingNavConfig: BuildingNavConfig = {
 
         //POI
         //food
-        {nodeAId: "MB_S2.245", nodeBId: "MB_S2_N4", accessible: true},
+        {nodeAId: "MB_vinhs_cafe", nodeBId: "MB_S2_N4", accessible: true},
         {nodeAId: "MB_S2_MIC", nodeBId: "MB_S2_N4", accessible: true},
 
         //study room
@@ -190,6 +190,7 @@ export const MBBuildingNavConfig: BuildingNavConfig = {
 
         {id:"MB_1_STAIRS_1", floorId: "MB_1", x: 218, y: 200, type: "stairs", label: "Stairs"},
         {id:"MB_1_STAIRS_2", floorId: "MB_1", x: 369, y: 506, type: "stairs", label: "Stairs"},
+        {id:"MB_1_STAIRS_3", floorId: "MB_1", x: 295, y: 805, type: "stairs", label: "Stairs"},
 
         {id:"MB_1_ESCALATOR_DOWN", floorId: "MB_1", x: 339, y: 801, type: "escalator", label: "Escalator"},
         {id:"MB_1_ESCALATOR", floorId: "MB_1", x: 327, y: 802, type: "escalator", label: "Escalator"},
@@ -234,6 +235,7 @@ export const MBBuildingNavConfig: BuildingNavConfig = {
         {nodeAId: "MB_1_STAIRS_1", nodeBId: "MB_1_N10", accessible: false},
         {nodeAId: "MB_1_STAIRS_2", nodeBId: "MB_1_N6", accessible: false},
         {nodeAId: "MB_1_STAIRS_2", nodeBId: "MB_1_N4", accessible: false},
+        {nodeAId: "MB_1_STAIRS_3", nodeBId: "MB_1_N3", accessible: false},
 
         {nodeAId: "MB_1_ESCALATOR_DOWN", nodeBId: "MB_1_N3", accessible: false},
         {nodeAId: "MB_1_ESCALATOR", nodeBId: "MB_1_N3", accessible: false},
@@ -261,7 +263,7 @@ export const MBBuildingNavConfig: BuildingNavConfig = {
    interFloorEdges: [
     //stairs
     {nodeAId: "MB_1_STAIRS_1", nodeBId: "MB_S2_STAIRS_5", accessible:false},
-
+    {nodeAId: "MB_1_STAIRS_3", nodeBId: "MB_S2_STAIRS_2", accessible:false},
     //escalators
     {nodeAId: "MB_S2_ESCALATOR_UP", nodeBId: "MB_1_ESCALATOR", accessible:false},
     {nodeAId: "MB_1_ESCALATOR_DOWN", nodeBId: "MB_S2_ESCALATOR_DOWN", accessible:false},
