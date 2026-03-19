@@ -2,13 +2,12 @@ import { BuildingNavConfig } from '../types/Navigation';
 
 export const hallBuildingNavConfig: BuildingNavConfig = {
   buildingId: "H", //needs to match the id of the BuildingIndoorConfig
-  defaultStartNodeId: "H_start",
+  defaultStartNodeId: "",
   floors: [
     {
       floorId: "H_8",
       nodes: [
 
-        {id: "H_start", floorId: "H_8", x: 306, y: 394, type: "entrance"},
         //halways 
         {id: "H_8_N1", floorId: "H_8", x: 177, y: 806, type: "hallway"},
         {id: "H_8_N2", floorId: "H_8", x: 176, y: 394, type: "hallway"},
@@ -32,9 +31,9 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
         {id: "H_8_N11", floorId: "H_8", x: 849, y: 211, type: "hallway"},
         {id: "H_8_N12", floorId: "H_8", x: 686, y: 211, type: "hallway"},
         {id: "H_8_N21", floorId: "H_8", x: 650, y: 806, type: "hallway"},
+        {id: "H_8_N22", floorId: "H_8", x: 306, y: 394, type: "hallway"},
 
         //rooms 
-        
           //top
         {id: "H_801", floorId: "H_8", x: 200, y: 114, type: "room", label: "Room 801"},
         {id: "H_803", floorId: "H_8", x: 293, y: 115, type: "room", label: "Room 803"},
@@ -92,19 +91,16 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
         {id: "H_8_BATHROOM_1_N", floorId: "H_8", x: 376, y: 289, type: "bathroom", label: "Neutral Washroom"},
         {id: "H_8_BATHROOM_2_N", floorId: "H_8", x: 638, y: 289, type: "bathroom", label: "Neutral Washroom"},
 
-
-
         //interfloor connections (stais, escalators, elevator)
         {id:"H_8_ELEVATOR", floorId: "H_8", x: 340, y: 352, type: "elevator", label: "Elevator"},
+
         {id: "H_8_STAIRS_1", floorId: "H_8", x: 306, y: 359, type: "stairs", label: "Stairwell"},
         {id: "H_8_STAIRS_2", floorId: "H_8", x: 297, y: 727, type: "stairs", label: "Stairwell"},
         {id: "H_8_STAIRS_3", floorId: "H_8", x: 714, y: 727, type: "stairs", label: "Stairwell"},
         {id: "H_8_STAIRS_4", floorId: "H_8", x: 714, y: 289, type: "stairs", label: "Stairwell"},
-        {id: "H_8_ESCALATOR_UP", floorId: "H_8", x: 488, y: 431, type: "escalator", label: "Escalator moving up"},
-        {id: "H_8_ESCALATOR_DOWN", floorId: "H_8", x: 488, y: 617, type: "escalator", label: "Escalator moving down"}, 
 
-
-
+        {id: "H_8_ESCALATOR_UP_TO_FLOOR_9", floorId: "H_8", x: 488, y: 431, type: "escalator", label: "Escalator Up to Floor 9"},
+        {id: "H_8_ESCALATOR_DOWN_TO_FLOOR_2", floorId: "H_8", x: 488, y: 617, type: "escalator", label: "Escalator Down to Floor 2"}, 
       ],
       edges: [
 
@@ -112,8 +108,8 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
         {nodeAId: "H_8_N3", nodeBId: "H_8_N2", accessible: true},
         {nodeAId: "H_8_N3", nodeBId: "H_8_N17", accessible: true},
         {nodeAId: "H_8_N17", nodeBId: "H_8_N4", accessible: true},
-        {nodeAId: "H_8_N2", nodeBId: "H_start", accessible: true},
-        {nodeAId: "H_start", nodeBId: "H_8_N5", accessible: true},
+        {nodeAId: "H_8_N2", nodeBId: "H_8_N22", accessible: true},
+        {nodeAId: "H_8_N22", nodeBId: "H_8_N5", accessible: true},
         {nodeAId: "H_8_N4", nodeBId: "H_8_N5", accessible: true},
         {nodeAId: "H_8_N2", nodeBId: "H_8_N13", accessible: true},
         {nodeAId: "H_8_N13", nodeBId: "H_8_N19", accessible: true},
@@ -125,7 +121,6 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
         {nodeAId: "H_8_N18", nodeBId: "H_8_N5", accessible: true},
         {nodeAId: "H_8_N1", nodeBId: "H_8_N14", accessible: true},
         {nodeAId: "H_8_N17", nodeBId: "H_8_N20", accessible: true},
-
 
         {nodeAId: "H_8_N4", nodeBId: "H_8_N12", accessible: true},
         {nodeAId: "H_8_N12", nodeBId: "H_8_N11", accessible: true},
@@ -147,7 +142,6 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
         {nodeAId: "H_8_N13", nodeBId: "H_857", accessible: true},
         {nodeAId: "H_8_N13", nodeBId: "H_855", accessible: true},
         {nodeAId: "H_8_N13", nodeBId: "H_854", accessible: true},
-
 
         {nodeAId: "H_8_N19", nodeBId: "H_853", accessible: true},
         {nodeAId: "H_8_N19", nodeBId: "H_852", accessible: true},
@@ -195,20 +189,17 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
 
         {nodeAId: "H_8_N21", nodeBId: "H_832.06", accessible: true},
 
-        {nodeAId: "H_start", nodeBId: "H_862", accessible: true},
-        
-
-
-
+        {nodeAId: "H_8_N22", nodeBId: "H_862", accessible: true},
+      
         //hall to POI
         {nodeAId: "H_8_N17", nodeBId: "H_8_BATHROOM_1_N", accessible: true},
         {nodeAId: "H_8_N12", nodeBId: "H_8_BATHROOM_2_N", accessible: true},
 
         //hall to interfloor connection 
-        {nodeAId: "H_start", nodeBId: "H_8_ELEVATOR", accessible: true },
-        {nodeAId: "H_start", nodeBId: "H_8_STAIRS_1", accessible: false },
-        {nodeAId: "H_8_N5", nodeBId: "H_8_ESCALATOR_UP", accessible: false},
-        {nodeAId: "H_8_N18", nodeBId: "H_8_ESCALATOR_DOWN", accessible: false},
+        {nodeAId: "H_8_N22", nodeBId: "H_8_ELEVATOR", accessible: true },
+        {nodeAId: "H_8_N22", nodeBId: "H_8_STAIRS_1", accessible: false },
+        {nodeAId: "H_8_N5", nodeBId: "H_8_ESCALATOR_UP_TO_FLOOR_9", accessible: false},
+        {nodeAId: "H_8_N18", nodeBId: "H_8_ESCALATOR_DOWN_TO_FLOOR_2", accessible: false},
         {nodeAId: "H_8_N15", nodeBId: "H_8_STAIRS_2", accessible: false},
         {nodeAId: "H_8_N7", nodeBId: "H_8_STAIRS_3", accessible: false},
         {nodeAId: "H_8_N12", nodeBId: "H_8_STAIRS_4", accessible: false},
@@ -252,8 +243,6 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
         {id: "H_9_N32", floorId: "H_9", x: 525, y: 659, type: "hallway"},
         {id: "H_9_N33", floorId: "H_9", x: 942, y: 646, type: "hallway"},
 
-
-
         //rooms 
           //Left side 
           {id: "H_967", floorId: "H_9", x: 73, y: 166, type: "room", label: "Room 967"},
@@ -271,7 +260,6 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
           {id: "H_961.15", floorId: "H_9", x: 32, y: 828, type: "room", label: "Room 961.15"},
           {id: "H_961.17", floorId: "H_9", x: 32, y: 869, type: "room", label: "Room 961.17"},
           {id: "H_961.19", floorId: "H_9", x: 32, y: 933, type: "room", label: "Room 961.19"},
-
 
           //Right side
           {id: "H_917", floorId: "H_9", x: 937, y: 118, type: "room", label: "Room 917"},
@@ -324,7 +312,6 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
           {id: "H_945", floorId: "H_9", x: 290, y: 798, type: "room", label: "Room 945"},
           {id: "H_920", floorId: "H_9", x: 658, y: 469, type: "room", label: "Room 920"},
 
-
         //POI
           //bathroom
           {id: "H_9_BATHROOM_1_W", floorId: "H_9", x: 355, y: 282, type: "bathroom", label: "Womens Washroom"},
@@ -339,10 +326,8 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
 
         {id: "H_9_ELEVATOR", floorId: "H_9", x: 358, y: 356, type: "elevator", label: "Elevator"},
 
-        {id: "H_9_ESCALATOR_DOWN", floorId: "H_9", x: 480, y: 444, type: "escalator", label: "Escalator Down"},
-        {id: "H_9_ESCALATOR_UP", floorId: "H_9", x: 515, y: 444, type: "escalator", label: "Escalator Up"}, 
-
-
+        {id: "H_9_ESCALATOR_DOWN_TO_FLOOR_8", floorId: "H_9", x: 480, y: 444, type: "escalator", label: "Escalator Down to Floor 8"},
+        {id: "H_9_ESCALATOR_UP_TO_FLOOR_10", floorId: "H_9", x: 515, y: 444, type: "escalator", label: "Escalator Up to Floor 10"}, 
       ],
       edges: [
         //hall to hall
@@ -481,11 +466,8 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
         {nodeAId: "H_9_STAIRS_3", nodeBId: "H_9_N24" , accessible: false},
         {nodeAId: "H_9_STAIRS_4", nodeBId: "H_9_N3" , accessible: false},
 
-        {nodeAId: "H_9_ESCALATOR_DOWN", nodeBId: "H_9_N25" , accessible: false},
-        {nodeAId: "H_9_ESCALATOR_UP", nodeBId: "H_9_N25" , accessible: false},
-
-
-
+        {nodeAId: "H_9_ESCALATOR_DOWN_TO_FLOOR_8", nodeBId: "H_9_N25" , accessible: false},
+        {nodeAId: "H_9_ESCALATOR_UP_TO_FLOOR_10", nodeBId: "H_9_N25" , accessible: false},
       ]
     },
     {
@@ -501,6 +483,7 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
 
         //POI
         {id: "H_1_BATHROOM_1_N", floorId: "H_1", x: 456, y: 285, type: "bathroom", label: "Neutral Washroom"},
+        {id: "H_1_SECURITY", floorId: "H_1", x: 859, y: 414, type: "helpDesk", label: "Security desk"},
 
         //hallways
         {id: "H_1_N1", floorId: "H_1", x: 372, y: 633, type: "hallway"},
@@ -509,37 +492,135 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
         {id: "H_1_N4", floorId: "H_1", x: 535, y: 465, type: "hallway"},
         {id: "H_1_N5", floorId: "H_1", x: 699, y: 465, type: "hallway"},
         {id: "H_1_N6", floorId: "H_1", x: 858, y: 465, type: "hallway"},
-        {id: "H_1_N7", floorId: "H_1", x: 860, y: 648, type: "hallway"},
+        {id: "H_1_N7", floorId: "H_1", x: 860, y: 651, type: "hallway"},
         {id: "H_1_N8", floorId: "H_1", x: 600, y: 653, type: "hallway"},
         {id: "H_1_N9", floorId: "H_1", x: 535, y: 207, type: "hallway"},
+        {id: "H_1_N10", floorId: "H_1", x: 955, y: 661, type: "hallway"},
+        {id: "H_1_N11", floorId: "H_1", x: 955, y: 473, type: "hallway"},
 
         //room
         {id: "H_110", floorId: "H_1", x: 260, y: 344, type: "room", label: "Room 110"},
 
         //Interfloor connection
-        {id: "H_1_ESCALATOR_1", floorId: "H_1", x: 775, y: 725, type: "escalator", label: "Escalator"},
-        {id: "H_1_ESCALATOR_2_UP", floorId: "H_1", x: 640, y: 620, type: "escalator", label: "Escalator"},
+        {id: "H_1_ESCALATOR_UP_TO_FLOOR_1", floorId: "H_1", x: 775, y: 725, type: "escalator", label: "Escalator Up to Floor 1"},
+        {id: "H_1_ESCALATOR_DOWN_TO_FLOOR_1", floorId: "H_1", x: 640, y: 620, type: "escalator", label: "Escalator Down to Floor 1"},
+        {id: "H_1_ESCALATOR_UP_TO_FLOOR_2", floorId: "H_1", x: 827, y: 618, type: "escalator", label: "Escalator Up to Floor 2"},
 
         {id: "H_1_STAIRS_1", floorId: "H_1", x: 775, y: 705, type: "stairs", label: "Stairs"},
         {id: "H_1_STAIRS_2", floorId: "H_1", x: 590, y: 620, type: "stairs", label: "Stairs"},
+        {id: "H_1_STAIRS_3", floorId: "H_1", x: 876, y: 618, type: "stairs", label: "Stairs"},
 
-        {id: "H_1_ELEVATOR_1", floorId: "H_1", x: 680, y: 570, type: "elevator", label: "Elevator"},
-        {id: "H_1_ELEVATOR_2", floorId: "H_1", x: 725, y: 570, type: "elevator", label: "Elevaror"},
-
-        
-
-
-
-
+        {id: "H_1_ELEVATOR_1", floorId: "H_1", x: 708, y: 561, type: "elevator", label: "Elevator"},
+        {id: "H_1_ELEVATOR_2", floorId: "H_1", x: 759, y: 562, type: "elevator", label: "Elevaror"},
       ],
       edges: [
 
+        //hall to hall
+        {nodeAId:"H_1_N1", nodeBId: "H_1_N2", accessible: true},
+        {nodeAId:"H_1_N1", nodeBId: "H_1_N3", accessible: true},
+        {nodeAId:"H_1_N1", nodeBId: "H_1_N8", accessible: true},
+        {nodeAId:"H_1_N1", nodeBId: "H_1_N4", accessible: true},
+
+        {nodeAId:"H_1_N2", nodeBId: "H_1_N3", accessible: true},
+        {nodeAId:"H_1_N4", nodeBId: "H_1_N9", accessible: true},
+        {nodeAId:"H_1_N4", nodeBId: "H_1_N5", accessible: true},
+        {nodeAId:"H_1_N5", nodeBId: "H_1_N6", accessible: true},
+        {nodeAId:"H_1_N6", nodeBId: "H_1_N11", accessible: true},
+        {nodeAId:"H_1_N7", nodeBId: "H_1_N8", accessible: true},
+        {nodeAId:"H_1_N7", nodeBId: "H_1_N10", accessible: true},
+        {nodeAId:"H_1_N10", nodeBId: "H_1_N11", accessible: true},
+
+        //hall to PIO
+        {nodeAId:"H_1_N6", nodeBId: "H_1_SECURITY", accessible: true},
+        {nodeAId:"H_1_N4", nodeBId: "H_1_BATHROOM_1_N", accessible: true},
+        
+        //hall to class
+        {nodeAId:"H_1_N3", nodeBId: "H_110", accessible: true},
+
+        //hall to entrance 
+        {nodeAId:"H_1_N1", nodeBId: "H_1_ENTRANCE_1", accessible: true},
+        {nodeAId:"H_1_N2", nodeBId: "H_1_ENTRANCE_2", accessible: true},
+
+        {nodeAId:"H_1_N10", nodeBId: "H_1_ENTRANCE_3", accessible: true},
+        {nodeAId:"H_1_N10", nodeBId: "H_1_ENTRANCE_4", accessible: true},
+
+
+        //hall to interfloor connections
+        {nodeAId:"H_1_STAIRS_1", nodeBId: "H_1_N7", accessible: false},
+        {nodeAId:"H_1_STAIRS_2", nodeBId: "H_1_N8", accessible: false},
+        {nodeAId:"H_1_STAIRS_3", nodeBId: "H_1_N7", accessible: false},
+
+        {nodeAId:"H_1_ESCALATOR_UP_TO_FLOOR_1", nodeBId: "H_1_N7", accessible: false},
+        {nodeAId:"H_1_ESCALATOR_DOWN_TO_FLOOR_1", nodeBId: "H_1_N8", accessible: false},
+        {nodeAId:"H_1_ESCALATOR_UP_TO_FLOOR_2", nodeBId: "H_1_N7", accessible: false},
+
+        {nodeAId:"H_1_ELEVATOR_1", nodeBId: "H_1_N5", accessible: true},
+        {nodeAId:"H_1_ELEVATOR_2", nodeBId: "H_1_N5", accessible: true},
+      ]
+    },
+    {
+      floorId: "H_2",
+      nodes: [
+        //hallway
+        {id: "H_2_N1", floorId: "H_2", x: 570, y: 741, type: "hallway"},
+        {id: "H_2_N2", floorId: "H_2", x: 685, y: 741, type: "hallway"},
+        {id: "H_2_N3", floorId: "H_2", x: 788, y: 741, type: "hallway"},
+        {id: "H_2_N4", floorId: "H_2", x: 722, y: 407, type: "hallway"},
+        {id: "H_2_N5", floorId: "H_2", x: 971, y: 407, type: "hallway"},
+        {id: "H_2_N6", floorId: "H_2", x: 471, y: 407, type: "hallway"},
+        
+        //POI
+        {id: "H_2_HIVE_CAFE", floorId: "H_2", x: 471, y: 256, type: "food", label: "Hive Cafe"},
+        {id: "H_2_STUDENT_UNION", floorId: "H_2", x: 801, y: 326, type: "helpDesk", label: "Student Union"},
+
+        //stairs
+        {id: "H_2_STAIRS_1", floorId: "H_2", x: 554, y: 811, type: "stairs", label: "Stairs"},
+        {id: "H_2_STAIRS_2", floorId: "H_2", x: 815, y: 811, type: "stairs", label: "Stairs"},
+
+        //escalator 
+        {id: "H_2_ESCALATOR_DOWN_TO_FLOOR_1", floorId: "H_2", x: 608, y: 811, type: "escalator", label: "Escalator Down to Floor 1"},
+        {id: "H_2_ESCALATOR_UP_TO_FLOOR_2", floorId: "H_2", x: 759, y: 811, type: "escalator", label: "Escalator on Floor 2"},
+        {id: "H_2_ESCALATOR_UP_TO_FLOOR_8", floorId: "H_2", x: 574, y: 429, type: "escalator", label: "Escalator Up to Floor 8"},
+        {id: "H_2_ESCALATOR_DOWN_TO_FLOOR_2", floorId: "H_2", x: 519, y: 681, type: "escalator", label: "Escalator Down to Floor 2"},
+
+        //elevator
+        {id: "H_2_ELEVATOR_1", floorId: "H_2", x: 660, y: 811, type: "elevator", label: "Elevator"},
+        {id: "H_2_ELEVATOR_2", floorId: "H_2", x: 709, y: 811, type: "elevator", label: "Elevator"},
+      ],
+      edges: [
+        //hall to POI
+        {nodeAId: "H_2_N6", nodeBId: "H_2_HIVE_CAFE", accessible: true},
+        {nodeAId: "H_2_N4", nodeBId: "H_2_STUDENT_UNION", accessible: true},
+
+        //hall to hall
+        {nodeAId: "H_2_N1", nodeBId: "H_2_N2", accessible: true},
+        {nodeAId: "H_2_N2", nodeBId: "H_2_N3", accessible: true},
+        {nodeAId: "H_2_N3", nodeBId: "H_2_N4", accessible: true},
+        {nodeAId: "H_2_N4", nodeBId: "H_2_N6", accessible: true},
+        {nodeAId: "H_2_N4", nodeBId: "H_2_N5", accessible: true},
+
+        //hall to stairs
+        {nodeAId: "H_2_N1", nodeBId: "H_2_STAIRS_1", accessible: false},
+        {nodeAId: "H_2_N3", nodeBId: "H_2_STAIRS_2", accessible: false},
+
+        //hall to escalator
+        {nodeAId: "H_2_N1", nodeBId: "H_2_ESCALATOR_DOWN_TO_FLOOR_1", accessible: false},
+        {nodeAId: "H_2_N3", nodeBId: "H_2_ESCALATOR_UP_TO_FLOOR_2", accessible: false},
+
+        {nodeAId: "H_2_N4", nodeBId: "H_2_ESCALATOR_UP_TO_FLOOR_8", accessible: false},
+        {nodeAId: "H_2_N6", nodeBId: "H_2_ESCALATOR_UP_TO_FLOOR_8", accessible: false},
+
+        {nodeAId: "H_2_N1", nodeBId: "H_2_ESCALATOR_DOWN_TO_FLOOR_2", accessible: false},
+
+        //hall to elevator
+        {nodeAId: "H_2_N2", nodeBId: "H_2_ELEVATOR_1", accessible: true},
+        {nodeAId: "H_2_N2", nodeBId: "H_2_ELEVATOR_2", accessible: true},
       ]
     }
 
   ],
   interFloorEdges: [
-    // edges that connect floors
+    // edges that connect floors for H8 and H9
     {nodeAId: "H_8_ELEVATOR", nodeBId: "H_9_ELEVATOR", accessible: true},
 
     {nodeAId: "H_8_STAIRS_1", nodeBId: "H_9_STAIRS_1", accessible: false},
@@ -547,8 +628,25 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
     {nodeAId: "H_8_STAIRS_3", nodeBId: "H_9_STAIRS_2", accessible: false},
     {nodeAId: "H_8_STAIRS_4", nodeBId: "H_9_STAIRS_4", accessible: false},
     
-    {nodeAId: "H_9_ESCALATOR_DOWN", nodeBId: "H_8_ESCALATOR_DOWN", accessible: false},
-    {nodeAId: "H_8_ESCALATOR_UP", nodeBId: "H_9_ESCALATOR_UP", accessible: false},
+    {nodeAId: "H_9_ESCALATOR_DOWN_TO_FLOOR_8", nodeBId: "H_8_ESCALATOR_DOWN_TO_FLOOR_2", accessible: false},
+    {nodeAId: "H_8_ESCALATOR_UP_TO_FLOOR_9", nodeBId: "H_9_ESCALATOR_UP_TO_FLOOR_10", accessible: false},
+
+    // edges that connect floors for H2 and H8
+    {nodeAId: "H_2_ESCALATOR_UP_TO_FLOOR_8", nodeBId: "H_8_ESCALATOR_UP_TO_FLOOR_9", accessible: false},
+    {nodeAId: "H_8_ESCALATOR_DOWN_TO_FLOOR_2", nodeBId: "H_2_ESCALATOR_DOWN_TO_FLOOR_2", accessible: false},
+
+    {nodeAId: "H_2_ELEVATOR_1", nodeBId: "H_8_ELEVATOR", accessible: true},
+    {nodeAId: "H_2_ELEVATOR_2", nodeBId: "H_8_ELEVATOR", accessible: true},
+
+    // edges that connect floors for H1 and H2
+    {nodeAId: "H_1_STAIRS_2", nodeBId: "H_2_STAIRS_1", accessible: false},
+    {nodeAId: "H_1_STAIRS_3", nodeBId: "H_2_STAIRS_2", accessible: false},
+
+    {nodeAId: "H_1_ESCALATOR_UP_TO_FLOOR_2", nodeBId: "H_2_ESCALATOR_UP_TO_FLOOR_2", accessible: false},
+    {nodeAId: "H_2_ESCALATOR_DOWN_TO_FLOOR_1", nodeBId: "H_1_ESCALATOR_DOWN_TO_FLOOR_1", accessible: false},
+
+    {nodeAId: "H_1_ELEVATOR_1", nodeBId: "H_2_ELEVATOR_1", accessible: true},
+    {nodeAId: "H_1_ELEVATOR_2", nodeBId: "H_2_ELEVATOR_2", accessible: true}
 
   ]
 };
