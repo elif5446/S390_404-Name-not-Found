@@ -1,5 +1,7 @@
 import { BuildingIndoorConfig } from "@/src/indoors/types/FloorPlans";
 
+import H1_SVG from "@/assets/floor/H-1.svg";
+import H2_SVG from "@/assets/floor/H-2.svg";
 import H8_SVG from "@/assets/floor/H-8.svg";
 import H9_SVG from "@/assets/floor/H-9.svg";
 import MB1_SVG from "@/assets/floor/MB-1.svg";
@@ -11,8 +13,33 @@ export const INDOOR_DATA: Record<string, BuildingIndoorConfig> = {
   H: {
     id: "H",
     name: "Hall Building",
-    defaultFloor: 8,
+    defaultFloor: 1,
     floors: [
+      {
+        id: "1",
+        level: 1,
+        label: "1",
+        type: "svg" as const,
+        image: H1_SVG,
+        viewBox: "0 0 1024 1024",
+        bounds: {
+          northEast: { latitude: 45.49769, longitude: -73.5783 }, //change later 
+          southWest: { latitude: 45.49682, longitude: -73.57954 }, //change later 
+        },
+      },
+            {
+        id: "2",
+        level: 2,
+        label: "2",
+        type: "svg" as const,
+        image: H2_SVG,
+        viewBox: "0 0 1024 1024",
+        bounds: {
+          northEast: { latitude: 45.49769, longitude: -73.5783 }, //change later 
+          southWest: { latitude: 45.49682, longitude: -73.57954 }, //change later 
+        },
+      },
+      
       {
         id: "8",
         level: 8,
@@ -57,7 +84,7 @@ export const INDOOR_DATA: Record<string, BuildingIndoorConfig> = {
       },
       {
         id: "1",
-        level: 2,
+        level: -1,
         label: "1",
         type: "svg" as const,
         image: MB1_SVG,
