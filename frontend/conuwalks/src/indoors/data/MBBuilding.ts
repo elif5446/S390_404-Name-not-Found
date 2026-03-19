@@ -24,24 +24,24 @@ export const MBBuildingNavConfig: BuildingNavConfig = {
         
         //POI
         //Study Rooms
-        {id: "MB_S2.273", floorId: "H_S2", x: 636, y: 123, type: "room", label: "Study Room"},
-        {id: "MB_S2.275", floorId: "H_S2", x: 674, y: 123, type: "room", label: "Study Room"},
-        {id: "MB_S2.279", floorId: "H_S2", x: 712, y: 123, type: "room", label: "Study Room"},
-        {id: "MB_S2.135", floorId: "H_S2", x: 492, y: 727, type: "room", label: "Study Room"},
-        {id: "MB_S2.428", floorId: "H_S2", x: 810, y: 800, type: "room", label: "Study Room"},
+        {id: "MB_S2.273", floorId: "MB_S2", x: 636, y: 123, type: "room", label: "Study Room"},
+        {id: "MB_S2.275", floorId: "MB_S2", x: 674, y: 123, type: "room", label: "Study Room"},
+        {id: "MB_S2.279", floorId: "MB_S2", x: 712, y: 123, type: "room", label: "Study Room"},
+        {id: "MB_S2.135", floorId: "MB_S2", x: 492, y: 727, type: "room", label: "Study Room"},
+        {id: "MB_S2.428", floorId: "MB_S2", x: 810, y: 800, type: "room", label: "Study Room"},
         
 
         //Washrooms
-        {id: "MB_S2_BATHROOM_W", floorId: "H_S2", x: 639, y: 762, type: "bathroom", label: "Women Washroom"},
-        {id: "MB_S2_BATHROOM_M", floorId: "H_S2", x: 720, y: 762, type: "bathroom", label: "Men Washroom"},
-        {id: "MB_S2_BATHROOM_H", floorId: "H_S2", x: 690, y: 776, type: "bathroom", label: "Handicap Washroom"},
+        {id: "MB_S2_BATHROOM_W", floorId: "MB_S2", x: 639, y: 762, type: "bathroom", label: "Women Washroom"},
+        {id: "MB_S2_BATHROOM_M", floorId: "MB_S2", x: 720, y: 762, type: "bathroom", label: "Men Washroom"},
+        {id: "MB_S2_BATHROOM_H", floorId: "MB_S2", x: 690, y: 776, type: "bathroom", label: "Handicap Washroom"},
         
         //Food
-        {id: "MB_S2.245", floorId: "H_S2", x: 442, y: 147, type: "food", label: "Vinh's Cafe"},
-        {id: "MB_S2_MIC", floorId: "H_S2", x: 390, y: 274, type: "food", label: "Microwave"},
+        {id: "MB_vinhs_cafe", floorId: "MB_S2", x: 442, y: 147, type: "food", label: "Vinh's Cafe"},
+        {id: "MB_S2_MIC", floorId: "MB_S2", x: 390, y: 274, type: "food", label: "Microwave"},
 
         //Help
-        {id: "MB_S2.145", floorId: "H_S2", x: 490, y: 657, type: "helpDesk", label: "Help Desk"},
+        {id: "MB_S2.145", floorId: "MB_S2", x: 490, y: 657, type: "helpDesk", label: "Help Desk"},
         
 
 
@@ -127,7 +127,7 @@ export const MBBuildingNavConfig: BuildingNavConfig = {
 
         //POI
         //food
-        {nodeAId: "MB_S2.245", nodeBId: "MB_S2_N4", accessible: true},
+        {nodeAId: "MB_vinhs_cafe", nodeBId: "MB_S2_N4", accessible: true},
         {nodeAId: "MB_S2_MIC", nodeBId: "MB_S2_N4", accessible: true},
 
         //study room
@@ -191,8 +191,9 @@ export const MBBuildingNavConfig: BuildingNavConfig = {
         {id:"MB_1_ELEVATOR5", floorId: "MB_1", x: 513, y: 569, type: "elevator", label: "Elevator"},
         {id:"MB_1_ELEVATOR6", floorId: "MB_1", x: 551, y: 569, type: "elevator", label: "Elevator"},
 
-        {id:"MB_1_STAIRS1", floorId: "MB_1", x: 218, y: 200, type: "stairs", label: "Stairs"},
-        {id:"MB_1_STAIRS2", floorId: "MB_1", x: 369, y: 506, type: "stairs", label: "Stairs"},
+        {id:"MB_1_STAIRS_1", floorId: "MB_1", x: 218, y: 200, type: "stairs", label: "Stairs"},
+        {id:"MB_1_STAIRS_2", floorId: "MB_1", x: 369, y: 506, type: "stairs", label: "Stairs"},
+        {id:"MB_1_STAIRS_3", floorId: "MB_1", x: 295, y: 805, type: "stairs", label: "Stairs"},
 
         {id:"MB_1_ESCALATOR_DOWN", floorId: "MB_1", x: 327, y: 802, type: "escalator", label: "Escalator"},
 
@@ -234,9 +235,10 @@ export const MBBuildingNavConfig: BuildingNavConfig = {
         {nodeAId: "MB_1_ENTRANCE3", nodeBId: "MB_1_N1", accessible: true},
 
         //interfloor connections (stairs, escalators, elevator) to hallway
-        {nodeAId: "MB_1_STAIRS1", nodeBId: "MB_1_N10", accessible: false},
-        {nodeAId: "MB_1_STAIRS2", nodeBId: "MB_1_N6", accessible: false},
-        {nodeAId: "MB_1_STAIRS2", nodeBId: "MB_1_N4", accessible: false},
+        {nodeAId: "MB_1_STAIRS_1", nodeBId: "MB_1_N10", accessible: false},
+        {nodeAId: "MB_1_STAIRS_2", nodeBId: "MB_1_N6", accessible: false},
+        {nodeAId: "MB_1_STAIRS_2", nodeBId: "MB_1_N4", accessible: false},
+        {nodeAId: "MB_1_STAIRS_3", nodeBId: "MB_1_N3", accessible: false},
 
         {nodeAId: "MB_1_ESCALATOR_DOWN", nodeBId: "MB_1_N3", accessible: false},
 
@@ -261,16 +263,15 @@ export const MBBuildingNavConfig: BuildingNavConfig = {
 
    ],
    interFloorEdges: [
-//     // edges that connect floors
-//     {nodeAId: "H_8_ELEVATOR", nodeBId: "H_9_ELEVATOR", accessible: true},
-
-//     {nodeAId: "H_8_STAIRS_1", nodeBId: "H_9_STAIRS_1", accessible: false},
-//     {nodeAId: "H_8_STAIRS_2", nodeBId: "H_9_STAIRS_3", accessible: false},
-//     {nodeAId: "H_8_STAIRS_3", nodeBId: "H_9_STAIRS_2", accessible: false},
-//     {nodeAId: "H_8_STAIRS_4", nodeBId: "H_9_STAIRS_4", accessible: false},
+    //stairs
+    {nodeAId: "MB_1_STAIRS_1", nodeBId: "MB_S2_STAIRS_5", accessible:false},
+    {nodeAId: "MB_1_STAIRS_3", nodeBId: "MB_S2_STAIRS_2", accessible:false},
+    //escalators
+    {nodeAId: "MB_S2_ESCALATOR_UP", nodeBId: "MB_1_ESCALATOR", accessible:false},
+    {nodeAId: "MB_1_ESCALATOR_DOWN", nodeBId: "MB_S2_ESCALATOR_DOWN", accessible:false},
     
-//     {nodeAId: "H_9_ESCALATOR_DOWN", nodeBId: "H_8_ESCALATOR_DOWN", accessible: false},
-//     {nodeAId: "H_8_ESCALATOR_UP", nodeBId: "H_9_ESCALATOR_UP", accessible: false},
+//     {nodeAId: "MB_9_ESCALATOR_DOWN", nodeBId: "MB_8_ESCALATOR_DOWN", accessible: false},
+//     {nodeAId: "MB_8_ESCALATOR_UP", nodeBId: "MB_9_ESCALATOR_UP", accessible: false},
 
    ]
  };
