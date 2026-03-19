@@ -38,8 +38,10 @@ export default function RootLayout() {
       apiKey="phc_At7tyPZSQwjffq1Uj35XDnUZqAbt5ZTWAc6SsMXbanw" 
       options={{
         host: "https://us.i.posthog.com",
+        flushAt: 1,
+        flushInterval: 0,
         "enableSessionReplay": true,
-        captureAppLifecycleEvents: true, // Tracks when app opens/closes
+        captureAppLifecycleEvents: true // Tracks when app opens/closes
       }}
       autocapture={{
           captureTouches: true, // Tracks taps (misclicks/rage clicks)
