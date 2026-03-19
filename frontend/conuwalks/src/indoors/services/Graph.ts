@@ -9,9 +9,9 @@ export class Graph {
   //navigation between floors uses a predefined cost (in terms of pixel distance). Can be changed but for now we favour escalators over stairs,
   //stairs over elevator (if you add accessiblity as true in pathFinder you will see that elevator path will be taken)
   private readonly FLOOR_TRANSITION_COSTS: Record<string, number> = {
-    elevator: 500,    
-    escalator: 50,   
-    stairs: 150,    
+    elevator: 600,    
+    escalator: 300,   
+    stairs: 500,    
   };
 
   constructor() {
@@ -26,7 +26,7 @@ export class Graph {
     this.nodes.set(node.id, node);
   }
 
-  addEdge(edge: Edge): void {
+  addEdge(edge: Edge, oneWay: boolean = false): void {
     const nodeA = this.nodes.get(edge.nodeAId);
     const nodeB = this.nodes.get(edge.nodeBId);
 
@@ -44,7 +44,6 @@ export class Graph {
             Math.pow(nodeB.x - nodeA.x, 2) + Math.pow(nodeB.y - nodeA.y, 2)
           );
 
-    
     const weightedEdge: WeighedEdge = {
       ...edge,
       weight,      
@@ -59,9 +58,12 @@ export class Graph {
     }
 
     this.edges.get(edge.nodeAId)!.push(weightedEdge);
-    this.edges
-      .get(edge.nodeBId)!
-      .push({ ...weightedEdge, nodeAId: edge.nodeBId, nodeBId: edge.nodeAId });
+
+    if(!oneWay){
+      this.edges
+        .get(edge.nodeBId)!
+        .push({ ...weightedEdge, nodeAId: edge.nodeBId, nodeBId: edge.nodeAId });
+    }
   }
 
   getNeighbors(nodeId: string): Node[] {
