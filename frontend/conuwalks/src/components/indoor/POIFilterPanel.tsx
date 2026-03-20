@@ -37,8 +37,10 @@ const POIFilterPanel: React.FC<Props> = ({
   onToggleCategory,
   onSelectPOI,
 }) => {
-  const [query, setQuery] = useState("");
 
+
+  const [query, setQuery] = useState("");
+  const [listExpanded, setListExpanded] = useState(false);
   const normalize = (value: string) => value.trim().toLowerCase().replace(/\s+/g, " ");
   const queryNormalized = normalize(query);
   const queryRoom = queryNormalized.replace(/^h\s*-\s*/i, "").replace(/^room\s+/i, "");
@@ -98,19 +100,7 @@ const POIFilterPanel: React.FC<Props> = ({
         </TouchableOpacity>
       </View>
 
-      <View style={S.searchRow}>
-        <Ionicons name="search-outline" size={14} color={POI_PALETTE.textMuted} />
-        <TextInput
-          value={query}
-          onChangeText={setQuery}
-          placeholder="Search POI or room"
-          placeholderTextColor={POI_PALETTE.textMuted}
-          style={S.searchInput}
-          accessibilityLabel="Search POIs"
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-      </View>
+
 
       {/*  Filter chips  */}
       <ScrollView
@@ -139,79 +129,105 @@ const POIFilterPanel: React.FC<Props> = ({
       </ScrollView>
 
 
-      <View style={S.listToggleRow}>
+      <View style={S.searchRow}>
+        <Ionicons name="search-outline" size={14} color={POI_PALETTE.textMuted} />
+        <TextInput
+          value={query}
+          onChangeText={setQuery}
+          placeholder="Search POIs"
+          placeholderTextColor={POI_PALETTE.textMuted}
+          style={S.searchInput}
+          accessibilityLabel="Search POIs"
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+      </View>
+
+      <TouchableOpacity
+        onPress={() => setListExpanded((v) => !v)}
+        style={S.listToggleRow}
+        accessibilityRole="button"
+        accessibilityLabel="Toggle POI list"
+      >
         <Text style={S.listToggleTitle}>Points of Interest ({visiblePOIs.length})</Text>
-      </View>
+        <Ionicons
+          name={listExpanded ? "chevron-up" : "chevron-down"}
+          size={16}
+          color={POI_PALETTE.textMid}
+        />
+      </TouchableOpacity>
 
-      {/*  POI list card (always expanded)  */}
-      <View style={S.listCard}>
-        <Text style={S.listHeader}>
-          Floor {floorLabel}{"   "}Points of Interest
-        </Text>
+      {/*  POI list card (collapsible)  */}
+      {listExpanded && (
+        <View style={S.listCard}>
+          <Text style={S.listHeader}>
+            Floor {floorLabel}{"   "}Points of Interest
+          </Text>
 
-        {visiblePOIs.length > 0 ? (
-          <ScrollView
-            style={S.listScroll}
-            contentContainerStyle={S.listScrollContent}
-            showsVerticalScrollIndicator={true}
-            nestedScrollEnabled
-          >
-            {visiblePOIs.map((poi, idx) => {
-              const categoryIcon = getCategoryIcon(poi.category);
+          {visiblePOIs.length > 0 ? (
+            <ScrollView
+              style={S.listScroll}
+              contentContainerStyle={S.listScrollContent}
+              showsVerticalScrollIndicator={true}
+              nestedScrollEnabled
+            >
+              {visiblePOIs.map((poi, idx) => {
+                const categoryIcon = getCategoryIcon(poi.category);
 
-              return (
-                <TouchableOpacity
-                  key={poi.id}
-                  onPress={() => onSelectPOI(poi)}
-                  style={[
-                    S.listRow,
-                    idx === visiblePOIs.length - 1 && S.listRowLast,
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Navigate to ${poi.description}, Room ${poi.room}`}
-                >
-                  <View
-                    style={{
-                      width: 26,
-                      height: 26,
-                      borderRadius: 8,
-                      backgroundColor: getBadgeBg(poi.category),
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
+                return (
+                  <TouchableOpacity
+                    key={poi.id}
+                    onPress={() => onSelectPOI(poi)}
+                    style={[
+                      S.listRow,
+                      idx === visiblePOIs.length - 1 && S.listRowLast,
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Navigate to ${poi.description}, Room ${poi.room}`}
                   >
-                    {categoryIcon.lib === "ion" ? (
-                      <Ionicons
-                        name={categoryIcon.name}
-                        size={14}
-                        color={getCategoryIconColor(poi.category)}
-                      />
-                    ) : (
-                      <MaterialCommunityIcons
-                        name={categoryIcon.name}
-                        size={14}
-                        color={getCategoryIconColor(poi.category)}
-                      />
-                    )}
-                  </View>
+                    <View
+                      style={{
+                        width: 26,
+                        height: 26,
+                        borderRadius: 8,
+                        backgroundColor: getBadgeBg(poi.category),
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      {categoryIcon.lib === "ion" ? (
+                        <Ionicons
+                          name={categoryIcon.name}
+                          size={14}
+                          color={getCategoryIconColor(poi.category)}
+                        />
+                      ) : (
+                        <MaterialCommunityIcons
+                          name={categoryIcon.name}
+                          size={14}
+                          color={getCategoryIconColor(poi.category)}
+                        />
+                      )}
+                    </View>
 
-                  <Text style={S.listRowDesc}>{poi.description}</Text>
-                  {sourcePOI?.id === poi.id ? (
-                    <Text style={S.rolePillSource}>Source</Text>
-                  ) : destinationPOI?.id === poi.id ? (
-                    <Text style={S.rolePillDestination}>Destination</Text>
-                  ) : null}
-                  <Text style={S.listRowRoom}>{formatPoiRoomLabel(poi)}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        ) : (
-          <View style={S.emptyState}>
-            <Text style={S.emptyStateText}>No POIs found for your search/filter.</Text>
-          </View>
-        )}
-      </View>
+                    <Text style={S.listRowDesc}>{poi.description}</Text>
+                    {sourcePOI?.id === poi.id ? (
+                      <Text style={S.rolePillSource}>Source</Text>
+                    ) : destinationPOI?.id === poi.id ? (
+                      <Text style={S.rolePillDestination}>Destination</Text>
+                    ) : null}
+                    <Text style={S.listRowRoom}>{formatPoiRoomLabel(poi)}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          ) : (
+            <View style={S.emptyState}>
+              <Text style={S.emptyStateText}>No POIs found for your search/filter.</Text>
+            </View>
+          )}
+        </View>
+      )}
     </View>
   );
 };

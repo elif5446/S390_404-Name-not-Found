@@ -8,24 +8,43 @@ import { poiBadgeStyles, POI_PALETTE } from "@/src/styles/IndoorPOI.styles";
 type IconLib = "ion" | "mci";
 type IconOffset = { x: number; y: number };
 
-// Fine-tune icon placement by room number (for any POI, not just hardcoded rooms)
+// Fine-tune icon placement by room number
 export const ICON_POSITION_OVERRIDES: Record<string, IconOffset> = {
-  "967": { x: 4, y: -20 },
-  "913": { x: 4, y: -4 },
-  "915": { x: 4, y: -4 },
-  "917": { x: 4, y: -6 },
-  "921": { x: 6, y: 3 },
-  "929": { x: 6, y:-6 },
-  "931": { x: 4, y: 9 },
-  "928": { x: 40 , y: -40 },
-  "933": { x: -33, y: 30 },
+  // Floor 9 stairs and elevator icon positions
+  "9-S1": { x: -15, y: -15 },
+  "9-S2": { x: 10, y: 10 },
+  "9-S3": { x: 5, y: 15 },
+  "9-S4": { x: 10, y: 8},
+  "9-E1": { x: -3, y: -5},
 
-  // Floor 9 stairs and elevator
-  "S1": { x:  200,  y: 200 },
-  "S2": { x: 8, y: 7 },
-  "S3": { x: 0, y: 0 },
-  "S4": { x: 0, y: 0 },
-  "E1": { x: 44, y: 8 },
+  //Floor 9 icon positions. 
+  "967": { x: 8, y: -4 },
+  "913": { x: 6, y: -8 },
+  "915": { x: 6, y: -8},
+  "917": { x: 6, y: -8 },
+  "921": { x: 6, y: -4},
+  "929": { x: 10, y:-6},
+  "928": { x: -10 , y: -6 },
+  "931": { x: -6, y: -2 },
+  "933": { x: 8, y: -5},
+
+
+  // Floor 8 bathroom  icon position
+    "836": { x: 10, y: 2 },
+
+  // Floor 8 stairs and elevator
+  "S1": { x:  8,  y:  12 },
+  "S2": { x: 6, y: 8 },
+  "S3": { x: 6, y: 8 },
+  "S4": { x: 5, y: 12 },
+  "E1": { x: 6, y: 8},
+  
+
+  // Floor 9 bathrooms, printer, IT help desk
+  "B1": { x: 0, y: 2}, // Girls bathroom
+  "B2": { x: 5, y: 1 }, // Boys bathroom
+  "PR1": { x: -20, y: -30 }, // Printer
+  "IT": { x: 12, y: -12 }, // IT Help Desk
 
 
 };
@@ -195,8 +214,14 @@ const POIBadge: React.FC<Props> = ({
   const labShiftUp = poi.category === "LAB" && !hasManualLabOffset ? -10 : 0;
   const transportShiftLeft = isVerticalTransport ? -12 : 0;
   const transportShiftUp = isVerticalTransport ? -12 : 0;
-  // Use icon offset for any POI (LAB, ROOM, etc.)
-  const manualRoomOffset = ICON_POSITION_OVERRIDES[poi.room] ?? { x: 0, y: 0 };
+  // Use floor-room key for stairs/elevator, fallback to room for others
+  let manualRoomOffset: IconOffset = { x: 0, y: 0 };
+  if (isVerticalTransport && poi.floor) {
+    const floorRoomKey = `${poi.floor}-${poi.room}`;
+    manualRoomOffset = ICON_POSITION_OVERRIDES[floorRoomKey] ?? ICON_POSITION_OVERRIDES[poi.room] ?? { x: 0, y: 0 };
+  } else {
+    manualRoomOffset = ICON_POSITION_OVERRIDES[poi.room] ?? { x: 0, y: 0 };
+  }
   const markerZIndex = poi.category === "ELEVATOR" ? 40 : poi.category === "STAIRS" ? 30 : 10;
   const markerHitSlop = isVerticalTransport
     ? { top: 14, bottom: 14, left: 14, right: 14 }
@@ -301,7 +326,8 @@ const POIBadge: React.FC<Props> = ({
             ? (hasManualLabOffset
                 ? 0
                 : labShiftRight)
-            : 0),
+            : 0)
+          + manualRoomOffset.x,
         top:
           anchorTop -
           markerSize / 2 -
@@ -312,7 +338,8 @@ const POIBadge: React.FC<Props> = ({
             ? (hasManualLabOffset
                 ? 0
                 : labShiftUp)
-            : 0),
+            : 0)
+          + manualRoomOffset.y,
         alignItems: "center",
         zIndex: markerZIndex,
       }}

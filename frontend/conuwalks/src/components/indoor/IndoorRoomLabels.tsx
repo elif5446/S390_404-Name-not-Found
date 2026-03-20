@@ -46,11 +46,11 @@ function getRoomLabelOffsetX(label: string): number {
     return 10;
   }
     if (room === "928" || room === "932") {
-      return 10;
+      return room === "928" ? -20 : 10;
     }
   //floor 9 rooms positions
   if (room === "931") {
-    return 10;
+    return -10;
   }
   if (room === "805.01" || room === "805.02") {
     return 3;
@@ -71,6 +71,9 @@ function getRoomLabelOffsetY(label: string): number {
   const room = label.replace("Room ", "");
   if (room === "865") {
     return -3;
+  }
+  if (room === "931") {
+    return 10;
   }
   return 0;
 }

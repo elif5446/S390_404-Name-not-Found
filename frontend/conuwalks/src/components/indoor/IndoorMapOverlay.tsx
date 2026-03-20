@@ -23,6 +23,8 @@ import MapContent from "./IndoorMap";
 import POIBadge from "./POIBadge";
 import DestinationMarker from "./DestinationMarker";
 import POIFilterPanel from "./POIFilterPanel";
+import { View as RNView, TextInput } from "react-native";
+import { POI_PALETTE } from "@/src/styles/IndoorPOI.styles";
 import IndoorRoomLabels from "./IndoorRoomLabels";
 import { styles } from "@/src/styles/IndoorMap.styles";
 import { navConfigRegistry } from "@/src/indoors/data/navConfigRegistry";
@@ -123,6 +125,8 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
   const [headerHeight, setHeaderHeight] = useState(72);
   const [destination, setDestination] = useState<IndoorDestination | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchBarHeight, setSearchBarHeight] = useState(0);
+  const [poiListExpanded, setPoiListExpanded] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
 
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -341,8 +345,81 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.mapContainer}>
-        <Animated.View style={[styles.mapCanvas, { opacity: fadeAnim }]}>
+      {/* Header chrome */}
+      <SafeAreaView
+        style={styles.headerWrapper}
+        edges={["top"]}
+        onLayout={(event: LayoutChangeEvent) => {
+          const nextHeight = Math.ceil(event.nativeEvent.layout.height);
+          if (nextHeight > 0 && nextHeight !== headerHeight) {
+            setHeaderHeight(nextHeight);
+          }
+        }}
+      >
+        <View
+          style={styles.headerContent}
+          accessible={true}
+          accessibilityLabel={`${buildingData.name} Floor ${activeFloor.label}`}
+        >
+          <View style={styles.headerTitleWrap}>
+            <Text
+              style={styles.buildingTitle}
+              numberOfLines={1}
+              accessibilityRole="header"
+            >
+              {buildingData.name}
+            </Text>
+          </View>
+          <View style={styles.headerFloorToggleRow}>
+            {buildingData.floors.map((floor) => {
+              const isActive = floor.level === currentLevel;
+              return (
+                <TouchableOpacity
+                  key={floor.level}
+                  onPress={() => handleFloorChange(floor.level)}
+                  style={isActive ? styles.headerFloorToggleActive : styles.headerFloorToggle}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isActive }}
+                  accessibilityLabel={`Switch to floor ${floor.label}`}
+                >
+                  <Text style={isActive ? styles.headerFloorToggleTextActive : styles.headerFloorToggleText}>
+                    {floor.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+      </SafeAreaView>
+
+      {/* Search bar below header */}
+      <RNView
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          backgroundColor: "#fff",
+          paddingHorizontal: 16,
+          paddingVertical: 8,
+          borderBottomWidth: 1,
+          borderBottomColor: "#eee",
+        }}
+        onLayout={e => setSearchBarHeight(e.nativeEvent.layout.height)}
+      >
+        <Ionicons name="search-outline" size={18} color={POI_PALETTE.textMuted} style={{ marginRight: 8 }} />
+        <TextInput
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          placeholder="Search POI or room"
+          placeholderTextColor={POI_PALETTE.textMuted}
+          style={{ flex: 1, fontSize: 16, color: "#222", paddingVertical: 4 }}
+          accessibilityLabel="Search POIs"
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+      </RNView>
+
+      <View style={styles.mapContainer}> 
+        <Animated.View style={[styles.mapCanvas, { opacity: fadeAnim }]}> 
           <ReactNativeZoomableView
             ref={zoomRef}
             maxZoom={3.0}
