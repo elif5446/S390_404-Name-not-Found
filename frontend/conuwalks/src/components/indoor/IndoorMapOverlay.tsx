@@ -65,59 +65,7 @@ interface Props {
 
 const MAP_POI_BADGE_SIZE = 18;
 
-const RouteDotsOverlay = ({
-  sourcePOI,
-  destinationPOI,
-  mapWidth,
-  mapHeight,
-  currentLevel,
-}: {
-  sourcePOI: POI | null;
-  destinationPOI: POI | null;
-  mapWidth: number;
-  mapHeight: number;
-  currentLevel: number;
-}) => {
-  if (!sourcePOI || !destinationPOI) return null;
-  if (sourcePOI.floor !== destinationPOI.floor) return null;
-  if (sourcePOI.floor !== currentLevel) return null;
 
-  const startX = sourcePOI.mapPosition.x * mapWidth;
-  const startY = sourcePOI.mapPosition.y * mapHeight;
-  const endX = destinationPOI.mapPosition.x * mapWidth;
-  const endY = destinationPOI.mapPosition.y * mapHeight;
-
-  const dx = endX - startX;
-  const dy = endY - startY;
-  const distance = Math.sqrt(dx * dx + dy * dy);
-  const dotCount = Math.max(10, Math.round(distance / 22));
-
-  return (
-    <View style={{ ...styles.floorImage, position: "absolute" }} pointerEvents="none">
-      {Array.from({ length: dotCount + 1 }).map((_, i) => {
-        const t = i / dotCount;
-        const x = startX + dx * t;
-        const y = startY + dy * t;
-
-        return (
-          <View
-            key={`route-dot-${i}`}
-            style={{
-              position: "absolute",
-              left: x - 2,
-              top: y - 2,
-              width: 4,
-              height: 4,
-              borderRadius: 2,
-              backgroundColor: "#E5486B",
-              opacity: 0.92,
-            }}
-          />
-        );
-      })}
-    </View>
-  );
-};
 
 const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
   const { width, height } = useWindowDimensions();
@@ -464,13 +412,7 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
                   );
                 })}
 
-              <RouteDotsOverlay
-                sourcePOI={sourcePOI}
-                destinationPOI={destinationPOI}
-                mapWidth={width}
-                mapHeight={contentHeight}
-                currentLevel={currentLevel}
-              />
+
 
               <IndoorRoomLabels
                 hotspots={hotspots}
