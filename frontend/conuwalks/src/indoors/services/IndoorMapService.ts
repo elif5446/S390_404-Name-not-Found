@@ -36,10 +36,14 @@ export class IndoorMapService {
 
     // add inter-floor edges (if they exist) after all floors are loaded
     // this is done last because inter-floor edges reference nodes on different floors
-    // so all nodes must exist in the graph before these edges can be added
+    // so all nodes must exist in the graph before these edges can be added. 
+    //Escalator edges between floors will not be bi-directional
     if (config.interFloorEdges) {
       for (const edge of config.interFloorEdges) {
-        this.graph.addEdge(edge);
+        const nodeA = this.graph.getNode(edge.nodeAId);
+        const nodeB = this.graph.getNode(edge.nodeBId);
+        const isEscalator = nodeA?.type === "escalator" || nodeB?.type === "escalator";
+        this.graph.addEdge(edge, isEscalator);
       }
     }
   }
