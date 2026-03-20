@@ -10,7 +10,7 @@ type IconOffset = { x: number; y: number };
 
 // Fine-tune icon placement by room number (for any POI, not just hardcoded rooms)
 export const ICON_POSITION_OVERRIDES: Record<string, IconOffset> = {
-  "967": { x: 4, y: -4 },
+  "967": { x: 4, y: -20 },
   "913": { x: 4, y: -4 },
   "915": { x: 4, y: -4 },
   "917": { x: 4, y: -6 },
@@ -21,11 +21,11 @@ export const ICON_POSITION_OVERRIDES: Record<string, IconOffset> = {
   "933": { x: -33, y: 30 },
 
   // Floor 9 stairs and elevator
-  "S1": { x: 40 , y: -40 },
-  "S2": { x: 0, y: 0 },
+  "S1": { x:  200,  y: 200 },
+  "S2": { x: 8, y: 7 },
   "S3": { x: 0, y: 0 },
   "S4": { x: 0, y: 0 },
-  "E1": { x: 40, y: 8 },
+  "E1": { x: 44, y: 8 },
 
 
 };
@@ -299,9 +299,9 @@ const POIBadge: React.FC<Props> = ({
           transportShiftLeft +
           (poi.category === "LAB"
             ? (hasManualLabOffset
-                ? manualRoomOffset.x
-                : labShiftRight + manualRoomOffset.x)
-            : manualRoomOffset.x),
+                ? 0
+                : labShiftRight)
+            : 0),
         top:
           anchorTop -
           markerSize / 2 -
@@ -310,9 +310,9 @@ const POIBadge: React.FC<Props> = ({
           transportShiftUp +
           (poi.category === "LAB"
             ? (hasManualLabOffset
-                ? manualRoomOffset.y
-                : labShiftUp + manualRoomOffset.y)
-            : manualRoomOffset.y),
+                ? 0
+                : labShiftUp)
+            : 0),
         alignItems: "center",
         zIndex: markerZIndex,
       }}

@@ -371,12 +371,15 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
                         ? "source"
                         : undefined;
 
+                  // Import ICON_POSITION_OVERRIDES from POIBadge
+                  const { ICON_POSITION_OVERRIDES } = require("./POIBadge");
+                  const manualRoomOffset = ICON_POSITION_OVERRIDES[poi.room] ?? { x: 0, y: 0 };
                   return (
                     <POIBadge
                       key={poi.id}
                       poi={poi}
-                      left={poi.mapPosition.x * width - MAP_POI_BADGE_SIZE / 2}
-                      top={poi.mapPosition.y * contentHeight - MAP_POI_BADGE_SIZE / 2}
+                      left={poi.mapPosition.x * width - MAP_POI_BADGE_SIZE / 2 + manualRoomOffset.x}
+                      top={poi.mapPosition.y * contentHeight - MAP_POI_BADGE_SIZE / 2 + manualRoomOffset.y}
                       size={MAP_POI_BADGE_SIZE}
                       selectionType={selectionType}
                       onPress={handleSelectPOI}
