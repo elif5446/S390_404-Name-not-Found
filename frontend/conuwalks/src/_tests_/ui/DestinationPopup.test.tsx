@@ -43,7 +43,6 @@ describe("DestinationPopup Component", () => {
   const mockSetSelectedRouteIndex = jest.fn();
   const mockSetRouteData = jest.fn();
   const mockClearRouteData = jest.fn();
-  const mockClearDestination = jest.fn();
   const mockSetTravelMode = jest.fn();
   const mockSetIsNavigationActive = jest.fn();
   const mockSetNavigationRouteId = jest.fn();
@@ -51,7 +50,7 @@ describe("DestinationPopup Component", () => {
   // bottomsheet mocks
   const mockMinimize = jest.fn();
   const mockDismiss = jest.fn();
-  const mockSnapTo = jest.fn();
+  const mockSnapTo = jest.fn(); // Added for our new auto-expand feature
   const MOCK_SNAP_OFFSET = 400;
 
   const mockRoutes = [
@@ -71,7 +70,6 @@ describe("DestinationPopup Component", () => {
       setSelectedRouteIndex: mockSetSelectedRouteIndex,
       setRouteData: mockSetRouteData,
       clearRouteData: mockClearRouteData,
-      clearDestination: mockClearDestination,
       loading: false,
       error: null,
       travelMode: "walking",
@@ -88,10 +86,10 @@ describe("DestinationPopup Component", () => {
     (useBottomSheet as jest.Mock).mockImplementation(({ onDismiss }) => ({
       translateY: new Animated.Value(0),
       MAX_HEIGHT: 800,
-      SNAP_OFFSET: MOCK_SNAP_OFFSET,
+      SNAP_OFFSET: MOCK_SNAP_OFFSET, // Mocked constant
       scrollOffsetRef: { current: 0 },
       minimize: mockMinimize,
-      snapTo: mockSnapTo,
+      snapTo: mockSnapTo, // Mocked function
       // wrap the mock dismiss so we can actually trigger the passed ondismiss callback
       dismiss: jest.fn((payload) => {
         mockDismiss(payload);
@@ -155,7 +153,7 @@ describe("DestinationPopup Component", () => {
 
     // because the sheet dismissed with 'true', the clearing functions should fire
     expect(mockSetIsNavigationActive).toHaveBeenCalledWith(false);
-    expect(mockClearDestination).toHaveBeenCalledTimes(1);
+    expect(mockClearRouteData).toHaveBeenCalledTimes(1);
     expect(mockOnClose).toHaveBeenCalledTimes(1);
   });
 
