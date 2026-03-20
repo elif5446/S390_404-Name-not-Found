@@ -1,6 +1,10 @@
 import { IndoorMapService } from "@/src/indoors/services/IndoorMapService";
 import { navConfigRegistry } from "@/src/indoors/data/navConfigRegistry";
 
+// SVG pixels to real-world meters ratio.
+// tweak this value based on your map's scale. (e.g., 0.02 means 50 pixels = 1 meter)
+const PIXEL_TO_METER_RATIO = 0.02;
+
 export const calculateIndoorPenaltySeconds = (
   startBuildingId: string | null,
   startRoom: string | null,
@@ -8,10 +12,33 @@ export const calculateIndoorPenaltySeconds = (
   destinationRoom: string | null,
 ): number => {
   let penalty = 0;
-
   const service = new IndoorMapService();
 
-  // calculate start room to entrance
+  // CASE 1: Start and Destination are in the SAME building
+  if (
+    startBuildingId &&
+    startBuildingId === destinationBuildingId &&
+    startRoom &&
+    destinationRoom &&
+    navConfigRegistry[startBuildingId]
+  ) {
+    service.loadBuilding(navConfigRegistry[startBuildingId]);
+    const startNode = service.getNodeByRoomNumber(startBuildingId, startRoom);
+    const endNode = service.getNodeByRoomNumber(startBuildingId, destinationRoom);
+
+    if (startNode && endNode) {
+      try {
+        const route = service.getRoute(startNode.id, endNode.id);
+        return service.getRouteDurationSeconds(route, PIXEL_TO_METER_RATIO);
+      } catch (e) {
+        console.warn("Failed to calculate same-building indoor penalty", e);
+      }
+    }
+    return 0; 
+  }
+
+  // CASE 2: Start and Destination are in DIFFERENT buildings
+  // calculate start room -> entrance
   if (startBuildingId && startRoom && navConfigRegistry[startBuildingId]) {
     service.loadBuilding(navConfigRegistry[startBuildingId]);
     const startNode = service.getNodeByRoomNumber(startBuildingId, startRoom);
@@ -20,14 +47,14 @@ export const calculateIndoorPenaltySeconds = (
     if (startNode && entrance) {
       try {
         const route = service.getRoute(startNode.id, entrance.id);
-        penalty += service.getRouteDurationSeconds(route);
+        penalty += service.getRouteDurationSeconds(route, PIXEL_TO_METER_RATIO);
       } catch (e) {
         console.warn("Failed to calculate start indoor penalty", e);
       }
     }
   }
 
-  // calculate entrance to destination Room
+  // calculate entrance -> destination room
   if (
     destinationBuildingId &&
     destinationRoom &&
@@ -43,7 +70,7 @@ export const calculateIndoorPenaltySeconds = (
     if (endNode && entrance) {
       try {
         const route = service.getRoute(entrance.id, endNode.id);
-        penalty += service.getRouteDurationSeconds(route);
+        penalty += service.getRouteDurationSeconds(route, PIXEL_TO_METER_RATIO);
       } catch (e) {
         console.warn("Failed to calculate destination indoor penalty", e);
       }

@@ -16,26 +16,44 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { ReactNativeZoomableView } from "@openspacelabs/react-native-zoomable-view";
 import Svg, { Polyline as SvgPolyline, G } from "react-native-svg";
-import { IndoorMapService } from "@/src/indoors/services/IndoorMapService";
+import { Ionicons } from "@expo/vector-icons";
 
+// Services & Types
+import { IndoorMapService } from "@/src/indoors/services/IndoorMapService";
 import { BuildingIndoorConfig } from "@/src/indoors/types/FloorPlans";
 import { Route } from "@/src/indoors/types/Routes";
 import { Node } from "@/src/indoors/types/Navigation";
+import { IndoorHotspot, IndoorDestination } from "@/src/indoors/types/hotspot";
+import { navConfigRegistry } from "@/src/indoors/data/navConfigRegistry";
 
+// Components & Metadata
 import MapContent from "./IndoorMap";
 import DestinationMarker from "./DestinationMarker";
 import IndoorRoomLabels from "./IndoorRoomLabels";
-import { styles } from "@/src/styles/IndoorMap.styles";
-import { navConfigRegistry } from "@/src/indoors/data/navConfigRegistry";
-import { IndoorHotspot, IndoorDestination } from "@/src/indoors/types/hotspot";
-
 import IndoorSearchSheet, {
   IndoorSearchSheetHandle,
 } from "./IndoorSearchSheet";
-import { Ionicons } from "@expo/vector-icons";
+import { styles } from "@/src/styles/IndoorMap.styles";
+import { SGWBuildingMetadata } from "@/src/data/metadata/SGW.BuildingMetaData";
+import { LoyolaBuildingMetadata } from "@/src/data/metadata/LOY.BuildingMetadata";
 
 type IndoorState = "search" | "preview" | "navigating";
 
+interface Props {
+  buildingData: BuildingIndoorConfig;
+  startBuildingId?: string | null;
+  startRoomId?: string | null;
+  destinationBuildingId?: string | null;
+  destinationRoomId?: string | null;
+  isNavigationActive?: boolean;
+  onSetStartRoom?: (roomLabel: string) => void;
+  onSetDestinationRoom?: (roomLabel: string) => void;
+  onExit: () => void;
+  onCancelNavigation?: () => void;
+  onToggleOutdoorMap: () => void;
+}
+
+// helper
 const calculateGeographicHeight = (
   bounds:
     | {
@@ -47,169 +65,28 @@ const calculateGeographicHeight = (
   fallbackHeight: number,
 ): number => {
   if (!bounds) return fallbackHeight;
-
   const { northEast, southWest } = bounds;
   const latDiff = Math.abs(northEast.latitude - southWest.latitude);
   const lonDiff = Math.abs(northEast.longitude - southWest.longitude);
-
   if (latDiff < 0.00001 || lonDiff < 0.00001) return fallbackHeight;
 
   const latRadians = (northEast.latitude * Math.PI) / 180;
   const lonScale = Math.cos(latRadians);
   const geographicRatio = (lonDiff * lonScale) / latDiff;
-
   const calculatedHeight = screenWidth / geographicRatio;
+
   return isFinite(calculatedHeight) ? calculatedHeight : fallbackHeight;
 };
 
-interface Props {
-  buildingData: BuildingIndoorConfig;
-  startRoomId?: string | null;
-  destinationRoomId?: string | null;
-  isNavigationActive?: boolean;
-  onSetStartRoom?: (roomLabel: string) => void;
-  onSetDestinationRoom?: (roomLabel: string) => void;
-  onExit: () => void;
-  onCancelNavigation?: () => void;
-}
-
-const IndoorMapOverlay: React.FC<Props> = ({
-  buildingData,
-  startRoomId,
-  destinationRoomId,
-  isNavigationActive,
-  onSetStartRoom,
-  onSetDestinationRoom,
-  onExit,
-  onCancelNavigation,
-}) => {
-  const { width, height } = useWindowDimensions();
-  const MAP_SECTION_MAX_HEIGHT = height * 0.5;
-  const [currentLevel, setCurrentLevel] = useState(buildingData.defaultFloor);
-  const [destination, setDestination] = useState<IndoorDestination | null>(
-    null,
-  );
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showSearchResults, setShowSearchResults] = useState(false);
-
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const zoomRef = useRef<ReactNativeZoomableView>(null);
-  const isMounted = useRef(true);
-
-  const [indoorRoute, setIndoorRoute] = useState<Route | null>(null);
-  const [baseStartNode, setBaseStartNode] = useState<Node | null>(null);
-
-  const indoorService = useRef(new IndoorMapService()).current;
-  const [isFloorMenuOpen, setIsFloorMenuOpen] = useState(false);
-  const [panelState, setPanelState] = useState<IndoorState>(
-    isNavigationActive && destinationRoomId ? "navigating" : "search",
-  );
-  const searchSheetRef = useRef<IndoorSearchSheetHandle>(null);
-  const isProgrammaticDismissRef = useRef(false);
-  const lastSyncedDestRef = useRef<string | null>(null);
-
-  // Initial Load & Start Node setup
-  useEffect(() => {
-    const navConfig = navConfigRegistry[buildingData.id];
-    if (!navConfig) {
-      console.warn(
-        `[IndoorRouting] No navigation config found for: ${buildingData.id}`,
-      );
-      return;
-    }
-
-    indoorService.loadBuilding(navConfig);
-
-    let sNode = null;
-    if (startRoomId) {
-      sNode = indoorService.getNodeByRoomNumber(buildingData.id, startRoomId);
-    }
-    if (!sNode) {
-      sNode = indoorService.getEntranceNode() || indoorService.getStartNode();
-    }
-    setBaseStartNode(sNode);
-  }, [buildingData.id, startRoomId, indoorService]);
-
-  // Dynamic Route Calculation
-  useEffect(() => {
-    if (!baseStartNode) return;
-
-    let targetId: string | null = null;
-    if (destination) {
-      targetId = destination.id;
-    } else if (destinationRoomId) {
-      const node = indoorService.getNodeByRoomNumber(
-        buildingData.id,
-        destinationRoomId,
-      );
-      if (node) targetId = node.id;
-    }
-
-    if (targetId && baseStartNode.id !== targetId) {
-      try {
-        const route = indoorService.getRoute(baseStartNode.id, targetId);
-        setIndoorRoute(route);
-      } catch (err) {
-        console.warn("Pathfinder failed:", err);
-        setIndoorRoute(null);
-      }
-    } else {
-      setIndoorRoute(null);
-    }
-  }, [
-    baseStartNode,
-    destination,
-    destinationRoomId,
-    buildingData.id,
-    indoorService,
-  ]);
-
-  const activeFloor = useMemo(
-    () => buildingData.floors.find((f) => f.level === currentLevel),
-    [buildingData.floors, currentLevel],
-  );
-
-  const contentHeight = useMemo(
-    () =>
-      calculateGeographicHeight(
-        activeFloor?.bounds,
-        width,
-        MAP_SECTION_MAX_HEIGHT,
-      ),
-    [activeFloor, width, MAP_SECTION_MAX_HEIGHT],
-  );
-
-  const SVG_SIZE = 1024;
-
-  const scale = useMemo(() => {
-    return Math.min(width / SVG_SIZE, contentHeight / SVG_SIZE);
-  }, [width, contentHeight]);
-
-  const renderedWidth = useMemo(() => SVG_SIZE * scale, [scale]);
-  const renderedHeight = useMemo(() => SVG_SIZE * scale, [scale]);
-
-  const offsetX = useMemo(
-    () => (width - renderedWidth) / 2,
-    [width, renderedWidth],
-  );
-  const offsetY = useMemo(
-    () => (contentHeight - renderedHeight) / 2,
-    [contentHeight, renderedHeight],
-  );
-
-  const panBufferX = width * 2;
-  const panBufferY = Math.max(contentHeight * 2, height * 2);
-
+// Hotspot & Search Management
+function useHotspots(buildingData: BuildingIndoorConfig, searchQuery: string) {
   const hotspots = useMemo<IndoorHotspot[]>(() => {
     const navConfig = navConfigRegistry[buildingData.id];
-
     if (!navConfig) return [];
-
     return navConfig.floors.flatMap((navFloor) => {
       const visualFloor = buildingData.floors.find(
         (f) => f.id === navFloor.floorId,
       );
-
       return navFloor.nodes
         .filter((node) => node.type === "room")
         .map((node) => ({
@@ -226,14 +103,11 @@ const IndoorMapOverlay: React.FC<Props> = ({
 
   const filteredRooms = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-
     if (!query) return [];
-
     return hotspots.filter((spot) => {
       const fullLabel = spot.label.toLowerCase();
       const shortLabel = spot.label.replace("Room ", "").toLowerCase();
       const id = spot.id.toLowerCase();
-
       return (
         fullLabel.includes(query) ||
         shortLabel.includes(query) ||
@@ -242,73 +116,98 @@ const IndoorMapOverlay: React.FC<Props> = ({
     });
   }, [hotspots, searchQuery]);
 
-  const isNodeOnFloor = useCallback(
-    (nodeFloorId: string | undefined, floor: typeof activeFloor) => {
-      if (!floor || !nodeFloorId) return false;
+  return { hotspots, filteredRooms };
+}
 
-      return nodeFloorId === floor.id;
-    },
-    [],
-  );
+// Indoor Routing Engine
+function useIndoorRouting(
+  indoorService: IndoorMapService,
+  buildingData: BuildingIndoorConfig,
+  startBuildingId: string | null | undefined,
+  destinationBuildingId: string | null | undefined,
+  destinationRoomId: string | null | undefined,
+  localDestination: IndoorDestination | null,
+  baseStartNode: Node | null,
+) {
+  const [indoorRoute, setIndoorRoute] = useState<Route | null>(null);
 
-  const activeFloorSegments = useMemo(() => {
-    if (!indoorRoute || !activeFloor) return [];
-    const segments: (typeof indoorRoute.nodes)[] = [];
-    let currentSegment: typeof indoorRoute.nodes = [];
+  useEffect(() => {
+    if (!baseStartNode) {
+      setIndoorRoute(null);
+      return;
+    }
 
-    indoorRoute.nodes.forEach((node) => {
-      if (isNodeOnFloor(node.floorId, activeFloor)) {
-        currentSegment.push(node);
-      } else if (currentSegment.length > 0) {
-        segments.push(currentSegment);
-        currentSegment = [];
+    let targetId: string | null = null;
+
+    if (localDestination) {
+      targetId = localDestination.id;
+    } else if (destinationBuildingId === buildingData.id && destinationRoomId) {
+      const node = indoorService.getNodeByRoomNumber(
+        buildingData.id,
+        destinationRoomId,
+      );
+      if (node) targetId = node.id;
+    } else if (
+      startBuildingId === buildingData.id &&
+      destinationBuildingId &&
+      startBuildingId !== destinationBuildingId
+    ) {
+      const exitNode = indoorService.getEntranceNode();
+      if (exitNode) targetId = exitNode.id;
+    }
+
+    if (targetId && baseStartNode.id !== targetId) {
+      try {
+        const route = indoorService.getRoute(baseStartNode.id, targetId);
+        setIndoorRoute(route);
+      } catch (err) {
+        console.warn("[IndoorRouting] Pathfinder failed:", err);
+        setIndoorRoute(null);
       }
-    });
-    if (currentSegment.length > 0) {
-      segments.push(currentSegment);
+    } else {
+      setIndoorRoute(null);
     }
+  }, [
+    baseStartNode,
+    localDestination,
+    destinationRoomId,
+    destinationBuildingId,
+    startBuildingId,
+    buildingData.id,
+    indoorService,
+  ]);
 
-    return segments;
-  }, [indoorRoute, activeFloor, isNodeOnFloor]);
+  return indoorRoute;
+}
 
-  useEffect(() => {
-    if (panelState === "navigating" || isNavigationActive) {
-      isProgrammaticDismissRef.current = true;
-      searchSheetRef.current?.dismiss();
-      setTimeout(() => {
-        isProgrammaticDismissRef.current = false;
-      }, 500);
-    } else if (panelState === "search") {
-      searchSheetRef.current?.minimize();
-    }
-  }, [panelState, isNavigationActive]);
-
-  const handleSheetExit = useCallback(() => {
-    if (!isProgrammaticDismissRef.current) {
-      onExit();
-    }
-  }, [onExit]);
-
-  const handleFloorChange = useCallback(
-    (level: number) => {
-      if (level === currentLevel) return;
-
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 150,
-        useNativeDriver: true,
-      }).start(({ finished }) => {
-        if (finished && isMounted.current) {
-          setCurrentLevel(level);
-        }
-      });
-    },
-    [currentLevel, fadeAnim],
+// Global Destination Sync
+function useDestinationSync(
+  buildingData: BuildingIndoorConfig,
+  destinationBuildingId: string | null | undefined,
+  destinationRoomId: string | null | undefined,
+  hotspots: IndoorHotspot[],
+  isNavigationActive: boolean | undefined,
+  baseStartNode: Node | null,
+  currentLevel: number,
+  handleFloorChange: (level: number) => void,
+  setPanelState: (state: IndoorState) => void,
+) {
+  const [destination, setDestination] = useState<IndoorDestination | null>(
+    null,
   );
+  const lastSyncedDestRef = useRef<string | null>(null);
 
-  // auto sync external destination
   useEffect(() => {
-    if (!destinationRoomId || hotspots.length === 0 || !baseStartNode) return;
+    if (
+      !destinationBuildingId ||
+      destinationBuildingId !== buildingData.id ||
+      !destinationRoomId
+    ) {
+      setDestination(null);
+      return;
+    }
+
+    if (hotspots.length === 0 || !baseStartNode) return;
     if (destinationRoomId === lastSyncedDestRef.current) return;
 
     const cleanInput = destinationRoomId
@@ -339,85 +238,283 @@ const IndoorMapOverlay: React.FC<Props> = ({
 
     if (targetRoom) {
       setDestination(targetRoom);
-      setSearchQuery(targetRoom.label ?? targetRoom.id);
       lastSyncedDestRef.current = destinationRoomId;
 
       if (isNavigationActive) {
         setPanelState("navigating");
-
         const startFloorLevel = buildingData.floors.find(
           (f) => f.id === baseStartNode.floorId,
         )?.level;
-
         if (startFloorLevel !== undefined && startFloorLevel !== currentLevel) {
           setTimeout(() => handleFloorChange(startFloorLevel), 100);
         }
       } else {
         setPanelState("preview");
-
         if (currentLevel !== targetRoom.floorLevel) {
           setTimeout(() => handleFloorChange(targetRoom.floorLevel), 100);
         }
       }
+    } else {
+      setDestination(null);
     }
   }, [
+    destinationBuildingId,
     destinationRoomId,
+    buildingData.id,
     hotspots,
     isNavigationActive,
     baseStartNode,
     buildingData.floors,
-    destination,
     currentLevel,
+    destination,
     handleFloorChange,
+    setPanelState,
   ]);
 
-  const handleMapInteraction = useCallback(() => {
-    if (searchSheetRef.current) {
-      searchSheetRef.current.minimize();
-    }
-  }, []);
+  return { destination, setDestination };
+}
 
-  const handleSetDestination = useCallback(
-    (item: IndoorDestination) => {
-      setDestination(item);
-      setCurrentLevel(item.floorLevel);
+const determineInitialFloor = (
+  buildingData: BuildingIndoorConfig,
+  startBuildingId?: string | null,
+  startRoomId?: string | null,
+  destinationBuildingId?: string | null,
+  destinationRoomId?: string | null,
+  isNavigationActive?: boolean,
+): number => {
+  const navConfig = navConfigRegistry[buildingData.id];
+  if (!navConfig) return buildingData.defaultFloor;
 
-      const labelText = item.label ?? item.id;
-      setSearchQuery(labelText);
-      setShowSearchResults(false);
-      setPanelState("preview");
-      searchSheetRef.current?.minimize();
-      if (onSetDestinationRoom) {
-        onSetDestinationRoom(item.id);
+  const cleanRoomString = (room?: string | null) =>
+    room?.replace(/[^a-zA-Z0-9]/g, "").toUpperCase() || "";
+
+  // if actively navigating from a room inside THIS building, start on that floor
+  if (
+    isNavigationActive &&
+    startBuildingId === buildingData.id &&
+    startRoomId
+  ) {
+    const cleanStart = cleanRoomString(startRoomId);
+    for (const navFloor of navConfig.floors) {
+      if (
+        navFloor.nodes.some((n) =>
+          n.id
+            .replace(/[^a-zA-Z0-9]/g, "")
+            .toUpperCase()
+            .endsWith(cleanStart),
+        )
+      ) {
+        const vFloor = buildingData.floors.find(
+          (f) => f.id === navFloor.floorId,
+        );
+        if (vFloor) return vFloor.level;
       }
-    },
-    [onSetDestinationRoom],
+    }
+  }
+
+  // if viewing a destination in THIS building, start on the destination floor
+  if (destinationBuildingId === buildingData.id && destinationRoomId) {
+    const cleanDest = cleanRoomString(destinationRoomId);
+    for (const navFloor of navConfig.floors) {
+      if (
+        navFloor.nodes.some(
+          (n) =>
+            n.id
+              .replace(/[^a-zA-Z0-9]/g, "")
+              .toUpperCase()
+              .endsWith(cleanDest) ||
+            (n.label || "")
+              .replace(/[^a-zA-Z0-9]/g, "")
+              .toUpperCase()
+              .endsWith(cleanDest),
+        )
+      ) {
+        const vFloor = buildingData.floors.find(
+          (f) => f.id === navFloor.floorId,
+        );
+        if (vFloor) return vFloor.level;
+      }
+    }
+  }
+
+  return buildingData.defaultFloor;
+};
+
+const IndoorMapOverlay: React.FC<Props> = ({
+  buildingData,
+  startBuildingId,
+  startRoomId,
+  destinationBuildingId,
+  destinationRoomId,
+  isNavigationActive,
+  onSetDestinationRoom,
+  onExit,
+  onCancelNavigation,
+  onToggleOutdoorMap,
+}) => {
+  const { width, height } = useWindowDimensions();
+  const MAP_SECTION_MAX_HEIGHT = height * 0.5;
+
+  const [currentLevel, setCurrentLevel] = useState(() =>
+    determineInitialFloor(
+      buildingData,
+      startBuildingId,
+      startRoomId,
+      destinationBuildingId,
+      destinationRoomId,
+      isNavigationActive,
+    ),
+  );
+  const [isFloorMenuOpen, setIsFloorMenuOpen] = useState(false);
+  const [panelState, setPanelState] = useState<IndoorState>(
+    isNavigationActive && destinationRoomId ? "navigating" : "search",
   );
 
-  const handleClearDestination = useCallback(() => {
-    setDestination(null);
-    setSearchQuery("");
-    setShowSearchResults(false);
-    setPanelState("search");
-  }, []);
+  const searchSheetRef = useRef<IndoorSearchSheetHandle>(null);
+  const zoomRef = useRef<ReactNativeZoomableView>(null);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const isMounted = useRef(true);
+  const isProgrammaticDismissRef = useRef(false);
 
-  const handleStartNavigation = useCallback(() => {
-    setPanelState("navigating");
+  const indoorService = useRef(new IndoorMapService()).current;
+  useEffect(() => {
+    const navConfig = navConfigRegistry[buildingData.id];
+    if (navConfig) indoorService.loadBuilding(navConfig);
+  }, [buildingData.id, indoorService]);
 
-    if (baseStartNode) {
-      const startFloorLevel = buildingData.floors.find(
-        (f) => f.id === baseStartNode.floorId,
-      )?.level;
-      if (startFloorLevel !== undefined) {
-        handleFloorChange(startFloorLevel);
-      }
+  // Dynamic Labels
+  const startPointLabel = useMemo(() => {
+    if (!startBuildingId || startBuildingId === "USER")
+      return "Current Location";
+    const bName =
+      SGWBuildingMetadata[startBuildingId]?.name ||
+      LoyolaBuildingMetadata[startBuildingId]?.name ||
+      startBuildingId;
+    return `${bName} ${startRoomId || ""}`.trim();
+  }, [startBuildingId, startRoomId]);
+
+  const destinationPointLabel = useMemo(() => {
+    if (!destinationBuildingId) return "";
+    if (destinationBuildingId === "USER") return "Current Location";
+    const bName =
+      SGWBuildingMetadata[destinationBuildingId]?.name ||
+      LoyolaBuildingMetadata[destinationBuildingId]?.name ||
+      destinationBuildingId;
+    return `${bName} ${destinationRoomId || ""}`.trim();
+  }, [destinationBuildingId, destinationRoomId]);
+
+  const [searchQuery, setSearchQuery] = useState(destinationPointLabel);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+
+  useEffect(() => {
+    setSearchQuery(destinationPointLabel);
+  }, [destinationPointLabel]);
+
+  const { hotspots, filteredRooms } = useHotspots(buildingData, searchQuery);
+
+  const handleFloorChange = useCallback(
+    (level: number) => {
+      if (level === currentLevel) return;
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 150,
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (finished && isMounted.current) setCurrentLevel(level);
+      });
+    },
+    [currentLevel, fadeAnim],
+  );
+
+  const [baseStartNode, setBaseStartNode] = useState<Node | null>(null);
+  useEffect(() => {
+    let sNode = null;
+    if (startBuildingId === buildingData.id && startRoomId) {
+      sNode = indoorService.getNodeByRoomNumber(buildingData.id, startRoomId);
     }
-  }, [baseStartNode, buildingData.floors, handleFloorChange]);
+    if (!sNode)
+      sNode = indoorService.getEntranceNode() || indoorService.getStartNode();
+    setBaseStartNode(sNode);
+  }, [buildingData.id, startBuildingId, startRoomId, indoorService]);
 
-  const handleCancelNavigation = useCallback(() => {
-    handleClearDestination();
-    onCancelNavigation?.();
-  }, [handleClearDestination, onCancelNavigation]);
+  const { destination, setDestination } = useDestinationSync(
+    buildingData,
+    destinationBuildingId,
+    destinationRoomId,
+    hotspots,
+    isNavigationActive,
+    baseStartNode,
+    currentLevel,
+    handleFloorChange,
+    setPanelState,
+  );
+
+  // override indoorRoute hook target if local destination exists
+  const activeRoute = useIndoorRouting(
+    indoorService,
+    buildingData,
+    startBuildingId,
+    destinationBuildingId,
+    destinationRoomId,
+    destination,
+    baseStartNode,
+  );
+
+  const activeFloor = useMemo(
+    () => buildingData.floors.find((f) => f.level === currentLevel),
+    [buildingData.floors, currentLevel],
+  );
+  const contentHeight = useMemo(
+    () =>
+      calculateGeographicHeight(
+        activeFloor?.bounds,
+        width,
+        MAP_SECTION_MAX_HEIGHT,
+      ),
+    [activeFloor, width, MAP_SECTION_MAX_HEIGHT],
+  );
+
+  const SVG_SIZE = 1024;
+  const scale = useMemo(
+    () => Math.min(width / SVG_SIZE, contentHeight / SVG_SIZE),
+    [width, contentHeight],
+  );
+  const renderedWidth = SVG_SIZE * scale;
+  const renderedHeight = SVG_SIZE * scale;
+  const offsetX = (width - renderedWidth) / 2;
+  const offsetY = (contentHeight - renderedHeight) / 2;
+  const panBufferX = width * 2;
+  const panBufferY = Math.max(contentHeight * 2, height * 2);
+
+  const activeFloorSegments = useMemo(() => {
+    if (!activeRoute || !activeFloor) return [];
+    const segments: (typeof activeRoute.nodes)[] = [];
+    let currentSegment: typeof activeRoute.nodes = [];
+
+    activeRoute.nodes.forEach((node) => {
+      if (node.floorId === activeFloor.id) {
+        currentSegment.push(node);
+      } else if (currentSegment.length > 0) {
+        segments.push(currentSegment);
+        currentSegment = [];
+      }
+    });
+    if (currentSegment.length > 0) segments.push(currentSegment);
+    return segments;
+  }, [activeRoute, activeFloor]);
+
+  // interactions
+  useEffect(() => {
+    if (panelState === "navigating" || isNavigationActive) {
+      isProgrammaticDismissRef.current = true;
+      searchSheetRef.current?.dismiss();
+      setTimeout(() => {
+        isProgrammaticDismissRef.current = false;
+      }, 500);
+    } else if (panelState === "search") {
+      searchSheetRef.current?.minimize();
+    }
+  }, [panelState, isNavigationActive]);
 
   useEffect(() => {
     isMounted.current = true;
@@ -426,18 +523,35 @@ const IndoorMapOverlay: React.FC<Props> = ({
     };
   }, []);
 
-  // inital fade in
   useEffect(() => {
     if (!isMounted.current) return;
-
     zoomRef.current?.zoomTo(1);
-
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 300,
       useNativeDriver: true,
     }).start();
   }, [currentLevel, fadeAnim]);
+
+  const handleSetDestination = useCallback(
+    (item: IndoorDestination) => {
+      setDestination(item);
+      setCurrentLevel(item.floorLevel);
+      setSearchQuery(item.label ?? item.id);
+      setShowSearchResults(false);
+      setPanelState("preview");
+      searchSheetRef.current?.minimize();
+      if (onSetDestinationRoom) onSetDestinationRoom(item.id);
+    },
+    [onSetDestinationRoom, setDestination],
+  );
+
+  const handleClearDestination = useCallback(() => {
+    setDestination(null);
+    setSearchQuery("");
+    setShowSearchResults(false);
+    setPanelState("search");
+  }, [setDestination]);
 
   if (!activeFloor) {
     return (
@@ -450,6 +564,7 @@ const IndoorMapOverlay: React.FC<Props> = ({
   return (
     <View style={[styles.container]} pointerEvents="auto">
       <View style={styles.mapSection}>
+        {/* Header */}
         <SafeAreaView style={styles.headerWrapper} edges={["top"]}>
           <View style={styles.headerContent}>
             <Text style={styles.buildingTitle} numberOfLines={1}>
@@ -486,7 +601,7 @@ const IndoorMapOverlay: React.FC<Props> = ({
                       ]}
                       onPress={() => {
                         handleFloorChange(floor.level);
-                        setIsFloorMenuOpen(false); // Close menu on select
+                        setIsFloorMenuOpen(false);
                       }}
                     >
                       <Text
@@ -505,10 +620,11 @@ const IndoorMapOverlay: React.FC<Props> = ({
           )}
         </SafeAreaView>
 
+        {/* Map Canvas */}
         <View
           style={styles.mapContainer}
           onStartShouldSetResponderCapture={() => {
-            handleMapInteraction();
+            searchSheetRef.current?.minimize();
             return false;
           }}
         >
@@ -538,6 +654,8 @@ const IndoorMapOverlay: React.FC<Props> = ({
                     width={width}
                     height={contentHeight}
                   />
+
+                  {/* Routing Lines */}
                   <Svg
                     style={{
                       position: "absolute",
@@ -552,8 +670,7 @@ const IndoorMapOverlay: React.FC<Props> = ({
                     <G
                       transform={`translate(${offsetX}, ${offsetY}) scale(${scale})`}
                     >
-                      {(panelState === "preview" ||
-                        panelState === "navigating") &&
+                      {activeFloorSegments.length > 0 &&
                         activeFloorSegments.map((segment, idx) => (
                           <SvgPolyline
                             key={`route-segment-${idx}`}
@@ -581,6 +698,7 @@ const IndoorMapOverlay: React.FC<Props> = ({
                     onSelectDestination={handleSetDestination}
                   />
 
+                  {/* Markers */}
                   {destination && destination.floorLevel === currentLevel && (
                     <DestinationMarker
                       x={offsetX + destination.x * scale - 6}
@@ -616,8 +734,9 @@ const IndoorMapOverlay: React.FC<Props> = ({
           </Animated.View>
         </View>
       </View>
+
+      {/* Overlays & Floating UI */}
       <TouchableOpacity
-        // style={styles.floatingBackButton}
         style={{
           position: "absolute",
           top: 67,
@@ -626,7 +745,7 @@ const IndoorMapOverlay: React.FC<Props> = ({
           elevation: 20,
           padding: 8,
         }}
-        onPress={onExit}
+        onPress={() => !isProgrammaticDismissRef.current && onExit()}
       >
         <Ionicons name="arrow-back" size={24} color="#0d0d0dff" />
       </TouchableOpacity>
@@ -635,7 +754,10 @@ const IndoorMapOverlay: React.FC<Props> = ({
         <View style={styles.activeNavOverlay}>
           <TouchableOpacity
             style={styles.endNavButton}
-            onPress={handleCancelNavigation}
+            onPress={() => {
+              handleClearDestination();
+              onCancelNavigation?.();
+            }}
           >
             <Ionicons name="close" size={26} color="#FFF" />
           </TouchableOpacity>
@@ -650,9 +772,13 @@ const IndoorMapOverlay: React.FC<Props> = ({
         showSearchResults={showSearchResults}
         setShowSearchResults={setShowSearchResults}
         filteredRooms={filteredRooms}
+        startPointLabel={startPointLabel}
         onSelectDestination={handleSetDestination}
         onClearDestination={handleClearDestination}
-        onExit={handleSheetExit}
+        onExit={() => !isProgrammaticDismissRef.current && onExit()}
+        onToggleOutdoorMap={() =>
+          !isProgrammaticDismissRef.current && onToggleOutdoorMap()
+        }
       />
     </View>
   );

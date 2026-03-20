@@ -374,7 +374,13 @@ const CampusMap: React.FC<CampusMapProps> = ({
   const handleMapLongPress = useCallback((e: LongPressEvent) => {
     const coordinate = e.nativeEvent.coordinate;
 
-    const findBuildingId = (geojson: typeof SGW | typeof LOY) => {
+    let foundCampus: "SGW" | "LOY" = "SGW";
+    let foundCenter: LatLng | null = null;
+
+    const findBuildingId = (
+      geojson: typeof SGW | typeof LOY,
+      campusStr: "SGW" | "LOY",
+    ) => {
       const feature = geojson.features.find((item) => {
         const currentFeature = item as GeoJsonFeature;
         if (currentFeature.geometry.type !== "Polygon") {
@@ -387,15 +393,28 @@ const CampusMap: React.FC<CampusMapProps> = ({
         return isPointInPolygon(coordinate, polygonCoords);
       });
 
-      return (feature?.properties as { id?: string } | undefined)?.id ?? null;
+      if (feature) {
+        foundCampus = campusStr;
+        const polygonCoords = polygonFromGeoJSON(
+          (feature as GeoJsonFeature).geometry.coordinates[0],
+        );
+        foundCenter = calculatePolygonCenter(polygonCoords);
+        return (feature.properties as { id?: string } | undefined)?.id ?? null;
+      }
+      return null;
     };
 
-    const foundId = findBuildingId(SGW) || findBuildingId(LOY);
+    const foundId = findBuildingId(SGW, "SGW") || findBuildingId(LOY, "LOY");
 
     if (foundId && INDOOR_DATA[foundId]) {
       setIndoorBuildingId(foundId);
       setManuallyExitedBuildingId(null);
-      setSelectedBuilding((prev) => ({ ...prev, visible: false }));
+      setSelectedBuilding({
+        name: foundId,
+        campus: foundCampus,
+        coords: foundCenter || coordinate,
+        visible: false,
+      });
     }
   }, []);
 
@@ -510,6 +529,13 @@ const CampusMap: React.FC<CampusMapProps> = ({
     setIsNavigationActive(false);
     setShowDirections(true);
   }, [setIsNavigationActive, setShowDirections]);
+
+  const handleToggleOutdoorMap = useCallback(() => {
+    setIndoorBuildingId(null);
+    if (destinationBuildingId && !isNavigationActive) {
+      setShowDirections(true);
+    }
+  }, [destinationBuildingId, isNavigationActive, setShowDirections]);
 
   const shouldUseLiveUserStart = startBuildingId === "USER" && !!userLocation;
 
@@ -1415,10 +1441,10 @@ const CampusMap: React.FC<CampusMapProps> = ({
       {indoorBuildingId && INDOOR_DATA[indoorBuildingId] && (
         <IndoorMapOverlay
           buildingData={INDOOR_DATA[indoorBuildingId]}
-          startRoomId={startBuildingId === indoorBuildingId ? startRoom : null}
-          destinationRoomId={
-            destinationBuildingId === indoorBuildingId ? destinationRoom : null
-          }
+          startBuildingId={startBuildingId}
+          startRoomId={startRoom}
+          destinationBuildingId={destinationBuildingId}
+          destinationRoomId={destinationRoom}
           isNavigationActive={isNavigationActive}
           onSetStartRoom={(roomLabel) => {
             setStartPoint(
@@ -1445,6 +1471,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
             clearRouteData();
             clearDestination();
           }}
+          onToggleOutdoorMap={handleToggleOutdoorMap}
         />
       )}
 

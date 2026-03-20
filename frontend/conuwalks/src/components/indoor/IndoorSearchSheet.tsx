@@ -11,13 +11,38 @@ import {
   StyleSheet,
   useColorScheme,
   AccessibilityActionEvent,
-  FlatList,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { SymbolView, SFSymbol } from "expo-symbols";
 import { BlurView } from "expo-blur";
 import { useBottomSheet } from "@/src/hooks/useBottomSheet";
 import BottomSheetDragHandle from "@/src/components/ui/BottomSheetDragHandle";
 import { IndoorHotspot, IndoorDestination } from "@/src/indoors/types/hotspot";
+
+interface SuggestionIconProps {
+  iosName: SFSymbol;
+  androidName: React.ComponentProps<typeof MaterialIcons>["name"];
+  color: string;
+}
+
+const SuggestionIcon = ({
+  iosName,
+  androidName,
+  color,
+}: SuggestionIconProps) => {
+  if (Platform.OS === "ios") {
+    return (
+      <SymbolView
+        name={iosName}
+        size={20}
+        tintColor={color}
+        fallback={<MaterialIcons name={androidName} size={20} color={color} />}
+      />
+    );
+  }
+  return <MaterialIcons name={androidName} size={20} color={color} />;
+};
 
 interface IndoorSearchSheetProps {
   visible: boolean;
@@ -26,9 +51,11 @@ interface IndoorSearchSheetProps {
   showSearchResults: boolean;
   setShowSearchResults: (value: boolean) => void;
   filteredRooms: IndoorHotspot[];
+  startPointLabel: string;
   onSelectDestination: (item: IndoorDestination) => void;
   onClearDestination: () => void;
   onExit: () => void;
+  onToggleOutdoorMap: () => void;
 }
 
 export interface IndoorSearchSheetHandle {
@@ -40,19 +67,9 @@ const IndoorSearchSheet = forwardRef<
   IndoorSearchSheetHandle,
   IndoorSearchSheetProps
 >((props, ref) => {
-  const {
-    visible,
-    searchQuery,
-    setSearchQuery,
-    showSearchResults,
-    setShowSearchResults,
-    filteredRooms,
-    onSelectDestination,
-    onClearDestination,
-    onExit,
-  } = props;
-
+  const { visible, onClearDestination, onExit, onToggleOutdoorMap } = props;
   const isDark = (useColorScheme() || "light") === "dark";
+  const campusPink = "#B03060";
 
   const {
     translateY,
@@ -86,7 +103,7 @@ const IndoorSearchSheet = forwardRef<
   return (
     <View
       style={[StyleSheet.absoluteFill, { zIndex: 999 }]}
-      pointerEvents={visible ? "box-none" : "none"}
+      pointerEvents={props.visible ? "box-none" : "none"}
     >
       <Animated.View
         style={[
@@ -111,36 +128,68 @@ const IndoorSearchSheet = forwardRef<
           />
         )}
 
-        <View style={sheetStyles.headerContainer}>
-          <View
-            style={sheetStyles.dragAreaWrapper}
-            {...handlePanResponder.panHandlers}
-          >
-            <BottomSheetDragHandle
-              isDark={isDark}
-              onToggleHeight={handleToggleHeight}
-              onAccessibilityAction={handleDragHandleAccessibilityAction}
-            />
-          </View>
+        {/* Draggable Handle */}
+        <View
+          style={sheetStyles.dragAreaWrapper}
+          {...handlePanResponder.panHandlers}
+        >
+          <BottomSheetDragHandle
+            isDark={isDark}
+            onToggleHeight={handleToggleHeight}
+            onAccessibilityAction={handleDragHandleAccessibilityAction}
+          />
+        </View>
 
-          <TouchableOpacity
-            onPress={() => dismiss(true)}
-            style={sheetStyles.headerExitButton}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <View
-              style={[
-                sheetStyles.closeButtonCircle,
-                { backgroundColor: isDark ? "#3A3A3C" : "#E5E5EA" },
-              ]}
+        <View style={sheetStyles.header}>
+          <View style={[sheetStyles.headerSide, sheetStyles.headerSideLeft]}>
+            <TouchableOpacity
+              onPress={() => dismiss(true)}
+              style={sheetStyles.iconButton}
+              accessibilityRole="button"
+              accessibilityLabel="Close search panel"
             >
-              <Ionicons
-                name="close"
-                size={18}
-                color={isDark ? "#E5E5EA" : "#8E8E93"}
-              />
-            </View>
-          </TouchableOpacity>
+              {Platform.OS === "ios" ? (
+                <View
+                  style={[
+                    sheetStyles.closeButtonCircle,
+                    { backgroundColor: isDark ? "#00000031" : "#85858522" },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      sheetStyles.closeButtonText,
+                      { color: isDark ? "#FFFFFF" : "#333333" },
+                    ]}
+                  >
+                    ✕
+                  </Text>
+                </View>
+              ) : (
+                <MaterialIcons name="close" size={22} color={campusPink} />
+              )}
+            </TouchableOpacity>
+          </View>
+          <View style={[sheetStyles.headerSide, sheetStyles.headerSideRight]}>
+            {onToggleOutdoorMap && (
+              <TouchableOpacity
+                onPress={onToggleOutdoorMap}
+                style={[
+                  sheetStyles.openOutdoorHeaderButton,
+                  { borderColor: isDark ? "#48484A" : "#D1D1D6" },
+                ]}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Text
+                  style={[
+                    sheetStyles.openOutdoorHeaderButtonText,
+                    { color: isDark ? "#E5E5EA" : "#1C1C1E" },
+                  ]}
+                >
+                  Outdoor Map ↘
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         <View
@@ -149,78 +198,75 @@ const IndoorSearchSheet = forwardRef<
         >
           <View
             style={[
-              sheetStyles.routingCard,
+              sheetStyles.searchPanelContainer,
               { backgroundColor: isDark ? "#2C2C2E" : "#F2F2F7" },
             ]}
           >
-            <View style={sheetStyles.timeline}>
-              <View style={sheetStyles.startDot} />
-              <View
-                style={[
-                  sheetStyles.line,
-                  { backgroundColor: isDark ? "#48484A" : "#D1D1D6" },
-                ]}
+            <View style={sheetStyles.inputRow}>
+              <SuggestionIcon
+                iosName="circle.circle.fill"
+                androidName="adjust"
+                color={campusPink}
               />
-              <View style={sheetStyles.endDot} />
+              <TextInput
+                style={[
+                  sheetStyles.input,
+                  { color: isDark ? "#E5E5EA" : "#1C1C1E" },
+                ]}
+                value={props.startPointLabel}
+                editable={false}
+              />
             </View>
 
-            <View style={sheetStyles.inputsContainer}>
-              <View style={sheetStyles.inputWrapper}>
-                <Text
-                  style={[
-                    sheetStyles.startText,
-                    { color: isDark ? "#E5E5EA" : "#1C1C1E" },
-                  ]}
-                >
-                  Current Location
-                </Text>
-              </View>
+            <View
+              style={[
+                sheetStyles.divider,
+                { backgroundColor: isDark ? "#38383A" : "#C6C6C8" },
+              ]}
+            />
 
-              <View
-                style={[
-                  sheetStyles.divider,
-                  { backgroundColor: isDark ? "#38383A" : "#C6C6C8" },
-                ]}
+            <View style={sheetStyles.inputRow}>
+              <SuggestionIcon
+                iosName="pin.fill"
+                androidName="location-on"
+                color={campusPink}
               />
-
-              <View style={sheetStyles.inputWrapper}>
-                <TextInput
-                  value={searchQuery}
-                  onChangeText={(text) => {
-                    setSearchQuery(text);
-                    const hasText = text.trim().length > 0;
-                    setShowSearchResults(hasText);
-                    if (!hasText) {
-                      // 2. Bug Fixed: onClearDestination is now in scope
-                      onClearDestination();
-                    }
-                  }}
-                  onFocus={() => {
-                    snapTo(SNAP_OFFSET);
-                  }}
-                  placeholder="Where to?"
-                  placeholderTextColor="#8E8E93"
-                  style={[
-                    sheetStyles.destinationInput,
-                    { color: isDark ? "#FFFFFF" : "#1C1C1E" },
-                  ]}
-                  autoCorrect={false}
-                />
-              </View>
+              <TextInput
+                value={props.searchQuery}
+                onChangeText={(text) => {
+                  props.setSearchQuery(text);
+                  const hasText = text.trim().length > 0;
+                  props.setShowSearchResults(hasText);
+                  if (!hasText) {
+                    onClearDestination();
+                  }
+                }}
+                onFocus={() => {
+                  snapTo(SNAP_OFFSET);
+                }}
+                placeholder="Where to?"
+                placeholderTextColor="#8E8E93"
+                style={[
+                  sheetStyles.input,
+                  { color: isDark ? "#FFFFFF" : "#1C1C1E" },
+                ]}
+                autoCorrect={false}
+                selectionColor={campusPink}
+              />
             </View>
           </View>
 
           {/* Search Results */}
-          {showSearchResults && filteredRooms.length > 0 && (
+          {props.showSearchResults && props.filteredRooms.length > 0 && (
             <View style={sheetStyles.resultsContainer}>
-              <FlatList
-                data={filteredRooms}
-                keyExtractor={(item) => item.id}
+              <ScrollView
                 keyboardShouldPersistTaps="always"
                 showsVerticalScrollIndicator={false}
-                renderItem={({ item: room }) => (
+              >
+                {props.filteredRooms.map((room) => (
                   <Pressable
-                    onPress={() => onSelectDestination(room)}
+                    key={room.id}
+                    onPress={() => props.onSelectDestination(room)}
                     style={[
                       sheetStyles.resultItem,
                       { borderBottomColor: isDark ? "#38383A" : "#E5E5EA" },
@@ -252,8 +298,8 @@ const IndoorSearchSheet = forwardRef<
                       </Text>
                     </View>
                   </Pressable>
-                )}
-              />
+                ))}
+              </ScrollView>
             </View>
           )}
         </View>
@@ -270,93 +316,111 @@ const sheetStyles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: 45,
+    borderTopRightRadius: 45,
     overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.12,
     shadowRadius: 12,
     elevation: 10,
-  },
-  headerContainer: {
-    width: "100%",
-    height: 48,
-    justifyContent: "center",
-    alignItems: "center",
+    paddingTop: 8,
   },
   dragAreaWrapper: {
-    position: "absolute",
-    width: "100%",
-    height: "100%",
-    justifyContent: "center",
-    alignItems: "center",
+    alignSelf: "stretch",
+    paddingTop: 4,
+    paddingBottom: 6,
     zIndex: 1,
   },
-  headerExitButton: {
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    position: "relative",
+    minHeight: 46,
+    marginBottom: 6,
+    paddingHorizontal: 16,
+  },
+  headerSide: {
     position: "absolute",
-    right: 16,
-    zIndex: 10,
+    top: 0,
+    bottom: 0,
+    justifyContent: "center",
+  },
+  headerSideLeft: {
+    left: 14,
+  },
+  headerSideRight: {
+    right: 14,
+    alignItems: "flex-end",
+  },
+  headerCenter: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: "flex-start",
+    justifyContent: "center",
+    backgroundColor: "transparent",
   },
   closeButtonCircle: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    justifyContent: "center",
+    width: 35,
+    height: 35,
+    borderRadius: 80,
     alignItems: "center",
+    justifyContent: "center",
+  },
+  closeButtonText: {
+    fontSize: 24,
+    fontWeight: "300",
+    lineHeight: 24,
+    includeFontPadding: false,
+    textAlign: "center",
+  },
+  openOutdoorHeaderButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingVertical: Platform.OS === "android" ? 7 : 6,
+    paddingHorizontal: 12,
+    minHeight: 30,
+  },
+  openOutdoorHeaderButtonText: {
+    fontWeight: "600",
+    fontSize: 13,
+    fontFamily: Platform.OS === "ios" ? "System" : "Roboto",
   },
   contentContainer: {
     flex: 1,
     paddingHorizontal: 16,
     paddingBottom: 24,
   },
-  routingCard: {
-    flexDirection: "row",
+  searchPanelContainer: {
     borderRadius: 16,
-    paddingVertical: 8,
+    paddingVertical: 12,
     paddingHorizontal: 14,
     marginBottom: 16,
+    gap: 12,
   },
-  timeline: {
+  inputRow: {
+    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    width: 20,
-    marginRight: 12,
+    gap: 10,
   },
-  startDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#4285F4",
-  },
-  endDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#B03060",
-  },
-  line: {
-    width: 2,
-    height: 24,
-    marginVertical: 4,
-  },
-  inputsContainer: {
+  input: {
     flex: 1,
-  },
-  inputWrapper: {
-    height: 44,
-    justifyContent: "center",
-  },
-  startText: {
     fontSize: 16,
-    fontWeight: "500",
-  },
-  destinationInput: {
-    fontSize: 16,
-    height: "100%",
+    height: 30,
+    paddingVertical: 0,
   },
   divider: {
     height: StyleSheet.hairlineWidth,
+    marginLeft: 30,
   },
   resultsContainer: {
     flex: 1,
@@ -384,20 +448,6 @@ const sheetStyles = StyleSheet.create({
     fontSize: 13,
     color: "#8E8E93",
     marginTop: 2,
-  },
-  exitButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(176, 48, 96, 0.1)",
-    paddingVertical: 14,
-    borderRadius: 16,
-  },
-  exitText: {
-    color: "#B03060",
-    fontSize: 16,
-    fontWeight: "700",
-    marginLeft: 6,
   },
 });
 
