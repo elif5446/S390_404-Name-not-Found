@@ -598,7 +598,7 @@ const IndoorMapOverlay: React.FC<Props> = ({
                           width: 24,
                           height: 24,
                           borderRadius: 12,
-                          backgroundColor: "#4285F4",
+                          backgroundColor: "#B03060BF",
                           borderWidth: 3,
                           borderColor: "#FFFFFF",
                           shadowColor: "#000",

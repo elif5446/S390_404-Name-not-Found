@@ -473,31 +473,34 @@ const CampusMap: React.FC<CampusMapProps> = ({
     [selectedBuilding, setDestination, destinationRoom],
   );
 
-  const handleDirectionsTrigger = useCallback((room?: string) => {
-    setSelectedBuilding((prev) => ({ ...prev, visible: false }));
-    handleSetAsDestination(room);
+  const handleDirectionsTrigger = useCallback(
+    (room?: string) => {
+      setSelectedBuilding((prev) => ({ ...prev, visible: false }));
+      handleSetAsDestination(room);
 
-    if (userLocationBuildingId && startRoom) {
-      setStartPoint(
-        userLocationBuildingId,
-        userLocation || initialLocation,
-        userLocationBuildingId,
-        startRoom,
-      );
-    } else if (userLocation) {
-      setStartPoint("USER", userLocation, "Your Location");
-    }
+      if (userLocationBuildingId && startRoom) {
+        setStartPoint(
+          userLocationBuildingId,
+          userLocation || initialLocation,
+          userLocationBuildingId,
+          startRoom,
+        );
+      } else if (userLocation) {
+        setStartPoint("USER", userLocation, "Your Location");
+      }
 
-    handleOpenDirectionsPopup();
-  }, [
-    handleSetAsDestination,
-    userLocationBuildingId,
-    startRoom,
-    userLocation,
-    handleOpenDirectionsPopup,
-    setStartPoint,
-    initialLocation,
-  ]);
+      handleOpenDirectionsPopup();
+    },
+    [
+      handleSetAsDestination,
+      userLocationBuildingId,
+      startRoom,
+      userLocation,
+      handleOpenDirectionsPopup,
+      setStartPoint,
+      initialLocation,
+    ],
+  );
 
   const handleCloseDestinationPopup = useCallback(() => {
     setShowDirections(false);
@@ -1464,6 +1467,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
         ref={destinationPopupRef}
         visible={showDirections}
         onClose={handleCloseDestinationPopup}
+        showOpenIndoorButton={selectedBuilding.name in INDOOR_DATA}
+        onOpenIndoorPress={() => handleOpenIndoorMap(selectedBuilding.name)}
       />
 
       {showDirections && !isNavigationActive && (
