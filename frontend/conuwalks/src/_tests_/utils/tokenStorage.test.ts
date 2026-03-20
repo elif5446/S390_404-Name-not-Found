@@ -1,5 +1,4 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { GoogleSignin } from "@react-native-google-signin/google-signin";
 import {
   saveTokens,
   saveUserInfo,
@@ -8,6 +7,14 @@ import {
   clearTokens,
   isTokenValid,
 } from "../../utils/tokenStorage";
+
+// Mock the global fetch API used for revoking the token
+global.fetch = jest.fn(() =>
+  Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve({}),
+  } as Response),
+);
 
 describe("tokenStorage utils", () => {
   beforeEach(() => {
@@ -51,11 +58,29 @@ describe("tokenStorage utils", () => {
     expect(user).not.toBeNull();
   });
 
-  test("clearTokens removes items and signs out of Google", async () => {
+  test("clearTokens removes items and revokes token", async () => {
+    // Mock the initial getItem call so the token revocation logic triggers
+    (AsyncStorage.getItem as jest.Mock).mockResolvedValue(
+      JSON.stringify({ accessToken: "fake-access-token" }),
+    );
+
     await clearTokens();
-    expect(AsyncStorage.removeItem).toHaveBeenCalledWith("@auth_tokens");
-    expect(AsyncStorage.removeItem).toHaveBeenCalledWith("@user_info");
-    expect(GoogleSignin.signOut).toHaveBeenCalled();
+
+    // Verify we use multiRemove with the correct keys
+    expect(AsyncStorage.multiRemove).toHaveBeenCalledWith([
+      "@auth_tokens",
+      "@user_info",
+      "@class_reminder_lead_time",
+      "@dismissed_class_event_ids",
+    ]);
+
+    // Verify the fetch call was made to Google's revocation endpoint
+    expect(global.fetch).toHaveBeenCalledWith(
+      "https://accounts.google.com/o/oauth2/revoke?token=fake-access-token",
+      expect.objectContaining({
+        method: "POST",
+      }),
+    );
   });
 
   test("isTokenValid validates expiry and presence", () => {

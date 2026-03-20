@@ -23,8 +23,8 @@ export const INDOOR_DATA: Record<string, BuildingIndoorConfig> = {
         image: H1_SVG,
         viewBox: "0 0 1024 1024",
         bounds: {
-          northEast: { latitude: 45.49769, longitude: -73.5783 }, //change later
-          southWest: { latitude: 45.49682, longitude: -73.57954 }, //change later
+          northEast: { latitude: 45.49769, longitude: -73.5783 },
+          southWest: { latitude: 45.49682, longitude: -73.57954 },
         },
       },
       {
@@ -35,8 +35,8 @@ export const INDOOR_DATA: Record<string, BuildingIndoorConfig> = {
         image: H2_SVG,
         viewBox: "0 0 1024 1024",
         bounds: {
-          northEast: { latitude: 45.49769, longitude: -73.5783 }, // change later
-          southWest: { latitude: 45.49682, longitude: -73.57954 }, // change later
+          northEast: { latitude: 45.49769, longitude: -73.5783 },
+          southWest: { latitude: 45.49682, longitude: -73.57954 },
         },
       },
       {

@@ -1,10 +1,14 @@
 import { IndoorMapService } from "@/src/indoors/services/IndoorMapService";
-import { BuildingNavConfig, NodeType } from "@/src/indoors/types/Navigation";
+import { BuildingNavConfig } from "@/src/indoors/types/Navigation";
 import { Graph } from "@/src/indoors/services/Graph";
 import { PathFinder } from "@/src/indoors/services/PathFinder";
 
 jest.mock("@/src/indoors/services/Graph");
 jest.mock("@/src/indoors/services/PathFinder");
+
+jest.mock("@/src/utils/tokenStorage", () => ({
+  getWheelchairAccessibilityPreference: jest.fn().mockResolvedValue(false),
+}));
 
 const MockGraph = Graph as jest.MockedClass<typeof Graph>;
 const MockPathFinder = PathFinder as jest.MockedClass<typeof PathFinder>;
@@ -116,13 +120,13 @@ describe("IndoorMapService", () => {
     it("adds inter-floor edges after floor edges", () => {
       service.loadBuilding(buildingConfig);
       buildingConfig.interFloorEdges!.forEach((edge) => {
-        expect(mockGraphInstance.addEdge).toHaveBeenCalledWith(edge);
+        expect(mockGraphInstance.addEdge).toHaveBeenCalledWith(edge, false);
       });
     });
   });
   describe("getRoute", () => {
-    it("delegates to PathFinder and returns the result", () => {
-      const route = service.getRoute("A", "B");
+    it("delegates to PathFinder and returns the result", async () => {
+      const route = await service.getRoute("A", "B");
       expect(mockPathFinderInstance.findShortestPath).toHaveBeenCalledWith(
         "A",
         "B",
@@ -131,8 +135,8 @@ describe("IndoorMapService", () => {
       expect(route).toBe(mockRoute);
     });
 
-    it("passes accessibleOnly flag to PathFinder", () => {
-      service.getRoute("A", "B", true);
+    it("passes accessibleOnly flag to PathFinder", async () => {
+      await service.getRoute("A", "B", true);
       expect(mockPathFinderInstance.findShortestPath).toHaveBeenCalledWith(
         "A",
         "B",
