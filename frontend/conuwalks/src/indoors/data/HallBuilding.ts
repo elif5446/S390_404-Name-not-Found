@@ -274,7 +274,7 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
           {id: "H_927.04", floorId: "H_9", x: 879, y: 641, type: "room", label: "Room 927.04"},
           {id: "H_927.01", floorId: "H_9", x: 978, y: 664, type: "room", label: "Room 927.01"},
           {id: "H_927.03", floorId: "H_9", x: 978, y: 619, type: "room", label: "Room 927.03"},
-          {id: "H_931", floorId: "H_9", x: 848, y: 836, type: "room", label: "Room 931"},
+          {id: "H_931", floorId: "H_9", x: 900, y: 820, type: "room", label: "Room 931"},
           {id: "H_929", floorId: "H_9", x: 916, y: 883, type: "room", label: "Room 929"},
 
           //Bottom
@@ -289,7 +289,7 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
           {id: "H_937", floorId: "H_9", x: 543, y: 798, type: "room", label: "Room 937"},
           {id: "H_933", floorId: "H_9", x: 753, y: 911, type: "room", label: "Room 933"},
           {id: "H_932", floorId: "H_9", x: 738, y: 805, type: "room", label: "Room 932"},
-          {id: "H_928", floorId: "H_9", x: 789, y: 805, type: "room", label: "Room 928"},
+          {id: "H_928", floorId: "H_9", x: 860, y: 800, type: "room", label: "Room 928"},
 
           //top
           {id: "H_903", floorId: "H_9", x: 235, y: 112, type: "room", label: "Room 903"},

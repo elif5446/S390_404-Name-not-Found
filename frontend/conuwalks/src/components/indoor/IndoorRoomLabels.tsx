@@ -42,7 +42,7 @@ function getRoomLabelOffsetX(label: string): number {
   if (["927.01", "927.02", "927.03"].includes(room)) {
     return 8;
   }
-  if (["925.01", "925.02", "925.03"].includes(room)) {
+  if (["925.01", "925.03"].includes(room)) {
     return 10;
   }
     if (room === "928" || room === "932") {

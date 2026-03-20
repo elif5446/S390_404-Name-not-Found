@@ -335,6 +335,10 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
     ...nonRoomPOIs.filter((p) => activeCategories.has(p.category)),
   ];
 
+  // --- DEBUG UI: Show POI info for H-9 ---
+  // (DEBUG UI REMOVED)
+  // --- END DEBUG UI ---
+
   return (
     <View style={styles.container}>
       <View style={styles.mapContainer}>

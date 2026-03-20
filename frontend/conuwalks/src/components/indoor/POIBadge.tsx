@@ -8,30 +8,26 @@ import { poiBadgeStyles, POI_PALETTE } from "@/src/styles/IndoorPOI.styles";
 type IconLib = "ion" | "mci";
 type IconOffset = { x: number; y: number };
 
-// Fine-tune icon placement by room number 
-//  adjust entries as needed
-const ICON_POSITION_OVERRIDES: Record<string, IconOffset> = {
-  "801": { x: -7, y: -4 },
-  "803" : {x: -5, y: -3 },
-  "805": { x: 0, y: 0 },
-  "807":{x:-1, y:-4},
-  "811": { x: -3, y: -2},
-  "813" : {x: -4, y: -2},
-  "815" : {x: -1, y: -2},
-  "817" : {x:3, y: -2},
-  "819" : {x:4, y: 2},
-  "821" : {x:4, y: 5},
-  "823" : {x:4, y: 5},
-  "825" : {x:6, y: 6},
-  "827" : {x:6, y: 5},
-  "829" : {x:6, y: -1},  
-  "809": { x: 0, y: 0 },
-  "836": { x: 19, y: -2 },
-  "E1": { x: 12, y: 15 },
-  "S1": { x: 17, y: 20 },
-  "S2": { x: 13, y: 15 },
-  "S3": { x: 13, y: 15 },
-  "S4": { x: 11, y: 18 },
+// Fine-tune icon placement by room number (for any POI, not just hardcoded rooms)
+export const ICON_POSITION_OVERRIDES: Record<string, IconOffset> = {
+  "967": { x: 4, y: -4 },
+  "913": { x: 4, y: -4 },
+  "915": { x: 4, y: -4 },
+  "917": { x: 4, y: -6 },
+  "921": { x: 6, y: 3 },
+  "929": { x: 6, y:-6 },
+  "931": { x: 4, y: 9 },
+  "928": { x: 40 , y: -40 },
+  "933": { x: -33, y: 30 },
+
+  // Floor 9 stairs and elevator
+  "S1": { x: 40 , y: -40 },
+  "S2": { x: 0, y: 0 },
+  "S3": { x: 0, y: 0 },
+  "S4": { x: 0, y: 0 },
+  "E1": { x: 40, y: 8 },
+
+
 };
 
 const CATEGORY_CONFIG: Record<
@@ -174,6 +170,7 @@ const POIBadge: React.FC<Props> = ({
 }) => {
   const cfg = CATEGORY_CONFIG[poi.category];
   const isRoom = poi.category === "ROOM";
+  const isLab = poi.category === "LAB";
   const isVerticalTransport = poi.category === "STAIRS" || poi.category === "ELEVATOR";
   const isCompactIconOnly = !isRoom && (poi.room === "805" || poi.room === "809");
   const hideTopMarker = !isRoom && (poi.room === "805" || poi.room === "809");
@@ -192,17 +189,21 @@ const POIBadge: React.FC<Props> = ({
   const iconBadgeShiftDown = poi.room === "805" ? 5 : poi.room === "809" ? 1 : 0;
   const markerShiftUp = poi.room === "836" ? -6 : poi.room === "809" ? -3 : 0;
   const markerShiftRight = poi.room === "836" ? 2 : poi.room === "809" ? 16 : 0;
-  const labShiftRight = poi.category === "LAB" ? 10 : 0;
-  const labShiftUp = poi.category === "LAB" ? -10 : 0;
+  // Only use default LAB shift if no manual override
+  const hasManualLabOffset = poi.category === "LAB" && Object.prototype.hasOwnProperty.call(ICON_POSITION_OVERRIDES, poi.room);
+  const labShiftRight = poi.category === "LAB" && !hasManualLabOffset ? 10 : 0;
+  const labShiftUp = poi.category === "LAB" && !hasManualLabOffset ? -10 : 0;
   const transportShiftLeft = isVerticalTransport ? -12 : 0;
   const transportShiftUp = isVerticalTransport ? -12 : 0;
+  // Use icon offset for any POI (LAB, ROOM, etc.)
   const manualRoomOffset = ICON_POSITION_OVERRIDES[poi.room] ?? { x: 0, y: 0 };
   const markerZIndex = poi.category === "ELEVATOR" ? 40 : poi.category === "STAIRS" ? 30 : 10;
   const markerHitSlop = isVerticalTransport
     ? { top: 14, bottom: 14, left: 14, right: 14 }
     : { top: 8, bottom: 8, left: 8, right: 8 };
 
-  if (isRoom) {
+  if (isRoom && !isLab) {
+    // Render only the label for ROOMs (not LABs)
     const offset = getRoomLabelOffset(poi.room);
     const isExtendedRoom = poi.room.includes(".");
     const showSubRoomIcon = poi.room === "805.01" || poi.room === "805.02";
@@ -296,16 +297,22 @@ const POIBadge: React.FC<Props> = ({
           markerSize / 2 +
           markerShiftRight +
           transportShiftLeft +
-          labShiftRight +
-          manualRoomOffset.x,
+          (poi.category === "LAB"
+            ? (hasManualLabOffset
+                ? manualRoomOffset.x
+                : labShiftRight + manualRoomOffset.x)
+            : manualRoomOffset.x),
         top:
           anchorTop -
           markerSize / 2 -
           3 +
           markerShiftUp +
           transportShiftUp +
-          labShiftUp +
-          manualRoomOffset.y,
+          (poi.category === "LAB"
+            ? (hasManualLabOffset
+                ? manualRoomOffset.y
+                : labShiftUp + manualRoomOffset.y)
+            : manualRoomOffset.y),
         alignItems: "center",
         zIndex: markerZIndex,
       }}
@@ -317,7 +324,7 @@ const POIBadge: React.FC<Props> = ({
         hitSlop={markerHitSlop}
         style={[
           poiBadgeStyles.badge,
-          isRoom
+          isRoom && !isLab
             ? {
                 width: 1,
                 height: 1,
@@ -343,7 +350,7 @@ const POIBadge: React.FC<Props> = ({
         accessibilityLabel={`${poi.description} – Room ${poi.room}`}
         accessibilityRole="button"
       >
-        {!isRoom && !hideTopMarker
+        {(!isRoom || isLab) && !hideTopMarker
           ? renderCategoryIcon(cfg.iconLib, cfg.icon, markerIconSize, iconColor)
           : null}
       </TouchableOpacity>
