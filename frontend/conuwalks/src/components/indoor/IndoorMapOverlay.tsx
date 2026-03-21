@@ -17,26 +17,31 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { ReactNativeZoomableView } from "@openspacelabs/react-native-zoomable-view";
+
+// Services & Types
+import { IndoorMapService } from "@/src/indoors/services/IndoorMapService";
 import { BuildingIndoorConfig } from "@/src/indoors/types/FloorPlans";
 import { POI, POICategory } from "@/src/types/poi";
 import { getPOIsForFloor, getCategoriesForFloor } from "@/src/data/poiData";
-import MapContent from "./IndoorMap";
 import POIBadge from "./POIBadge";
 import POIFilterPanel from "./POIFilterPanel";
-import IndoorRoomLabels from "./IndoorRoomLabels";
 import IndoorBottomPanel, {
   IndoorSearchResult,
 } from "./IndoorTopPanel";
-import { styles } from "@/src/styles/IndoorMap.styles";
-import { navConfigRegistry } from "@/src/indoors/data/navConfigRegistry";
-import {
-  IndoorHotspot,
-  IndoorDestination,
-} from "@/src/indoors/types/hotspot";
 import IndoorRouteOverlay from "./IndoorRouteOverlay";
-import { IndoorMapService } from "@/src/indoors/services/IndoorMapService";
 import { Route } from "@/src/indoors/types/Routes";
 import IndoorPointMarker from "./IndoorPointMarker";
+
+import { Node } from "@/src/indoors/types/Navigation";
+import { IndoorHotspot, IndoorDestination } from "@/src/indoors/types/hotspot";
+import { navConfigRegistry } from "@/src/indoors/data/navConfigRegistry";
+
+// Components & Metadata
+import MapContent from "./IndoorMap";
+import DestinationMarker from "./DestinationMarker";
+import IndoorRoomLabels from "./IndoorRoomLabels";
+import FloorPicker from "./FloorPicker";
+import { styles } from "@/src/styles/IndoorMap.styles";
 
 type RouteNodeLike = {
   id: string;
@@ -318,16 +323,27 @@ function calculateGeographicHeight(
   return isFinite(calculatedHeight) ? calculatedHeight : screenHeight;
 }
 
-
+const MAP_POI_BADGE_SIZE = 18;
 
 interface Props {
   buildingData: BuildingIndoorConfig;
+  startBuildingId?: string | null;
+  startRoomId?: string | null;
+  destinationBuildingId?: string | null;
+  destinationRoomId?: string | null;
+  onSetStartRoom?: (roomLabel: string) => void;
+  onSetDestinationRoom?: (roomLabel: string) => void;
   onExit: () => void;
 }
 
-const MAP_POI_BADGE_SIZE = 18;
-
-const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
+const IndoorMapOverlay: React.FC<Props> = ({
+  buildingData,
+  startBuildingId,
+  startRoomId,
+  destinationBuildingId,
+  destinationRoomId,
+  onExit,
+}) => {
   const { width, height } = useWindowDimensions();
 
   const [currentLevel, setCurrentLevel] = useState(buildingData.defaultFloor);
@@ -459,6 +475,22 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
     return roomHotspots;
   }, [buildingData.id]);
 
+  const [baseStartNode, setBaseStartNode] = useState<Node | null>(null);
+
+  useEffect(() => {
+    let sNode = null;
+    if (startBuildingId === buildingData.id && startRoomId) {
+      sNode = indoorMapService.getNodeByRoomNumber(
+        buildingData.id,
+        startRoomId,
+      );
+    }
+    if (!sNode)
+      sNode =
+        indoorMapService.getEntranceNode() || indoorMapService.getStartNode();
+    setBaseStartNode(sNode);
+  }, [buildingData.id, startBuildingId, startRoomId, indoorMapService]);
+
   const handleSetStartLocation = useCallback((item: IndoorDestination) => {
     setStartLocation(item);
     setCurrentLevel(item.floorLevel);
@@ -477,7 +509,7 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
     setRoute(null);
   }, []);
 
-  const handleDirectionsPress = useCallback(() => {
+  const handleDirectionsPress = useCallback(async () => {
     try {
       const navConfig = navConfigRegistry[buildingData.id];
       if (!navConfig || !destination) {
@@ -487,8 +519,8 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
       }
 
       const startNodeId = startLocation
-        ? resolveDestinationNodeId(startLocation) ?? navConfig.defaultStartNodeId
-        : navConfig.defaultStartNodeId;
+        ? resolveDestinationNodeId(startLocation)
+        : (baseStartNode?.id || navConfig.defaultStartNodeId);
 
       const endNodeId = resolveDestinationNodeId(destination);
 
@@ -499,7 +531,11 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
         return;
       }
 
-      const nextRoute = indoorMapService.getRoute(startNodeId, endNodeId, false);
+      const nextRoute = await indoorMapService.getRoute(
+        startNodeId,
+        endNodeId,
+        false,
+      );
       setRoute(nextRoute);
       setShowSearchResults(false);
       setShowDirections(true);
@@ -509,9 +545,10 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
       setShowDirections(false);
     }
   }, [
-    buildingData.id,
+   buildingData.id,
     destination,
     startLocation,
+    baseStartNode,
     indoorMapService,
     resolveDestinationNodeId,
   ]);
@@ -656,9 +693,24 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
           floorLevel: matchingRoom.floorLevel,
           label: matchingRoom.label,
         });
+      } else {
+        // Fallback to nearest node for map-tapped POIs
+        const xPos = Math.round(poi.mapPosition.x * 1024);
+        const yPos = Math.round(poi.mapPosition.y * 1024);
+        const floorIdStr = `${buildingData.id}_${currentLevel}`;
+        
+        const nearestNode = indoorMapService.getNearestRoomNode(floorIdStr, xPos, yPos);
+        
+        handleSetDestination({
+          id: nearestNode ? nearestNode.id : poi.id,
+          x: xPos,
+          y: yPos,
+          floorLevel: currentLevel,
+          label: `${poi.description} (Room ${poi.room})`,
+        });
       }
     },
-    [routeTargetMode, hotspots, handleSetDestination],
+    [routeTargetMode, hotspots, currentLevel, buildingData.id, indoorMapService, handleSetDestination],
   );
 
   const activeFloor = useMemo(
@@ -681,7 +733,10 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
   const renderedWidth = useMemo(() => SVG_SIZE * scale, [scale]);
   const renderedHeight = useMemo(() => SVG_SIZE * scale, [scale]);
 
-  const offsetX = useMemo(() => (width - renderedWidth) / 2, [width, renderedWidth]);
+  const offsetX = useMemo(
+    () => (width - renderedWidth) / 2,
+    [width, renderedWidth],
+  );
   const offsetY = useMemo(
     () => (contentHeight - renderedHeight) / 2,
     [contentHeight, renderedHeight],
@@ -892,6 +947,28 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
                   y={offsetY + destination.y * scale}
                   emoji="📍"
                   bgColor="transparent"
+                />
+              )}
+
+              {baseStartNode && baseStartNode.floorId === activeFloor.id && (
+                <View
+                  style={{
+                    position: "absolute",
+                    left: offsetX + baseStartNode.x * scale - 12,
+                    top: offsetY + baseStartNode.y * scale - 12,
+                    width: 24,
+                    height: 24,
+                    borderRadius: 12,
+                    backgroundColor: "#B03060BF",
+                    borderWidth: 3,
+                    borderColor: "#FFFFFF",
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.25,
+                    shadowRadius: 3,
+                    elevation: 4,
+                    zIndex: 1005,
+                  }}
                 />
               )}
             </View>

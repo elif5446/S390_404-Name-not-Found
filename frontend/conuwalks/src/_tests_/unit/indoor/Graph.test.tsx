@@ -11,7 +11,7 @@ const makeNode = (
   floorId: "floor-1",
   x,
   y,
-  type: "hallway",
+  type: isEntrance ? "entrance" : "hallway",
   isEntrance,
 });
 
@@ -124,7 +124,6 @@ describe("Graph", () => {
         5,
       );
     });
-
     it("should create a one-way edge when oneWay is true (A→B only)", () => {
       graph.addEdge(makeEdge("A", "B"), true);
       expect(graph.getEdge("A", "B")).toBeDefined();
@@ -137,6 +136,7 @@ describe("Graph", () => {
       expect(graph.getEdge("B", "A")).toBeDefined();
     });
   });
+
   describe("getEdge", () => {
     it("should return undefined for nodes with no edges", () => {
       graph.addNode(makeNode("A", 0, 0));

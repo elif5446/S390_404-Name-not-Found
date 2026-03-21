@@ -5,14 +5,19 @@ import {
   StyleSheet,
   TouchableOpacity,
   TextInput,
+  Switch,
+  Platform
 } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
+import { SymbolView } from "expo-symbols";
 import { openNotificationSettings, openAppearanceSettings } from "@/src/utils/openSystemSettings";
 import {
   getClassReminderLeadTime,
   saveClassReminderLeadTime,
+  getWheelchairAccessibilityPreference,
+  saveWheelchairAccessibilityPreference,
   MAX_CLASS_REMINDER_LEAD_TIME_MINUTES,
-  MIN_CLASS_REMINDER_LEAD_TIME_MINUTES,
+  MIN_CLASS_REMINDER_LEAD_TIME_MINUTES
 } from "@/src/utils/tokenStorage";
 
 const REMINDER_OPTIONS_MINUTES = [0, 5, 10, 15, 30, 45, 60];
@@ -45,6 +50,7 @@ const UserProfileContent = ({ userInfo, onSignOut, mode }: any) => {
   const textColor = mode === "dark" ? "#FFF" : "#333";
   const [reminderLeadTime, setReminderLeadTime] = useState<number>(10);
   const [customReminderInput, setCustomReminderInput] = useState("");
+  const [isWheelchairAccessible, setIsWheelchairAccessible] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -56,6 +62,7 @@ const UserProfileContent = ({ userInfo, onSignOut, mode }: any) => {
         if (!REMINDER_OPTIONS_MINUTES.includes(value)) {
           setCustomReminderInput(String(value));
         }
+        setIsWheelchairAccessible(await getWheelchairAccessibilityPreference());
       }
     };
 
@@ -65,6 +72,14 @@ const UserProfileContent = ({ userInfo, onSignOut, mode }: any) => {
       mounted = false;
     };
   }, []);
+
+  const setWheelchairAccessibilityPreference = async (preference: boolean) => {
+    if(await saveWheelchairAccessibilityPreference(preference)) {
+      setIsWheelchairAccessible(preference);
+    } else {
+      setIsWheelchairAccessible(!preference);
+    }
+  }
 
   const handleReminderChange = async (minutes: number) => {
     setReminderLeadTime(minutes);
@@ -195,12 +210,44 @@ const UserProfileContent = ({ userInfo, onSignOut, mode }: any) => {
           {`Set any value from ${MIN_CLASS_REMINDER_LEAD_TIME_MINUTES} to ${MAX_CLASS_REMINDER_LEAD_TIME_MINUTES} minutes`}
         </Text>
 
-        <TouchableOpacity style={styles.row} onPress={() => openNotificationSettings()}>
+        {/* Wheelchair-Accessible Directions & Navigation Toggle */}
+        <View 
+          accessible={true}
+          accessibilityRole="switch"
+          accessibilityLabel="Wheelchair-Accessible Directions and Navigation"
+          accessibilityHint="Toggle to enable wheelchair accessible routes"
+          accessibilityState={{ checked: !!isWheelchairAccessible }}
+          style={{flexDirection: "row", justifyContent: "space-between", paddingVertical: 20, alignItems:"center", paddingHorizontal:15}}
+        >
+          <View style={{flexDirection: "row", justifyContent: "space-between", alignItems:"center"}}>
+            {Platform.OS === "ios" ?
+                <SymbolView
+                name="figure.roll"
+                size={24}
+                tintColor="#B03060"
+                fallback={<MaterialIcons name="accessible-forward" size={24} />}
+              />
+            : <MaterialIcons name="accessible-forward" size={24} tintColor="#B03060" color="#B03060"/>}
+            <View style={{flexDirection: "column", paddingLeft:10}}>
+              <Text style={[styles.rowText, { color: textColor }]}>
+                {`Wheelchair-Accessible\nDirections & Navigation`}
+              </Text>
+            </View>
+          </View>
+          <Switch 
+            importantForAccessibility="no-hide-descendants"
+            style={{paddingVertical: 10}}
+            value={isWheelchairAccessible}
+            onValueChange={() => setWheelchairAccessibilityPreference(!isWheelchairAccessible)}
+          />
+        </View>
+
+        <TouchableOpacity style={[styles.row, Platform.OS === 'ios' ? {paddingTop: 35} : {}]} onPress={() => openNotificationSettings()}>
           <MaterialIcons name="settings" size={22} color="#B03060" />
           <Text style={[styles.rowText, { color: textColor }]}>System Notification Settings</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.row} onPress={() => openAppearanceSettings()}>
+        <TouchableOpacity style={[styles.row, {paddingBottom: 0}]} onPress={() => openAppearanceSettings()}>
           <MaterialIcons name="dark-mode" size={22} color="#B03060" />
           <Text style={[styles.rowText, { color: textColor }]}>Appearance</Text>
         </TouchableOpacity>
@@ -216,7 +263,7 @@ const UserProfileContent = ({ userInfo, onSignOut, mode }: any) => {
 
 const styles = StyleSheet.create({
   container: { paddingHorizontal: 20 },
-  section: { marginBottom: 25 },
+  section: { marginBottom: Platform.OS === 'ios' ? 25 : 10 },
   sectionTitle: {
     fontSize: 13,
     fontWeight: "700",
@@ -280,7 +327,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 0,
     gap: 10,
   },
   signOutText: { color: "#FFF", fontWeight: "700", fontSize: 16 },

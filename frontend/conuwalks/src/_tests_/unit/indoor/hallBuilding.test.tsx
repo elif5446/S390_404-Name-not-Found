@@ -275,16 +275,16 @@ describe('Hall Building Navigation', () => {
 
 
 //you can try changing the nodes to find the shortest route from any of the implemented nodes.
-  test('find the route between N1 and N2', () => {
-    const route = service.getRoute('H_847', 'H_813');
+  test('find the route between H_964 and H_801', async () => {
+    const route = await service.getRoute('H_964', 'H_801');
     console.log('Path:', route.nodes.map(n => n.id).join(' → '));
     console.log('Total distance:', route.totalDistance);
   });
 
   //see how the route can be found using users current location
-  test('find the route from the default start node to H_964', () => {
+  test('find the route from the default start node to H_964', async () => {
     const userLocation = locationTracker.getUserLocation();
-    const route = service.getRoute(userLocation!.nodeId, 'H_964');
+    const route = await service.getRoute(userLocation!.nodeId, 'H_964');
     console.log('Path:', route.nodes.map(n => n.id).join(' → '));
     console.log('Total distance:', route.totalDistance);
   });

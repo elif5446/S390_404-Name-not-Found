@@ -20,7 +20,11 @@ const MapContent = React.memo(({ floor, width, height }: MapContentProps) => {
       const SvgComponent = floor.image as React.ElementType;
       return (
         <View style={{ width, height, position: "relative" }}>
-          <SvgComponent width={width} height={height} preserveAspectRatio="xMidYMid meet" />
+          <SvgComponent
+            width={width}
+            height={height}
+            preserveAspectRatio="xMidYMid meet"
+          />
         </View>
       );
     } else {

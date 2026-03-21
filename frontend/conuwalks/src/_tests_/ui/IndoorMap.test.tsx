@@ -44,8 +44,8 @@ describe("MapContent Component", () => {
     // query by the accessibility label
     const svgElement = screen.getByLabelText("mock-svg");
     expect(svgElement).toBeTruthy();
-    expect(svgElement.props.width).toBe("100%");
-    expect(svgElement.props.height).toBe("100%");
+    expect(svgElement.props.width).toBe(300);
+    expect(svgElement.props.height).toBe(400);
     expect(svgElement.props.preserveAspectRatio).toBe("xMidYMid meet");
   });
 

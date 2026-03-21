@@ -1,4 +1,4 @@
-import { BuildingNavConfig, Node } from '../types/Navigation';
+import { BuildingNavConfig } from '../types/Navigation';
 
 
 export const hallBuildingNavConfig: BuildingNavConfig = {
@@ -131,7 +131,16 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
         {nodeAId: "H_8_N7", nodeBId: "H_8_N21", accessible: true},
         {nodeAId: "H_8_N21", nodeBId: "H_8_N6", accessible: true},
 
-        //hall to class 
+        { nodeAId: "H_8_N4", nodeBId: "H_8_N12", accessible: true },
+        { nodeAId: "H_8_N12", nodeBId: "H_8_N11", accessible: true },
+        { nodeAId: "H_8_N11", nodeBId: "H_8_N10", accessible: true },
+        { nodeAId: "H_8_N10", nodeBId: "H_8_N9", accessible: true },
+        { nodeAId: "H_8_N9", nodeBId: "H_8_N8", accessible: true },
+        { nodeAId: "H_8_N8", nodeBId: "H_8_N7", accessible: true },
+        { nodeAId: "H_8_N7", nodeBId: "H_8_N21", accessible: true },
+        { nodeAId: "H_8_N21", nodeBId: "H_8_N6", accessible: true },
+
+        //hall to class
         { nodeAId: "H_8_N3", nodeBId: "H_801", accessible: true },
         {nodeAId: "H_8_N3", nodeBId: "H_867", accessible: true},
         {nodeAId: "H_8_N3", nodeBId: "H_865", accessible: true},
@@ -370,8 +379,119 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
         {nodeAId: "H_9_N31", nodeBId: "H_9_N24", accessible: true},
         {nodeAId: "H_9_N24", nodeBId: "H_9_N13", accessible: true},
 
-        //hall to class 
-        {nodeAId: "H_9_N1", nodeBId: "H_964", accessible: true},
+        { nodeAId: "H_9_N30", nodeBId: "H_9_N3", accessible: true },
+        { nodeAId: "H_9_N3", nodeBId: "H_9_N2", accessible: true },
+        { nodeAId: "H_9_N2", nodeBId: "H_9_N4", accessible: true },
+        { nodeAId: "H_9_N4", nodeBId: "H_9_N5", accessible: true },
+        { nodeAId: "H_9_N5", nodeBId: "H_9_N6", accessible: true },
+        { nodeAId: "H_9_N6", nodeBId: "H_9_N7", accessible: true },
+        { nodeAId: "H_9_N7", nodeBId: "H_9_N8", accessible: true },
+        { nodeAId: "H_9_N8", nodeBId: "H_9_N9", accessible: true },
+        { nodeAId: "H_9_N9", nodeBId: "H_9_N32", accessible: true },
+
+        { nodeAId: "H_9_N8", nodeBId: "H_9_N12", accessible: true },
+        { nodeAId: "H_9_N12", nodeBId: "H_9_N11", accessible: true },
+        { nodeAId: "H_9_N11", nodeBId: "H_9_N10", accessible: true },
+        { nodeAId: "H_9_N10", nodeBId: "H_9_N9", accessible: true },
+
+        { nodeAId: "H_9_N32", nodeBId: "H_9_N25", accessible: true },
+        { nodeAId: "H_9_N32", nodeBId: "H_9_N13", accessible: true },
+        { nodeAId: "H_9_N13", nodeBId: "H_9_N14", accessible: true },
+        { nodeAId: "H_9_N14", nodeBId: "H_9_N15", accessible: true },
+        { nodeAId: "H_9_N15", nodeBId: "H_9_N16", accessible: true },
+        { nodeAId: "H_9_N16", nodeBId: "H_9_N17", accessible: true },
+        { nodeAId: "H_9_N17", nodeBId: "H_9_N18", accessible: true },
+        { nodeAId: "H_9_N18", nodeBId: "H_9_N19", accessible: true },
+        { nodeAId: "H_9_N19", nodeBId: "H_9_N20", accessible: true },
+        { nodeAId: "H_9_N20", nodeBId: "H_9_N21", accessible: true },
+        { nodeAId: "H_9_N21", nodeBId: "H_9_N31", accessible: true },
+        { nodeAId: "H_9_N31", nodeBId: "H_9_N22", accessible: true },
+        { nodeAId: "H_9_N22", nodeBId: "H_9_N23", accessible: true },
+        { nodeAId: "H_9_N31", nodeBId: "H_9_N24", accessible: true },
+        { nodeAId: "H_9_N24", nodeBId: "H_9_N13", accessible: true },
+
+        //hall to class
+        { nodeAId: "H_9_N1", nodeBId: "H_964", accessible: true },
+
+        { nodeAId: "H_9_N2", nodeBId: "H_915", accessible: true },
+        { nodeAId: "H_9_N2", nodeBId: "H_917", accessible: true },
+
+        { nodeAId: "H_9_N3", nodeBId: "H_911", accessible: true },
+        { nodeAId: "H_9_N3", nodeBId: "H_913", accessible: true },
+
+        { nodeAId: "H_9_N4", nodeBId: "H_919", accessible: true },
+        { nodeAId: "H_9_N4", nodeBId: "H_921", accessible: true },
+
+        { nodeAId: "H_9_N5", nodeBId: "H_923", accessible: true },
+        { nodeAId: "H_9_N5", nodeBId: "H_920", accessible: true },
+
+        { nodeAId: "H_9_N6", nodeBId: "H_925.01", accessible: true },
+        { nodeAId: "H_9_N6", nodeBId: "H_925.02", accessible: true },
+        { nodeAId: "H_9_N6", nodeBId: "H_925.03", accessible: true },
+
+        { nodeAId: "H_9_N8", nodeBId: "H_927", accessible: true },
+        { nodeAId: "H_9_N8", nodeBId: "H_927.04", accessible: true },
+
+        { nodeAId: "H_9_N10", nodeBId: "H_937", accessible: true },
+
+        { nodeAId: "H_9_N11", nodeBId: "H_932", accessible: true },
+        { nodeAId: "H_9_N11", nodeBId: "H_933", accessible: true },
+
+        { nodeAId: "H_9_N12", nodeBId: "H_928", accessible: true },
+        { nodeAId: "H_9_N12", nodeBId: "H_931", accessible: true },
+        { nodeAId: "H_9_N12", nodeBId: "H_929", accessible: true },
+
+        { nodeAId: "H_9_N13", nodeBId: "H_937", accessible: true },
+        { nodeAId: "H_9_N14", nodeBId: "H_945", accessible: true },
+        { nodeAId: "H_9_N15", nodeBId: "H_941", accessible: true },
+
+        { nodeAId: "H_9_N16", nodeBId: "H_943", accessible: true },
+        { nodeAId: "H_9_N16", nodeBId: "H_961.33", accessible: true },
+        { nodeAId: "H_9_N16", nodeBId: "H_961.31", accessible: true },
+
+        { nodeAId: "H_9_N17", nodeBId: "H_961.30", accessible: true },
+        { nodeAId: "H_9_N17", nodeBId: "H_961.28", accessible: true },
+        { nodeAId: "H_9_N17", nodeBId: "H_961.27", accessible: true },
+        { nodeAId: "H_9_N17", nodeBId: "H_961.29", accessible: true },
+
+        { nodeAId: "H_9_N18", nodeBId: "H_961.26", accessible: true },
+        { nodeAId: "H_9_N18", nodeBId: "H_961.23", accessible: true },
+        { nodeAId: "H_9_N18", nodeBId: "H_961.25", accessible: true },
+
+        { nodeAId: "H_9_N19", nodeBId: "H_961.21", accessible: true },
+        { nodeAId: "H_9_N19", nodeBId: "H_961.19", accessible: true },
+        { nodeAId: "H_9_N19", nodeBId: "H_961.17", accessible: true },
+
+        { nodeAId: "H_9_N20", nodeBId: "H_961.13", accessible: true },
+        { nodeAId: "H_9_N20", nodeBId: "H_961.15", accessible: true },
+        { nodeAId: "H_9_N20", nodeBId: "H_961.14", accessible: true },
+
+        { nodeAId: "H_9_N21", nodeBId: "H_961.09", accessible: true },
+        { nodeAId: "H_9_N21", nodeBId: "H_961.11", accessible: true },
+
+        { nodeAId: "H_9_N22", nodeBId: "H_961.07", accessible: true },
+        { nodeAId: "H_9_N22", nodeBId: "H_961.03", accessible: true },
+        { nodeAId: "H_9_N22", nodeBId: "H_961.06", accessible: true },
+
+        { nodeAId: "H_9_N23", nodeBId: "H_961.01", accessible: true },
+        { nodeAId: "H_9_N23", nodeBId: "H_961.02", accessible: true },
+        { nodeAId: "H_9_N23", nodeBId: "H_961.04", accessible: true },
+
+        { nodeAId: "H_9_N24", nodeBId: "H_968", accessible: true },
+        { nodeAId: "H_9_N24", nodeBId: "H_966", accessible: true },
+
+        { nodeAId: "H_9_N26", nodeBId: "H_963", accessible: true },
+        { nodeAId: "H_9_N27", nodeBId: "H_965", accessible: true },
+        { nodeAId: "H_9_N28", nodeBId: "H_967", accessible: true },
+
+        { nodeAId: "H_9_N29", nodeBId: "H_903", accessible: true },
+        { nodeAId: "H_9_N29", nodeBId: "H_907", accessible: true },
+        { nodeAId: "H_9_N30", nodeBId: "H_909", accessible: true },
+
+        { nodeAId: "H_9_N33", nodeBId: "H_927.04", accessible: true },
+        { nodeAId: "H_9_N33", nodeBId: "H_927.01", accessible: true },
+        { nodeAId: "H_9_N33", nodeBId: "H_927.03", accessible: true },
+        { nodeAId: "H_9_N33", nodeBId: "H_927", accessible: true },
 
         {nodeAId: "H_9_N2", nodeBId: "H_915", accessible: true},
         {nodeAId: "H_9_N2", nodeBId: "H_917", accessible: true},
@@ -617,7 +737,6 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
         {nodeAId: "H_2_N2", nodeBId: "H_2_ELEVATOR_2", accessible: true},
       ]
     }
-
   ],
   interFloorEdges: [
     // edges that connect floors for H8 and H9
