@@ -1109,12 +1109,14 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
   const [sourcePOI, setSourcePOI] = useState<POI | null>(null);
   const [destinationPOI, setDestinationPOI] = useState<POI | null>(null);
 
-
+  const [showDirections, setShowDirections] = useState(false);
   const handleSetStartLocation = useCallback((item: IndoorDestination) => {
     setStartLocation(item);
     setCurrentLevel(item.floorLevel);
     setSearchQuery(item.label ?? item.id);
     setShowSearchResults(false);
+    setShowDirections(false);
+    setRoute(null);
   }, []);
   const indoorMapService = useMemo(() => {
     const service = new IndoorMapService();
@@ -1260,11 +1262,13 @@ const handleDrawDirections = useCallback(() => {
     return roomHotspots;
   }, [buildingData.id]);
 
- const handleSetDestination = useCallback((item: IndoorDestination) => {
+const handleSetDestination = useCallback((item: IndoorDestination) => {
   setDestination(item);
   setCurrentLevel(item.floorLevel);
   setSearchQuery(item.label ?? item.id);
   setShowSearchResults(false);
+  setShowDirections(false);
+  setRoute(null);
 }, []);
 
 const handleSelectSearchResult = useCallback(
@@ -1310,6 +1314,45 @@ const handleSelectSearchResult = useCallback(
     setSearchQuery("");
     setShowSearchResults(false);
   }, []);
+  
+  const handleDirectionsPress = useCallback(() => {
+    try {
+      const navConfig = navConfigRegistry[buildingData.id];
+      if (!navConfig || !destination) {
+        setRoute(null);
+        setShowDirections(false);
+        return;
+      }
+
+      const startNodeId = startLocation
+        ? resolveDestinationNodeId(startLocation) ?? navConfig.defaultStartNodeId
+        : navConfig.defaultStartNodeId;
+
+      const endNodeId = resolveDestinationNodeId(destination);
+
+      if (!startNodeId || !endNodeId) {
+        console.warn("Could not resolve start or destination node");
+        setRoute(null);
+        setShowDirections(false);
+        return;
+      }
+
+      const nextRoute = indoorMapService.getRoute(startNodeId, endNodeId, false);
+      setRoute(nextRoute);
+      setShowSearchResults(false);
+      setShowDirections(true);
+    } catch (error) {
+      console.warn("Failed to compute indoor route:", error);
+      setRoute(null);
+      setShowDirections(false);
+    }
+  }, [
+    buildingData.id,
+    destination,
+    startLocation,
+    indoorMapService,
+    resolveDestinationNodeId,
+  ]);
 
   const combinedSearchResults = useMemo<IndoorSearchResult[]>(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -1624,7 +1667,7 @@ const handleSelectSearchResult = useCallback(
           }}
         />
 
-        {startLocation && startLocation.floorLevel === currentLevel && (
+        {startLocation && !showDirections && startLocation.floorLevel === currentLevel && (       
           <IndoorPointMarker
             x={offsetX + startLocation.x * scale}
             y={offsetY + startLocation.y * scale}
@@ -1638,7 +1681,7 @@ const handleSelectSearchResult = useCallback(
             x={offsetX + destination.x * scale}
             y={offsetY + destination.y * scale}
             emoji="📍"
-            bgColor="#C2185B"
+            bgColor="none"
           />
         )}
       </View>
@@ -1660,29 +1703,33 @@ const handleSelectSearchResult = useCallback(
         <Ionicons name="arrow-back" size={24} color="#0d0d0dff" />
       </TouchableOpacity>
 
-       <IndoorBottomPanel
-  searchQuery={searchQuery}
-  setSearchQuery={setSearchQuery}
-  showSearchResults={showSearchResults}
-  setShowSearchResults={setShowSearchResults}
-  searchResults={combinedSearchResults}
-  onSelectResult={handleSelectSearchResult}
-  onClearSelection={() => {
-    if (activeField === "start") {
-      setStartLocation(null);
-    } else {
-      handleClearDestination();
-    }
-  }}
-  startLabel={startLocation?.label ?? "Current position"}
-  destinationLabel={destination?.label ?? ""}
-  activeField={activeField}
-  onFocusField={(field) => {
-    setActiveField(field);
-    setSearchQuery("");
-    setShowSearchResults(false);
-  }}
-/>
+        <IndoorBottomPanel
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        showSearchResults={showSearchResults}
+        setShowSearchResults={setShowSearchResults}
+        searchResults={combinedSearchResults}
+        onSelectResult={handleSelectSearchResult}
+        onClearDestination={() => {
+          if (activeField === "start") {
+            setStartLocation(null);
+          } else {
+            setDestination(null);
+            setRoute(null);
+          }
+        }}
+        startLabel={startLocation?.label ?? "Current position"}
+        destinationLabel={destination?.label ?? ""}
+        activeField={activeField}
+        onFocusField={(field) => {
+          setActiveField(field);
+          setSearchQuery("");
+          setShowSearchResults(false);
+        }}
+        onDirectionsPress={handleDirectionsPress}
+        canShowDirections={!!destination}
+      />
+
 
       <POIFilterPanel
         pois={nonRoomPOIs}

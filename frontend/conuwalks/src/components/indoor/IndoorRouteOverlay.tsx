@@ -57,19 +57,28 @@ const IndoorRouteOverlay: React.FC<Props> = ({
         height: canvasHeight,
       }}
     >
-      <Svg width={canvasWidth} height={canvasHeight}>
+    <Svg width={canvasWidth} height={canvasHeight}>
         <Polyline
-          points={points}
-          fill="none"
-          stroke="#2563EB"
-          strokeWidth={6}
-          strokeLinecap="round"
-          strokeLinejoin="round"
+            points={points}
+            fill="none"
+            stroke="#FFFFFF"
+            strokeWidth={8}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            opacity={0.9}
+        />
+        <Polyline
+            points={points}
+            fill="none"
+            stroke="#C2185B"
+            strokeWidth={4.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
         />
 
-        <Circle cx={startX} cy={startY} r={6} fill="#2563EB" />
-        <Circle cx={endX} cy={endY} r={7} fill="#E5486B" />
-      </Svg>
+        <Circle cx={startX} cy={startY} r={4} fill="#3A7BD5" />
+        <Circle cx={endX} cy={endY} r={5} fill="#C2185B" />
+        </Svg>
     </View>
   );
 };
