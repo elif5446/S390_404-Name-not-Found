@@ -89,9 +89,7 @@ const IndoorBottomPanel: React.FC<Props> = ({
             value={activeField === "start" ? searchQuery : startLabel}
             onFocus={() => {
               onFocusField("start");
-              if (searchQuery.length > 0) {
-                setShowSearchResults(true);
-              }
+              setShowSearchResults(false);
             }}
             onChangeText={(text) => {
               onFocusField("start");
@@ -129,9 +127,7 @@ const IndoorBottomPanel: React.FC<Props> = ({
             value={activeField === "destination" ? searchQuery : destinationLabel}
             onFocus={() => {
               onFocusField("destination");
-              if (searchQuery.length > 0) {
-                setShowSearchResults(true);
-              }
+              setShowSearchResults(false);
             }}
             onChangeText={(text) => {
               onFocusField("destination");
@@ -240,47 +236,47 @@ const IndoorBottomPanel: React.FC<Props> = ({
           </TouchableOpacity>
         </View>
 
-        {showSearchResults && (
-          <View style={styles.resultsContainer}>
-            {searchResults.length > 0 ? (
-              <ScrollView
-                keyboardShouldPersistTaps="handled"
-                nestedScrollEnabled
-                showsVerticalScrollIndicator={false}
-              >
-                {searchResults.map((item) => (
-                  <Pressable
-                    key={`${item.type}-${item.id}`}
-                    style={styles.resultItem}
-                    onPress={() => {
-                      onSelectResult(item);
-                      setShowSearchResults(false);
-                      Keyboard.dismiss();
-                    }}
-                  >
-                    <Ionicons
-                      name={item.type === "poi" ? "location-outline" : "search"}
-                      size={14}
-                      color={activeField === "start" ? "#3A7BD5" : "#C2185B"}
-                      style={styles.resultIcon}
-                    />
+    {showSearchResults && searchQuery.trim().length > 0 && (
+       <View style={styles.resultsContainer}>
+        {searchResults.length > 0 ? (
+       <ScrollView
+        keyboardShouldPersistTaps="handled"
+        nestedScrollEnabled
+        showsVerticalScrollIndicator={false}
+      >
+        {searchResults.map((item) => (
+          <Pressable
+            key={`${item.type}-${item.id}`}
+            style={styles.resultItem}
+            onPress={() => {
+              onSelectResult(item);
+              setShowSearchResults(false);
+              Keyboard.dismiss();
+            }}
+          >
+            <Ionicons
+              name={item.type === "poi" ? "location-outline" : "search"}
+              size={14}
+              color={activeField === "start" ? "#3A7BD5" : "#C2185B"}
+              style={styles.resultIcon}
+            />
 
-                    <View style={styles.resultTextContainer}>
-                      <Text style={styles.resultTitle}>{item.label}</Text>
-                      <Text style={styles.resultSubtitle}>
-                        Floor {item.floorLevel} • {item.type === "poi" ? "POI" : "Room"}
-                      </Text>
-                    </View>
-                  </Pressable>
-                ))}
-              </ScrollView>
-            ) : (
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>No matching results found</Text>
-              </View>
-            )}
-          </View>
-        )}
+            <View style={styles.resultTextContainer}>
+              <Text style={styles.resultTitle}>{item.label}</Text>
+              <Text style={styles.resultSubtitle}>
+                Floor {item.floorLevel} • {item.type === "poi" ? "POI" : "Room"}
+              </Text>
+            </View>
+          </Pressable>
+        ))}
+      </ScrollView>
+         ) : (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyText}>No matching results found</Text>
+      </View>
+         )}
+       </View>
+      )}
       </View>
     </View>
   );
