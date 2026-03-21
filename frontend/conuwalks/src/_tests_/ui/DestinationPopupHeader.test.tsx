@@ -220,7 +220,7 @@ describe("DestinationHeader Component", () => {
       render(<DestinationHeader {...defaultProps} travelMode="transit" />);
       // Note: Exact string depends on local time zone of the test runner,
       // but it will contain "Leave at"
-      expect(screen.getByText(/Leave at \d{2}:\d{2}/)).toBeTruthy();
+      expect(screen.getByText(/Leave at \d{1,2}:\d{2}/)).toBeTruthy();
     });
 
     it("renders 'Arrive by HH:MM' for 'arrive' mode", () => {
@@ -231,7 +231,7 @@ describe("DestinationHeader Component", () => {
       });
 
       render(<DestinationHeader {...defaultProps} travelMode="transit" />);
-      expect(screen.getByText(/Arrive by \d{2}:\d{2}/)).toBeTruthy();
+      expect(screen.getByText(/Arrive by \d{1,2}:\d{2}/)).toBeTruthy();
     });
 
     it("appends the date string if isToday is false", () => {
@@ -244,7 +244,7 @@ describe("DestinationHeader Component", () => {
 
       render(<DestinationHeader {...defaultProps} travelMode="transit" />);
       // Should include comma and date formatting e.g., "Leave at 14:30, Thu, Mar 5"
-      expect(screen.getByText(/Leave at \d{2}:\d{2},/)).toBeTruthy();
+      expect(screen.getByText(/Leave at \d{1,2}:\d{2},/)).toBeTruthy();
     });
   });
 

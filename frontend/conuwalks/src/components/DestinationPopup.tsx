@@ -28,6 +28,7 @@ interface DestinationPopupProps {
 
 export interface DestinationPopupHandle {
   minimize: () => void;
+  dismiss: () => void;
 }
 
 const DestinationPopup = forwardRef<
@@ -42,6 +43,7 @@ const DestinationPopup = forwardRef<
     setSelectedRouteIndex,
     setRouteData,
     clearRouteData,
+    clearDestination,
     loading,
     error,
     travelMode,
@@ -62,11 +64,12 @@ const DestinationPopup = forwardRef<
     (shouldClear: boolean = true) => {
       if (shouldClear) {
         setIsNavigationActive(false);
+        clearDestination();
         clearRouteData();
       }
       onClose();
     },
-    [setIsNavigationActive, clearRouteData, onClose],
+    [onClose, setIsNavigationActive, clearDestination, clearRouteData],
   );
 
   const {
@@ -76,17 +79,20 @@ const DestinationPopup = forwardRef<
     scrollOffsetRef,
     minimize,
     snapTo,
-    dismiss,
     handleToggleHeight,
     handlePanResponder,
     scrollAreaPanResponder,
+    dismiss: dismissBottomSheet,
   } = useBottomSheet({
     visible,
     onDismiss: handleSheetDismiss,
   });
 
   // Expose minimize safely to CampusMap
-  useImperativeHandle(ref, () => ({ minimize }));
+  useImperativeHandle(ref, () => ({
+    minimize,
+    dismiss: () => dismissBottomSheet(true),
+  }));
 
   const handleTravelModeSelect = useCallback(
     (mode: "walking" | "driving" | "transit" | "bicycling") => {
@@ -97,8 +103,8 @@ const DestinationPopup = forwardRef<
   );
 
   const handleHeaderDismiss = useCallback(() => {
-    dismiss(true);
-  }, [dismiss]);
+    dismissBottomSheet(true);
+  }, [dismissBottomSheet]);
 
   const handleScroll = useCallback(
     (e: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -122,18 +128,18 @@ const DestinationPopup = forwardRef<
         setRouteData(routes[index]);
         setNavigationRouteId(routeId);
         setIsNavigationActive(true);
-        dismiss(false); // Pass false so it doesn't clear the route when closing
+        dismissBottomSheet(false);
         return;
       }
       setNavigationRouteId(routeId);
     },
     [
       routes,
+      setNavigationRouteId,
       setSelectedRouteIndex,
       setRouteData,
       setIsNavigationActive,
-      setNavigationRouteId,
-      dismiss,
+      dismissBottomSheet,
     ],
   );
 
