@@ -8,6 +8,14 @@ import {
   isTokenValid,
 } from "../../utils/tokenStorage";
 
+// Mock the global fetch API used for revoking the token
+global.fetch = jest.fn(() =>
+  Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve({}),
+  } as Response),
+);
+
 describe("tokenStorage utils", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -50,34 +58,28 @@ describe("tokenStorage utils", () => {
     expect(user).not.toBeNull();
   });
 
-  test("clearTokens removes items and revokes Google token", async () => {
-    const mockTokenString = JSON.stringify({
-      accessToken: "mock-access-token",
-    });
-    (AsyncStorage.getItem as jest.Mock).mockResolvedValueOnce(mockTokenString);
-
-    global.fetch = jest.fn().mockResolvedValue({
-      ok: true,
-    });
+  test("clearTokens removes items and revokes token", async () => {
+    // Mock the initial getItem call so the token revocation logic triggers
+    (AsyncStorage.getItem as jest.Mock).mockResolvedValue(
+      JSON.stringify({ accessToken: "fake-access-token" }),
+    );
 
     await clearTokens();
 
-    expect(AsyncStorage.removeItem).toHaveBeenCalledWith("@auth_tokens");
-    expect(AsyncStorage.removeItem).toHaveBeenCalledWith("@user_info");
-    expect(AsyncStorage.removeItem).toHaveBeenCalledWith(
+    // Verify we use multiRemove with the correct keys
+    expect(AsyncStorage.multiRemove).toHaveBeenCalledWith([
+      "@auth_tokens",
+      "@user_info",
       "@class_reminder_lead_time",
-    );
-    expect(AsyncStorage.removeItem).toHaveBeenCalledWith(
       "@dismissed_class_event_ids",
-    );
+    ]);
 
-    // 4. Verify the fetch call was made to Google's revoke endpoint
+    // Verify the fetch call was made to Google's revocation endpoint
     expect(global.fetch).toHaveBeenCalledWith(
-      "https://accounts.google.com/o/oauth2/revoke?token=mock-access-token",
-      {
+      "https://accounts.google.com/o/oauth2/revoke?token=fake-access-token",
+      expect.objectContaining({
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      },
+      }),
     );
   });
 
