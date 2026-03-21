@@ -2,6 +2,7 @@ import { BuildingNavConfig, Node } from "../types/Navigation";
 import { Route, UserLocation } from "../types/Routes";
 import { Graph } from "./Graph";
 import { PathFinder } from "./PathFinder";
+import { getWheelchairAccessibilityPreference } from "@/src/utils/tokenStorage";
 import { IndoorLocationTracker } from "./IndoorLocationTracker";
 
 export class IndoorMapService {
@@ -33,13 +34,14 @@ export class IndoorMapService {
 
     // add inter-floor edges (if they exist) after all floors are loaded
     // this is done last because inter-floor edges reference nodes on different floors
-    // so all nodes must exist in the graph before these edges can be added. 
+    // so all nodes must exist in the graph before these edges can be added.
     //Escalator edges between floors will not be bi-directional
     if (config.interFloorEdges) {
       for (const edge of config.interFloorEdges) {
         const nodeA = this.graph.getNode(edge.nodeAId);
         const nodeB = this.graph.getNode(edge.nodeBId);
-        const isEscalator = nodeA?.type === "escalator" || nodeB?.type === "escalator";
+        const isEscalator =
+          nodeA?.type === "escalator" || nodeB?.type === "escalator";
         this.graph.addEdge(edge, isEscalator);
       }
     }
@@ -58,15 +60,17 @@ export class IndoorMapService {
   }
 
   //you can find a route by giving a start and end node
-  getRoute(
+  async getRoute(
     startNodeId: string,
     endNodeId: string,
-    accessibleOnly: boolean = false,
-  ): Route {
+    accessibleOnly: boolean | null = null,
+  ): Promise<Route> {
+    const wheelchairOnly =
+      accessibleOnly ?? (await getWheelchairAccessibilityPreference());
     return this.pathFinder.findShortestPath(
       startNodeId,
       endNodeId,
-      accessibleOnly,
+      wheelchairOnly,
     );
   }
 

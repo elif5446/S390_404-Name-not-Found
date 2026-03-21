@@ -624,8 +624,8 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
     {nodeAId: "H_8_ELEVATOR", nodeBId: "H_9_ELEVATOR", accessible: true},
 
     {nodeAId: "H_8_STAIRS_1", nodeBId: "H_9_STAIRS_1", accessible: false},
-    {nodeAId: "H_8_STAIRS_2", nodeBId: "H_9_STAIRS_2", accessible: false}, 
-    {nodeAId: "H_8_STAIRS_3", nodeBId: "H_9_STAIRS_3", accessible: false}, 
+    {nodeAId: "H_8_STAIRS_2", nodeBId: "H_9_STAIRS_3", accessible: false},
+    {nodeAId: "H_8_STAIRS_3", nodeBId: "H_9_STAIRS_2", accessible: false},
     {nodeAId: "H_8_STAIRS_4", nodeBId: "H_9_STAIRS_4", accessible: false},
     
     {nodeAId: "H_9_ESCALATOR_DOWN_TO_FLOOR_8", nodeBId: "H_8_ESCALATOR_DOWN_TO_FLOOR_2", accessible: false},

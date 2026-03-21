@@ -55,7 +55,7 @@ const DestinationHeader: React.FC<DestinationHeaderProps> = ({
 
   let timeLabel = "Leave now";
   if (targetTime) {
-    const timeString = targetTime.toLocaleTimeString([], {
+    const timeString = targetTime.toLocaleTimeString("en-CA", {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
@@ -66,7 +66,7 @@ const DestinationHeader: React.FC<DestinationHeaderProps> = ({
       timeLabel = `${prefix} ${timeString}`;
     } else {
       // append the date if it's not today
-      const dateString = targetTime.toLocaleDateString([], {
+      const dateString = targetTime.toLocaleDateString("en-CA", {
         weekday: "short",
         month: "short",
         day: "numeric",

@@ -27,8 +27,8 @@ import MapView, {
 } from "react-native-maps";
 
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { BlurView } from "expo-blur";
 import { SymbolView, SFSymbol } from "expo-symbols";
+import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AdditionalInfoPopup, {
   AdditionalInfoPopupHandle,
@@ -241,8 +241,9 @@ const CampusMap: React.FC<CampusMapProps> = ({
     [onInfoPopupExpansionChange],
   );
 
-  const handleOpenIndoorMap = useCallback((buildingId: string) => {
-    if (!INDOOR_DATA[buildingId]) return;
+  const handleOpenIndoorMap = useCallback(
+    (buildingId: string) => {
+      if (!INDOOR_DATA[buildingId]) return;
 
     setSelectedTransitStopKey(null);
     setSelectedBuilding((prev) => ({ ...prev, visible: false }));

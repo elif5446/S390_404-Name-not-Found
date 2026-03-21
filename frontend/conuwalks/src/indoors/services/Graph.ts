@@ -51,14 +51,6 @@ export class Graph {
       weight,
     };
 
-    // //this will store the edges to be bi-directional since in the buildingNavConfig we only make one edge for each pair of nodes.
-    // if (!this.edges.has(edge.nodeAId)) {
-    //   this.edges.set(edge.nodeAId, []);
-    // }
-    // if (!this.edges.has(edge.nodeBId)) {
-    //   this.edges.set(edge.nodeBId, []);
-    // }
-
     const existingEdges = this.edges.get(edge.nodeAId) || [];
     const edgeExists = existingEdges.some((e) => e.nodeBId === edge.nodeBId);
 
