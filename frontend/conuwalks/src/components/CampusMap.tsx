@@ -212,16 +212,19 @@ const CampusMap: React.FC<CampusMapProps> = ({
     [onInfoPopupExpansionChange],
   );
 
-  const handleOpenIndoorMap = useCallback((buildingId: string) => {
-    if (!INDOOR_DATA[buildingId]) return;
+  const handleOpenIndoorMap = useCallback(
+    (buildingId: string) => {
+      if (!INDOOR_DATA[buildingId]) return;
 
-    setSelectedTransitStopKey(null);
-    setShowDirections(false);
-    setIsNavigationActive(false);
-    clearRouteData();
-    setSelectedBuilding((prev) => ({ ...prev, visible: false }));
-    setIndoorBuildingId(buildingId);
-  }, [setShowDirections, setIsNavigationActive, clearRouteData]);
+      setSelectedTransitStopKey(null);
+      setShowDirections(false);
+      setIsNavigationActive(false);
+      clearRouteData();
+      setSelectedBuilding((prev) => ({ ...prev, visible: false }));
+      setIndoorBuildingId(buildingId);
+    },
+    [setShowDirections, setIsNavigationActive, clearRouteData],
+  );
 
   // Calculate circle radius based on zoom level (longitudeDelta)
   // Larger longitudeDelta = zoomed out = bigger circle
@@ -1254,6 +1257,10 @@ const CampusMap: React.FC<CampusMapProps> = ({
       {indoorBuildingId && INDOOR_DATA[indoorBuildingId] && (
         <IndoorMapOverlay
           buildingData={INDOOR_DATA[indoorBuildingId]}
+          startBuildingId={startBuildingId}
+          startRoomId={startRoom}
+          destinationBuildingId={destinationBuildingId}
+          destinationRoomId={destinationRoom}
           onExit={() => setIndoorBuildingId(null)}
         />
       )}
@@ -1266,8 +1273,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
           campus={selectedBuilding.campus}
           onClose={handleClosePopup}
           onDirectionsTrigger={handleDirectionsTrigger}
-          onOpenIndoorPress={() => handleOpenIndoorMap(selectedBuilding.name)}  
-          showOpenIndoorButton={selectedBuilding.name in INDOOR_DATA}        
+          onOpenIndoorPress={() => handleOpenIndoorMap(selectedBuilding.name)}
+          showOpenIndoorButton={selectedBuilding.name in INDOOR_DATA}
           directionsEtaLabel={directionsEtaLabel}
           onExpansionChange={handleInfoPopupExpansionChange}
         />
