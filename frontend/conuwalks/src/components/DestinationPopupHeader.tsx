@@ -13,14 +13,16 @@ import TimeSelectorModal from "./TimeSelectorModal";
 import { styles } from "../styles/DestinationPopup";
 import { isToday } from "../utils/time";
 
+type TravelMode = "walking" | "driving" | "transit" | "bicycling";
+
 interface DestinationHeaderProps {
   isDark: boolean;
-  travelMode: "walking" | "driving" | "transit" | "bicycling";
+  travelMode: TravelMode;
   setTravelMode: (
-    mode: "walking" | "driving" | "transit" | "bicycling",
+    mode: TravelMode,
   ) => void;
   getModeDurationLabel: (
-    mode: "walking" | "driving" | "transit" | "bicycling",
+    mode: TravelMode,
   ) => string;
   onDismiss: () => void;
   onToggleHeight: () => void;

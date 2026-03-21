@@ -40,11 +40,12 @@ export class Graph {
     //calculate the distance of the edge with Euclidean distance formula (note that no edges are assigned an initial weight)
     // recall nodes on different floors use a fixed cost
     const weight =
-      nodeA.floorId !== nodeB.floorId
-        ? this.getTransitionCost(nodeA, nodeB)
-        : Math.sqrt(
-            Math.pow(nodeB.x - nodeA.x, 2) + Math.pow(nodeB.y - nodeA.y, 2),
-          );
+      nodeA.floorId === nodeB.floorId
+        ?
+        Math.sqrt(
+                    Math.pow(nodeB.x - nodeA.x, 2) + Math.pow(nodeB.y - nodeA.y, 2),
+                  )
+        : this.getTransitionCost(nodeA, nodeB);
 
     const weightedEdge: WeightedEdge = {
       ...edge,

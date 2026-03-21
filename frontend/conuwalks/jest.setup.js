@@ -14,13 +14,26 @@ jest.mock("expo", () => ({
 }));
 
 // Mock expo module registry
-global.__ExpoImportMetaRegistry = {
+globalThis.__ExpoImportMetaRegistry = {
   register: jest.fn(),
   get: jest.fn(),
 };
 
 // Mock structuredClone
-global.structuredClone = jest.fn((obj) => JSON.parse(JSON.stringify(obj)));
+// Fix: for 'Prefer structuredClone over JSON.parse(JSON.stringify)'
+// Includes providing a mock implementation that doesn't use the json hack
+if (typeof globalThis.structuredClone !== "function") {
+  globalThis.structuredClone = jest.fn((obj) => {
+    if (obj === undefined) return undefined;
+
+    // for a mock in test environment, a simple spread or
+    // structured copy is preferred over json stringify
+    return typeof obj === 'object' ? { ...obj } : obj;
+  });
+} else {
+  // ff it exists, we just make it a mockable spy
+  globalThis.structuredClone = jest.fn(globalThis.structuredClone);
+}
 
 // Mock react-native-maps
 jest.mock("react-native-maps", () => {

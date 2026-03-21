@@ -19,7 +19,6 @@ import {
 } from "react-native";
 import MapView, {
   LatLng,
-  Circle,
   Region,
   Marker,
   PROVIDER_GOOGLE,
@@ -217,7 +216,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
       mapRef.current.animateCamera({ pitch: 0, heading: 0 }, { duration: 150 });
 
       setTimeout(() => {
-        mapRef.current?.animateToRegion(preNavigationRegionRef.current!, 500);
+        mapRef.current?.animateToRegion(preNavigationRegionRef.current, 500);
         preNavigationRegionRef.current = null;
       }, 150);
     }
@@ -1207,7 +1206,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
               }}
             >
               Next in{" "}
-              {activeInstructionDistanceMeters !== null
+              {typeof activeInstructionDistanceMeters === "number"
                 ? `${activeInstructionDistanceMeters} m`
                 : activeInstruction.distance}
             </Text>

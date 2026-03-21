@@ -174,6 +174,7 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
 
   // Fetch directions when destination, start, or travel mode changes
   const fetchRoute = useCallback(async () => {
+      if (shouldShowRoute) {
     console.log("RoutePolyline: fetchRoute called", {
       showDirections,
       isNavigationActive,
@@ -181,10 +182,11 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
       hasDestination: !!destinationCoords,
       mode: travelMode,
     });
+}
 
     if (!shouldShowRoute || !effectiveStartLocation || !destinationCoords) {
       if (!effectiveStartLocation || !destinationCoords) setRoutes([]);
-      console.log("RoutePolyline: Missing start or destination, skipping");
+      // console.log("RoutePolyline: Missing start or destination, skipping");
       return;
     }
 
@@ -260,11 +262,11 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
           if (bestPublicRoute && bestPublicRoute.duration) {
             // parse public transit duration
             const durStr = bestPublicRoute.duration;
-            const hMatch = durStr.match(/(\d{1,5})\s{0,5}h/);
-            const mMatch = durStr.match(/(\d{1,5})\s{0,5}min/);
+            const hMatch = /(\d{1,5})\s{0,5}h/.exec(durStr);
+            const mMatch = /(\d{1,5})\s{0,5}min/.exec(durStr);
             const publicMins =
-              (hMatch ? parseInt(hMatch[1], 10) * 60 : 0) +
-              (mMatch ? parseInt(mMatch[1], 10) : 0);
+              (hMatch ? Number.parseInt(hMatch[1], 10) * 60 : 0) +
+              (mMatch ? Number.parseInt(mMatch[1], 10) : 0);
 
             const shuttleDepMs = new Date(shuttleRoute.departureDate).getTime();
             const targetTimeMs = routingTime.getTime();
@@ -328,10 +330,7 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
           err instanceof Error ? err.message : "Failed to fetch directions";
         console.warn("Route fetch error:", errorMessage);
 
-        if (
-          errorMessage
-            .toLowerCase()
-            .match(/not been used|disabled|legacy api|request denied/)
+        if ( /not been used|disabled|legacy api|request denied/.exec(errorMessage)
         ) {
           if (requestKey) blockedRequestKeyRef.current = requestKey;
         }

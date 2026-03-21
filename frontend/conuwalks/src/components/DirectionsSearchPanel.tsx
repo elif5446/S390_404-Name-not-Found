@@ -358,8 +358,8 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
           style={[
             styles.blurContainer,
             {
-              gap: destinationIsHidden !== null ? 0 : 10,
-              paddingBottom: destinationIsHidden !== null ? 5 : 15,
+              gap: destinationIsHidden ? 0 : 10,
+              paddingBottom: destinationIsHidden ? 5 : 15,
             },
           ]}
         >

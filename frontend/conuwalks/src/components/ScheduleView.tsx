@@ -56,7 +56,7 @@ const getBuildingCenter = (buildingCode: string): LatLng | null => {
 
     let centerCoords = calculatePolygonCenter(latLngCoords);
 
-    if (!centerCoords || isNaN(centerCoords.latitude)) {
+    if (!centerCoords || Number.isNaN(centerCoords.latitude)) {
       let sumLat = 0,
         sumLng = 0;
       latLngCoords.forEach((coord) => {

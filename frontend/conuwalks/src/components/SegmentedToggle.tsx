@@ -10,10 +10,10 @@ import { useDirections } from "@/src/context/DirectionsContext";
 function SegmentedToggle({
   campus,
   setCampus,
-}: {
+}: Readonly<{
   campus: "SGW" | "Loyola";
   setCampus: (campus: "SGW" | "Loyola") => void;
-}) {
+}>) {
   const mode = useColorScheme() || "light";
   const insets = useSafeAreaInsets();
   const { isNavigationActive } = useDirections();

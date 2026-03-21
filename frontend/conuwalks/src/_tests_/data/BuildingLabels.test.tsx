@@ -1,7 +1,6 @@
 import {
   computeCentroid,
   attachCentroids,
-  FeatureCollection,
 } from "@/src/data/BuildingLabels";
 
 describe("BuildingLabels logic", () => {

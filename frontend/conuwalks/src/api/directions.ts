@@ -140,7 +140,7 @@ export const decodePolyline = (polyline: string): LatLng[] => {
     let byte;
 
     do {
-      byte = polyline.charCodeAt(index++) - 63;
+      byte = polyline.codePointAt(index++) - 63;
       result |= (byte & 0x1f) << shift;
       shift += 5;
     } while (byte >= 0x20);
@@ -152,7 +152,7 @@ export const decodePolyline = (polyline: string): LatLng[] => {
     shift = 0;
 
     do {
-      byte = polyline.charCodeAt(index++) - 63;
+      byte = polyline.codePointAt(index++) - 63;
       result |= (byte & 0x1f) << shift;
       shift += 5;
     } while (byte >= 0x20);
@@ -243,7 +243,7 @@ const stripHtml = (input: string | undefined): string => {
     return "Continue";
   }
   // prevent ReDoS flags
-  return input.replace(/<[^>]{0,1000}>/g, "").trim() || "Continue";
+  return input.replaceAll(/<[^>]{0,1000}>/g, "").trim() || "Continue";
 };
 
 const toLatLng = (
@@ -277,10 +277,12 @@ const toLatLng = (
   };
 };
 
+type TravelMode = "walking" | "driving" | "transit" | "bicycling";
+
 const fetchLegacyDirections = async (
   start: LatLng,
   destination: LatLng,
-  mode: "walking" | "driving" | "transit" | "bicycling",
+  mode: TravelMode,
   targetTime: Date | null,
   timeMode: "leave" | "arrive",
 ): Promise<RouteData[]> => {
@@ -412,7 +414,7 @@ const fetchLegacyDirections = async (
 export const getDirections = async (
   start: LatLng | null,
   destination: LatLng | null,
-  mode: "walking" | "driving" | "transit" | "bicycling",
+  mode: TravelMode,
   targetTime: Date | null = null,
   timeMode: "leave" | "arrive" = "leave",
 ): Promise<RouteData[]> => {
@@ -425,7 +427,7 @@ export const getDirections = async (
   try {
     // Map modes to Routes API travel mode enum
     const modeMap: Record<
-      "walking" | "driving" | "transit" | "bicycling",
+      TravelMode,
       "WALK" | "DRIVE" | "TRANSIT" | "BICYCLE"
     > = {
       walking: "WALK",

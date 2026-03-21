@@ -47,7 +47,7 @@ export class PathFinder {
 
       // we reached the destination
       if (currentId === endNodeId) {
-        return this.buildRoute(cameFrom, currentId, gScore.get(currentId)!);
+        return this.buildRoute(cameFrom, currentId, gScore.get(currentId));
       }
 
       openSet.delete(currentId);
