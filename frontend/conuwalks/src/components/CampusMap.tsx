@@ -134,6 +134,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
   } = useUserLocation();
 
   const INITIAL_DELTA = 0.008;
+  const ICON_FREEZE_DELAY_MS = 250;
 
   // Get directions context for destination setting
   const {
@@ -186,6 +187,25 @@ const CampusMap: React.FC<CampusMapProps> = ({
   const destinationPopupRef = useRef<DestinationPopupHandle>(null);
   const preNavigationRegionRef = useRef<Region | null>(null);
   const [trackLocationMarker, setTrackLocationMarker] = useState(true);
+  const [trackDestMarker, setTrackDestMarker] = useState(true);
+
+  const trackMarkerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  // unmount cleanup logic for dest marker
+  useEffect(() => {
+    return () => {
+      if (trackMarkerTimeoutRef.current) {
+        clearTimeout(trackMarkerTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (destinationBuildingId) {
+      setTrackDestMarker(true);
+    }
+  }, [destinationBuildingId]);
 
   // handle restoring the camera view when navigation ends
   useEffect(() => {
@@ -212,16 +232,19 @@ const CampusMap: React.FC<CampusMapProps> = ({
     [onInfoPopupExpansionChange],
   );
 
-  const handleOpenIndoorMap = useCallback((buildingId: string) => {
-    if (!INDOOR_DATA[buildingId]) return;
+  const handleOpenIndoorMap = useCallback(
+    (buildingId: string) => {
+      if (!INDOOR_DATA[buildingId]) return;
 
-    setSelectedTransitStopKey(null);
-    setShowDirections(false);
-    setIsNavigationActive(false);
-    clearRouteData();
-    setSelectedBuilding((prev) => ({ ...prev, visible: false }));
-    setIndoorBuildingId(buildingId);
-  }, [setShowDirections, setIsNavigationActive, clearRouteData]);
+      setSelectedTransitStopKey(null);
+      setShowDirections(false);
+      setIsNavigationActive(false);
+      clearRouteData();
+      setSelectedBuilding((prev) => ({ ...prev, visible: false }));
+      setIndoorBuildingId(buildingId);
+    },
+    [setShowDirections, setIsNavigationActive, clearRouteData],
+  );
 
   // Calculate circle radius based on zoom level (longitudeDelta)
   // Larger longitudeDelta = zoomed out = bigger circle
@@ -262,6 +285,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
   // auto-pan when toggling campuses
   useEffect(() => {
+    let timeoutId;
     if (mapRef.current && initialLat && initialLng) {
       mapRef.current.animateToRegion(
         {
@@ -273,9 +297,24 @@ const CampusMap: React.FC<CampusMapProps> = ({
         500,
       );
 
-      clearDestination();
-      setSelectedBuilding((prev) => ({ ...prev, visible: false }));
+      // do if we just acted in schedule view
+      if (!showDirections && !isNavigationActive) {
+        destinationPopupRef.current?.dismiss();
+        setTimeout(() => {
+          clearDestination();
+          setSelectedBuilding((prev) => ({ ...prev, visible: false }));
+        }, 250);
+      }
     }
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+    // explicitly exclude showDirections/isNavigationActive from deps
+    // to not run every time the popup is opened or closed
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialLat, initialLng, clearDestination]);
 
   // Handle building tap to show additional info and set destination
@@ -808,6 +847,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
                   coordinate={centerCoordinates}
                   anchor={{ x: 0.5, y: 0.5 }}
                   zIndex={1000}
+                  tracksViewChanges={trackDestMarker}
                   onPress={() =>
                     handleBuildingPress(buildingId, campus, centerCoordinates)
                   }
@@ -815,7 +855,22 @@ const CampusMap: React.FC<CampusMapProps> = ({
                   accessibilityRole="button"
                   flat
                 >
-                  <MaterialIcons name="place" size={26} color="#B03060" />
+                  <View
+                    onLayout={() => {
+                      if (!trackDestMarker) return;
+
+                      if (trackMarkerTimeoutRef.current) {
+                        clearTimeout(trackMarkerTimeoutRef.current);
+                      }
+
+                      trackMarkerTimeoutRef.current = setTimeout(() => {
+                        setTrackDestMarker(false);
+                        trackMarkerTimeoutRef.current = null;
+                      }, ICON_FREEZE_DELAY_MS);
+                    }}
+                  >
+                    <MaterialIcons name="place" size={26} color="#B03060" />
+                  </View>
                 </Marker>
               )}
 
@@ -870,6 +925,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
     handleBuildingPress,
     selectedBuilding.name,
     selectedBuilding.visible,
+    trackDestMarker,
   ]);
 
   const mapID = useMemo(() => {
@@ -1254,6 +1310,10 @@ const CampusMap: React.FC<CampusMapProps> = ({
       {indoorBuildingId && INDOOR_DATA[indoorBuildingId] && (
         <IndoorMapOverlay
           buildingData={INDOOR_DATA[indoorBuildingId]}
+          startBuildingId={startBuildingId}
+          startRoomId={startRoom}
+          destinationBuildingId={destinationBuildingId}
+          destinationRoomId={destinationRoom}
           onExit={() => setIndoorBuildingId(null)}
         />
       )}
@@ -1266,8 +1326,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
           campus={selectedBuilding.campus}
           onClose={handleClosePopup}
           onDirectionsTrigger={handleDirectionsTrigger}
-          onOpenIndoorPress={() => handleOpenIndoorMap(selectedBuilding.name)}  
-          showOpenIndoorButton={selectedBuilding.name in INDOOR_DATA}        
+          onOpenIndoorPress={() => handleOpenIndoorMap(selectedBuilding.name)}
+          showOpenIndoorButton={selectedBuilding.name in INDOOR_DATA}
           directionsEtaLabel={directionsEtaLabel}
           onExpansionChange={handleInfoPopupExpansionChange}
         />
