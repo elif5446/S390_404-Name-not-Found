@@ -132,41 +132,64 @@ function useIndoorRouting(
   const [indoorRoute, setIndoorRoute] = useState<Route | null>(null);
 
   useEffect(() => {
-    if (!baseStartNode) {
-      setIndoorRoute(null);
-      return;
-    }
+    let isCurrent = true;
 
-    let targetId: string | null = null;
-
-    if (localDestination) {
-      targetId = localDestination.id;
-    } else if (destinationBuildingId === buildingData.id && destinationRoomId) {
-      const node = indoorService.getNodeByRoomNumber(
-        buildingData.id,
-        destinationRoomId,
-      );
-      if (node) targetId = node.id;
-    } else if (
-      startBuildingId === buildingData.id &&
-      destinationBuildingId &&
-      startBuildingId !== destinationBuildingId
-    ) {
-      const exitNode = indoorService.getEntranceNode();
-      if (exitNode) targetId = exitNode.id;
-    }
-
-    if (targetId && baseStartNode.id !== targetId) {
-      try {
-        const route = indoorService.getRoute(baseStartNode.id, targetId);
-        setIndoorRoute(route);
-      } catch (err) {
-        console.warn("[IndoorRouting] Pathfinder failed:", err);
+    const calculateRoute = async () => {
+      if (!baseStartNode) {
         setIndoorRoute(null);
+        return;
       }
-    } else {
-      setIndoorRoute(null);
-    }
+
+      let targetId: string | null = null;
+
+      if (localDestination) {
+        targetId = localDestination.id;
+      } else if (
+        destinationBuildingId === buildingData.id &&
+        destinationRoomId
+      ) {
+        const node = indoorService.getNodeByRoomNumber(
+          buildingData.id,
+          destinationRoomId,
+        );
+        if (node) targetId = node.id;
+      } else if (
+        startBuildingId === buildingData.id &&
+        destinationBuildingId &&
+        startBuildingId !== destinationBuildingId
+      ) {
+        const exitNode = indoorService.getEntranceNode();
+        if (exitNode) targetId = exitNode.id;
+      }
+
+      if (targetId && baseStartNode.id !== targetId) {
+        try {
+          const route = await indoorService.getRoute(
+            baseStartNode.id,
+            targetId,
+          );
+
+          if (isCurrent) {
+            setIndoorRoute(route);
+          }
+        } catch (err) {
+          console.warn("[IndoorRouting] Pathfinder failed:", err);
+          if (isCurrent) {
+            setIndoorRoute(null);
+          }
+        }
+      } else {
+        if (isCurrent) {
+          setIndoorRoute(null);
+        }
+      }
+    };
+
+    calculateRoute();
+
+    return () => {
+      isCurrent = false;
+    };
   }, [
     baseStartNode,
     localDestination,

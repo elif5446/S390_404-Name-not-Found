@@ -22,20 +22,22 @@ export class IndoorMapService {
     this.pathFinder = new PathFinder(this.graph);
     this.locationTracker.setGraph(this.graph);
 
-    //load the floors
+    // load ALL nodes across ALL floors
+    // This ensures no edges fail because a target node hasn't been parsed yet
     for (const floor of config.floors) {
       for (const node of floor.nodes) {
         this.graph.addNode(node);
       }
+    }
+
+    // add standard intra-floor edges
+    for (const floor of config.floors) {
       for (const edge of floor.edges) {
         this.graph.addEdge(edge);
       }
     }
 
-    // add inter-floor edges (if they exist) after all floors are loaded
-    // this is done last because inter-floor edges reference nodes on different floors
-    // so all nodes must exist in the graph before these edges can be added.
-    //Escalator edges between floors will not be bi-directional
+    // add inter-floor edges (Escalators, stairs, elevators)
     if (config.interFloorEdges) {
       for (const edge of config.interFloorEdges) {
         const nodeA = this.graph.getNode(edge.nodeAId);
@@ -50,7 +52,7 @@ export class IndoorMapService {
       try {
         this.locationTracker.setDefaultLocation(config.defaultStartNodeId);
       } catch (e) {
-        console.warn(`Failed to set default location: ${e}`);
+        console.warn(`[IndoorMapService] Failed to set default location: ${e}`);
       }
     }
   }
@@ -59,12 +61,11 @@ export class IndoorMapService {
     return this.graph;
   }
 
-  //you can find a route by giving a start and end node
   async getRoute(
     startNodeId: string,
     endNodeId: string,
     accessibleOnly: boolean | null = null,
-  ): Promise<Route> {
+  ): Promise<Route | null> {
     const wheelchairOnly =
       accessibleOnly ?? (await getWheelchairAccessibilityPreference());
     return this.pathFinder.findShortestPath(
@@ -90,10 +91,13 @@ export class IndoorMapService {
   getRouteFromCurrentLocation(
     endNodeId: string,
     accessibleOnly: boolean = false,
-  ): Route {
+  ): Route | null {
     const userLoc = this.getUserLocation();
     if (!userLoc) {
-      throw new Error("IndoorMapService: user location not set");
+      console.warn(
+        "[IndoorMapService] User location not set. Cannot calculate route.",
+      );
+      return null;
     }
     return this.pathFinder.findShortestPath(
       userLoc.nodeId,
