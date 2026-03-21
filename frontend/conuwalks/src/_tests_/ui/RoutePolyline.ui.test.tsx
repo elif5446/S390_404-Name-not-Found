@@ -8,6 +8,7 @@ jest.mock("react-native-maps", () => {
   const { View } = require("react-native");
   return {
     Polyline: (props: any) => <View testID="mock-polyline" {...props} />,
+    Marker: (props: any) => <View testID="mock-marker" {...props} />,
   };
 });
 
@@ -137,17 +138,20 @@ describe("RoutePolyline - UI & Rendering", () => {
           {
             travelMode: "WALKING",
             polylinePoints: [{ latitude: 1, longitude: 1 }],
+            endLocation: { latitude: 1.1, longitude: 1.1 },
           },
           {
             travelMode: "TRANSIT",
             transitVehicleType: "Subway",
             transitLineName: "Green Line", // STM Green Line
             polylinePoints: [{ latitude: 2, longitude: 2 }],
+            endLocation: { latitude: 2.1, longitude: 2.1 },
           },
           {
             travelMode: "TRANSIT",
             transitVehicleType: "Bus",
             polylinePoints: [{ latitude: 3, longitude: 3 }],
+            endLocation: { latitude: 3.1, longitude: 3.1 },
           },
         ],
       };
@@ -166,11 +170,9 @@ describe("RoutePolyline - UI & Rendering", () => {
       // walk segment
       expect(polylines[0].props.strokeColor).toBe("#B03060");
       expect(polylines[0].props.lineDashPattern).toBeTruthy();
-
       // green metro segment
       expect(polylines[1].props.strokeColor).toBe("#139D48"); // Green
-      expect(polylines[1].props.lineDashPattern).toBeNull();
-
+      expect(polylines[1].props.lineDashPattern).toBeUndefined();
       // bus segment
       expect(polylines[2].props.strokeColor).toBe("#A970FF"); // Light purple
     });

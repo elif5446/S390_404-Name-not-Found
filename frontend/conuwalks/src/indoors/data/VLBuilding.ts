@@ -2,7 +2,7 @@ import { BuildingNavConfig } from '../types/Navigation';
 
 export const VLBuildingNavConfig: BuildingNavConfig = {
   buildingId: "VL", 
-  defaultStartNodeId: "",
+  defaultStartNodeId: "VL_ENTRANCE",
   floors: [
     {
         floorId: "VL_1",

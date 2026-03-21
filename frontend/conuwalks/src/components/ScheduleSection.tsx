@@ -44,6 +44,7 @@ const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       accessibilityRole="button"
       accessibilityLabel={`Directions to ${eventName || "class"}, ${directionsEtaLabel || "--"}`}
       accessibilityHint="Opens directions panel"
+      testID="directions-button"
     >
       <View
         style={{

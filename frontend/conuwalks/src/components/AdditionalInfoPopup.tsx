@@ -35,6 +35,8 @@ interface AdditionalInfoPopupProps {
   campus: "SGW" | "LOY";
   onClose: () => void;
   onDirectionsTrigger?: () => void;
+  onOpenIndoorPress?: () => void;
+  showOpenIndoorButton?: boolean;
   directionsEtaLabel?: string;
   onExpansionChange?: (isExpanded: boolean) => void;
 }
@@ -82,15 +84,17 @@ const AdditionalInfoPopup = forwardRef<
   AdditionalInfoPopupHandle,
   AdditionalInfoPopupProps
 >((props, ref) => {
-  const {
-    visible,
-    buildingId,
-    campus,
-    onClose,
-    onDirectionsTrigger,
-    directionsEtaLabel,
-    onExpansionChange,
-  } = props;
+const {
+  visible,
+  buildingId,
+  campus,
+  onClose,
+  onDirectionsTrigger,
+  onOpenIndoorPress,
+  showOpenIndoorButton,
+  directionsEtaLabel,
+  onExpansionChange,
+} = props;
 
   const mode = useColorScheme() || "light";
   const { buildingInfo, isCopying, copyAddress, accessibilityIcons } =
@@ -228,19 +232,19 @@ const AdditionalInfoPopup = forwardRef<
               style={styles.iosContentContainer}
               {...handlePanResponder.panHandlers}
             >
-              <PopupHeader
-                mode={mode}
-                buildingId={buildingId}
-                buildingInfo={buildingInfo}
-                accessibilityIcons={accessibilityIcons}
-                directionsEtaLabel={directionsEtaLabel}
-                onDismiss={dismiss}
-                onDirectionsPress={handleDirectionsPress}
-                onToggleHeight={handleToggleHeight}
-                onDragHandleAccessibilityAction={
-                  handleDragHandleAccessibilityAction
-                }
-              />
+            <PopupHeader
+            mode={mode}
+            buildingId={buildingId}
+            buildingInfo={buildingInfo}
+            accessibilityIcons={accessibilityIcons}
+            directionsEtaLabel={directionsEtaLabel}
+            onDismiss={dismiss}
+            onDirectionsPress={handleDirectionsPress}
+            onOpenIndoorPress={onOpenIndoorPress}
+            showOpenIndoorButton={showOpenIndoorButton}
+            onToggleHeight={handleToggleHeight}
+            onDragHandleAccessibilityAction={handleDragHandleAccessibilityAction}
+          />
             </View>
 
             <View style={{ flex: 1 }} {...scrollAreaPanResponder.panHandlers}>

@@ -1,6 +1,6 @@
-import { LatLng } from 'react-native-maps';
+import { LatLng } from "react-native-maps";
 //we can add the POIs later
-export type NodeType = 'room' | 'hallway' | 'elevator' | 'stairs' | 'entrance' | 'bathroom'| 'escalator' | 'food' | 'helpDesk';
+export type NodeType = 'room' | "poi" | 'hallway' | 'elevator' | 'stairs' | 'entrance' | 'bathroom'| 'escalator' | 'food' | 'helpDesk';
 
 export interface Node {
   id: string;
@@ -15,13 +15,13 @@ export interface Node {
 export interface Edge {
   nodeAId: string;
   nodeBId: string;
-  weight? : number;
+  weight?: number;
   accessible: boolean;
 }
 
-//this was only made cause we do not initially add a weight to the edges in the buildingNavConfig files. 
+//this was only made cause we do not initially add a weight to the edges in the buildingNavConfig files.
 //so this is a way to inforce that a weight will be added later
-export interface WeighedEdge extends Edge{
+export interface WeightedEdge extends Edge {
   weight: number;
 }
 
