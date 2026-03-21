@@ -10,6 +10,8 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { bottomPanelStyles as styles } from "@/src/components/indoor/styles/IndoorTopPanel.styles";
+import { POICategory } from "@/src/types/poi";
+import { CATEGORY_LABELS } from "@/src/data/poiData";
 
 export type IndoorSearchResult = {
   id: string;
@@ -29,12 +31,18 @@ interface Props {
   searchResults: IndoorSearchResult[];
   onSelectResult: (item: IndoorSearchResult) => void;
   onClearDestination: () => void;
+
   startLabel: string;
   destinationLabel: string;
   activeField: "start" | "destination";
   onFocusField: (field: "start" | "destination") => void;
+
   onDirectionsPress: () => void;
   canShowDirections: boolean;
+
+  categories: POICategory[];
+  activeCategories: Set<POICategory>;
+  onToggleCategory: (cat: POICategory) => void;
 }
 
 const IndoorBottomPanel: React.FC<Props> = ({
@@ -51,10 +59,13 @@ const IndoorBottomPanel: React.FC<Props> = ({
   onFocusField,
   onDirectionsPress,
   canShowDirections,
+  categories,
+  activeCategories,
+  onToggleCategory,
 }) => {
   return (
     <View style={styles.container} pointerEvents="box-none">
-      <View style={styles.panel}>
+      <View style={[styles.panel, { overflow: "visible", position: "relative" }]}>
         <View
           style={[
             styles.inputContainer,
@@ -148,6 +159,87 @@ const IndoorBottomPanel: React.FC<Props> = ({
           )}
         </View>
 
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginTop: 8,
+          }}
+        >
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={{ flex: 1, marginRight: 8 }}
+            contentContainerStyle={{
+              alignItems: "center",
+              paddingRight: 8,
+              gap: 6,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 11,
+                fontWeight: "700",
+                color: "#8A8A8A",
+              }}
+            >
+              SHOW
+            </Text>
+
+            {categories.map((cat) => {
+              const isActive = activeCategories.has(cat);
+
+              return (
+                <TouchableOpacity
+                  key={cat}
+                  onPress={() => onToggleCategory(cat)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isActive }}
+                  accessibilityLabel={`Filter ${CATEGORY_LABELS[cat]}`}
+                  style={{
+                    paddingHorizontal: 10,
+                    paddingVertical: 5,
+                    borderRadius: 12,
+                    backgroundColor: isActive ? "#FCE4EC" : "#F2F2F2",
+                    borderWidth: 1,
+                    borderColor: isActive ? "#C2185B" : "#E0E0E0",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 11,
+                      fontWeight: "600",
+                      color: isActive ? "#C2185B" : "#666666",
+                    }}
+                  >
+                    {CATEGORY_LABELS[cat]}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+
+          <TouchableOpacity
+            onPress={onDirectionsPress}
+            disabled={!canShowDirections}
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 16,
+              backgroundColor: canShowDirections ? "#C2185B" : "#D8D8D8",
+              alignItems: "center",
+              justifyContent: "center",
+              shadowColor: "#000",
+              shadowOpacity: 0.15,
+              shadowRadius: 6,
+              elevation: 5,
+            }}
+          >
+            <Ionicons name="return-up-forward" size={16} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
+
         {showSearchResults && (
           <View style={styles.resultsContainer}>
             {searchResults.length > 0 ? (
@@ -189,32 +281,8 @@ const IndoorBottomPanel: React.FC<Props> = ({
             )}
           </View>
         )}
-
-<TouchableOpacity
-  onPress={onDirectionsPress}
-  disabled={!canShowDirections}
-  style={{
-  
-      width: 32,
-      right: -310,
-      height: 26,
-      marginTop: 2,
-      borderRadius: 21,
-      backgroundColor: canShowDirections ? "#C2185B" : "#D8D8D8",
-      alignItems: "center",
-      justifyContent: "center",
-      shadowColor: "#000",
-      shadowOpacity: 0.15,
-      shadowRadius: 6,
-      elevation: 5,
-    }}
->
-  <Ionicons name="return-up-forward" size={16} color="#FFFFFF" />
-
-</TouchableOpacity>
+      </View>
     </View>
-    </View>
-   
   );
 };
 

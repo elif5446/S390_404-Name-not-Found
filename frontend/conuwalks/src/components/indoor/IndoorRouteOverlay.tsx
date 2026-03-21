@@ -74,6 +74,7 @@ const IndoorRouteOverlay: React.FC<Props> = ({
             strokeWidth={4.5}
             strokeLinecap="round"
             strokeLinejoin="round"
+            strokeDasharray="10 8"
         />
 
         <Circle cx={startX} cy={startY} r={4} fill="#3A7BD5" />

@@ -1314,7 +1314,7 @@ const handleSelectSearchResult = useCallback(
     setSearchQuery("");
     setShowSearchResults(false);
   }, []);
-  
+
   const handleDirectionsPress = useCallback(() => {
     try {
       const navConfig = navConfigRegistry[buildingData.id];
@@ -1584,8 +1584,8 @@ const handleSelectSearchResult = useCallback(
         </View>
       </SafeAreaView>
 
-      <View style={styles.mapContainer}>
-        <Animated.View style={[styles.mapCanvas, { opacity: fadeAnim }]}>
+<View style={[styles.mapContainer, { marginTop: 60 }]}>
+  <Animated.View style={[styles.mapCanvas, { opacity: fadeAnim }]}>
           <ReactNativeZoomableView
             ref={zoomRef}
             maxZoom={3.0}
@@ -1703,32 +1703,38 @@ const handleSelectSearchResult = useCallback(
         <Ionicons name="arrow-back" size={24} color="#0d0d0dff" />
       </TouchableOpacity>
 
-        <IndoorBottomPanel
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        showSearchResults={showSearchResults}
-        setShowSearchResults={setShowSearchResults}
-        searchResults={combinedSearchResults}
-        onSelectResult={handleSelectSearchResult}
-        onClearDestination={() => {
-          if (activeField === "start") {
-            setStartLocation(null);
-          } else {
-            setDestination(null);
-            setRoute(null);
-          }
-        }}
-        startLabel={startLocation?.label ?? "Current position"}
-        destinationLabel={destination?.label ?? ""}
-        activeField={activeField}
-        onFocusField={(field) => {
-          setActiveField(field);
-          setSearchQuery("");
-          setShowSearchResults(false);
-        }}
-        onDirectionsPress={handleDirectionsPress}
-        canShowDirections={!!destination}
-      />
+<IndoorBottomPanel
+  searchQuery={searchQuery}
+  setSearchQuery={setSearchQuery}
+  showSearchResults={showSearchResults}
+  setShowSearchResults={setShowSearchResults}
+  searchResults={combinedSearchResults}
+  onSelectResult={handleSelectSearchResult}
+  onClearDestination={() => {
+    if (activeField === "start") {
+      setStartLocation(null);
+      setShowDirections(false);
+      setRoute(null);
+    } else {
+      setDestination(null);
+      setShowDirections(false);
+      setRoute(null);
+    }
+  }}
+  startLabel={startLocation?.label ?? "Current position"}
+  destinationLabel={destination?.label ?? ""}
+  activeField={activeField}
+  onFocusField={(field) => {
+    setActiveField(field);
+    setSearchQuery("");
+    setShowSearchResults(false);
+  }}
+  onDirectionsPress={handleDirectionsPress}
+  canShowDirections={!!destination}
+  categories={categoriesForFloor}
+  activeCategories={activeCategories}
+  onToggleCategory={handleToggleCategory}
+/>
 
 
       <POIFilterPanel
