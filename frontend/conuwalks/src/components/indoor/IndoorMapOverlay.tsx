@@ -902,7 +902,7 @@ const IndoorMapOverlay: React.FC<Props> = ({ buildingData, onExit }) => {
       <TouchableOpacity
         style={{
           position: "absolute",
-          top: 67,
+          top: 73,
           left: 16,
           zIndex: 9999,
           elevation: 20,

@@ -104,7 +104,6 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
         {id: "H_8_ESCALATOR_DOWN_TO_FLOOR_2", floorId: "H_8", x: 488, y: 617, type: "escalator", label: "Escalator Down to Floor 2"}, 
       ],
       edges: [
-
         //hall to hall
         {nodeAId: "H_8_N3", nodeBId: "H_8_N2", accessible: true},
         {nodeAId: "H_8_N3", nodeBId: "H_8_N17", accessible: true},
@@ -323,6 +322,7 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
         {id: "H_9_STAIRS_2", floorId: "H_9", x: 709, y: 727, type: "stairs", label: "Stairwell"},
         {id: "H_9_STAIRS_3", floorId: "H_9", x: 295, y: 724, type: "stairs", label: "Stairwell"},
         {id: "H_9_STAIRS_4", floorId: "H_9", x: 714, y: 291, type: "stairs", label: "Stairwell"},
+        {id: "H_9_PRINTER", floorId: "H_9", x: 900, y: 500, type: "room", label: ""},
 
         {id: "H_9_ELEVATOR", floorId: "H_9", x: 358, y: 356, type: "elevator", label: "Elevator"},
 
@@ -455,6 +455,7 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
         //hall to POI
         {nodeAId: "H_9_N29", nodeBId: "H_9_BATHROOM_1_W", accessible: true},
         {nodeAId: "H_9_N3", nodeBId: "H_9_BATHROOM_2_M", accessible: true},
+        {nodeAId: "H_9_PRINTER", nodeBId: "H_9_N6", accessible: true},
 
 
         //hall to interfloor connection 

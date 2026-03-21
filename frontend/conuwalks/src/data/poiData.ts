@@ -51,7 +51,7 @@ const POI_DATA: Record<string, POI[]> = {
   // Right column: 821, 823, 825, 827, 829
   // Left side: 801, 803, 805
   "H-8": [
-    //  Top-row labs (left to right) 
+    //  Top-row labs 
     {
       id: "H-8-lab-807",
       label: "Lab",
@@ -61,16 +61,7 @@ const POI_DATA: Record<string, POI[]> = {
       floor: 8,
       mapPosition: mapPositionFromNode("H_807", { x: 0.446, y: 0.112 }),
     },
-    {
-      id: "H-8-lab-809",
-      label: "Lab",
-      category: "LAB" as POICategory,
-      description: "Computer Lab",
-      room: "809",
-      floor: 8,
-      // No explicit H_809 node yet in HallBuilding graph, keep nearest visual fallback.
-      mapPosition: { x: 0.370, y: 0.119 },
-    },
+    
     {
       id: "H-8-lab-811",
       label: "Lab",
@@ -516,11 +507,30 @@ const POI_DATA: Record<string, POI[]> = {
       floor: 8,
       mapPosition: mapPositionFromNode("H_805.02", { x: 0.37, y: 0.119 }),
     },
+    // Escalators
+    {
+      id: "H-8-escalator-up-9",
+      label: "Escalator Up",
+      category: "ESCALATOR" as POICategory,
+      description: "Escalator Up to Floor 9",
+      room: "ESCALATOR_UP_9",
+      floor: 8,
+      mapPosition: mapPositionFromNode("H_8_ESCALATOR_UP_TO_FLOOR_9", { x: 0.477, y: 0.421 }),
+    },
+    {
+      id: "H-8-escalator-down-2",
+      label: "Escalator Down",
+      category: "ESCALATOR" as POICategory,
+      description: "Escalator Down to Floor 2",
+      room: "ESCALATOR_DOWN_2",
+      floor: 8,
+      mapPosition: mapPositionFromNode("H_8_ESCALATOR_DOWN_TO_FLOOR_2", { x: 0.477, y: 0.603 }),
+    },
   ],
 
   // Hall Building – Floor 9
   "H-9": [
-    // Computer Labs (user-provided list)
+    // Computer Labs 
     {
       id: "H-9-lab-913",
       label: "Lab",
@@ -623,7 +633,7 @@ const POI_DATA: Record<string, POI[]> = {
       mapPosition: mapPositionFromNode("H_9_BATHROOM_2_M", { x: 0.614, y: 0.286 }),
     },
 
-    // IT Help Desk (example location, adjust as needed)
+    // IT Help Desk 
     {
       id: "H-9-it",
       label: "IT",
@@ -634,15 +644,15 @@ const POI_DATA: Record<string, POI[]> = {
       mapPosition: { x: 0.50, y: 0.50 },
     },
 
-    // Printer (example location, adjust as needed)
+    // Printer (new location, not covered by escalator)
     {
       id: "H-9-print",
-      label: "Print",
+      label: "",
       category: "PRINT" as POICategory,
       description: "Printer",
       room: "PR1",
       floor: 9,
-      mapPosition: { x: 0.60, y: 0.60 },
+      mapPosition: mapPositionFromNode("H_9_PRINTER", { x: 0.586, y: 0.586 }),
     },
 
     // Elevator
@@ -693,6 +703,25 @@ const POI_DATA: Record<string, POI[]> = {
       floor: 9,
       mapPosition: mapPositionFromNode("H_9_STAIRS_4", { x: 0.697, y: 0.284 }),
     },
+    // Escalators
+    {
+      id: "H-9-escalator-down-8",
+      label: "Escalator Down",
+      category: "ESCALATOR" as POICategory,
+      description: "Escalator Down to Floor 8",
+      room: "ESCALATOR_DOWN_8",
+      floor: 9,
+      mapPosition: mapPositionFromNode("H_9_ESCALATOR_DOWN_TO_FLOOR_8", { x: 0.469, y: 0.434 }),
+    },
+    {
+      id: "H-9-escalator-up-10",
+      label: "Escalator Up",
+      category: "ESCALATOR" as POICategory,
+      description: "Escalator Up to Floor 10",
+      room: "ESCALATOR_UP_10",
+      floor: 9,
+      mapPosition: mapPositionFromNode("H_9_ESCALATOR_UP_TO_FLOOR_10", { x: 0.503, y: 0.434 }),
+    },
   ],
 
 };
@@ -716,6 +745,7 @@ export const CATEGORY_LABELS: Record<POICategory, string> = {
   ROOM: "Room",
   STAIRS: "Stairs",
   ELEVATOR: "Elevator",
+  ESCALATOR: "Escalator",
   PRINT: "Print",
   IT: "IT",
 };

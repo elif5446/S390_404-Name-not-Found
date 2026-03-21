@@ -30,7 +30,22 @@ export const ICON_POSITION_OVERRIDES: Record<string, IconOffset> = {
 
 
   // Floor 8 bathroom  icon position
-    "836": { x: 10, y: 2 },
+	"836": { x: 10, y: 2 },
+
+  // Floor 8 computer labs icon positions
+  "801": { x: 2, y: -6 },
+  "803": { x: 3, y: -6 },
+  "811": { x: 5, y: -6 },
+  "815": { x: 5, y: -6 },
+  "813": { x: 3, y: -6 },
+  "817": { x: 8, y: -6 },
+  "819": { x: 8, y: -2},
+  "821": { x: 8, y: -2 },
+  "823": { x: 8, y: -2 },
+  "825": { x: 8, y: -2 },
+  "827": { x: 8, y: -2 },
+  "829": { x: 8, y: -4 },
+ 
 
   // Floor 8 stairs and elevator
   "S1": { x:  8,  y:  12 },
@@ -43,7 +58,7 @@ export const ICON_POSITION_OVERRIDES: Record<string, IconOffset> = {
   // Floor 9 bathrooms, printer, IT help desk
   "B1": { x: 0, y: 2}, // Girls bathroom
   "B2": { x: 5, y: 1 }, // Boys bathroom
-  "PR1": { x: -20, y: -30 }, // Printer
+  "PR1": { x: -80, y: 20}, // Printer
   "IT": { x: 12, y: -12 }, // IT Help Desk
 
 
@@ -78,6 +93,12 @@ const CATEGORY_CONFIG: Record<
   },
   ELEVATOR: {
     icon: "elevator",
+    iconLib: "mci",
+    bg: POI_PALETTE.elevatorBg,
+    iconColor: POI_PALETTE.iconDark,
+  },
+  ESCALATOR: {
+    icon: "escalator",
     iconLib: "mci",
     bg: POI_PALETTE.elevatorBg,
     iconColor: POI_PALETTE.iconDark,

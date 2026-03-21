@@ -7,6 +7,7 @@ export type POICategory =
   | "ROOM"
   | "STAIRS"
   | "ELEVATOR"
+  | "ESCALATOR"
   | "PRINT"
   | "IT";
 
