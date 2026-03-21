@@ -4,7 +4,6 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
-  TextInput,
   PanResponder,
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -40,7 +39,7 @@ const POIFilterPanel: React.FC<Props> = ({
   destinationPOI,
   onSelectPOI,
 }) => {
-  const [query, setQuery] = useState("");
+  const [query] = useState("");
   const [expanded, setExpanded] = useState(false);
 
   const normalize = (value: string) =>
@@ -173,36 +172,6 @@ const POIFilterPanel: React.FC<Props> = ({
 
         {expanded && (
           <View style={{ maxHeight: 250 }}>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginHorizontal: 12,
-                marginTop: 10,
-                marginBottom: 8,
-                backgroundColor: "#F7F7F7",
-                borderRadius: 12,
-                paddingHorizontal: 10,
-                paddingVertical: 8,
-              }}
-            >
-              <Ionicons
-                name="search-outline"
-                size={14}
-                color={POI_PALETTE.textMuted}
-              />
-              <TextInput
-                value={query}
-                onChangeText={setQuery}
-                placeholder="Search POIs"
-                placeholderTextColor={POI_PALETTE.textMuted}
-                style={{ flex: 1, marginLeft: 8, color: "#222" }}
-                accessibilityLabel="Search POIs"
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-            </View>
-
             {visiblePOIs.length > 0 ? (
               <ScrollView
                 style={{ maxHeight: 180 }}
