@@ -141,7 +141,7 @@ export default function GoogleCalendarAuth({onAuthSuccess}: Readonly<{onAuthSucc
         }}
       >
         <Button
-          title={!request ? "Loading..." : "Get Started with Google Calendar"
+          title={request ? "Get Started with Google Calendar" : "Loading..."
           }
           disabled={!request}
           onPress={signIn}

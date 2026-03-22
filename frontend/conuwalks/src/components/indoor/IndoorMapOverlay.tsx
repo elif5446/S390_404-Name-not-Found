@@ -54,7 +54,7 @@ const calculateGeographicHeight = (
   const geographicRatio = (lonDiff * lonScale) / latDiff;
 
   const calculatedHeight = screenWidth / geographicRatio;
-  return isFinite(calculatedHeight) ? calculatedHeight : screenHeight;
+  return Number.isFinite(calculatedHeight) ? calculatedHeight : screenHeight;
 };
 
 interface Props {
@@ -244,10 +244,10 @@ const IndoorMapOverlay: React.FC<Props> = ({
         <Animated.View style={[styles.mapCanvas, { opacity: fadeAnim }]}>
           <ReactNativeZoomableView
             ref={zoomRef}
-            maxZoom={3.0}
-            minZoom={1.0}
+            maxZoom={3}
+            minZoom={1}
             zoomStep={0.5}
-            initialZoom={1.0}
+            initialZoom={1}
             bindToBorders={true}
             visualTouchFeedbackEnabled={false}
             contentWidth={width}

@@ -50,7 +50,7 @@ describe("shuttleSyncService.ts", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     fetchMock = jest.fn();
-    global.fetch = fetchMock;
+    globalThis.fetch = fetchMock;
 
     // silence console warnings and errors for cleaner test output
     jest.spyOn(console, "log").mockImplementation(() => {});

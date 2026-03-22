@@ -82,7 +82,7 @@ describe("RoutePolyline - Logic & Functions", () => {
 
     it("skips fetching and clears routes if coordinates are invalid", async () => {
       render(
-        <RoutePolyline startLocation={{ latitude: NaN, longitude: -73.6 }} />,
+        <RoutePolyline startLocation={{ latitude: Number.NaN, longitude: -73.6 }} />,
       );
 
       await act(async () => {

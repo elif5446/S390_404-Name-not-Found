@@ -1,4 +1,3 @@
-import { LatLng } from "react-native-maps";
 //we can add the POIs later
 export type NodeType = 'room' | "poi" | 'hallway' | 'elevator' | 'stairs' | 'entrance' | 'bathroom'| 'escalator' | 'food' | 'helpDesk';
 

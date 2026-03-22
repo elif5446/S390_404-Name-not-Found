@@ -358,8 +358,8 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
           style={[
             styles.blurContainer,
             {
-              gap: destinationIsHidden !== null ? 0 : 10,
-              paddingBottom: destinationIsHidden !== null ? 5 : 15,
+              gap: destinationIsHidden ? 0 : 10,
+              paddingBottom: destinationIsHidden ? 5 : 15,
             },
           ]}
         >
@@ -485,7 +485,7 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
                     >
                       {startText}
                     </Text>
-                    {suggestion.buildingName && !suggestion.roomNumber && (
+                    {!!(suggestion.buildingName && !suggestion.roomNumber) && (
                       <TouchableOpacity
                         style={styles.suggestionIconButton}
                         onPress={() => setStartPointText(startText)}
@@ -529,7 +529,7 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
                       accessibilityHint="Tap to select and enter this location"
                     >
                       <Text style={styles.listSuggestionText}>{destText}</Text>
-                      {suggestion.buildingName && !suggestion.roomNumber && (
+                      {!!(suggestion.buildingName && !suggestion.roomNumber) && (
                         <TouchableOpacity
                           style={styles.suggestionIconButton}
                           onPress={() => setDestinationText(destText)}
