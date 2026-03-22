@@ -327,7 +327,7 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
           err instanceof Error ? err.message : "Failed to fetch directions";
         console.warn("Route fetch error:", errorMessage);
 
-        if ( /not been used|disabled|legacy api|request denied/.exec(errorMessage)
+        if ( /not been used|disabled|legacy api|request denied/i.exec(errorMessage)
         ) {
           if (requestKey) blockedRequestKeyRef.current = requestKey;
         }
@@ -390,11 +390,11 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
 
       // distinguish specific vehicles so a Bus to Metro transfer is recognized
       const currentMode =
-        (currentStep.travelMode === "TRANSIT"
+        (currentStep.travelMode === "transit"
           ? currentStep.transitVehicleType
           : currentStep.travelMode) || "UNKNOWN";
       const nextMode =
-        (nextStep.travelMode === "TRANSIT"
+        (nextStep.travelMode === "transit"
           ? nextStep.transitVehicleType
           : nextStep.travelMode) || "UNKNOWN";
 
@@ -424,28 +424,40 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
   // Rendering logic
   if (travelMode === "transit") {
     return (
-          <>
-            {routeData.steps.map((step, idx) => {
-              if (!step.polylinePoints?.length) return null;
-              const style = getStepColorAndStyle(step, isIOS);
-              return (
-                <Polyline
-                  key={`step-${idx}`}
-                  coordinates={step.polylinePoints}
-                  strokeColor={style.color}
-                  strokeWidth={style.width}
-                  lineDashPattern={style.isWalk ? (walkDash as number[]) : undefined}
-                  lineCap={style.isWalk ? "round" : "butt"}
-                  zIndex={style.isWalk ? zIndex : zIndex + 1}
-                  geodesic
-                />
-              );
-            })}
-            {transferNodes.map((node) => (
-              <TransferNodeMarker key={node.key} coordinate={node.coordinate} color={node.color} zIndex={zIndex + 3} />
-            ))}
-          </>
-        );
+      <>
+        {routeData.steps.map((step, idx) => {
+          if (!step.polylinePoints?.length) return null;
+
+          const style = getStepColorAndStyle(step, isIOS);
+          // restoring unique, mode-specific key
+          const stepKey = `transit-step-${travelMode}-${routeData.id}-${idx}`;
+
+          return (
+            <Polyline
+              key={style.isWalk ? `${stepKey}-walk` : `${stepKey}-solid`}
+              coordinates={step.polylinePoints}
+              strokeColor={style.color}
+              strokeWidth={style.width}
+              lineDashPattern={style.isWalk ? (walkDash as number[]) : undefined}
+              // explicitly setting lineCap and lineJoin as requested
+              lineCap={style.isWalk ? "round" : "butt"}
+              lineJoin="round"
+              zIndex={style.isWalk ? zIndex : zIndex + 1}
+              geodesic
+            />
+          );
+        })}
+
+        {transferNodes.map((node) => (
+          <TransferNodeMarker
+            key={node.key}
+            coordinate={node.coordinate}
+            color={node.color}
+            zIndex={zIndex + 3}
+          />
+        ))}
+      </>
+    );
   }
 
   let mainColor = "#B03060";
