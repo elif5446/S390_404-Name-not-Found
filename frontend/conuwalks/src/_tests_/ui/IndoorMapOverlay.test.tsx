@@ -117,7 +117,7 @@ describe("IndoorMapOverlay", () => {
     );
 
     expect(screen.getByText('Hall Building')).toBeTruthy();
-    expect(screen.getByText('Floor 8')).toBeTruthy();
+    expect(screen.getByLabelText('Switch to floor 8')).toBeTruthy();
     expect(screen.getByText('Map for Floor Level 8')).toBeTruthy();
   });
 
@@ -130,7 +130,7 @@ describe("IndoorMapOverlay", () => {
     );
 
     expect(screen.getByText('Map for Floor Level 8')).toBeTruthy();
-    const changeFloorBtn = screen.getByTestId('change-floor-btn');
+    const changeFloorBtn = screen.getByLabelText('Switch to floor 9');
     fireEvent.press(changeFloorBtn);
 
     act(() => {
@@ -138,6 +138,5 @@ describe("IndoorMapOverlay", () => {
     });
 
     expect(screen.getByText('Map for Floor Level 9')).toBeTruthy();
-    expect(screen.getByText('Floor 9')).toBeTruthy();
-  });
+    expect(screen.getByLabelText('Hall Building Floor 9')).toBeTruthy();  });
 });
