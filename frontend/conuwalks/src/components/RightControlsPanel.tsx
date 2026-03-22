@@ -21,7 +21,17 @@ interface Props {
   indoorBuildingId?: string | null;
   isInfoPopupExpanded?: boolean;
 }
-
+// helper for complexity
+const GlassBackground: React.FC<{ mode: "light" | "dark" }> = ({ mode }) => {
+  if (Platform.OS !== "ios") return null;
+  return (
+    <BlurView
+      intensity={35}
+      tint={mode === "dark" ? "dark" : "light"}
+      style={{ position: "absolute", width: "100%", height: "100%" }}
+    />
+  );
+};
 const RightControlsPanel: React.FC<Props> = ({
   userInfo,
   onSignOut,
@@ -85,17 +95,7 @@ const RightControlsPanel: React.FC<Props> = ({
           accessibilityLabel="Open user profile"
           accessibilityRole="button"
         >
-          {Platform.OS === "ios" && (
-            <BlurView
-              intensity={35}
-              tint={mode === "dark" ? "dark" : "light"}
-              style={{
-                position: "absolute",
-                width: "100%",
-                height: "100%",
-              }}
-            />
-          )}
+          <GlassBackground mode={mode}/>
           <MaterialIcons name="person" size={24} color="#B03060" />
         </TouchableOpacity>
 
@@ -130,17 +130,7 @@ const RightControlsPanel: React.FC<Props> = ({
             accessibilityLabel="Recenter to your location"
             accessibilityHint="Moves the map camera back to your current location"
           >
-            {Platform.OS === "ios" && (
-              <BlurView
-                intensity={35}
-                tint={mode === "dark" ? "dark" : "light"}
-                style={{
-                  position: "absolute",
-                  width: "100%",
-                  height: "100%",
-                }}
-              />
-            )}
+            <GlassBackground mode={mode}/>
             {locationLoading ? (
               <ActivityIndicator size="small" color="#B03060" />
             ) : Platform.OS === "ios" ? (

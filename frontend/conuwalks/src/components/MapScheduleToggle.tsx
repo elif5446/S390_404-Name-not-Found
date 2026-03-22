@@ -16,6 +16,46 @@ interface Props {
   visible?: boolean; // when false, component renders null
 }
 
+// helper 1 for complexity, renders the icon based on Platform and selection state
+const ToggleIcon = ({ name, iosName, isSelected, activeColor, inactiveColor }: any) => {
+  const color = isSelected ? activeColor : inactiveColor;
+  if (Platform.OS === "ios") {
+    return <SymbolView name={iosName} size={20} tintColor={color} />;
+  }
+  return <MaterialIcons name={name} size={22} color={color} />;
+};
+
+// helper 2 for complexity, the individual toggle button to reduce main loop complexity
+const ToggleButton = ({ label, value, current, icon, iosIcon, colors, onPress }: any) => {
+  const isSelected = current === value;
+  return (
+    <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityState={{ selected: isSelected }}
+      accessibilityLabel={`${label} View`}
+      onPress={() => onPress(value)}
+      style={{
+        width: 105,
+        paddingVertical: 10,
+        borderRadius: 22,
+        backgroundColor: isSelected ? colors.activeBg : "transparent",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <ToggleIcon
+        name={icon}
+        iosName={iosIcon}
+        isSelected={isSelected}
+        activeColor={colors.activeColor}
+        inactiveColor={colors.inactiveColor}
+      />
+      <Text style={{ marginTop: 4, color: isSelected ? colors.activeColor : colors.inactiveColor, fontWeight: "600", fontSize: 11 }}>
+        {label}
+      </Text>
+    </TouchableOpacity>
+  );
+};
 const MapCalendarToggle: React.FC<Props> = ({
   selected,
   onChange,
@@ -25,10 +65,14 @@ const MapCalendarToggle: React.FC<Props> = ({
 
   if (!visible) return null;
 
-  const background = mode === "dark" ? "#1C1B1F" : "#FFFFFF";
-  const activeBg = "#B03060";
-  const activeColor = "#FFFFFF";
-  const inactiveColor = mode === "dark" ? "#FFFFFF" : "#333333";
+const colors = {
+   background : mode === "dark" ? "#1C1B1F" : "#FFFFFF",
+   activeBg : "#B03060",
+   activeColor : "#FFFFFF",
+   inactiveColor : mode === "dark" ? "#FFFFFF" : "#333333",
+  };
+
+const isIOS = Platform.OS === "ios";
 
   return (
     <View
@@ -51,20 +95,22 @@ const MapCalendarToggle: React.FC<Props> = ({
           alignItems: "center",
           borderRadius: 32,
           padding: 4,
-          backgroundColor: Platform.OS === "ios" ? "transparent" : background,
+          backgroundColor: isIOS ? "transparent" : colors.background,
           overflow: "hidden",
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 2 },
           shadowOpacity: selected === "calendar"
                 ? 0
-                : (Platform.OS === "ios" ? 0.18 : 0.22),
+                : (isIOS ? 0.18 : 0.22),
           shadowRadius: 4,
           elevation: selected === "calendar"
                 ? 0
-                : (Platform.OS === "ios" ? 0 : 6),
+                : (isIOS ? 0 : 6),
         }}
       >
-        {Platform.OS === "ios" && (
+
+
+        {isIOS &&
           <BlurView
             intensity={35}
             tint={mode === "dark" ? "dark" : "light"}
@@ -74,90 +120,11 @@ const MapCalendarToggle: React.FC<Props> = ({
               height: "100%",
             }}
           />
-        )}
+        }
 
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityState={{ selected: selected === "map" }}
-          accessibilityLabel="Map View"
-          onPress={() => onChange("map")}
-          style={{
-            width: 105,
-            paddingVertical: 10,
-            paddingHorizontal: 14,
-            borderRadius: 22,
-            backgroundColor: selected === "map" ? activeBg : "transparent",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          {Platform.OS === "ios" ? (
-            <SymbolView
-              name="map"
-              size={20}
-              tintColor={selected === "map" ? activeColor : inactiveColor}
-            />
-          ) : (
-            <MaterialIcons
-              name="map"
-              size={22}
-              color={selected === "map" ? activeColor : inactiveColor}
-            />
-          )}
-          <Text
-            style={{
-              marginTop: 4,
-              color: selected === "map" ? activeColor : inactiveColor,
-              fontWeight: "600",
-              fontSize: 11,
-            }}
-          >
-            Map
-          </Text>
-        </TouchableOpacity>
+        <ToggleButton label="Map" value="map" current={selected} icon="map" iosIcon="map" colors={colors} onPress={onChange} />
+        <ToggleButton label="Schedule" value="calendar" current={selected} icon="event" iosIcon="calendar" colors={colors} onPress={onChange} />
 
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityState={{ selected: selected === "calendar" }}
-          accessibilityLabel="Schedule View"
-          onPress={() => onChange("calendar")}
-          style={{
-            width: 105,
-            marginLeft: 6,
-            paddingVertical: 10,
-            paddingHorizontal: 14,
-            borderRadius: 22,
-            backgroundColor: selected === "calendar" ? activeBg : "transparent",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          {Platform.OS === "ios" ? (
-            <SymbolView
-              name="calendar"
-              size={20}
-              tintColor={selected === "calendar" ? activeColor : inactiveColor}
-            />
-          ) : (
-            <MaterialIcons
-              name="event"
-              size={22}
-              color={selected === "calendar" ? activeColor : inactiveColor}
-            />
-          )}
-          <Text
-            style={{
-              marginTop: 4,
-              color: selected === "calendar" ? activeColor : inactiveColor,
-              fontWeight: "600",
-              fontSize: 11,
-            }}
-          >
-            Schedule
-          </Text>
-        </TouchableOpacity>
       </View>
     </View>
   );
