@@ -43,7 +43,7 @@ describe("DirectionsContext", () => {
   describe("Start and Destination State Updates", () => {
     it("updates start point correctly", () => {
       const { result } = renderHook(() => useDirections(), { wrapper });
-      const mockCoords = { latitude: 45.0, longitude: -73.0 };
+      const mockCoords = { latitude: 45, longitude: -73 };
 
       act(() => {
         result.current.setStartPoint("H", mockCoords, "Hall Building", "H-820");

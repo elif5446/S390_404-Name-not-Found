@@ -16,7 +16,22 @@ interface Props {
   userInfo: any;
   onSignOut: () => void;
 }
+// helper for complexity, extracts avatar logic
+const UserAvatar = ({ photo, name, size, campusPink }: any) => {
+  const radius = size / 2;
+  const fontSize = size * 0.4;
 
+  if (photo) {
+    return <Image source={{ uri: photo }} style={{ width: size, height: size, borderRadius: radius }} />;
+  }
+  return (
+    <View style={{ width: size, height: size, borderRadius: radius, backgroundColor: campusPink, justifyContent: "center", alignItems: "center" }}>
+      <Text style={{ color: "#FFFFFF", fontSize, fontWeight: "600" }}>
+        {name?.charAt(0) || "U"}
+      </Text>
+    </View>
+  );
+};
 const CollapsibleUserProfile: React.FC<Props> = ({ userInfo, onSignOut }) => {
   const mode = useColorScheme() || "light";
   const isDark = mode === "dark";
@@ -47,55 +62,14 @@ const CollapsibleUserProfile: React.FC<Props> = ({ userInfo, onSignOut }) => {
         accessibilityLabel="Open user profile"
         accessibilityRole="button"
       >
-        {userInfo?.photo ? (
-          <Image
-            source={{ uri: userInfo.photo }}
-            style={{ width: 48, height: 48, borderRadius: 24 }}
-          />
-        ) : (
-          <View
-            style={{
-              width: 48,
-              height: 48,
-              borderRadius: 24,
-              backgroundColor: campusPink,
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <Text style={{ color: "#FFFFFF", fontSize: 18, fontWeight: "600" }}>
-              {userInfo?.name?.charAt(0) || "U"}
-            </Text>
-          </View>
-        )}
+        <UserAvatar photo={userInfo?.photo} name={userInfo?.name} size={48} campusPink={campusPink} />
       </TouchableOpacity>
     );
   }
 
   const content = (
     <View style={{ padding: 16, alignItems: "center" }}>
-      {userInfo?.photo ? (
-        <Image
-          source={{ uri: userInfo.photo }}
-          style={{ width: 60, height: 60, borderRadius: 30, marginBottom: 12 }}
-        />
-      ) : (
-        <View
-          style={{
-            width: 60,
-            height: 60,
-            borderRadius: 30,
-            backgroundColor: campusPink,
-            justifyContent: "center",
-            alignItems: "center",
-            marginBottom: 12,
-          }}
-        >
-          <Text style={{ color: "#FFFFFF", fontSize: 24, fontWeight: "600" }}>
-            {userInfo?.name?.charAt(0) || "U"}
-          </Text>
-        </View>
-      )}
+    <UserAvatar photo={userInfo?.photo} name={userInfo?.name} size={60} campusPink={campusPink} />
 
       {userInfo?.name && (
         <Text

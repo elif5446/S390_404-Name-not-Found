@@ -118,7 +118,7 @@ export const LoyolaBuildingSearchMetadata: Record<string, { name: string; coordi
   },
   "GE": {
     name: "Centre for Structural and Functional Genomics",
-    coordinates: {latitude: 45.45700, longitude: -73.64042}
+    coordinates: {latitude: 45.457, longitude: -73.64042}
   },
   "HA": {
     name: "Hingston Hall, wing HA",

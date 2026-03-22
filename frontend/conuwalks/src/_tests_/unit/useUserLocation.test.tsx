@@ -138,8 +138,8 @@ describe("useUserLocation Hook - Unit Tests", () => {
     });
 
     it("should update location when watchPositionAsync callback fires", async () => {
-      const initialCoords = { latitude: 45.0, longitude: -73.0 };
-      const newCoords = { latitude: 46.0, longitude: -74.0 };
+      const initialCoords = { latitude: 45, longitude: -73 };
+      const newCoords = { latitude: 46, longitude: -74 };
 
       mockPermission("granted");
       mockLastKnownPosition(initialCoords);
@@ -349,7 +349,7 @@ describe("useUserLocation Hook - Unit Tests", () => {
     });
 
     it("should handle NaN coordinates without crashing", async () => {
-      const nanCoords = { latitude: NaN, longitude: NaN };
+      const nanCoords = { latitude: Number.NaN, longitude: Number.NaN };
 
       (
         Location.requestForegroundPermissionsAsync as jest.Mock
