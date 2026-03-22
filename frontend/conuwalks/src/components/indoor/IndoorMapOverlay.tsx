@@ -17,7 +17,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { ReactNativeZoomableView } from "@openspacelabs/react-native-zoomable-view";
-import { generateRouteSteps } from "@/src/indoors/services/RouteInstructionService";
 // Services & Types
 import { IndoorMapService } from "@/src/indoors/services/IndoorMapService";
 import { BuildingIndoorConfig } from "@/src/indoors/types/FloorPlans";
@@ -395,11 +394,12 @@ const IndoorMapOverlay: React.FC<Props> = ({
     [activeField, hotspots, handleSetDestination, handleSetStartLocation],
   );
 
-  const routeSteps = useMemo(() => {
-    if (!route) return [];
-    return generateRouteSteps(route.nodes);
-  }, [route]);
+    const routeInstructions = useMemo(() => {
+      if (!route) return { steps: [] };
+      return indoorMapService.getRouteInstructions(route);
+    }, [route, indoorMapService]);
 
+    const routeSteps = routeInstructions.steps;
 
 
   useEffect(() => {
