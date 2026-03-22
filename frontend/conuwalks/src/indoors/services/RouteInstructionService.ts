@@ -118,7 +118,7 @@ interface StartSegment    { kind: "start";    node: Node; initialVec: { dx: numb
 interface StraightSegment { kind: "straight"; onOpenFloor: boolean; nextTransitKind: TransitKind | null }
 interface TurnSegment     { kind: "turn";     direction: "left" | "right" }
 interface TransitSegment  { kind: "transit";  transitKind: TransitKind; fromFloor: number; toFloor: number }
-interface ArriveSegment   { kind: "arrive";   node: Node }
+interface ArriveSegment   { kind: "arrive";   node: Node; approachTurn?: "left" | "right" }
 
 type Segment =
   | StartSegment
@@ -184,10 +184,17 @@ export function buildSegments(nodes: Node[]): Segment[] {
 
     //Case C: final destination
     if (isLast) {
-      maybeEmitStraight(segs, nodes, lastActionIdx, i);
-      segs.push({ kind: "arrive", node: curr });
-      break;
-    }
+  maybeEmitStraight(segs, nodes, lastActionIdx, i);
+let lastTurn: TurnSegment | undefined;
+for (let k = segs.length - 1; k >= 0; k--) {
+  if (segs[k].kind === "turn") {
+    lastTurn = segs[k] as TurnSegment;
+    break;
+  }
+}
+  segs.push({ kind: "arrive", node: curr, approachTurn: lastTurn?.direction });
+  break;
+}
 
     //Case D: turn detection
     const next = nodes[i + 1];
@@ -292,8 +299,12 @@ function segmentToText(seg: Segment): string {
       return `${verb} ${dir} to Floor ${seg.toFloor}`;
     }
 
-    case "arrive":
-      return `You have arrived at ${destinationLabel(seg.node)}`;
+  case "arrive": {
+  const dest = destinationLabel(seg.node);
+  if (seg.approachTurn === "left")  return `Your destination is on the left — ${dest}`;
+  if (seg.approachTurn === "right") return `Your destination is on the right — ${dest}`;
+  return `You have arrived at ${dest}`;
+}
   }
 }
 
@@ -311,10 +322,13 @@ export function generateRouteSteps(nodes: Node[]): RouteStep[] {
     collapsed.push(seg);
   }
 
-  // Remove a "straight" that sits immediately before "arrive" — it's redundant
-  const filtered = collapsed.filter((seg, idx) =>
-    !(seg.kind === "straight" && collapsed[idx + 1]?.kind === "arrive")
-  );
+// Remove a "straight" or "turn" immediately before "arrive" — both are redundant
+ const filtered = collapsed.filter((seg, idx) => {
+  if (seg.kind !== "turn" && seg.kind !== "straight") return true;
+  const next = collapsed[idx + 1];
+  const nextNext = collapsed[idx + 2];
+  return !(next?.kind === "arrive" || nextNext?.kind === "arrive");
+});
 
   return filtered.map((seg, idx) => ({
     id: `step-${idx}-${seg.kind}`,
