@@ -46,6 +46,213 @@ const hallFloor9RoomPOIs: POI[] =
 
 
 const POI_DATA: Record<string, POI[]> = {
+        // Hall Building – Floor 2
+        "H-2": [
+          // Hive Cafe
+          {
+            id: "H-2-hive-cafe",
+            label: "Hive Cafe",
+            category: "FOOD" as POICategory,
+            description: "Hive Cafe",
+            room: "HIVE_CAFE",
+            floor: 2,
+            mapPosition: mapPositionFromNode("H_2_HIVE_CAFE", { x: 0.460, y: 0.250 }),
+            showLabel: true,
+          },
+          // Student Union
+          {
+            id: "H-2-student-union",
+            label: "Student Union",
+            category: "HELP_DESK" as POICategory,
+            description: "Student Union Office",
+            room: "STUDENT_UNION",
+            floor: 2,
+            mapPosition: mapPositionFromNode("H_2_STUDENT_UNION", { x: 0.782, y: 0.318 }),
+          },
+          // Stairs
+          {
+            id: "H-2-stairs-1",
+            label: "Stairs",
+            category: "STAIRS" as POICategory,
+            description: "Stairs",
+            room: "S1",
+            floor: 2,
+            mapPosition: mapPositionFromNode("H_2_STAIRS_1", { x: 0.541, y: 0.792 }),
+          },
+          {
+            id: "H-2-stairs-2",
+            label: "Stairs",
+            category: "STAIRS" as POICategory,
+            description: "Stairs",
+            room: "S2",
+            floor: 2,
+            mapPosition: mapPositionFromNode("H_2_STAIRS_2", { x: 0.796, y: 0.792 }),
+          },
+          // Escalators
+          {
+            id: "H-2-escalator-down-1",
+            label: "Escalator Down",
+            category: "ESCALATOR" as POICategory,
+            description: "Escalator Down to Floor 1",
+            room: "ESCALATOR_DOWN_1",
+            floor: 2,
+            mapPosition: mapPositionFromNode("H_2_ESCALATOR_DOWN_TO_FLOOR_1", { x: 0.594, y: 0.792 }),
+          },
+          {
+            id: "H-2-escalator-up-2",
+            label: "Escalator Up",
+            category: "ESCALATOR" as POICategory,
+            description: "Escalator Up to Floor 2",
+            room: "ESCALATOR_UP_2",
+            floor: 2,
+            mapPosition: mapPositionFromNode("H_2_ESCALATOR_UP_TO_FLOOR_2", { x: 0.741, y: 0.792 }),
+          },
+          {
+            id: "H-2-escalator-up-8",
+            label: "Escalator Up",
+            category: "ESCALATOR" as POICategory,
+            description: "Escalator Up to Floor 8",
+            room: "ESCALATOR_UP_8",
+            floor: 2,
+            mapPosition: mapPositionFromNode("H_2_ESCALATOR_UP_TO_FLOOR_8", { x: 0.561, y: 0.419 }),
+          },
+          {
+            id: "H-2-escalator-down-2",
+            label: "Escalator Down",
+            category: "ESCALATOR" as POICategory,
+            description: "Escalator Down to Floor 2",
+            room: "ESCALATOR_DOWN_2",
+            floor: 2,
+            mapPosition: mapPositionFromNode("H_2_ESCALATOR_DOWN_TO_FLOOR_2", { x: 0.507, y: 0.665 }),
+          },
+          // Elevators
+          {
+            id: "H-2-elevator-1",
+            label: "Elevator",
+            category: "ELEVATOR" as POICategory,
+            description: "Elevator",
+            room: "E1",
+            floor: 2,
+            mapPosition: mapPositionFromNode("H_2_ELEVATOR_1", { x: 0.645, y: 0.792 }),
+          },
+          {
+            id: "H-2-elevator-2",
+            label: "Elevator",
+            category: "ELEVATOR" as POICategory,
+            description: "Elevator",
+            room: "E2",
+            floor: 2,
+            mapPosition: mapPositionFromNode("H_2_ELEVATOR_2", { x: 0.692, y: 0.792 }),
+          },
+        ],
+    // Hall Building – Floor 1
+    "H-1": [
+      // Shared Bathroom (Neutral Washroom)
+      {
+        id: "H-1-bathroom-neutral",
+        label: "WC",
+        category: "WC_SHARED" as POICategory,
+        description: "Shared Washroom",
+        room: "BATHROOM_1_N",
+        floor: 1,
+        mapPosition: mapPositionFromNode("H_1_BATHROOM_1_N", { x: 0.445, y: 0.278 }),
+      },
+      // Security Desk
+      {
+        id: "H-1-security",
+        label: "Security",
+        category: "HELP_DESK" as POICategory,
+        description: "Security Desk",
+        room: "SECURITY",
+        floor: 1,
+        mapPosition: mapPositionFromNode("H_1_SECURITY", { x: 0.839, y: 0.404 }),
+      },
+      // Auditorium (Room 110)
+      {
+        id: "H-1-room-110",
+        label: "Auditorium",
+        category: "ROOM" as POICategory,
+        description: "Auditorium (Room 110)",
+        room: "110",
+        floor: 1,
+        mapPosition: mapPositionFromNode("H_110", { x: 0.254, y: 0.336 }),
+      },
+      // Elevators
+      {
+        id: "H-1-elevator-1",
+        label: "Elevator",
+        category: "ELEVATOR" as POICategory,
+        description: "Elevator",
+        room: "E1",
+        floor: 1,
+        mapPosition: mapPositionFromNode("H_1_ELEVATOR_1", { x: 0.691, y: 0.548 }),
+      },
+      {
+        id: "H-1-elevator-2",
+        label: "Elevator",
+        category: "ELEVATOR" as POICategory,
+        description: "Elevator",
+        room: "E2",
+        floor: 1,
+        mapPosition: mapPositionFromNode("H_1_ELEVATOR_2", { x: 0.741, y: 0.549 }),
+      },
+      // Stairs
+      {
+        id: "H-1-stairs-1",
+        label: "Stairs",
+        category: "STAIRS" as POICategory,
+        description: "Stairs",
+        room: "S1",
+        floor: 1,
+        mapPosition: mapPositionFromNode("H_1_STAIRS_1", { x: 0.757, y: 0.688 }),
+      },
+      {
+        id: "H-1-stairs-2",
+        label: "Stairs",
+        category: "STAIRS" as POICategory,
+        description: "Stairs",
+        room: "S2",
+        floor: 1,
+        mapPosition: mapPositionFromNode("H_1_STAIRS_2", { x: 0.576, y: 0.606 }),
+      },
+      {
+        id: "H-1-stairs-3",
+        label: "Stairs",
+        category: "STAIRS" as POICategory,
+        description: "Stairs",
+        room: "S3",
+        floor: 1,
+        mapPosition: mapPositionFromNode("H_1_STAIRS_3", { x: 0.856, y: 0.603 }),
+      },
+      // Escalators
+      {
+        id: "H-1-escalator-up-1",
+        label: "Escalator Up",
+        category: "ESCALATOR" as POICategory,
+        description: "Escalator Up to Floor 1",
+        room: "ESCALATOR_UP_1",
+        floor: 1,
+        mapPosition: mapPositionFromNode("H_1_ESCALATOR_UP_TO_FLOOR_1", { x: 0.757, y: 0.708 }),
+      },
+      {
+        id: "H-1-escalator-down-1",
+        label: "Escalator Down",
+        category: "ESCALATOR" as POICategory,
+        description: "Escalator Down to Floor 1",
+        room: "ESCALATOR_DOWN_1",
+        floor: 1,
+        mapPosition: mapPositionFromNode("H_1_ESCALATOR_DOWN_TO_FLOOR_1", { x: 0.625, y: 0.605 }),
+      },
+      {
+        id: "H-1-escalator-up-2",
+        label: "Escalator Up",
+        category: "ESCALATOR" as POICategory,
+        description: "Escalator Up to Floor 2",
+        room: "ESCALATOR_UP_2",
+        floor: 1,
+        mapPosition: mapPositionFromNode("H_1_ESCALATOR_UP_TO_FLOOR_2", { x: 0.808, y: 0.604 }),
+      },
+    ],
   // Hall Building – Floor 8
   // From bottom floor plan image: 807, 809, 811, 813, 815, 817, 819 (top row)
   // Right column: 821, 823, 825, 827, 829
@@ -748,6 +955,8 @@ export const CATEGORY_LABELS: Record<POICategory, string> = {
   ESCALATOR: "Escalator",
   PRINT: "Print",
   IT: "IT",
+  HELP_DESK: "Student Union",
+  FOOD: "Cafe",
 };
 
 // Returns the unique categories present for a given building + floor.

@@ -9,7 +9,9 @@ export type POICategory =
   | "ELEVATOR"
   | "ESCALATOR"
   | "PRINT"
-  | "IT";
+  | "IT"
+  | "HELP_DESK"
+  | "FOOD";
 
 export interface POI {
   id: string;
@@ -21,6 +23,8 @@ export interface POI {
   /** Floor number */
   floor: number;
   mapPosition: { x: number; y: number };
+  /** Show label under icon (optional, for special POIs like cafes) */
+  showLabel?: boolean;
 }
 
 export interface POIDirections {

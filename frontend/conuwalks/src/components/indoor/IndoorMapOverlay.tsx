@@ -708,8 +708,8 @@ const IndoorMapOverlay: React.FC<Props> = ({
       <TouchableOpacity
         style={{
           position: "absolute",
-          top: 73,
-          left: 16,
+          top: 30,
+          left: 5,
           zIndex: 9999,
           elevation: 20,
           padding: 8,

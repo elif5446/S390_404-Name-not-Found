@@ -10,18 +10,46 @@ type IconOffset = { x: number; y: number };
 
 // Fine-tune icon placement by room number
 export const ICON_POSITION_OVERRIDES: Record<string, IconOffset> = {
-  // Floor 9 stairs, elevator, and escalator icon positions
+              
+  // Hall Floor 9  icon positions
   "9-S1": { x: -15, y: -15 },
   "9-S2": { x: 10, y: 10 },
   "9-S3": { x: 5, y: 15 },
   "9-S4": { x: 10, y: 8},
     "9-E1": { x: 2, y: -4 },
   // Escalators 
-  "9-ESCALATOR_DOWN_8": { x: -20, y: 0 },
-  "9-ESCALATOR_UP_10": { x: 20, y: 0 },
-    // escalator POIs positions. 
+  "9-ESCALATOR_DOWN_8": { x: 14, y: 0 },
+  "9-ESCALATOR_UP_10": { x: 15, y: 0 }, 
     "ESCALATOR_DOWN_8": { x: -1, y: 10 },
     "ESCALATOR_UP_10": { x: 3, y: 10 },
+
+  // Hall floor 1  
+  "1-S1": { x: 6, y: 6 }, 
+  "1-S2": { x: 6, y: 4 }, 
+  "1-S3": { x: 8, y: 5 }, 
+  "1-S4": { x: 0, y: 0 }, 
+  "1-E1": { x: 10, y: 10 }, 
+  "1-E2": { x: 15, y: 18}, 
+  "1-ESCALATOR_UP_1": { x: -10, y: 10}, 
+  "1-ESCALATOR_DOWN_1": { x: 12, y: 12 }, 
+  "1-ESCALATOR_UP_2": { x: 15, y: 12},
+  "1-SECURITY": { x: -3, y: 15 }, 
+
+  //Hall floor 2 
+
+              "HIVE_CAFE": { x: -10, y: -10 },
+            "2-ESCALATOR_DOWN_1": { x: 14, y: 20 },
+          "2-E2": { x: 15, y: 20 },
+          "2-E1": { x: 10, y: 12 },
+        "2-ESCALATOR_UP_2": { x: 15, y: 20 },
+        "2-S1": { x: 6, y: 8 },
+        "2-S2": { x: 10, y: 14 },
+       "2-STUDENT_UNION": { x: 10, y: 15 },
+      "2-ESCALATOR_DOWN_2": { x: 15, y: -3 },
+    "2-ESCALATOR_UP_8": { x: 10, y: 25},
+   
+    
+    
 
   //Floor 9 icon positions. 
   "967": { x: 8, y: -4 },
@@ -53,7 +81,7 @@ export const ICON_POSITION_OVERRIDES: Record<string, IconOffset> = {
   "829": { x: 8, y: -4 },
  
 
-  // Floor 8 stairs and elevator
+  // Floor 8 stairs elevator
   "S1": { x:  8,  y:  12 },
   "S2": { x: 6, y: 8 },
   "S3": { x: 6, y: 8 },
@@ -65,36 +93,48 @@ export const ICON_POSITION_OVERRIDES: Record<string, IconOffset> = {
   "B1": { x: 0, y: 2}, // Girls bathroom
   "B2": { x: 5, y: 1 }, // Boys bathroom
   "PR1": { x: -80, y: 20}, // Printer
-  "IT": { x: 12, y: -12 }, // IT Help Desk
+  "IT": { x: 13, y: -5 }, // IT Help Desk
 
 
+  // Floor 8 escalator positions
+  "ESCALATOR_UP_9": { x: 6, y: 10 },
+  "ESCALATOR_DOWN_2": { x: 6, y: 2 },
 };
 
-const CATEGORY_CONFIG: Record<
-  POICategory,
-  {
-    icon: string;
-    iconLib: IconLib;
-    bg: string;
-    iconColor: string;
-  }
-> = {
+const CATEGORY_CONFIG: Record<POICategory, {
+  icon: string;
+  iconLib: IconLib;
+  bg: string;
+  iconColor: string;
+}> = {
+  FOOD: {
+    icon: "coffee",
+    iconLib: "mci",
+    bg: "#F7C873",
+    iconColor: POI_PALETTE.iconDark,
+  },
   LAB: {
     icon: "desktop-outline",
     iconLib: "ion",
-    bg: "#B76E79", // Lighter burgundy
+    bg: "#B76E79",
+    iconColor: POI_PALETTE.iconDark,
+  },
+  HELP_DESK: {
+    icon: "account-group",
+    iconLib: "mci",
+    bg: "#B76E79",
     iconColor: POI_PALETTE.iconDark,
   },
   ROOM: {
     icon: "business-outline",
     iconLib: "ion",
-    bg: "#B76E79", // Lighter burgundy
+    bg: "#B76E79",
     iconColor: POI_PALETTE.iconDark,
   },
   STAIRS: {
     icon: "stairs",
     iconLib: "mci",
-    bg: "#B76E79", // Lighter burgundy
+    bg: "#B76E79", 
     iconColor: POI_PALETTE.iconDark,
   },
   ELEVATOR: {
@@ -222,7 +262,7 @@ const POIBadge: React.FC<Props> = ({
   const cfg = CATEGORY_CONFIG[poi.category];
   const isRoom = poi.category === "ROOM";
   const isLab = poi.category === "LAB";
-  const isVerticalTransport = poi.category === "STAIRS" || poi.category === "ELEVATOR";
+  const isVerticalTransport = poi.category === "STAIRS" || poi.category === "ELEVATOR" || poi.category === "ESCALATOR" || poi.category === "HELP_DESK";
   const isCompactIconOnly = !isRoom && (poi.room === "805" || poi.room === "809");
   const hideTopMarker = !isRoom && (poi.room === "805" || poi.room === "809");
   const isDestination = selectionType === "destination";
@@ -413,7 +453,26 @@ const POIBadge: React.FC<Props> = ({
           ? renderCategoryIcon(cfg.iconLib, cfg.icon, markerIconSize, iconColor)
           : null}
       </TouchableOpacity>
-
+      {/* Show label under icon for Hive Cafe (FOOD with showLabel) */}
+      {poi.category === "FOOD" && poi.showLabel && (
+        <Text
+          style={{
+            marginTop: 2,
+            fontSize: 10,
+            fontWeight: "bold",
+            color: POI_PALETTE.textDark,
+            textAlign: "center",
+            backgroundColor: "#fff8e1",
+            borderRadius: 4,
+            paddingHorizontal: 4,
+            paddingVertical: 1,
+            overflow: "hidden",
+            elevation: 2,
+          }}
+        >
+          HIVE CAFE
+        </Text>
+      )}
     </View>
   );
 };

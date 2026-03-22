@@ -324,6 +324,10 @@ function getCategoryIcon(cat: POICategory): CategoryIcon {
       return { lib: "ion", name: "print-outline" };
     case "IT":
       return { lib: "ion", name: "help-circle-outline" };
+    case "HELP_DESK":
+      return { lib: "mci", name: "account-group" };
+    case "FOOD":
+      return { lib: "mci", name: "coffee" };
     default:
       return { lib: "ion", name: "location-outline" };
   }
