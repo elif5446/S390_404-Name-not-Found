@@ -5,7 +5,7 @@ export type RouteStep = {
   text: string;
 };
 
-// ─── Vector / geometry ───────────────────────────────────────────────────────
+//Vector / geometry 
 
 function vec(from: { x: number; y: number }, to: { x: number; y: number }) {
   return { dx: to.x - from.x, dy: to.y - from.y };
@@ -45,7 +45,7 @@ function runDistance(nodes: Node[], fromIdx: number, toIdx: number): number {
   return d;
 }
 
-// ─── Turn / transit classification ───────────────────────────────────────────
+// Turn / transit classification
 
 type TurnKind = "straight" | "left" | "right";
 
@@ -72,7 +72,7 @@ function floorNum(floorId: string): number {
   return isNaN(n) ? 0 : n;
 }
 
-// ─── Approach vector ─────────────────────────────────────────────────────────
+//Approach vector
 
 function buildApproachVec(
   nodes: Node[],
@@ -87,8 +87,7 @@ function buildApproachVec(
   return acc;
 }
 
-// ─── Label helpers ────────────────────────────────────────────────────────────
-
+//Label helpers
 function roomLabel(node: Node): string {
   const raw = node.label ?? node.id;
   if (/^room\s+/i.test(raw)) return raw.trim();
@@ -105,7 +104,7 @@ function destinationLabel(node: Node): string {
   }
 }
 
-// ─── Open-floor detection ─────────────────────────────────────────────────────
+//Open-floor detection
 
 const OPEN_FLOOR_NUMBERS = new Set([1, 2]);
 
@@ -113,7 +112,7 @@ function isOpenFloor(floorId: string): boolean {
   return OPEN_FLOOR_NUMBERS.has(floorNum(floorId));
 }
 
-// ─── Segment types ────────────────────────────────────────────────────────────
+//Segment types
 
 interface StartSegment    { kind: "start";    node: Node; initialVec: { dx: number; dy: number } }
 interface StraightSegment { kind: "straight"; onOpenFloor: boolean; nextTransitKind: TransitKind | null }
@@ -128,7 +127,7 @@ type Segment =
   | TransitSegment
   | ArriveSegment;
 
-// ─── Core: path → segments ───────────────────────────────────────────────────
+//Core: path → segments 
 
 export function buildSegments(nodes: Node[]): Segment[] {
   const segs: Segment[] = [];
@@ -149,7 +148,7 @@ export function buildSegments(nodes: Node[]): Segment[] {
     const prev = nodes[i - 1];
     const isLast = i === nodes.length - 1;
 
-    // ── Case A: transit node ──────────────────────────────────────────────
+    //Case A: transit node
     if (getTransitKind(curr) !== null) {
       maybeEmitStraight(segs, nodes, lastActionIdx, i, getTransitKind(curr));
 
@@ -177,20 +176,20 @@ export function buildSegments(nodes: Node[]): Segment[] {
       continue;
     }
 
-    // ── Case B: floor boundary without transit node ───────────────────────
+    //Case B: floor boundary without transit node
     if (curr.floorId !== prev.floorId) {
       i++;
       continue;
     }
 
-    // ── Case C: final destination ─────────────────────────────────────────
+    //Case C: final destination
     if (isLast) {
       maybeEmitStraight(segs, nodes, lastActionIdx, i);
       segs.push({ kind: "arrive", node: curr });
       break;
     }
 
-    // ── Case D: turn detection ────────────────────────────────────────────
+    //Case D: turn detection
     const next = nodes[i + 1];
 
     if (getTransitKind(next) !== null || next.floorId !== curr.floorId) {
@@ -228,7 +227,7 @@ function maybeEmitStraight(
   }
 }
 
-// ─── Segment → text ──────────────────────────────────────────────────────────
+//Segment → text
 
 function segmentToText(seg: Segment): string {
   switch (seg.kind) {
@@ -298,8 +297,7 @@ function segmentToText(seg: Segment): string {
   }
 }
 
-// ─── Public API ───────────────────────────────────────────────────────────────
-
+//Public API
 export function generateRouteSteps(nodes: Node[]): RouteStep[] {
   if (!nodes || nodes.length < 2) return [];
 

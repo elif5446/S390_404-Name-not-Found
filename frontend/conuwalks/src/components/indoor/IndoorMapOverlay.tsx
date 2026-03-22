@@ -41,7 +41,7 @@ import DestinationMarker from "./DestinationMarker";
 import IndoorRoomLabels from "./IndoorRoomLabels";
 import FloorPicker from "./FloorPicker";
 import { styles } from "@/src/styles/IndoorMap.styles";
-
+import { getWheelchairAccessibilityPreference } from "@/src/utils/tokenStorage";
 type RouteNodeLike = {
   id: string;
   x: number;
@@ -108,7 +108,20 @@ const IndoorMapOverlay: React.FC<Props> = ({
   const [route, setRoute] = useState<Route | null>(null);
   const [activeField, setActiveField] = useState<"start" | "destination">("destination");
   const [showDirections, setShowDirections] = useState(false);
+  const [avoidStairs, setAvoidStairs] = useState(false);
 
+// Load the persisted wheelchair accessibility preference on mount
+useEffect(() => {
+  getWheelchairAccessibilityPreference().then(setAvoidStairs);
+}, []);
+
+// Re-compute route automatically if the user changes the preference
+// while the directions panel is already open
+useEffect(() => {
+  if (showDirections && destination) {
+    handleDirectionsPress();
+  }
+}, [avoidStairs]);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const zoomRef = useRef<ReactNativeZoomableView>(null);
   const isMounted = useRef(true);
@@ -265,7 +278,7 @@ const IndoorMapOverlay: React.FC<Props> = ({
       const nextRoute = await indoorMapService.getRoute(
         startNodeId,
         endNodeId,
-        false,
+        avoidStairs,
       );
       setRoute(nextRoute);
       setShowSearchResults(false);
@@ -282,6 +295,7 @@ const IndoorMapOverlay: React.FC<Props> = ({
     baseStartNode,
     indoorMapService,
     resolveDestinationNodeId,
+    avoidStairs,
   ]);
 
   const combinedSearchResults = useMemo<IndoorSearchResult[]>(() => {
