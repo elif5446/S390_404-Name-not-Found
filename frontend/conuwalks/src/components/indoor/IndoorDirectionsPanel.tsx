@@ -2,17 +2,17 @@ import React, { useState } from "react";
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { POI, POICategory } from "@/src/types/poi";
-import { getDirectionsForPOI } from "@/src/data/poiData";
+import { Node } from "@/src/indoors/types/Navigation";
+import { generateRouteSteps, estimateWalkMinutes } from "@/src/indoors/services/RouteInstructionService";
 import {
   directionsStyles as S,
   POI_PALETTE,
 } from "@/src/styles/IndoorPOI.styles";
-import POIBadge from "./POIBadge";
 
 interface Props {
   poi: POI;
-  startingRoom: string;
-  sourcePOI?: POI | null;
+ 
+  path: Node[];
   onClose: () => void;
 }
 
@@ -21,20 +21,15 @@ const formatRoomWithBuilding = (room: string): string => {
   return /^h\s*-/i.test(value) ? value.toUpperCase() : `H-${value}`;
 };
 
-const IndoorDirectionsPanel: React.FC<Props> = ({
-  poi,
-  startingRoom,
-  sourcePOI,
-  onClose,
-}) => {
+const IndoorDirectionsPanel: React.FC<Props> = ({ poi, path, onClose }) => {
   const [avoidStairs, setAvoidStairs] = useState(false);
-  const [avoidElevator, setAvoidElevator] = useState(false);
 
-  const { steps, estimatedMinutes } = getDirectionsForPOI(
-    poi,
-    startingRoom,
-    sourcePOI,
-  );
+  const steps = generateRouteSteps(path);
+  const estimatedMinutes = estimateWalkMinutes(path);
+
+  // The starting node is the first node in the path
+  const startNode = path[0];
+  const startLabel = startNode?.label ?? startNode?.id ?? "Starting point";
 
   return (
     <View style={S.panel}>
@@ -63,129 +58,117 @@ const IndoorDirectionsPanel: React.FC<Props> = ({
         bounces={false}
         contentContainerStyle={{ paddingBottom: 28 }}
       >
-      {/* Avoid toggles */}
-      <View style={S.toggleRow}>
-        <TouchableOpacity
-          onPress={() => setAvoidStairs((v) => !v)}
-          style={[S.togglePill, avoidStairs && S.togglePillActive]}
-          accessibilityRole="button"
-          accessibilityState={{ selected: avoidStairs }}
-          accessibilityLabel="Avoid stairs"
-        >
-          <Text style={[S.toggleText, avoidStairs && S.toggleTextActive]}>
-            avoid stairs
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Starting room card */}
-      <View style={S.infoCard}>
-        <Text style={S.infoCardRoomNum}>
-          {formatRoomWithBuilding(sourcePOI ? sourcePOI.room : startingRoom)}
-        </Text>
-        <Text style={S.infoCardLabel}>{sourcePOI ? sourcePOI.description : "Starting Room"}</Text>
-      </View>
-
-      {/* Destination POI card */}
-      <View style={S.infoCard}>
-        {/* Inline badge (not absolute-positioned) */}
-        <View
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: 10,
-            backgroundColor: POI_PALETTE.pink,
-            alignItems: "center",
-            justifyContent: "center",
-            marginRight: 10,
-          }}
-        >
-          <Ionicons
-            name={getCategoryIcon(poi.category)}
-            size={18}
-            color={POI_PALETTE.white}
-          />
+        {/* Avoid toggles */}
+        <View style={S.toggleRow}>
+          <TouchableOpacity
+            onPress={() => setAvoidStairs((v) => !v)}
+            style={[S.togglePill, avoidStairs && S.togglePillActive]}
+            accessibilityRole="button"
+            accessibilityState={{ selected: avoidStairs }}
+            accessibilityLabel="Avoid stairs"
+          >
+            <Text style={[S.toggleText, avoidStairs && S.toggleTextActive]}>
+              avoid stairs
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        <View style={S.infoCardDest}>
-          <Text style={S.infoCardDestName}>{poi.description}</Text>
-          <Text style={S.infoCardDestRoom}>
-            H-{poi.room}{"  "}(POI)
+        {/* Starting point card */}
+        <View style={S.infoCard}>
+          <Text style={S.infoCardRoomNum}>
+            {formatRoomWithBuilding(startNode?.id ?? "")}
           </Text>
+          <Text style={S.infoCardLabel}>{startLabel}</Text>
         </View>
 
-        <TouchableOpacity
-          style={S.navArrowBtn}
-          accessibilityRole="button"
-          accessibilityLabel={`Start navigation to ${poi.description}`}
-        >
-          <Ionicons name="arrow-forward" size={16} color={POI_PALETTE.white} />
-        </TouchableOpacity>
-      </View>
-
-      {/* Route steps */}
-      <Text style={S.stepsLabel}>ROUTE STEPS</Text>
-      {steps.map((step, idx) => {
-        const isLast = idx === steps.length - 1;
-        return (
-          <View key={idx} style={S.stepRow}>
-            <View
-              style={[
-                S.stepAccent,
-                { backgroundColor: isLast ? POI_PALETTE.pink : POI_PALETTE.pillGray },
-              ]}
+        {/* Destination POI card */}
+        <View style={S.infoCard}>
+          <View
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 10,
+              backgroundColor: POI_PALETTE.pink,
+              alignItems: "center",
+              justifyContent: "center",
+              marginRight: 10,
+            }}
+          >
+            <Ionicons
+              name={getCategoryIcon(poi.category)}
+              size={18}
+              color={POI_PALETTE.white}
             />
-            <Text style={isLast ? S.stepTextHighlight : S.stepText}>
-              {idx + 1}.{"  "}
-              {step}
+          </View>
+
+          <View style={S.infoCardDest}>
+            <Text style={S.infoCardDestName}>{poi.description}</Text>
+            <Text style={S.infoCardDestRoom}>
+              {formatRoomWithBuilding(poi.room)}{"  "}(POI)
             </Text>
           </View>
-        );
-      })}
 
-      {/* ETA */}
-      <View style={S.etaRow}>
-        <View style={S.etaBadge}>
-          <Text style={S.etaText}>~{estimatedMinutes} min</Text>
+          <TouchableOpacity
+            style={S.navArrowBtn}
+            accessibilityRole="button"
+            accessibilityLabel={`Start navigation to ${poi.description}`}
+          >
+            <Ionicons name="arrow-forward" size={16} color={POI_PALETTE.white} />
+          </TouchableOpacity>
         </View>
-        <Text style={S.etaLabel}>estimated walk</Text>
-      </View>
 
-      {/* Tap hint */}
-      <View style={S.tapHintCard}>
-        <Text style={S.tapHintText}>
-          Tap any POI marker on the map to set as destination.
-        </Text>
-      </View>
+        {/* Route steps */}
+        <Text style={S.stepsLabel}>ROUTE STEPS</Text>
+        {steps.map((step, idx) => {
+          const isLast = idx === steps.length - 1;
+          return (
+            <View key={step.id} style={S.stepRow}>
+              <View
+                style={[
+                  S.stepAccent,
+                  { backgroundColor: isLast ? POI_PALETTE.pink : POI_PALETTE.pillGray },
+                ]}
+              />
+              <Text style={isLast ? S.stepTextHighlight : S.stepText}>
+                {idx + 1}.{"  "}
+                {step.text}
+              </Text>
+            </View>
+          );
+        })}
+
+        {/* ETA */}
+        <View style={S.etaRow}>
+          <View style={S.etaBadge}>
+            <Text style={S.etaText}>~{estimatedMinutes} min</Text>
+          </View>
+          <Text style={S.etaLabel}>estimated walk</Text>
+        </View>
+
+        {/* Tap hint */}
+        <View style={S.tapHintCard}>
+          <Text style={S.tapHintText}>
+            Tap any POI marker on the map to set as destination.
+          </Text>
+        </View>
       </ScrollView>
     </View>
   );
 };
 
-//helpers 
+// Helpers
 
-function getCategoryIcon(
-  cat: POICategory,
-): keyof typeof Ionicons.glyphMap {
+function getCategoryIcon(cat: POICategory): keyof typeof Ionicons.glyphMap {
   switch (cat) {
-    case "LAB":
-      return "desktop-outline";
-    case "ROOM":
-      return "business-outline";
-    case "WC_F":
-      return "person-outline";
-    case "WC_M":
-      return "person-outline";
-    case "WC_A":
-      return "accessibility-outline";
-    case "WC_SHARED":
-      return "people-outline";
-    case "PRINT":
-      return "print-outline";
-    case "IT":
-      return "help-circle-outline";
-    default:
-      return "location-outline";
+    case "LAB":       return "desktop-outline";
+    case "ROOM":      return "business-outline";
+    case "WC_F":      return "person-outline";
+    case "WC_M":      return "person-outline";
+    case "WC_A":      return "accessibility-outline";
+    case "WC_SHARED": return "people-outline";
+    case "PRINT":     return "print-outline";
+    case "IT":        return "help-circle-outline";
+    default:          return "location-outline";
   }
 }
 

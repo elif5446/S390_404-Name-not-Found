@@ -5,7 +5,7 @@ export type RouteStep = {
   text: string;
 };
 
-//Vector / geometry 
+// ─── Vector / geometry ───────────────────────────────────────────────────────
 
 function vec(from: { x: number; y: number }, to: { x: number; y: number }) {
   return { dx: to.x - from.x, dy: to.y - from.y };
@@ -45,7 +45,7 @@ function runDistance(nodes: Node[], fromIdx: number, toIdx: number): number {
   return d;
 }
 
-//Turn / transit classification 
+// ─── Turn / transit classification ───────────────────────────────────────────
 
 type TurnKind = "straight" | "left" | "right";
 
@@ -72,7 +72,8 @@ function floorNum(floorId: string): number {
   return isNaN(n) ? 0 : n;
 }
 
-//Approach vector
+// ─── Approach vector ─────────────────────────────────────────────────────────
+
 function buildApproachVec(
   nodes: Node[],
   i: number,
@@ -86,7 +87,7 @@ function buildApproachVec(
   return acc;
 }
 
-//Label helpers
+// ─── Label helpers ────────────────────────────────────────────────────────────
 
 function roomLabel(node: Node): string {
   const raw = node.label ?? node.id;
@@ -104,7 +105,7 @@ function destinationLabel(node: Node): string {
   }
 }
 
-//Open-floor detection 
+// ─── Open-floor detection ─────────────────────────────────────────────────────
 
 const OPEN_FLOOR_NUMBERS = new Set([1, 2]);
 
@@ -112,13 +113,13 @@ function isOpenFloor(floorId: string): boolean {
   return OPEN_FLOOR_NUMBERS.has(floorNum(floorId));
 }
 
-//Segment types
+// ─── Segment types ────────────────────────────────────────────────────────────
 
-interface StartSegment   { kind: "start";    node: Node; initialVec: { dx: number; dy: number } }
-interface StraightSegment{ kind: "straight"; onOpenFloor: boolean; nextTransitKind: TransitKind | null }
-interface TurnSegment    { kind: "turn";     direction: "left" | "right" }
-interface TransitSegment { kind: "transit";  transitKind: TransitKind; fromFloor: number; toFloor: number }
-interface ArriveSegment  { kind: "arrive";   node: Node }
+interface StartSegment    { kind: "start";    node: Node; initialVec: { dx: number; dy: number } }
+interface StraightSegment { kind: "straight"; onOpenFloor: boolean; nextTransitKind: TransitKind | null }
+interface TurnSegment     { kind: "turn";     direction: "left" | "right" }
+interface TransitSegment  { kind: "transit";  transitKind: TransitKind; fromFloor: number; toFloor: number }
+interface ArriveSegment   { kind: "arrive";   node: Node }
 
 type Segment =
   | StartSegment
@@ -127,23 +128,20 @@ type Segment =
   | TransitSegment
   | ArriveSegment;
 
-//Core: path → segments
+// ─── Core: path → segments ───────────────────────────────────────────────────
+
 export function buildSegments(nodes: Node[]): Segment[] {
   const segs: Segment[] = [];
 
   if (nodes.length < 2) return segs;
 
-  //Start
   segs.push({
     kind: "start",
     node: nodes[0],
     initialVec: vec(nodes[0], nodes[1]),
   });
 
-  // After the start action the user is at node index 0; walking begins at 1.
   let lastActionIdx = 0;
-
-  //Walk through the rest of the path
   let i = 1;
 
   while (i < nodes.length) {
@@ -151,9 +149,8 @@ export function buildSegments(nodes: Node[]): Segment[] {
     const prev = nodes[i - 1];
     const isLast = i === nodes.length - 1;
 
-    // Case A: transit node (escalator / elevator / stairs)
+    // ── Case A: transit node ──────────────────────────────────────────────
     if (getTransitKind(curr) !== null) {
-    
       maybeEmitStraight(segs, nodes, lastActionIdx, i, getTransitKind(curr));
 
       let j = i;
@@ -174,25 +171,26 @@ export function buildSegments(nodes: Node[]): Segment[] {
       if (toFloor !== fromFloor) {
         segs.push({ kind: "transit", transitKind: chosenKind, fromFloor, toFloor });
       }
+
       lastActionIdx = j;
       i = j + 1;
       continue;
     }
 
-    //Case B: crossed a floor boundary without a transit node 
+    // ── Case B: floor boundary without transit node ───────────────────────
     if (curr.floorId !== prev.floorId) {
       i++;
       continue;
     }
 
-    //Case C: final destination
+    // ── Case C: final destination ─────────────────────────────────────────
     if (isLast) {
       maybeEmitStraight(segs, nodes, lastActionIdx, i);
       segs.push({ kind: "arrive", node: curr });
       break;
     }
 
-    //Case D: turn detection
+    // ── Case D: turn detection ────────────────────────────────────────────
     const next = nodes[i + 1];
 
     if (getTransitKind(next) !== null || next.floorId !== curr.floorId) {
@@ -205,11 +203,8 @@ export function buildSegments(nodes: Node[]): Segment[] {
     const turn = classifyTurn(approachVec, departVec);
 
     if (turn !== "straight" && !isOpenFloor(curr.floorId)) {
-      // Emit the straight corridor leading up to this turn
       maybeEmitStraight(segs, nodes, lastActionIdx, i);
-      // Emit the turn
       segs.push({ kind: "turn", direction: turn });
-      // The pivot node is the new last-action point
       lastActionIdx = i;
     }
 
@@ -233,7 +228,7 @@ function maybeEmitStraight(
   }
 }
 
-//Segment → text
+// ─── Segment → text ──────────────────────────────────────────────────────────
 
 function segmentToText(seg: Segment): string {
   switch (seg.kind) {
@@ -271,7 +266,6 @@ function segmentToText(seg: Segment): string {
     }
 
     case "straight": {
-      // On open floors (lobby, atrium) say "Walk to the X" when heading to a transit node
       if (seg.onOpenFloor && seg.nextTransitKind) {
         const target =
           seg.nextTransitKind === "elevator" ? "elevator" :
@@ -279,7 +273,6 @@ function segmentToText(seg: Segment): string {
           "stairs";
         return `Walk to the ${target}`;
       }
-      // On open floors with no specific target just say "walk across"
       if (seg.onOpenFloor) {
         return "Walk across the open area";
       }
@@ -305,24 +298,41 @@ function segmentToText(seg: Segment): string {
   }
 }
 
-//Public API
+// ─── Public API ───────────────────────────────────────────────────────────────
 
 export function generateRouteSteps(nodes: Node[]): RouteStep[] {
   if (!nodes || nodes.length < 2) return [];
 
   const segments = buildSegments(nodes);
 
-  // Collapse back-to-back "straight" segments into one
   const collapsed: Segment[] = [];
   for (const seg of segments) {
     if (seg.kind === "straight" && collapsed[collapsed.length - 1]?.kind === "straight") {
-      continue; 
+      continue;
     }
     collapsed.push(seg);
   }
 
-  return collapsed.map((seg, idx) => ({
+  // Remove a "straight" that sits immediately before "arrive" — it's redundant
+  const filtered = collapsed.filter((seg, idx) =>
+    !(seg.kind === "straight" && collapsed[idx + 1]?.kind === "arrive")
+  );
+
+  return filtered.map((seg, idx) => ({
     id: `step-${idx}-${seg.kind}`,
     text: segmentToText(seg),
   }));
+}
+
+/**
+ * Estimates walking time from a path of nodes.
+ * Uses a rough scale of 80 map-pixels per second at normal walking pace.
+ */
+export function estimateWalkMinutes(nodes: Node[]): number {
+  if (!nodes || nodes.length < 2) return 1;
+  let dist = 0;
+  for (let i = 0; i < nodes.length - 1; i++) {
+    dist += magnitude(vec(nodes[i], nodes[i + 1]));
+  }
+  return Math.max(1, Math.round((dist / 80) / 60));
 }
