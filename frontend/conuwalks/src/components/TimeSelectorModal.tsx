@@ -75,7 +75,7 @@ const WheelPicker = ({
   );
 
   const originalIndex = data.findIndex((d: any) => d.value === selectedValue);
-  const safeOriginalIndex = originalIndex >= 0 ? originalIndex : 0;
+  const safeOriginalIndex = Math.max(originalIndex, 0);
 
   const centerOffset = loop ? data.length : 0;
   const startIndex = centerOffset + safeOriginalIndex;
@@ -172,7 +172,7 @@ export default function TimeSelectorModal({
   onApply,
   initialMode,
   initialDate,
-}: TimeSelectorModalProps) {
+}: Readonly < TimeSelectorModalProps>)  {
   const isDark = (useColorScheme() || "light") === "dark";
   const [mode, setMode] = useState<"leave" | "arrive">(initialMode);
 

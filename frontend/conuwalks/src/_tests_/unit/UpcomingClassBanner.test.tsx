@@ -1,6 +1,5 @@
-﻿import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react-native";
-import { act } from "react";
+﻿import { render, screen, fireEvent, waitFor } from "@testing-library/react-native";
+import React, { act } from "react";
 import { PanResponder, Switch } from "react-native";
 import UpcomingClassBanner from "../../components/UpcomingClassBanner";
 import { useGoogleCalendar } from "@/src/hooks/useGoogleCalendar";

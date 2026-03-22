@@ -79,7 +79,7 @@ const mockBuildingData: BuildingIndoorConfig = {
       image: MockSvgImage,
       bounds: {
         northEast: { latitude: 45.4973, longitude: -73.5785 },
-        southWest: { latitude: 45.4968, longitude: -73.5790 },
+        southWest: { latitude: 45.4968, longitude: -73.579 },
       },
     },
     {
@@ -90,7 +90,7 @@ const mockBuildingData: BuildingIndoorConfig = {
       image: MockSvgImage,
       bounds: {
         northEast: { latitude: 45.4973, longitude: -73.5785 },
-        southWest: { latitude: 45.4968, longitude: -73.5790 },
+        southWest: { latitude: 45.4968, longitude: -73.579 },
       },
     },
   ],

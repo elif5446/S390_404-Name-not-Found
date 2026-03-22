@@ -167,9 +167,9 @@ const parseHTMLToJSON = (html: string): ShuttleSchedule => {
         for (let j = 1; j < cells.length; j++) {
           const cellContent = cells[j].split(/<\/td>/i)[0];
           const text = cellContent
-            .replace(/<[^>]{0,1000}>/g, "")
-            .replace(/&nbsp;/g, "")
-            .replace(/[^0-9:]/g, "")
+            .replaceAll(/<[^>]{0,1000}>/g, "")
+            .replaceAll(/&nbsp;/g, "")
+            .replaceAll(/[^0-9:]/g, "")
             .trim();
 
           cols.push(text);

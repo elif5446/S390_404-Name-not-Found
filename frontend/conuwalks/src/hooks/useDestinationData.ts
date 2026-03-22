@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { DirectionStep, useDirections } from "@/src/context/DirectionsContext";
 import { getDirections } from "@/src/api/directions";
 
+type TravelMode = "walking" | "driving" | "transit" | "bicycling";
 export const useDestinationData = (
   visible: boolean,
   overrideDestination?: { latitude: number; longitude: number },
@@ -26,7 +27,7 @@ export const useDestinationData = (
   const effectiveDestination = overrideDestination || contextDestination;
   const effectiveStart = overrideStart || contextStart;
   const [modeDurationCache, setModeDurationCache] = useState<
-    Partial<Record<"walking" | "driving" | "transit" | "bicycling", string>>
+    Partial<Record<TravelMode, string>>
   >({});
 
   const routeScopeKey = `${startBuildingId ?? "-"}->${destinationBuildingId ?? "-"}`;
@@ -46,13 +47,13 @@ export const useDestinationData = (
   const normalizeDurationLabel = useCallback((value: string): string => {
     const lower = value.toLowerCase();
     if (lower.includes("h") || lower.includes("hour")) {
-      const hourMatch = lower.match(/(\d{1,10})\s{0,10}h/);
-      const minuteMatch = lower.match(/(\d{1,10})\s{0,10}(?:mins?|minutes?)/);
+      const hourMatch = /(\d{1,10})\s{0,10}h/.exec(lower);
+      const minuteMatch = /(\d{1,10})\s{0,10}(?:mins?|minutes?)/.exec(lower);
       const hours = hourMatch ? Number.parseInt(hourMatch[1], 10) : 0;
       const minutes = minuteMatch ? Number.parseInt(minuteMatch[1], 10) : 0;
       return minutes > 0 ? `${hours} h ${minutes} min` : `${hours} h`;
     }
-    const minuteMatch = lower.match(/(\d{1,10})\s{0,10}(?:mins?|minutes?)/);
+    const minuteMatch = /(\d{1,10})\s{0,10}(?:mins?|minutes?)/.exec(lower);
     if (minuteMatch) {
       return formatMinutes(Number.parseInt(minuteMatch[1], 10));
     }
@@ -66,7 +67,7 @@ export const useDestinationData = (
 
   useEffect(() => {
     const activeRoute = routes[selectedRouteIndex] || routeData;
-    if (!activeRoute || !activeRoute.requestMode) return;
+    if (!activeRoute?.requestMode) return;
 
     const normalizedDuration = normalizeDurationLabel(activeRoute.duration);
     setModeDurationCache((prev) => {
@@ -86,7 +87,7 @@ export const useDestinationData = (
     if (!visible || !startCoords || !effectiveDestination) return;
 
     let isCancelled = false;
-    const allModes: ("walking" | "driving" | "transit" | "bicycling")[] = [
+    const allModes: (TravelMode)[] = [
       "walking",
       "transit",
       "bicycling",
@@ -140,9 +141,8 @@ export const useDestinationData = (
 
       const activeRoute = routeData || routes[selectedRouteIndex];
       if (
-        activeRoute &&
-        activeRoute.requestMode === modeKey &&
-        activeRoute.duration
+        activeRoute?.requestMode === modeKey &&
+          activeRoute.duration
       ) {
         return normalizeDurationLabel(activeRoute.duration);
       }

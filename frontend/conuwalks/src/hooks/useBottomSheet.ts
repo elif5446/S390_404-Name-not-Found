@@ -226,11 +226,14 @@ export const useBottomSheet = ({
       } else if (velocity < -1.2) {
         if (currentY > SNAP_OFFSET + 40) snapTo(SNAP_OFFSET);
         else snapTo(0);
+      } else if (currentY > MINIMIZED_OFFSET + 40) {
+          dismiss(true);
+      } else if (currentY > (SNAP_OFFSET + MINIMIZED_OFFSET) / 2) {
+          minimize();
+      } else if (currentY > SNAP_OFFSET / 2) {
+          snapTo(SNAP_OFFSET);
       } else {
-        if (currentY > MINIMIZED_OFFSET + 40) dismiss(true);
-        else if (currentY > (SNAP_OFFSET + MINIMIZED_OFFSET) / 2) minimize();
-        else if (currentY > SNAP_OFFSET / 2) snapTo(SNAP_OFFSET);
-        else snapTo(0);
+          snapTo(0);
       }
     };
 
