@@ -4,18 +4,32 @@ import { IndoorHotspot, IndoorDestination } from "@/src/indoors/types/hotspot";
 
 function getRoomLabelFontSize(label: string): number {
   const room = label.replace("Room ", "");
+  if (room === "106.1") {
+    return 7;//VL-1
+  }
+  if (room === "202.30") {
+    return 5.5; // VL-2
+  }
+  if (room === "203.30") {
+    return 4; // VL-2
+  }
+  if (["101.07", "101.06", "101.03", "101.04"].includes(room)) {
+    return 6;//VL-1
+  }
   if (["927.01", "927.02", "927.03"].includes(room)) {
-    return 6;
+    return 6;//HALL-9
   }
   if (["925.01", "925.02", "925.03"].includes(room)) {
-    return 5.5;
+    return 5.5;//HALL- 9
   }
+  if (room === "122.1") {
+    return 8; // VL-1 
+  }
+  if (room === "102.3") {
+    return 7; // VL-1 
+  } 
   if (room === "928" || room === "932") {
-    return 7;
-  }
-  //floor 8 rooms
-  if (room === "805.01" || room === "805.02") {
-    return 7;
+    return 7;//HALL-9
   }
   if (room === "832.06") {
     return 10;
@@ -30,25 +44,71 @@ function getRoomLabelFontSize(label: string): number {
     return 8;
   }
   //floor 9 rooms
-        if (/^961\.(1[9]|2[0-9]|3[0-3])$/.test(room)) {
-          return 2;
+  if (/^961\.(1[9]|2[0-9]|3[0-3])$/.test(room)) {
+    return 2;
   }
   return 8;
-  
 }
 //rooms positions 
 function getRoomLabelOffsetX(label: string): number {
   const room = label.replace("Room ", "");
+  if (room === "202.30") {
+    return 2; // VL-2, 
+  }
+  if (room === "203.30") {
+    return 6; // VL-2
+  }
+  if (room === "204") {
+    return 6; // VL-2
+  }
+  if (room === "240") {
+    return 4; // VL-2
+  }
+  if (room === "197.1") {
+    return 4;//VL-1
+  }
+  if (room === "120") {
+    return 6;//VL-1
+  }
+  if (room === "140") {
+    return 10; //VL-1
+  }
+  if (["101.07", "101.06", "101.03", "101.04"].includes(room)) {
+    return 4;//VL-1
+  }
   if (["927.01", "927.02", "927.03"].includes(room)) {
-    return 8;
+    return 8;//HALL-9
   }
   if (["925.01", "925.03"].includes(room)) {
-    return 10;
+    return 10;//HALL -9
   }
-    if (room === "928" || room === "932") {
-      return room === "928" ? -20 : 10;
-    }
+   if (room === "928") {
+    return 10; 
+  }
+  if (room === "931") {
+    return 10; 
+  }
+  
+  if (room === "124") {
+    return 10; //VL-1 
+  }
+  if (room === "122.1") {
+    return 5; // VL-1 
+  }
+  if (room === "102") {
+    return 5; // VL-1 
+  }
+  if (room === "102.2") {
+    return 4; // VL-1 
+  }
+  if (room === "102.3") {
+    return 2; // VL-1 
+  }
   //floor 9 rooms positions
+  if (room === "928" || room === "932") {
+    return room === "928" ? -20 : 10;
+  }
+
   if (room === "931") {
     return -10;
   }
@@ -66,14 +126,14 @@ function getRoomLabelOffsetX(label: string): number {
   }
   return 0;
 }
-
+//Floor 8 positions
 function getRoomLabelOffsetY(label: string): number {
   const room = label.replace("Room ", "");
   if (room === "865") {
     return -3;
   }
   if (room === "931") {
-    return 10;
+    return 10;//HALL  -9
   }
   return 0;
 }
