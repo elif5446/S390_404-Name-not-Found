@@ -4,7 +4,7 @@ import { Graph } from "./Graph";
 
 //this class is the A* implementation for finding the shortest path.
 export class PathFinder {
-  private graph: Graph;
+  private readonly graph: Graph;
 
   constructor(graph: Graph) {
     this.graph = graph;

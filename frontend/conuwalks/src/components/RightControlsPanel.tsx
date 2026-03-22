@@ -43,7 +43,6 @@ const RightControlsPanel: React.FC<Props> = ({
   const buttonSize = 50;
   const buttonSpacing = 12;
   const userIconSize = 50;
-  const containerPadding = 8;
 
   return (
     <>

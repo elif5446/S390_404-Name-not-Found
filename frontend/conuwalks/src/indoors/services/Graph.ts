@@ -3,8 +3,8 @@ import { Node, Edge, WeightedEdge } from "../types/Navigation";
 //This class will create the whole indoor mapping system for
 // a selected building. This graph will then be passed to pathfinder to get the shortest path
 export class Graph {
-  private nodes: Map<string, Node>; //key is nodeId
-  private edges: Map<string, WeightedEdge[]>; //key is nodeId and value is the list of edges its connected to
+  private readonly nodes: Map<string, Node>; //key is nodeId
+  private readonly edges: Map<string, WeightedEdge[]>; //key is nodeId and value is the list of edges its connected to
 
   //navigation between floors uses a predefined cost (in terms of pixel distance). Can be changed but for now we favour escalators over stairs,
   //stairs over elevator (if you add accessiblity as true in pathFinder you will see that elevator path will be taken)

@@ -17,7 +17,7 @@ export interface CalendarEvent {
 }
 
 export class GoogleCalendarApi {
-  private accessToken: string;
+  private readonly accessToken: string;
 
   constructor(accessToken: string) {
     this.accessToken = accessToken;
@@ -171,7 +171,7 @@ export class GoogleCalendarApi {
   }
 
   // Create a new event
-  async createEvent(calendarId: string = 'primary', event: Partial<CalendarEvent>) {
+  async createEvent(event: Partial<CalendarEvent>, calendarId: string = 'primary') {
     return this.fetchApi(`/calendars/${encodeURIComponent(calendarId)}/events`, {
       method: 'POST',
       body: JSON.stringify(event),
@@ -194,7 +194,7 @@ export class GoogleCalendarApi {
   }
 
   // Get events for a specific date range
-  async getEventsInRange(calendarId: string = 'primary', timeMin: Date, timeMax: Date) {
+  async getEventsInRange(timeMin: Date, timeMax: Date, calendarId: string = 'primary') {
     console.log(`Fetching events from ${timeMin.toISOString()} to ${timeMax.toISOString()}`);
 
     try {

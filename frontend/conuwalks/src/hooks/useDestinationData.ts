@@ -67,7 +67,7 @@ export const useDestinationData = (
 
   useEffect(() => {
     const activeRoute = routes[selectedRouteIndex] || routeData;
-    if (!activeRoute || !activeRoute.requestMode) return;
+    if (!activeRoute?.requestMode) return;
 
     const normalizedDuration = normalizeDurationLabel(activeRoute.duration);
     setModeDurationCache((prev) => {
@@ -141,9 +141,8 @@ export const useDestinationData = (
 
       const activeRoute = routeData || routes[selectedRouteIndex];
       if (
-        activeRoute &&
-        activeRoute.requestMode === modeKey &&
-        activeRoute.duration
+        activeRoute?.requestMode === modeKey &&
+          activeRoute.duration
       ) {
         return normalizeDurationLabel(activeRoute.duration);
       }

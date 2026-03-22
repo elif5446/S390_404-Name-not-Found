@@ -13,7 +13,7 @@ export default function LoginScreen() {
   const [isNavigating, setIsNavigating] = useState(false);
   const isMounted = useRef(true);
   const navigationLock = useRef(false);
-  const hasNavigated = useRef(false);
+ // const hasNavigated = useRef(false);
 
   useEffect(() => {
     console.log("LoginScreen MOUNTED");

@@ -328,8 +328,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
         const feature = sourceGeo.features.find(
           (item) => (item as GeoJsonFeature).properties.id === buildingId,
         ) as GeoJsonFeature | undefined;
-
-        if (feature && feature.geometry.type === "Polygon") {
+        // optional chaining for more concise check
+        if (feature?.geometry.type === "Polygon") {
           coordinates = calculatePolygonCenter(feature.geometry.coordinates[0]);
         } else {
           return;
@@ -514,9 +514,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
     }
   }, [showDirections, isNavigationActive]);
 
-  const recenterButtonTop =
-    insets.top +
-    (isNavigationActive && routeData ? 118 : 84 + searchPanelHeight);
   const isSheetVisibleForAccessibility =
     (selectedBuilding.visible && !showDirections) || showDirections;
 
@@ -551,14 +548,22 @@ const CampusMap: React.FC<CampusMapProps> = ({
         const normalizedVehicle = (
           step.transitVehicleType || "Transit"
         ).toLowerCase();
-        const vehicleLabel =
-          normalizedVehicle.includes("subway") ||
-          normalizedVehicle.includes("metro")
-            ? "Metro"
-            : normalizedVehicle.includes("bus") ||
-                normalizedVehicle.includes("shuttle")
-              ? "Bus"
-              : "Transit";
+
+        // defining logic independently
+        const getVehicleLabel = (vehicle) => {
+          const v = vehicle.toLowerCase();
+
+          if (v.includes("subway") || v.includes("metro")) {
+            return "Metro";
+          }
+
+          if (v.includes("bus") || v.includes("shuttle")) {
+            return "Bus";
+          }
+
+          return "Transit";
+        };
+        const vehicleLabel = getVehicleLabel(normalizedVehicle);
         const markerIcon: "directions-bus" | "subway" =
           vehicleLabel === "Metro" ? "subway" : "directions-bus";
 

@@ -259,7 +259,7 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
           let showShuttle = true;
           const bestPublicRoute = fetchedRoutes[0];
 
-          if (bestPublicRoute && bestPublicRoute.duration) {
+          if (bestPublicRoute?.duration) {
             // parse public transit duration
             const durStr = bestPublicRoute.duration;
             const hMatch = /(\d{1,5})\s{0,5}h/.exec(durStr);

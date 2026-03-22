@@ -485,7 +485,7 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
                     >
                       {startText}
                     </Text>
-                    {suggestion.buildingName && !suggestion.roomNumber && (
+                    {!!(suggestion.buildingName && !suggestion.roomNumber) && (
                       <TouchableOpacity
                         style={styles.suggestionIconButton}
                         onPress={() => setStartPointText(startText)}
@@ -529,7 +529,7 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
                       accessibilityHint="Tap to select and enter this location"
                     >
                       <Text style={styles.listSuggestionText}>{destText}</Text>
-                      {suggestion.buildingName && !suggestion.roomNumber && (
+                      {!!(suggestion.buildingName && !suggestion.roomNumber) && (
                         <TouchableOpacity
                           style={styles.suggestionIconButton}
                           onPress={() => setDestinationText(destText)}
