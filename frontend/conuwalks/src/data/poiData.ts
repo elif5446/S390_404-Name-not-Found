@@ -20,6 +20,8 @@ const mapPositionFromNode = (
     x: Number((node.x / NODE_COORD_MAX).toFixed(3)),
     y: Number((node.y / NODE_COORD_MAX).toFixed(3)),
   };
+
+
 };
 //9th floor nodes 
 const hallFloor9RoomPOIs: POI[] =
@@ -46,6 +48,145 @@ const hallFloor9RoomPOIs: POI[] =
 
 
 const POI_DATA: Record<string, POI[]> = {
+            // VL Building – Floor 2
+            "VL-2": [
+              // Bathrooms
+              {
+                id: "VL-2-wc-f-1",
+                label: "WC F",
+                category: "WC_F" as POICategory,
+                description: "Womens Washroom",
+                room: "B1",
+                floor: 2,
+                mapPosition: { x: 0.654, y: 0.214 }, // 670/1024, 219/1024
+              },
+              {
+                id: "VL-2-wc-m-1",
+                label: "WC M",
+                category: "WC_M" as POICategory,
+                description: "Mens Washroom",
+                room: "B2",
+                floor: 2,
+                mapPosition: { x: 0.654, y: 0.293 }, // 670/1024, 300/1024
+              },
+              // Stairs
+              {
+                id: "VL-2-stairs-1",
+                label: "Stairs",
+                category: "STAIRS" as POICategory,
+                description: "Stairs",
+                room: "S1",
+                floor: 2,
+                mapPosition: { x: 0.749, y: 0.770 }, // 767/1024, 789/1024
+              },
+              {
+                id: "VL-2-stairs-2",
+                label: "Stairs",
+                category: "STAIRS" as POICategory,
+                description: "Stairs",
+                room: "S2",
+                floor: 2,
+                mapPosition: { x: 0.213, y: 0.389 }, // 218/1024, 398/1024
+              },
+              {
+                id: "VL-2-stairs-3",
+                label: "Stairs",
+                category: "STAIRS" as POICategory,
+                description: "Stairs",
+                room: "S3",
+                floor: 2,
+                mapPosition: { x: 0.548, y: 0.251 }, // 561/1024, 257/1024
+              },
+              // Elevator
+              {
+                id: "VL-2-elevator-1",
+                label: "Elevator",
+                category: "ELEVATOR" as POICategory,
+                description: "Elevator",
+                room: "E1",
+                floor: 2,
+                mapPosition: { x: 0.220, y: 0.517 }, // 225/1024, 530/1024
+              },
+            ],
+          // VL Building – Floor 1
+          "VL-1": [
+            // Bathrooms
+            {
+              id: "VL-1-wc-f-1",
+              label: "WC F",
+              category: "WC_F" as POICategory,
+              description: "Womens Washroom",
+              room: "B1",
+              floor: 1,
+              mapPosition: { x: 0.728, y: 0.215 }, // 746/1024, 220/1024
+            },
+            {
+              id: "VL-1-wc-f-2",
+              label: "WC F",
+              category: "WC_F" as POICategory,
+              description: "Womens Washroom",
+              room: "B2",
+              floor: 1,
+              mapPosition: { x: 0.655, y: 0.294 }, // 671/1024, 301/1024
+            },
+            {
+              id: "VL-1-wc-m-1",
+              label: "WC M",
+              category: "WC_M" as POICategory,
+              description: "Mens Washroom",
+              room: "B3",
+              floor: 1,
+              mapPosition: { x: 0.655, y: 0.215 }, // 671/1024, 220/1024
+            },
+            {
+              id: "VL-1-wc-m-2",
+              label: "WC M",
+              category: "WC_M" as POICategory,
+              description: "Mens Washroom",
+              room: "B4",
+              floor: 1,
+              mapPosition: { x: 0.728, y: 0.294 }, // 746/1024, 301/1024
+            },
+            // Stairs
+            {
+              id: "VL-1-stairs-1",
+              label: "Stairs",
+              category: "STAIRS" as POICategory,
+              description: "Stairs",
+              room: "S1",
+              floor: 1,
+              mapPosition: { x: 0.801, y: 0.578 }, // 820/1024, 592/1024
+            },
+            {
+              id: "VL-1-stairs-2",
+              label: "Stairs",
+              category: "STAIRS" as POICategory,
+              description: "Stairs",
+              room: "S2",
+              floor: 1,
+              mapPosition: { x: 0.218, y: 0.458 }, // 223/1024, 469/1024
+            },
+            {
+              id: "VL-1-stairs-3",
+              label: "Stairs",
+              category: "STAIRS" as POICategory,
+              description: "Stairs",
+              room: "S3",
+              floor: 1,
+              mapPosition: { x: 0.552, y: 0.251 }, // 565/1024, 257/1024
+            },
+            // Elevator
+            {
+              id: "VL-1-elevator-1",
+              label: "Elevator",
+              category: "ELEVATOR" as POICategory,
+              description: "Elevator",
+              room: "E1",
+              floor: 1,
+              mapPosition: { x: 0.220, y: 0.510 }, // 225/1024, 522/1024
+            },
+          ],
+
         // Hall Building – Floor 2
         "H-2": [
           // Hive Cafe
@@ -145,6 +286,7 @@ const POI_DATA: Record<string, POI[]> = {
             mapPosition: mapPositionFromNode("H_2_ELEVATOR_2", { x: 0.692, y: 0.792 }),
           },
         ],
+
     // Hall Building – Floor 1
     "H-1": [
       // Shared Bathroom (Neutral Washroom)
@@ -253,10 +395,8 @@ const POI_DATA: Record<string, POI[]> = {
         mapPosition: mapPositionFromNode("H_1_ESCALATOR_UP_TO_FLOOR_2", { x: 0.808, y: 0.604 }),
       },
     ],
-  // Hall Building – Floor 8
-  // From bottom floor plan image: 807, 809, 811, 813, 815, 817, 819 (top row)
-  // Right column: 821, 823, 825, 827, 829
-  // Left side: 801, 803, 805
+
+  
   "H-8": [
     //  Top-row labs 
     {

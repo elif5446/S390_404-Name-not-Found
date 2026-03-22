@@ -10,6 +10,26 @@ type IconOffset = { x: number; y: number };
 
 // Fine-tune icon placement by room number
 export const ICON_POSITION_OVERRIDES: Record<string, IconOffset> = {
+  // VL-2 icon positions
+                "VL-2-wc-m-1": { x: 0, y: 78 }, 
+                "VL-2-wc-f-1": { x: 5, y: 105 },
+  
+                  "VL-2-elevator-1": { x: 5, y: 1 }, 
+                  "VL-2-stairs-1": { x: 6, y: -90 },
+                   "VL-2-stairs-2": { x: 6, y: 80 },
+                   "VL-2-stairs-3": { x: 8, y: 85 },
+                // VL-1 icon positions
+                // Bathrooms
+                "VL-1-wc-f-1": { x: 5, y: 110},
+                "VL-1-wc-f-2": { x: -1, y: 44},
+                "VL-1-wc-m-1": { x: 0, y: 140 },
+                "VL-1-wc-m-2": { x: 5, y: 75},
+                // Stairs
+                "VL-1-stairs-1": { x: 5, y: -25 },
+                "VL-1-stairs-2": { x: 4, y: 25 },
+                "VL-1-stairs-3": { x: 6, y: 90 },
+                // Elevator
+                "VL-1-elevator-1": { x: 7, y: 17 },
               
   // Hall Floor 9  icon positions
   "9-S1": { x: -15, y: -15 },
@@ -58,8 +78,8 @@ export const ICON_POSITION_OVERRIDES: Record<string, IconOffset> = {
   "917": { x: 6, y: -8 },
   "921": { x: 6, y: -4},
   "929": { x: 10, y:-6},
-  "928": { x: -10 , y: -6 },
-  "931": { x: -6, y: -2 },
+  "928": { x: 1, y: -6 }, 
+  "931": { x: 2, y: -2 },
   "933": { x: 8, y: -5},
 
 
@@ -92,7 +112,7 @@ export const ICON_POSITION_OVERRIDES: Record<string, IconOffset> = {
   // Floor 9 bathrooms, printer, IT help desk
   "B1": { x: 0, y: 2}, // Girls bathroom
   "B2": { x: 5, y: 1 }, // Boys bathroom
-  "PR1": { x: -80, y: 20}, // Printer
+  "PR1": { x: -10, y: 10}, // Printer
   "IT": { x: 13, y: -5 }, // IT Help Desk
 
 
@@ -286,14 +306,12 @@ const POIBadge: React.FC<Props> = ({
   const labShiftUp = poi.category === "LAB" && !hasManualLabOffset ? -10 : 0;
   const transportShiftLeft = isVerticalTransport ? -12 : 0;
   const transportShiftUp = isVerticalTransport ? -12 : 0;
-  // Use floor-room key for stairs/elevator, fallback to room for others
-  let manualRoomOffset: IconOffset = { x: 0, y: 0 };
-  if (isVerticalTransport && poi.floor) {
-    const floorRoomKey = `${poi.floor}-${poi.room}`;
-    manualRoomOffset = ICON_POSITION_OVERRIDES[floorRoomKey] ?? ICON_POSITION_OVERRIDES[poi.room] ?? { x: 0, y: 0 };
-  } else {
-    manualRoomOffset = ICON_POSITION_OVERRIDES[poi.room] ?? { x: 0, y: 0 };
-  }
+  // Always prefer POI id as unique key for icon offset, then floor-room, then room
+  let manualRoomOffset: IconOffset =
+    ICON_POSITION_OVERRIDES[poi.id] ??
+    (poi.floor ? ICON_POSITION_OVERRIDES[`${poi.floor}-${poi.room}`] : undefined) ??
+    ICON_POSITION_OVERRIDES[poi.room] ??
+    { x: 0, y: 0 };
   const markerZIndex = poi.category === "ELEVATOR" ? 40 : poi.category === "STAIRS" ? 30 : 10;
   const markerHitSlop = isVerticalTransport
     ? { top: 14, bottom: 14, left: 14, right: 14 }
