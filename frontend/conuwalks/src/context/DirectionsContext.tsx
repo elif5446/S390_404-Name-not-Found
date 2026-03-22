@@ -236,7 +236,7 @@ export const DirectionsProvider: React.FC<DirectionsProviderProps> = ({
   }, []);
 
   const setError = useCallback((error: string | null) => {
-    _setErrorState(error);
+    _setError(error);
   }, []);
 
   const resetDirections = useCallback(() => {
