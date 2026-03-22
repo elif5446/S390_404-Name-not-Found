@@ -202,28 +202,6 @@ const IndoorMapOverlay: React.FC<Props> = ({
         })),
     );
 
-    if (buildingData.id === "H") {
-      const hasRoom836 = roomHotspots.some(
-        (spot) =>
-          spot.floorLevel === 8 &&
-          spot.label.replace("Room ", "") === "836",
-      );
-
-      if (!hasRoom836) {
-        const room836Poi = getPOIsForFloor("H", 8).find(
-          (poi) => poi.room === "836",
-        );
-        if (room836Poi) {
-          roomHotspots.push({
-            id: "H_836",
-            x: Math.round(room836Poi.mapPosition.x * 1024),
-            y: Math.round(room836Poi.mapPosition.y * 1024),
-            floorLevel: 8,
-            label: "Room 836",
-          });
-        }
-      }
-    }
 
     return roomHotspots;
   }, [buildingData.id]);
