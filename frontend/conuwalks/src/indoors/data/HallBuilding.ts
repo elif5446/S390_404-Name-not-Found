@@ -328,6 +328,7 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
 
         {id: "H_9_ESCALATOR_DOWN_TO_FLOOR_8", floorId: "H_9", x: 480, y: 444, type: "escalator", label: "Escalator Down to Floor 8"},
         {id: "H_9_ESCALATOR_UP_TO_FLOOR_10", floorId: "H_9", x: 515, y: 444, type: "escalator", label: "Escalator Up to Floor 10"}, 
+        {id: "H_9_ESCALATOR_UP_TO_FLOOR_9", floorId: "H_9", x: 480, y: 627, type: "escalator", label: "Escalator Up to Floor 9"}, 
       ],
       edges: [
         //hall to hall
@@ -372,6 +373,7 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
 
         //hall to class 
         {nodeAId: "H_9_N1", nodeBId: "H_964", accessible: true},
+        {nodeAId: "H_9_N1", nodeBId: "H_962", accessible: true},
 
         {nodeAId: "H_9_N2", nodeBId: "H_915", accessible: true},
         {nodeAId: "H_9_N2", nodeBId: "H_917", accessible: true},
@@ -468,6 +470,7 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
 
         {nodeAId: "H_9_ESCALATOR_DOWN_TO_FLOOR_8", nodeBId: "H_9_N25" , accessible: false},
         {nodeAId: "H_9_ESCALATOR_UP_TO_FLOOR_10", nodeBId: "H_9_N25" , accessible: false},
+        {nodeAId: "H_9_ESCALATOR_UP_TO_FLOOR_9", nodeBId: "H_9_N32" , accessible: false},
       ]
     },
     {
@@ -629,7 +632,7 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
     {nodeAId: "H_8_STAIRS_4", nodeBId: "H_9_STAIRS_4", accessible: false},
     
     {nodeAId: "H_9_ESCALATOR_DOWN_TO_FLOOR_8", nodeBId: "H_8_ESCALATOR_DOWN_TO_FLOOR_2", accessible: false},
-    {nodeAId: "H_8_ESCALATOR_UP_TO_FLOOR_9", nodeBId: "H_9_ESCALATOR_UP_TO_FLOOR_10", accessible: false},
+    {nodeAId: "H_8_ESCALATOR_UP_TO_FLOOR_9", nodeBId: "H_9_ESCALATOR_UP_TO_FLOOR_9", accessible: false},
 
     // edges that connect floors for H2 and H8
     {nodeAId: "H_2_ESCALATOR_UP_TO_FLOOR_8", nodeBId: "H_8_ESCALATOR_UP_TO_FLOOR_9", accessible: false},
