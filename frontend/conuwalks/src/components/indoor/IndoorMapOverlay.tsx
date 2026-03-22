@@ -55,11 +55,6 @@ type RouteStep = {
   text: string;
 };
 
-function getEstimatedWalkMinutes(distance: number) {
-  const pixelsPerMinute = 300;
-  return Math.max(1, Math.round(distance / pixelsPerMinute));
-}
-
 function getDirectionVector(
   from: { x: number; y: number },
   to: { x: number; y: number },
@@ -76,14 +71,48 @@ function getReadableDestinationLabel(node: { label?: string; id: string }) {
   return `Room ${cleaned}`;
 }
 
-function getInitialCorridorInstruction(vec: { dx: number; dy: number }) {
-  if (Math.abs(vec.dx) >= Math.abs(vec.dy)) {
-    return vec.dx > 0
-      ? "Exit the room and turn right into the corridor"
-      : "Exit the room and turn left into the corridor";
+function getFloorNumber(floorId: string) {
+  const parts = floorId.split("_");
+  return parts[parts.length - 1];
+}
+
+function getFloorTransitionInstruction(
+  fromNode: { type?: string; floorId: string },
+  toNode: { type?: string; floorId: string },
+) {
+  const fromFloor = Number(getFloorNumber(fromNode.floorId));
+  const toFloor = Number(getFloorNumber(toNode.floorId));
+
+  const direction =
+    !isNaN(fromFloor) && !isNaN(toFloor)
+      ? toFloor > fromFloor
+        ? "up"
+        : "down"
+      : "";
+
+  if (fromNode.type === "elevator" || toNode.type === "elevator") {
+    return `Take the elevator${direction ? ` ${direction}` : ""} to Floor ${toFloor}`;
   }
 
-  return "Exit the room and continue into the corridor";
+  if (fromNode.type === "escalator" || toNode.type === "escalator") {
+    return `Take the escalator${direction ? ` ${direction}` : ""} to Floor ${toFloor}`;
+  }
+
+  if (fromNode.type === "stairs" || toNode.type === "stairs") {
+    return `Take the stairs${direction ? ` ${direction}` : ""} to Floor ${toFloor}`;
+  }
+
+  return `Go to Floor ${toFloor}`;
+}
+
+function getInitialHallwayInstruction(vec: { dx: number; dy: number }) {
+  if (Math.abs(vec.dx) >= Math.abs(vec.dy)) {
+    return vec.dx > 0
+      ? "Exit the room and turn right into the hallway"
+      : "Exit the room and turn left into the hallway";
+  }
+
+  return "Exit the room and continue into the hallway";
 }
 
 function getTurnInstruction(
@@ -93,84 +122,87 @@ function getTurnInstruction(
   const cross = prev.dx * next.dy - prev.dy * next.dx;
   const dot = prev.dx * next.dx + prev.dy * next.dy;
 
-  // If nearly straight, don't force left/right
-  if (Math.abs(cross) < 20 || dot > 0) {
+  if (Math.abs(cross) < 40 || dot > 0) {
     return "straight";
   }
-
-  // Screen coordinates: y grows downward, so left/right is flipped
   return cross > 0 ? "right" : "left";
 }
 
 function generateRouteSteps(
-  nodes: { id: string; x: number; y: number; label?: string }[],
+  nodes: {
+    id: string;
+    x: number;
+    y: number;
+    label?: string;
+    type?: string;
+    floorId: string;
+  }[],
 ): RouteStep[] {
   if (!nodes || nodes.length < 2) return [];
 
   const steps: RouteStep[] = [];
+
   const firstVec = getDirectionVector(nodes[0], nodes[1]);
 
-  if (nodes.length === 2) {
-    steps.push({
-      id: `${nodes[0].id}-${nodes[1].id}-start`,
-      text: getInitialCorridorInstruction(firstVec),
-    });
-    steps.push({
-      id: `${nodes[1].id}-arrive`,
-      text: `Arrive at ${getReadableDestinationLabel(nodes[1])}`,
-    });
-    return steps;
-  }
-
-  // First step
+  // STEP 1: leaving room
   steps.push({
-    id: `${nodes[0].id}-${nodes[1].id}-start`,
-    text: getInitialCorridorInstruction(firstVec),
+    id: "start",
+    text: getInitialHallwayInstruction(firstVec),
   });
 
-  // Middle steps
-  for (let i = 1; i < nodes.length - 1; i++) {
-    const prevVec = getDirectionVector(nodes[i - 1], nodes[i]);
-    const nextVec = getDirectionVector(nodes[i], nodes[i + 1]);
+  for (let i = 1; i < nodes.length; i++) {
+    const prev = nodes[i - 1];
+    const curr = nodes[i];
 
-    const moveLength = Math.sqrt(nextVec.dx * nextVec.dx + nextVec.dy * nextVec.dy);
-    if (moveLength < 5) continue;
-
-    const turn = getTurnInstruction(prevVec, nextVec);
-
-    if (turn === "left") {
+    // 🟣 FLOOR CHANGE STEP
+    if (prev.floorId !== curr.floorId) {
       steps.push({
-        id: `${nodes[i].id}-left`,
-        text: "Turn left at the corridor",
+        id: `${prev.id}-${curr.id}-floor`,
+        text: getFloorTransitionInstruction(prev, curr),
       });
-    } else if (turn === "right") {
-      steps.push({
-        id: `${nodes[i].id}-right`,
-        text: "Turn right at the corridor",
-      });
-    } else {
-      // Only occasionally add a straight step
-      if (i === 1 || i === nodes.length - 2) {
+      continue;
+    }
+
+    if (i < nodes.length - 1) {
+      const next = nodes[i + 1];
+
+      if (curr.floorId !== next.floorId) continue;
+
+      const prevVec = getDirectionVector(prev, curr);
+      const nextVec = getDirectionVector(curr, next);
+
+      const turn = getTurnInstruction(prevVec, nextVec);
+
+      if (turn === "left") {
         steps.push({
-          id: `${nodes[i].id}-straight`,
-          text: "Continue along the corridor",
+          id: `${curr.id}-left`,
+          text: "Turn left at the hallway",
         });
+      } else if (turn === "right") {
+        steps.push({
+          id: `${curr.id}-right`,
+          text: "Turn right at the hallway",
+        });
+      } else {
+        // Only show straight when meaningful
+        if (i === 1 || i === nodes.length - 2) {
+          steps.push({
+            id: `${curr.id}-straight`,
+            text: "Continue along the hallway",
+          });
+        }
       }
     }
   }
 
-  // Final arrival always includes room number
+  // FINAL STEP
   const lastNode = nodes[nodes.length - 1];
   steps.push({
-    id: `${lastNode.id}-arrive`,
+    id: "end",
     text: `Arrive at ${getReadableDestinationLabel(lastNode)}`,
   });
 
-  // Remove consecutive duplicates
-  return steps.filter((step, index, arr) => {
-    if (index === 0) return true;
-    return step.text !== arr[index - 1].text;
-  });
+  return steps;
 }
 function calculateGeographicHeight(
   bounds:
@@ -521,10 +553,7 @@ const IndoorMapOverlay: React.FC<Props> = ({
     return generateRouteSteps(route.nodes);
   }, [route]);
 
-  const estimatedMinutes = useMemo(() => {
-    if (!route) return 0;
-    return getEstimatedWalkMinutes(route.totalDistance);
-  }, [route]);
+
 
   useEffect(() => {
     setActiveCategories(
@@ -957,25 +986,6 @@ const IndoorMapOverlay: React.FC<Props> = ({
                 }}
               >
                 Follow these steps to reach your destination
-              </Text>
-            </View>
-
-            <View
-              style={{
-                backgroundColor: "#C2185B",
-                paddingHorizontal: 10,
-                paddingVertical: 5,
-                borderRadius: 12,
-              }}
-            >
-              <Text
-                style={{
-                  color: "#FFFFFF",
-                  fontWeight: "700",
-                  fontSize: 12,
-                }}
-              >
-                {estimatedMinutes} min
               </Text>
             </View>
           </View>
