@@ -53,41 +53,46 @@ export class PathFinder {
       openSet.delete(currentId);
       closedSet.add(currentId);
 
-      // explore neighbors
-      const neighbors = this.graph.getNeighbors(currentId);
-
-      for (const neighbor of neighbors) {
-        // skip already explored nodes
-        if (closedSet.has(neighbor.id)) continue;
-
-        const edge = this.graph.getEdge(currentId, neighbor.id);
-        if (!edge) continue;
-        if (accessibleOnly && !edge.accessible) continue;
-
-        // calculate the cost to reach this neighbor through current node
-        if (edge.weight === undefined) {
-          throw new Error(
-            `Edge between ${currentId} and ${neighbor.id} has no weight`,
-          );
-        }
-        const tentativeGScore =
-          (gScore.get(currentId) ?? Infinity) + edge.weight;
-
-        if (tentativeGScore < (gScore.get(neighbor.id) ?? Infinity)) {
-          // this is a better path to this neighbor so update
-          cameFrom.set(neighbor.id, currentId);
-          gScore.set(neighbor.id, tentativeGScore);
-          fScore.set(
-            neighbor.id,
-            tentativeGScore + this.heuristic(neighbor, endNode),
-          );
-          openSet.add(neighbor.id);
-        }
-      }
+      // extracted logic
+      this.processNeighbors(currentId, endNode, accessibleOnly, openSet, closedSet, gScore, fScore, cameFrom);
     }
     throw new Error(
       `PathFinder: no path found between ${startNodeId} and ${endNodeId}`,
     );
+  }
+
+// new private helper to handle the inner loop complexity
+  private processNeighbors(
+    currentId: string,
+    endNode: Node,
+    accessibleOnly: boolean,
+    openSet: Set<string>,
+    closedSet: Set<string>,
+    gScore: Map<string, number>,
+    fScore: Map<string, number>,
+    cameFrom: Map<string, string>
+  ): void {
+    const neighbors = this.graph.getNeighbors(currentId);
+
+    for (const neighbor of neighbors) {
+      if (closedSet.has(neighbor.id)) continue;
+
+      const edge = this.graph.getEdge(currentId, neighbor.id);
+      if (!edge || (accessibleOnly && !edge.accessible)) continue;
+
+      if (edge.weight === undefined) {
+        throw new Error(`Edge between ${currentId} and ${neighbor.id} has no weight`);
+      }
+
+      const tentativeGScore = (gScore.get(currentId) ?? Infinity) + edge.weight;
+
+      if (tentativeGScore < (gScore.get(neighbor.id) ?? Infinity)) {
+        cameFrom.set(neighbor.id, currentId);
+        gScore.set(neighbor.id, tentativeGScore);
+        fScore.set(neighbor.id, tentativeGScore + this.heuristic(neighbor, endNode));
+        openSet.add(neighbor.id);
+      }
+    }
   }
 
   // straight line distance between two nodes (estimates how far we are from the goal)
