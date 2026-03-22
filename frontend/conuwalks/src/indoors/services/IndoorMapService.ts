@@ -4,6 +4,7 @@ import { Graph } from "./Graph";
 import { PathFinder } from "./PathFinder";
 import { getWheelchairAccessibilityPreference } from "@/src/utils/tokenStorage";
 import { IndoorLocationTracker } from "./IndoorLocationTracker";
+import { generateRouteSteps , RouteStep} from "@/src/indoors/services/RouteInstructionService";
 
 export class IndoorMapService {
   private graph: Graph;
@@ -186,5 +187,10 @@ export class IndoorMapService {
       }
     }
     return changes;
+  }
+  getRouteInstructions (route: Route) : {steps: RouteStep[]} {
+    return {
+      steps: generateRouteSteps(route.nodes)
+    };
   }
 }
