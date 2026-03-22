@@ -1398,7 +1398,7 @@ const handleCloseBuildingSearch = () => {
         padding: 16
       }}
     >
-      <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8 }}>
+      <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8, color: "#fff" }}>
         Search Building
       </Text>
       <TextInput
