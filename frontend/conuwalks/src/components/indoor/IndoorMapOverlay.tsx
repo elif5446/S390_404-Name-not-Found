@@ -199,25 +199,29 @@ useEffect(() => {
     () => new Set(categoriesForFloor),
   );
 
-  const hotspots = useMemo<IndoorHotspot[]>(() => {
-    const navConfig = navConfigRegistry[buildingData.id];
-    if (!navConfig) return [];
+const hotspots = useMemo<IndoorHotspot[]>(() => {
+  const navConfig = navConfigRegistry[buildingData.id];
+  if (!navConfig) return [];
 
-    const roomHotspots = navConfig.floors.flatMap((floor) =>
-      floor.nodes
-        .filter((node) => node.type === "room")
-        .map((node) => ({
-          id: node.id,
-          x: node.x,
-          y: node.y,
-          floorLevel: parseInt(node.floorId.split("_")[1], 10),
-          label: node.label ?? node.id,
-        })),
-    );
+  // Build a lookup map: floorId → level (e.g. "MB_S2" → 1, "MB_1" → 2)
+  const floorLevelByFloorId = Object.fromEntries(
+    buildingData.floors.map((f) => [f.id, f.level])
+  );
 
+  const roomHotspots = navConfig.floors.flatMap((floor) =>
+    floor.nodes
+      .filter((node) => node.type === "room")
+      .map((node) => ({
+        id: node.id,
+        x: node.x,
+        y: node.y,
+        floorLevel: floorLevelByFloorId[floor.floorId] ?? 1,
+        label: node.label ?? node.id,
+      })),
+  );
 
-    return roomHotspots;
-  }, [buildingData.id]);
+  return roomHotspots;
+}, [buildingData.id, buildingData.floors]);
 
   const [baseStartNode, setBaseStartNode] = useState<Node | null>(null);
 
