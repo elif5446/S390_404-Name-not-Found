@@ -333,7 +333,7 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
         {id: "H_9_STAIRS_4", floorId: "H_9", x: 714, y: 291, type: "stairs", label: "Stairwell"},
         {id: "H_9_PRINTER", floorId: "H_9", x: 900, y: 500, type: "room", label: ""},
 
-        {id: "H_9_ELEVATOR", floorId: "H_9", x: 358, y: 356, type: "elevator", label: "Elevator"},
+        {id: "H_9_ELEVATOR", floorId: "H_9", x: 358, y: 387, type: "elevator", label: "Elevator"},
 
         {id: "H_9_ESCALATOR_DOWN_TO_FLOOR_8", floorId: "H_9", x: 480, y: 444, type: "escalator", label: "Escalator Down to Floor 8"},
         {id: "H_9_ESCALATOR_UP_TO_FLOOR_10", floorId: "H_9", x: 515, y: 444, type: "escalator", label: "Escalator Up to Floor 10"}, 
