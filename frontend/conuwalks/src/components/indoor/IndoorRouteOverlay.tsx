@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View } from "react-native";
 import Svg, { Polyline, Circle } from "react-native-svg";
 import { Node } from "@/src/indoors/types/Navigation";
@@ -30,13 +30,15 @@ const IndoorRouteOverlay: React.FC<Props> = ({
 
   if (nodesForCurrentFloor.length < 2) return null;
 
-  const points = nodesForCurrentFloor
-    .map((node) => {
-      const x = offsetX + node.x * scale;
-      const y = offsetY + node.y * scale;
-      return `${x},${y}`;
-    })
-    .join(" ");
+  const points = useMemo(() =>
+    nodesForCurrentFloor
+      .map((node) => {
+        const x = offsetX + node.x * scale;
+        const y = offsetY + node.y * scale;
+        return `${x},${y}`;
+      })
+      .join(" ")
+  , [nodesForCurrentFloor, offsetX, offsetY, scale]);
 
   const firstNode = nodesForCurrentFloor[0];
   const lastNode = nodesForCurrentFloor[nodesForCurrentFloor.length - 1];
