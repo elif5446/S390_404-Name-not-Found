@@ -30,7 +30,7 @@ import IndoorBottomPanel, {
 import IndoorRouteOverlay from "./IndoorRouteOverlay";
 import { Route } from "@/src/indoors/types/Routes";
 import IndoorPointMarker from "./IndoorPointMarker";
-
+import IndoorDirectionsPopup from "./IndoorDirectionsPopup";
 import { Node } from "@/src/indoors/types/Navigation";
 import { IndoorHotspot, IndoorDestination } from "@/src/indoors/types/hotspot";
 import { navConfigRegistry } from "@/src/indoors/data/navConfigRegistry";
@@ -752,131 +752,11 @@ const IndoorMapOverlay: React.FC<Props> = ({
         onToggleCategory={handleToggleCategory}
       />
 
-      {showDirections && routeSteps.length > 0 && (
-        <View
-          style={{
-            position: "absolute",
-            bottom: 20,
-            left: 12,
-            right: 12,
-            backgroundColor: "#FFF7FA",
-            borderRadius: 20,
-            padding: 14,
-            borderWidth: 1,
-            borderColor: "#F7D6E3",
-            shadowColor: "#000",
-            shadowOpacity: 0.10,
-            shadowRadius: 8,
-            elevation: 6,
-            zIndex: 1000,
-            maxHeight: 280,
-          }}
-        >
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginBottom: 10,
-            }}
-          >
-            <View
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 16,
-                backgroundColor: "#C2185B",
-                alignItems: "center",
-                justifyContent: "center",
-                marginRight: 10,
-              }}
-            >
-              <Ionicons name="walk" size={16} color="#FFFFFF" />
-            </View>
-
-            <View style={{ flex: 1 }}>
-              <Text
-                style={{
-                  fontSize: 13,
-                  fontWeight: "700",
-                  color: "#C2185B",
-                }}
-              >
-                Walking directions
-              </Text>
-              <Text
-                style={{
-                  fontSize: 11,
-                  color: "#9A9A9A",
-                  marginTop: 2,
-                }}
-              >
-                Follow these steps to reach your destination
-              </Text>
-            </View>
-          </View>
-
-          <View
-            style={{
-              height: 1,
-              backgroundColor: "#F1D3DF",
-              marginBottom: 10,
-            }}
+          <IndoorDirectionsPopup
+            visible={showDirections && routeSteps.length > 0}
+            steps={routeSteps}
+            onClose={() => setShowDirections(false)}
           />
-
-          <ScrollView
-            style={{ maxHeight: 180 }}
-            contentContainerStyle={{ paddingBottom: 4 }}
-            showsVerticalScrollIndicator={true}
-            nestedScrollEnabled
-          >
-            {routeSteps.map((step, index) => (
-              <View
-                key={step.id}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "flex-start",
-                  marginBottom: index === routeSteps.length - 1 ? 0 : 10,
-                }}
-              >
-                <View
-                  style={{
-                    width: 22,
-                    height: 22,
-                    borderRadius: 11,
-                    backgroundColor: index === routeSteps.length - 1 ? "#C2185B" : "#FCE4EC",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginRight: 10,
-                    marginTop: 1,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 11,
-                      fontWeight: "700",
-                      color: index === routeSteps.length - 1 ? "#FFFFFF" : "#C2185B",
-                    }}
-                  >
-                    {index + 1}
-                  </Text>
-                </View>
-
-                <Text
-                  style={{
-                    flex: 1,
-                    fontSize: 13,
-                    lineHeight: 18,
-                    color: index === routeSteps.length - 1 ? "#C2185B" : "#333333",
-                    fontWeight: index === routeSteps.length - 1 ? "700" : "500",
-                  }}
-                >
-                  {step.text}
-                </Text>
-              </View>
-            ))}
-          </ScrollView>
-        </View>
-      )}
 
       <POIFilterPanel
         pois={nonRoomPOIs}
