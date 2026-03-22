@@ -4,13 +4,17 @@ import { Graph } from "./Graph";
 
 //this class is the A* implementation for finding the shortest path.
 export class PathFinder {
-  private graph: Graph;
+  private readonly graph: Graph;
 
   constructor(graph: Graph) {
     this.graph = graph;
   }
 
-  findShortestPath(startNodeId: string, endNodeId: string, accessibleOnly: boolean = false): Route {
+  findShortestPath(
+    startNodeId: string,
+    endNodeId: string,
+    accessibleOnly: boolean = false,
+  ): Route {
     const startNode = this.graph.getNode(startNodeId);
     const endNode = this.graph.getNode(endNodeId);
 
@@ -43,53 +47,64 @@ export class PathFinder {
 
       // we reached the destination
       if (currentId === endNodeId) {
-        return this.buildRoute(cameFrom, currentId, gScore.get(currentId)!);
+        return this.buildRoute(cameFrom, currentId, gScore.get(currentId));
       }
 
       openSet.delete(currentId);
       closedSet.add(currentId);
 
-      // explore neighbors
-      const neighbors = this.graph.getNeighbors(currentId);
-
-      for (const neighbor of neighbors) {
-        // skip already explored nodes
-        if (closedSet.has(neighbor.id)) continue;
-
-        const edge = this.graph.getEdge(currentId, neighbor.id);
-        if (!edge) continue;
-        if (accessibleOnly && !edge.accessible) continue;
-
-
-        // calculate the cost to reach this neighbor through current node
-        if (edge.weight === undefined) {
-          throw new Error(`Edge between ${currentId} and ${neighbor.id} has no weight`);
-        }
-        const tentativeGScore =
-          (gScore.get(currentId) ?? Infinity) + edge.weight;
-
-        if (tentativeGScore < (gScore.get(neighbor.id) ?? Infinity)) {
-          // this is a better path to this neighbor so update
-          cameFrom.set(neighbor.id, currentId);
-          gScore.set(neighbor.id, tentativeGScore);
-          fScore.set(
-            neighbor.id,
-            tentativeGScore + this.heuristic(neighbor, endNode),
-          );
-          openSet.add(neighbor.id);
-        }
-      }
+      // extracted logic
+      this.processNeighbors(currentId, endNode, accessibleOnly, openSet, closedSet, gScore, fScore, cameFrom);
     }
     throw new Error(
       `PathFinder: no path found between ${startNodeId} and ${endNodeId}`,
     );
   }
 
+// new private helper to handle the inner loop complexity
+  private processNeighbors(
+    currentId: string,
+    endNode: Node,
+    accessibleOnly: boolean,
+    openSet: Set<string>,
+    closedSet: Set<string>,
+    gScore: Map<string, number>,
+    fScore: Map<string, number>,
+    cameFrom: Map<string, string>
+  ): void {
+    const neighbors = this.graph.getNeighbors(currentId);
+
+    for (const neighbor of neighbors) {
+      if (closedSet.has(neighbor.id)) continue;
+
+      const edge = this.graph.getEdge(currentId, neighbor.id);
+      if (!edge || (accessibleOnly && !edge.accessible)) continue;
+
+      if (edge.weight === undefined) {
+        throw new Error(`Edge between ${currentId} and ${neighbor.id} has no weight`);
+      }
+
+      const tentativeGScore = (gScore.get(currentId) ?? Infinity) + edge.weight;
+
+      if (tentativeGScore < (gScore.get(neighbor.id) ?? Infinity)) {
+        cameFrom.set(neighbor.id, currentId);
+        gScore.set(neighbor.id, tentativeGScore);
+        fScore.set(neighbor.id, tentativeGScore + this.heuristic(neighbor, endNode));
+        openSet.add(neighbor.id);
+      }
+    }
+  }
+
   // straight line distance between two nodes (estimates how far we are from the goal)
   private heuristic(nodeA: Node, nodeB: Node): number {
-    return Math.sqrt(
+    const spatialDistance = Math.sqrt(
       Math.pow(nodeB.x - nodeA.x, 2) + Math.pow(nodeB.y - nodeA.y, 2),
     );
+
+    // add an arbitrary penalty if the floors don't match
+    const floorPenalty = nodeA.floorId !== nodeB.floorId ? 500 : 0;
+
+    return spatialDistance + floorPenalty;
   }
 
   // finds the node in the open set with the lowest fScore
@@ -130,8 +145,7 @@ export class PathFinder {
 
     return {
       nodes,
-      totalDistance
+      totalDistance,
     };
   }
-
 }

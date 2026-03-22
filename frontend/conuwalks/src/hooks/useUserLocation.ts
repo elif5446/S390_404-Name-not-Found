@@ -83,10 +83,10 @@ export const useUserLocation = (): UseUserLocationReturn => {
         );
 
         // Prevent memory leak if unmounted while the promise was pending
-        if (!isMounted) {
-          subscription.remove();
-        } else {
+        if (isMounted) {
           locationSubscription.current = subscription;
+        } else {
+          subscription.remove();
         }
       } catch (err) {
         console.error("Location error:", err);

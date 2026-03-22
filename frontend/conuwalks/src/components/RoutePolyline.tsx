@@ -1,9 +1,17 @@
-import React, { useEffect, useRef, useCallback } from "react";
-import { Platform } from "react-native";
-import { LatLng, Polyline } from "react-native-maps";
+import React, {
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+  useState,
+} from "react";
+import { Platform, View } from "react-native";
+import { LatLng, Polyline, Marker } from "react-native-maps";
 import { useDirections, DirectionStep } from "@/src/context/DirectionsContext";
 import { getDirections, decodePolyline } from "@/src/api/directions";
 import { getShuttleRouteIfApplicable } from "@/src/api/shuttleEngine";
+
+const TRANSFER_NODE_FREEZE_DELAY_MS = 250;
 
 const getStepColorAndStyle = (step: DirectionStep, isIOS: boolean) => {
   const mode = (step.travelMode || "").toUpperCase();
@@ -11,7 +19,6 @@ const getStepColorAndStyle = (step: DirectionStep, isIOS: boolean) => {
   if (mode === "WALK" || mode === "WALKING") {
     return {
       color: "#B03060",
-      dash: isIOS ? [1, 6] : [1, 8],
       width: isIOS ? 3 : 4,
       isWalk: true,
     };
@@ -21,7 +28,7 @@ const getStepColorAndStyle = (step: DirectionStep, isIOS: boolean) => {
   const shortName = (step.transitLineShortName || "").toLowerCase();
   const longName = (step.transitLineName || "").toLowerCase();
 
-  let color = "#888888";
+  let color = "#000000";
 
   if (type.includes("shuttle")) {
     color = "#B03060";
@@ -52,13 +59,114 @@ const getStepColorAndStyle = (step: DirectionStep, isIOS: boolean) => {
     color = "#A970FF"; // Light Purple for public buses
   }
 
-  return { color, dash: null, width: 5, isWalk: false };
+  return { color, width: 5, isWalk: false };
 };
 
 interface RoutePolylineProps {
   startLocation?: LatLng;
   zIndex?: number;
 }
+
+const TransferNodeMarker = ({
+  coordinate,
+  color,
+  zIndex,
+}: {
+  coordinate: LatLng;
+  color: string;
+  zIndex: number;
+}) => {
+  const [trackChanges, setTrackChanges] = useState(true);
+  const freezeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (freezeTimeoutRef.current) {
+        clearTimeout(freezeTimeoutRef.current);
+        freezeTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
+  return (
+    <Marker
+      coordinate={coordinate}
+      anchor={{ x: 0.5, y: 0.5 }}
+      zIndex={zIndex}
+      tracksViewChanges={trackChanges}
+      flat
+    >
+      <View
+        onLayout={() => {
+          if (!trackChanges) return;
+
+          if (freezeTimeoutRef.current) {
+            clearTimeout(freezeTimeoutRef.current);
+            freezeTimeoutRef.current = null;
+          }
+
+          freezeTimeoutRef.current = setTimeout(() => {
+            setTrackChanges(false);
+          }, TRANSFER_NODE_FREEZE_DELAY_MS);
+        }}
+        style={{
+          width: 20,
+          height: 20,
+          borderRadius: 10,
+          backgroundColor: "#FFFFFF",
+          borderWidth: 4,
+          borderColor: color,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.3,
+          shadowRadius: 1.5,
+          elevation: 2,
+        }}
+      />
+    </Marker>
+  );
+};
+
+// helper function: extracted the shuttle injection logic to reduce fetchRoute complexity
+const injectShuttleRoute = async (
+  fetchedRoutes: any[],
+  effectiveStartLocation: LatLng,
+  destinationCoords: LatLng,
+  routingTime: Date,
+  timeMode: "leave" | "arrive"
+) => {
+  const shuttleRoute = await getShuttleRouteIfApplicable(
+    effectiveStartLocation,
+    destinationCoords,
+    routingTime,
+    timeMode
+  );
+
+  if (!shuttleRoute) return fetchedRoutes;
+
+  let showShuttle = true;
+  const bestPublicRoute = fetchedRoutes[0];
+
+  if (bestPublicRoute?.duration) {
+    const durStr = bestPublicRoute.duration;
+    const hMatch = /(\d{1,5})\s{0,5}h/.exec(durStr);
+    const mMatch = /(\d{1,5})\s{0,5}min/.exec(durStr);
+    const publicMins = (hMatch ? parseInt(hMatch[1], 10) * 60 : 0) + (mMatch ? parseInt(mMatch[1], 10) : 0);
+
+    const shuttleDepMs = new Date(shuttleRoute.departureDate).getTime();
+    const targetTimeMs = routingTime.getTime();
+
+    if (timeMode === "leave") {
+      if ((shuttleDepMs - targetTimeMs) / 60000 >= publicMins) showShuttle = false;
+    } else {
+      const publicDepMs = targetTimeMs - publicMins * 60000;
+      if ((publicDepMs - shuttleDepMs) / 60000 >= 45) showShuttle = false;
+    }
+  }
+
+  if (showShuttle) fetchedRoutes.unshift(shuttleRoute);
+  return fetchedRoutes;
+};
 
 /**
  * Component to render the route polyline on the map
@@ -95,10 +203,19 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
   const requestKey =
     effectiveStartLocation && destinationCoords
       ? `${effectiveStartLocation.latitude.toFixed(4)},${effectiveStartLocation.longitude.toFixed(4)}->${destinationCoords.latitude.toFixed(4)},${destinationCoords.longitude.toFixed(4)}:${travelMode}:${timeMode}:${targetTime ? targetTime.getTime() : "now"}`
-      : null;
+      : null; // This ensures that reopening the same destination won't be falsely blocked.
+
+  // flush the request cache when the route is dismissed or destination is cleared
+  useEffect(() => {
+    if (!shouldShowRoute || !destinationCoords) {
+      lastFetchedKeyRef.current = null;
+      blockedRequestKeyRef.current = null;
+    }
+  }, [shouldShowRoute, destinationCoords]);
 
   // Fetch directions when destination, start, or travel mode changes
   const fetchRoute = useCallback(async () => {
+      if (shouldShowRoute) {
     console.log("RoutePolyline: fetchRoute called", {
       showDirections,
       isNavigationActive,
@@ -106,10 +223,11 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
       hasDestination: !!destinationCoords,
       mode: travelMode,
     });
+}
 
     if (!shouldShowRoute || !effectiveStartLocation || !destinationCoords) {
       if (!effectiveStartLocation || !destinationCoords) setRoutes([]);
-      console.log("RoutePolyline: Missing start or destination, skipping");
+      // console.log("RoutePolyline: Missing start or destination, skipping");
       return;
     }
 
@@ -156,7 +274,7 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
       }
 
       // Fetch directions from API
-      const fetchedRoutes = await getDirections(
+      let fetchedRoutes = await getDirections(
         effectiveStartLocation,
         destinationCoords,
         travelMode,
@@ -170,51 +288,7 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
 
       // Shuttle injection
       if (travelMode === "transit") {
-        const routingTime = targetTime || new Date();
-        const shuttleRoute = await getShuttleRouteIfApplicable(
-          effectiveStartLocation,
-          destinationCoords,
-          routingTime,
-          timeMode,
-        );
-
-        if (shuttleRoute) {
-          let showShuttle = true;
-          const bestPublicRoute = fetchedRoutes[0];
-
-          if (bestPublicRoute && bestPublicRoute.duration) {
-            // parse public transit duration
-            const durStr = bestPublicRoute.duration;
-            const hMatch = durStr.match(/(\d{1,5})\s{0,5}h/);
-            const mMatch = durStr.match(/(\d{1,5})\s{0,5}min/);
-            const publicMins =
-              (hMatch ? parseInt(hMatch[1], 10) * 60 : 0) +
-              (mMatch ? parseInt(mMatch[1], 10) : 0);
-
-            const shuttleDepMs = new Date(shuttleRoute.departureDate).getTime();
-            const targetTimeMs = routingTime.getTime();
-
-            if (timeMode === "leave") {
-              const waitMins = (shuttleDepMs - targetTimeMs) / 60000;
-              // hide shuttle if waiting longer than the entire public transit trip
-              if (waitMins >= publicMins) {
-                showShuttle = false;
-              }
-            } else {
-              // timeMode === "arrive"
-              // public transit requires you to leave at: targetTime - publicMins
-              const publicDepMs = targetTimeMs - publicMins * 60000;
-              const extraEarlyMins = (publicDepMs - shuttleDepMs) / 60000;
-              if (extraEarlyMins >= 45) {
-                showShuttle = false;
-              }
-            }
-          }
-
-          if (showShuttle) {
-            fetchedRoutes.unshift(shuttleRoute);
-          }
-        }
+          fetchedRoutes = await injectShuttleRoute(fetchedRoutes, effectiveStartLocation, destinationCoords, targetTime || new Date(), timeMode);
       }
 
       // Check if component is still mounted before updating state
@@ -229,7 +303,7 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
         .map((route) => ({
           ...route,
           polylinePoints: route.isShuttle
-            ? route.polylinePoints // use pre-defined points for shuttle
+            ? route.polylinePoints
             : decodePolyline(route.overviewPolyline),
         }))
         .filter((route) => route.polylinePoints.length > 0);
@@ -253,10 +327,7 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
           err instanceof Error ? err.message : "Failed to fetch directions";
         console.warn("Route fetch error:", errorMessage);
 
-        if (
-          errorMessage
-            .toLowerCase()
-            .match(/not been used|disabled|legacy api|request denied/)
+        if ( /not been used|disabled|legacy api|request denied/i.exec(errorMessage)
         ) {
           if (requestKey) blockedRequestKeyRef.current = requestKey;
         }
@@ -284,7 +355,6 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
 
   useEffect(() => {
     blockedRequestKeyRef.current = null;
-
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
@@ -301,10 +371,51 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
   }, [fetchRoute]);
 
   useEffect(() => {
+      isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
     };
   }, []);
+
+  const isIOS = Platform.OS === "ios";
+  const walkDash = isIOS ? [1, 6] : [1, 8];
+
+  const transferNodes = useMemo(() => {
+    if (travelMode !== "transit" || !routeData || !routeData.steps) return [];
+
+    const nodes = [];
+    for (let i = 0; i < routeData.steps.length - 1; i++) {
+      const currentStep = routeData.steps[i];
+      const nextStep = routeData.steps[i + 1];
+
+      // distinguish specific vehicles so a Bus to Metro transfer is recognized
+      const currentMode =
+        (currentStep.travelMode === "transit"
+          ? currentStep.transitVehicleType
+          : currentStep.travelMode) || "UNKNOWN";
+      const nextMode =
+        (nextStep.travelMode === "transit"
+          ? nextStep.transitVehicleType
+          : nextStep.travelMode) || "UNKNOWN";
+
+      // mode changes, it's a transfer point
+      if (currentMode !== nextMode && currentStep.endLocation) {
+        const currentStyle = getStepColorAndStyle(currentStep, isIOS);
+        const nextStyle = getStepColorAndStyle(nextStep, isIOS);
+
+        const nodeColor = !currentStyle.isWalk
+          ? currentStyle.color
+          : nextStyle.color;
+
+        nodes.push({
+          key: `transfer-${routeData.id}-${i}`,
+          coordinate: currentStep.endLocation,
+          color: nodeColor,
+        });
+      }
+    }
+    return nodes;
+  }, [routeData, travelMode, isIOS]);
 
   if (!shouldShowRoute || !routeData || routeData.polylinePoints.length === 0) {
     return null;
@@ -312,36 +423,41 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
 
   // Rendering logic
   if (travelMode === "transit") {
-    const hasStepPolylines = routeData.steps.some(
-      (step) => step.polylinePoints && step.polylinePoints.length > 0,
+    return (
+      <>
+        {routeData.steps.map((step, idx) => {
+          if (!step.polylinePoints?.length) return null;
+
+          const style = getStepColorAndStyle(step, isIOS);
+          // restoring unique, mode-specific key
+          const stepKey = `transit-step-${travelMode}-${routeData.id}-${idx}`;
+
+          return (
+            <Polyline
+              key={style.isWalk ? `${stepKey}-walk` : `${stepKey}-solid`}
+              coordinates={step.polylinePoints}
+              strokeColor={style.color}
+              strokeWidth={style.width}
+              lineDashPattern={style.isWalk ? (walkDash as number[]) : undefined}
+              // explicitly setting lineCap and lineJoin as requested
+              lineCap={style.isWalk ? "round" : "butt"}
+              lineJoin="round"
+              zIndex={style.isWalk ? zIndex : zIndex + 1}
+              geodesic
+            />
+          );
+        })}
+
+        {transferNodes.map((node) => (
+          <TransferNodeMarker
+            key={node.key}
+            coordinate={node.coordinate}
+            color={node.color}
+            zIndex={zIndex + 3}
+          />
+        ))}
+      </>
     );
-
-    if (hasStepPolylines) {
-      return (
-        <>
-          {routeData.steps.map((step, idx) => {
-            if (!step.polylinePoints || step.polylinePoints.length === 0)
-              return null;
-
-            const style = getStepColorAndStyle(step, Platform.OS === "ios");
-
-            return (
-              <Polyline
-                key={`transit-step-${travelMode}-${routeData.id}-${idx}`}
-                coordinates={step.polylinePoints}
-                strokeColor={style.color}
-                strokeWidth={style.width}
-                lineDashPattern={style.dash as any}
-                lineCap={style.isWalk ? "round" : "butt"}
-                lineJoin="round"
-                zIndex={zIndex + (style.isWalk ? 0 : 1)} // Draw vehicles on top of walk dots
-                geodesic
-              />
-            );
-          })}
-        </>
-      );
-    }
   }
 
   let mainColor = "#B03060";
@@ -354,25 +470,35 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
     isWalking = false;
   }
 
-  const defaultDash = isWalking
-    ? Platform.OS === "ios"
-      ? [1, 6]
-      : [1, 8]
-    : undefined;
+  const routeKey = `route-${travelMode}-${routeData.id}`;
+
+  if (isWalking) {
+    return (
+      <Polyline
+        key={`${routeKey}-walk`}
+        coordinates={routeData.polylinePoints}
+        strokeColor={mainColor}
+        strokeWidth={isIOS ? 3 : 4}
+        lineDashPattern={walkDash as number[]}
+        lineCap="round"
+        lineJoin="round"
+        zIndex={zIndex}
+        geodesic
+      />
+    );
+  }
 
   return (
-    <Polyline
-      key={`route-${travelMode}-${routeData.id}`}
-      coordinates={routeData.polylinePoints}
-      strokeColor={mainColor}
-      strokeWidth={isWalking ? (Platform.OS === "ios" ? 3 : 4) : 5}
-      lineDashPattern={defaultDash as any}
-      lineCap={isWalking ? "round" : "butt"}
-      lineJoin={isWalking ? "round" : "miter"}
-      zIndex={zIndex}
-      geodesic
-    />
-  );
+      <Polyline
+        coordinates={routeData.polylinePoints}
+        strokeColor={mainColor}
+        strokeWidth={5}
+        lineDashPattern={isWalking ? (walkDash as number[]) : undefined}
+        lineCap={isWalking ? "round" : "butt"}
+        zIndex={zIndex}
+        geodesic
+      />
+    );
 };
 
 export default RoutePolyline;

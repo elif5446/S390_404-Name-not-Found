@@ -1,3 +1,16 @@
+import { View, ViewProps } from "react-native";
+import { ReactNode } from "react";
+
+interface MockPolygonProps extends ViewProps {
+  children?: ReactNode;
+  testID?: string;
+  accessibilityLabel?: string;
+  coordinates?: LatLng[];
+  fillColor?: string;
+  strokeColor?: string;
+  strokeWidth?: number;
+}
+
 // Mock expo-location
 jest.mock("expo-location", () => ({
   requestForegroundPermissionsAsync: jest.fn(),
@@ -14,19 +27,33 @@ jest.mock("expo", () => ({
 }));
 
 // Mock expo module registry
-global.__ExpoImportMetaRegistry = {
+globalThis.__ExpoImportMetaRegistry = {
   register: jest.fn(),
   get: jest.fn(),
 };
 
 // Mock structuredClone
-global.structuredClone = jest.fn((obj) => JSON.parse(JSON.stringify(obj)));
+// Fix: for 'Prefer structuredClone over JSON.parse(JSON.stringify)'
+// Includes providing a mock implementation that doesn't use the json hack
+if (typeof globalThis.structuredClone !== "function") {
+  globalThis.structuredClone = jest.fn((obj) => {
+    if (obj === undefined) return undefined;
+
+    // for a mock in test environment, a simple spread or
+    // structured copy is preferred over json stringify
+    return typeof obj === 'object' ? { ...obj } : obj;
+  });
+} else {
+  // ff it exists, we just make it a mockable spy
+  globalThis.structuredClone = jest.fn(globalThis.structuredClone);
+}
 
 // Mock react-native-maps
 jest.mock("react-native-maps", () => {
+  const React = require("react");
   const { View } = require("react-native");
 
-  const MockMapView = ({ children, testID, ...props }) => (
+  const MockMapView = ({ children, testID, ...props }: any) => (
     <View testID={testID || "map-view"} {...props}>
       {children}
     </View>
@@ -40,14 +67,16 @@ jest.mock("react-native-maps", () => {
     strokeColor,
     strokeWidth,
     ...props
-  }) => (
+  } : any) => (
     <View
       testID={testID || "polygon"}
       accessibilityLabel={accessibilityLabel}
-      data-coordinates={JSON.stringify(coordinates)}
-      data-fill-color={fillColor}
-      data-stroke-color={strokeColor}
-      data-stroke-width={strokeWidth}
+      {...({
+            "data-coordinates": JSON.stringify(coordinates),
+            "data-fill-color": fillColor,
+            "data-stroke-color": strokeColor,
+            "data-stroke-width": strokeWidth,
+      } as any)}
       {...props}
     />
   );
@@ -56,6 +85,8 @@ jest.mock("react-native-maps", () => {
     __esModule: true,
     default: MockMapView,
     Polygon: MockPolygon,
+    Marker: ({ children }: any) => React.createElement("View", {}, children),
+    Polyline: () => React.createElement("View"),
     PROVIDER_GOOGLE: "google",
   };
 });
@@ -85,20 +116,26 @@ jest.mock("@/src/utils/geo", () => ({
 // Suppress act() warnings
 const originalError = console.error;
 console.error = (...args) => {
-  const message =
-    typeof args[0] === "string"
-      ? args[0]
-      : args[0] && args[0].message
-        ? args[0].message
-        : "";
+    const firstArg = args[0];
+    let message = "";
 
-  if (
-    message.includes("Warning: An update to") &&
-    message.includes("was not wrapped in act")
-  ) {
-    return;
-  }
+    // 1. extract the message into a logic block
+      if (typeof firstArg === "string") {
+        message = firstArg;
+      } else if (firstArg && typeof firstArg.message === "string") {
+        message = firstArg.message;
+      }
 
+    // 2. filter out the act() warnings
+    const isActWarning = message.includes("Warning: An update to") && message.includes("was not wrapped in act");
+
+    const isStateUpdateWarning = message.includes("code that causes React state updates should be wrapped into act(...)");
+
+    if (isActWarning || isStateUpdateWarning) {
+        return;
+      }
+
+  // 3. otherwise, log the error as usual
   originalError.call(console, ...args);
 };
 
@@ -108,7 +145,7 @@ jest.mock("@react-native-segmented-control/segmented-control", () => {
 
   return {
     __esModule: true,
-    default: ({ values, selectedIndex, onChange, testID, ...props }) => (
+    default: ({ values, selectedIndex, onChange, testID, ...props } : any) => (
       <View testID={testID || "segmented-control"} {...props}>
         {values.map((value, index) => (
           <TouchableOpacity
@@ -159,7 +196,7 @@ jest.mock("expo-blur", () => {
   const { View } = require("react-native");
 
   return {
-    BlurView: ({ children, testID, ...props }) => (
+    BlurView: ({ children, testID, ...props } : any) => (
       <View testID={testID || "blur-view"} {...props}>
         {children}
       </View>

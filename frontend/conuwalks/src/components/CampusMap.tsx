@@ -19,7 +19,6 @@ import {
 } from "react-native";
 import MapView, {
   LatLng,
-  Circle,
   Region,
   Marker,
   PROVIDER_GOOGLE,
@@ -28,8 +27,8 @@ import MapView, {
 } from "react-native-maps";
 
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { BlurView } from "expo-blur";
 import { SymbolView, SFSymbol } from "expo-symbols";
+import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AdditionalInfoPopup, {
   AdditionalInfoPopupHandle,
@@ -98,6 +97,18 @@ interface GeoJsonFeature {
   };
 }
 
+const getBuildingDisplayName = (
+  buildingId: string,
+  campus: "SGW" | "LOY",
+) => {
+  const metadata =
+    campus === "LOY"
+      ? LoyolaBuildingMetadata[buildingId]
+      : SGWBuildingMetadata[buildingId];
+
+  return metadata?.name || buildingId;
+};
+
 const PlatformIcon = ({
   materialName,
   iosName,
@@ -117,6 +128,94 @@ const PlatformIcon = ({
   return <MaterialIcons name={materialName} size={size} color={color} />;
 };
 
+// helper complexity
+const BuildingGroup = React.memo(({
+  buildingId,
+  campus,
+  coordinates,
+  isSelected,
+  isDestination,
+  dimOthers,
+  handleBuildingPress,
+  trackDestMarker, // passed from parent
+  markerRefSetter // helper to set the ref from parent
+}: any) => {
+  const centerCoordinates = calculatePolygonCenter(coordinates);
+  const campusTheme = BuildingTheme[campus as keyof typeof BuildingTheme] as Record<
+    string,
+    string
+  >;
+
+  const themeColor = campusTheme[buildingId] || "#888888";
+  const name = getBuildingDisplayName(buildingId, campus);
+
+  return (
+    <React.Fragment>
+      <Polygon
+        coordinates={coordinates}
+        accessibilityLabel={name}
+        testID={`polygon-${name}`}
+        fillColor={
+          isSelected ? themeColor + "F0" :
+          isDestination ? themeColor + "C8" :
+          dimOthers ? themeColor + "55" : themeColor + "90"
+        }
+        strokeColor={"rgba(0,0,0,0.12)"}
+        strokeWidth={1}
+        tappable
+        onPress={() => handleBuildingPress(buildingId, campus, centerCoordinates)}
+        zIndex={3}
+      />
+
+      {isSelected && (
+        <>
+          <Polygon
+            coordinates={coordinates}
+            fillColor="transparent"
+            strokeColor="#515351ff"
+            strokeWidth={5}
+            zIndex={5}
+          />
+          <Polygon
+            coordinates={coordinates}
+            fillColor="transparent"
+            strokeColor="#FFFFFF"
+            strokeWidth={2}
+            zIndex={6}
+          />
+        </>
+      )}
+
+      {isDestination && !isSelected && (
+        <Marker
+          coordinate={centerCoordinates}
+          anchor={{ x: 0.5, y: 0.5 }}
+          zIndex={1000}
+          tracksViewChanges={trackDestMarker}
+          flat
+          accessibilityLabel={`${name} destination`}
+          testID={`marker-${name}-destination`}
+        >
+          <MaterialIcons name="place" size={26} color="#B03060" />
+        </Marker>
+      )}
+
+      <Marker
+        ref={markerRefSetter} // Use the passed setter
+        coordinate={centerCoordinates}
+        onPress={() => handleBuildingPress(buildingId, campus, centerCoordinates)}
+        zIndex={200}
+        tracksViewChanges={false}
+        title={name}
+        accessibilityLabel={name}
+        testID={`marker-${name}`}
+      >
+        <View style={{ width: 44, height: 44, opacity: 0.01 }} />
+      </Marker>
+    </React.Fragment>
+  );
+});
+
 const CampusMap: React.FC<CampusMapProps> = ({
   initialLocation = { latitude: 45.49599, longitude: -73.57854 },
   onInfoPopupExpansionChange,
@@ -134,6 +233,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
   } = useUserLocation();
 
   const INITIAL_DELTA = 0.008;
+  const ICON_FREEZE_DELAY_MS = 250;
 
   // Get directions context for destination setting
   const {
@@ -186,6 +286,25 @@ const CampusMap: React.FC<CampusMapProps> = ({
   const destinationPopupRef = useRef<DestinationPopupHandle>(null);
   const preNavigationRegionRef = useRef<Region | null>(null);
   const [trackLocationMarker, setTrackLocationMarker] = useState(true);
+  const [trackDestMarker, setTrackDestMarker] = useState(true);
+
+  const trackMarkerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  // unmount cleanup logic for dest marker
+  useEffect(() => {
+    return () => {
+      if (trackMarkerTimeoutRef.current) {
+        clearTimeout(trackMarkerTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (destinationBuildingId) {
+      setTrackDestMarker(true);
+    }
+  }, [destinationBuildingId]);
 
   // handle restoring the camera view when navigation ends
   useEffect(() => {
@@ -194,10 +313,12 @@ const CampusMap: React.FC<CampusMapProps> = ({
         preNavigationRegionRef.current = mapRegion;
       }
     } else if (preNavigationRegionRef.current && mapRef.current) {
+      const regionToRestore = preNavigationRegionRef.current;
+
       mapRef.current.animateCamera({ pitch: 0, heading: 0 }, { duration: 150 });
 
       setTimeout(() => {
-        mapRef.current?.animateToRegion(preNavigationRegionRef.current!, 500);
+        mapRef.current?.animateToRegion(regionToRestore, 500);
         preNavigationRegionRef.current = null;
       }, 150);
     }
@@ -210,6 +331,20 @@ const CampusMap: React.FC<CampusMapProps> = ({
       onInfoPopupExpansionChange?.(isExpanded);
     },
     [onInfoPopupExpansionChange],
+  );
+
+  const handleOpenIndoorMap = useCallback(
+    (buildingId: string) => {
+      if (!INDOOR_DATA[buildingId]) return;
+
+      setSelectedTransitStopKey(null);
+      setShowDirections(false);
+      setIsNavigationActive(false);
+      clearRouteData();
+      setSelectedBuilding((prev) => ({ ...prev, visible: false }));
+      setIndoorBuildingId(buildingId);
+    },
+    [setShowDirections, setIsNavigationActive, clearRouteData],
   );
 
   // Calculate circle radius based on zoom level (longitudeDelta)
@@ -251,6 +386,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
   // auto-pan when toggling campuses
   useEffect(() => {
+    let timeoutId;
     if (mapRef.current && initialLat && initialLng) {
       mapRef.current.animateToRegion(
         {
@@ -262,9 +398,24 @@ const CampusMap: React.FC<CampusMapProps> = ({
         500,
       );
 
-      clearDestination();
-      setSelectedBuilding((prev) => ({ ...prev, visible: false }));
+      // do if we just acted in schedule view
+      if (!showDirections && !isNavigationActive) {
+        destinationPopupRef.current?.dismiss();
+        setTimeout(() => {
+          clearDestination();
+          setSelectedBuilding((prev) => ({ ...prev, visible: false }));
+        }, 250);
+      }
     }
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+    // explicitly exclude showDirections/isNavigationActive from deps
+    // to not run every time the popup is opened or closed
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialLat, initialLng, clearDestination]);
 
   // Handle building tap to show additional info and set destination
@@ -279,8 +430,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
         const feature = sourceGeo.features.find(
           (item) => (item as GeoJsonFeature).properties.id === buildingId,
         ) as GeoJsonFeature | undefined;
-
-        if (feature && feature.geometry.type === "Polygon") {
+        // optional chaining for more concise check
+        if (feature?.geometry.type === "Polygon") {
           coordinates = calculatePolygonCenter(feature.geometry.coordinates[0]);
         } else {
           return;
@@ -465,9 +616,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
     }
   }, [showDirections, isNavigationActive]);
 
-  const recenterButtonTop =
-    insets.top +
-    (isNavigationActive && routeData ? 118 : 84 + searchPanelHeight);
   const isSheetVisibleForAccessibility =
     (selectedBuilding.visible && !showDirections) || showDirections;
 
@@ -502,14 +650,22 @@ const CampusMap: React.FC<CampusMapProps> = ({
         const normalizedVehicle = (
           step.transitVehicleType || "Transit"
         ).toLowerCase();
-        const vehicleLabel =
-          normalizedVehicle.includes("subway") ||
-          normalizedVehicle.includes("metro")
-            ? "Metro"
-            : normalizedVehicle.includes("bus") ||
-                normalizedVehicle.includes("shuttle")
-              ? "Bus"
-              : "Transit";
+
+        // defining logic independently
+        const getVehicleLabel = (vehicle: string) => {
+          const v = vehicle.toLowerCase();
+
+          if (v.includes("subway") || v.includes("metro")) {
+            return "Metro";
+          }
+
+          if (v.includes("bus") || v.includes("shuttle")) {
+            return "Bus";
+          }
+
+          return "Transit";
+        };
+        const vehicleLabel = getVehicleLabel(normalizedVehicle);
         const markerIcon: "directions-bus" | "subway" =
           vehicleLabel === "Metro" ? "subway" : "directions-bus";
 
@@ -708,145 +864,26 @@ const CampusMap: React.FC<CampusMapProps> = ({
             feature.geometry.coordinates[0],
           );
 
-          const themeColor =
-            BuildingTheme[campus][
-              buildingId as keyof (typeof BuildingTheme)[typeof campus]
-            ];
-          const color = themeColor || "#888888";
-
-          // metadata for accessibility
-          const meta =
-            campus === "LOY"
-              ? LoyolaBuildingMetadata[buildingId]
-              : SGWBuildingMetadata[buildingId];
-          const name = meta?.name || buildingId;
-
-          const isSelected =
-            selectedBuilding.visible && selectedBuilding.name === buildingId;
+          const isSelected = selectedBuilding.visible && selectedBuilding.name === buildingId;
           const isDestination = destinationBuildingId === buildingId;
-          const hasSelection =
-            selectedBuilding.visible && !!selectedBuilding.name;
-          const dimOthers = hasSelection && !isSelected; // dim everything except selected
-          // Calculate center point of building for directions
-          const centerCoordinates = calculatePolygonCenter(coordinates);
+          const dimOthers = (selectedBuilding.visible && !!selectedBuilding.name) && !isSelected;
           const markerKey = `${campus}-${buildingId}`;
-
-          return (
-            <React.Fragment key={buildingId}>
-              {}
-              <Polygon
-                key={`${campus}-${buildingId}-base`}
-                coordinates={coordinates}
-                fillColor={
-                  isSelected
-                    ? color + "F0"
-                    : isDestination
-                      ? color + "C8"
-                      : dimOthers
-                        ? color + "55"
-                        : color + "90"
-                }
-                strokeColor={"rgba(0,0,0,0.12)"}
-                strokeWidth={1}
-                tappable
-                onPress={() =>
-                  handleBuildingPress(buildingId, campus, centerCoordinates)
-                }
-                accessibilityLabel={name}
-                accessibilityRole="button"
-                zIndex={3}
-              />
-
-              {}
-              {isSelected && (
-                <>
-                  {}
-                  <Polygon
-                    key={`${campus}-${buildingId}-selected-outer`}
-                    coordinates={coordinates}
-                    fillColor="transparent"
-                    strokeColor="#515351ff"
-                    strokeWidth={5}
-                    tappable
-                    onPress={() =>
-                      handleBuildingPress(buildingId, campus, centerCoordinates)
-                    }
-                    zIndex={5}
-                  />
-
-                  {}
-                  <Polygon
-                    key={`${campus}-${buildingId}-selected-inner`}
-                    coordinates={coordinates}
-                    fillColor="transparent"
-                    strokeColor="#FFFFFF"
-                    strokeWidth={2}
-                    tappable
-                    onPress={() =>
-                      handleBuildingPress(buildingId, campus, centerCoordinates)
-                    }
-                    zIndex={6}
-                  />
-                </>
-              )}
-
-              {}
-              {isDestination && !isSelected && (
-                <Marker
-                  key={`${campus}-${buildingId}-dest-pin`}
-                  coordinate={centerCoordinates}
-                  anchor={{ x: 0.5, y: 0.5 }}
-                  zIndex={1000}
-                  onPress={() =>
-                    handleBuildingPress(buildingId, campus, centerCoordinates)
-                  }
-                  accessibilityLabel={`${name} destination`}
-                  accessibilityRole="button"
-                  flat
-                >
-                  <MaterialIcons name="place" size={26} color="#B03060" />
-                </Marker>
-              )}
-
-              <Marker
-                ref={(markerRef) => {
-                  buildingMarkerRefs.current[markerKey] = markerRef as {
-                    showCallout?: () => void;
-                  } | null;
-                }}
-                coordinate={centerCoordinates}
-                onPress={() =>
-                  handleBuildingPress(buildingId, campus, centerCoordinates)
-                }
-                zIndex={200}
-                tracksViewChanges={false}
-                title={name}
-                importantForAccessibility="yes"
-                accessibilityLabel={name}
-                accessibilityRole="button"
-                accessibilityHint="Tap to view details"
-              >
-                <View
-                  style={{
-                    width: 44,
-                    height: 44,
-                    backgroundColor: "#FFFFFF",
-                    opacity: 0.01,
-                  }}
-                  collapsable={false}
-                  importantForAccessibility="yes"
-                  accessible={true}
-                  accessibilityLabel={name}
-                  accessibilityRole="button"
-                  accessibilityHint="Tap to view details"
-                >
-                  {Platform.OS === "android" && (
-                    <Text style={{ width: 1, height: 1, opacity: 0 }}> </Text>
-                  )}
-                </View>
-              </Marker>
-            </React.Fragment>
-          );
+                  return (
+                    <BuildingGroup
+                        key={markerKey}
+                        buildingId={buildingId}
+                        campus={campus}
+                        coordinates={coordinates}
+                        isSelected={isSelected}
+                        isDestination={isDestination}
+                        dimOthers={dimOthers}
+                        handleBuildingPress={handleBuildingPress}
+                        trackDestMarker={trackDestMarker}
+                        markerRefSetter={(markerRef: any) => {
+                          buildingMarkerRefs.current[markerKey] = markerRef;
+                        }}
+                      />
+                  );
         });
     };
 
@@ -859,6 +896,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
     handleBuildingPress,
     selectedBuilding.name,
     selectedBuilding.visible,
+    trackDestMarker,
   ]);
 
   const mapID = useMemo(() => {
@@ -1140,7 +1178,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
               }}
             >
               Next in{" "}
-              {activeInstructionDistanceMeters !== null
+              {typeof activeInstructionDistanceMeters === "number"
                 ? `${activeInstructionDistanceMeters} m`
                 : activeInstruction.distance}
             </Text>
@@ -1243,6 +1281,10 @@ const CampusMap: React.FC<CampusMapProps> = ({
       {indoorBuildingId && INDOOR_DATA[indoorBuildingId] && (
         <IndoorMapOverlay
           buildingData={INDOOR_DATA[indoorBuildingId]}
+          startBuildingId={startBuildingId}
+          startRoomId={startRoom}
+          destinationBuildingId={destinationBuildingId}
+          destinationRoomId={destinationRoom}
           onExit={() => setIndoorBuildingId(null)}
         />
       )}
@@ -1255,6 +1297,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
           campus={selectedBuilding.campus}
           onClose={handleClosePopup}
           onDirectionsTrigger={handleDirectionsTrigger}
+          onOpenIndoorPress={() => handleOpenIndoorMap(selectedBuilding.name)}
+          showOpenIndoorButton={selectedBuilding.name in INDOOR_DATA}
           directionsEtaLabel={directionsEtaLabel}
           onExpansionChange={handleInfoPopupExpansionChange}
         />

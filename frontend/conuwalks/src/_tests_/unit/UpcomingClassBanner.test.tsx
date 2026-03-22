@@ -1,7 +1,6 @@
-﻿import React from "react";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react-native";
-import { act } from "react";
-import { PanResponder } from "react-native";
+﻿import { render, screen, fireEvent, waitFor } from "@testing-library/react-native";
+import React, { act } from "react";
+import { PanResponder, Switch } from "react-native";
 import UpcomingClassBanner from "../../components/UpcomingClassBanner";
 import { useGoogleCalendar } from "@/src/hooks/useGoogleCalendar";
 import { useDirections } from "@/src/context/DirectionsContext";
@@ -10,7 +9,10 @@ import {
   getClassReminderLeadTime,
   getDismissedClassEventIds,
   saveDismissedClassEventIds,
+  saveWheelchairAccessibilityPreference,
+  getWheelchairAccessibilityPreference
 } from "@/src/utils/tokenStorage";
+import UserProfileContent from "@/src/components/UserProfileContent";
 
 jest.mock("@/src/hooks/useGoogleCalendar");
 jest.mock("@/src/context/DirectionsContext", () => ({
@@ -24,6 +26,8 @@ jest.mock("@/src/utils/tokenStorage", () => ({
   getClassReminderLeadTime: jest.fn(),
   getDismissedClassEventIds: jest.fn(),
   saveDismissedClassEventIds: jest.fn(),
+  saveWheelchairAccessibilityPreference: jest.fn(),
+  getWheelchairAccessibilityPreference: jest.fn(),
   DEFAULT_CLASS_REMINDER_LEAD_TIME_MINUTES: 10,
 }));
 
@@ -40,6 +44,8 @@ const mockUseUserLocation = useUserLocation as jest.Mock;
 const mockGetClassReminderLeadTime = getClassReminderLeadTime as jest.Mock;
 const mockGetDismissedClassEventIds = getDismissedClassEventIds as jest.Mock;
 const mockSaveDismissedClassEventIds = saveDismissedClassEventIds as jest.Mock;
+const mockSaveWheelchairAccessibilityPreference = saveWheelchairAccessibilityPreference as jest.Mock;
+const mockGetWheelchairAccessibilityPreference = getWheelchairAccessibilityPreference as jest.Mock;
 
 const mockSetStartPoint = jest.fn();
 const mockSetDestination = jest.fn();
@@ -445,11 +451,69 @@ describe("UpcomingClassBanner", () => {
       expect(screen.getByTestId("upcoming-class-banner")).toBeTruthy();
     });
 
-    // Swipe only a little — not past threshold
     act(() => {
       capturedPanConfig?.onPanResponderRelease?.({}, { dy: -10, vy: 0 });
     });
 
     expect(screen.getByTestId("upcoming-class-banner")).toBeTruthy();
+  });
+
+  it("should initialize the switch with the saved wheelchair preference", async () => {
+    mockGetWheelchairAccessibilityPreference.mockResolvedValue(true);
+
+    render(<UserProfileContent userInfo={{ email: "test@concordia.ca" }} mode="light" />);
+
+    await waitFor(() => {
+      const switchElement = screen.getByRole("switch", { name: /wheelchair-accessible/i });
+      expect(switchElement.props.accessibilityState.checked).toBe(true);
+    });
+  });
+
+  it("should save and update UI when toggled", async () => {
+    mockGetWheelchairAccessibilityPreference.mockResolvedValue(false);
+    mockSaveWheelchairAccessibilityPreference.mockResolvedValue(true);
+
+    render(<UserProfileContent userInfo={{ email: "test@concordia.ca" }} mode="light" />);
+
+    await waitFor(() => {
+      expect(mockGetWheelchairAccessibilityPreference).toHaveBeenCalled();
+    });
+
+    const switchElement = screen.UNSAFE_getByType(Switch);
+
+    await act(async () => {
+      fireEvent(switchElement, "onValueChange", true);
+    });
+
+    await waitFor(() => {
+      expect(mockSaveWheelchairAccessibilityPreference).toHaveBeenCalledWith(true);
+    });
+
+    await waitFor(() => {
+      const container = screen.getByRole("switch", { name: /wheelchair-accessible/i });
+      expect(container.props.accessibilityState.checked).toBe(true);
+    });
+  });
+
+  it("should revert the switch state if the save operation fails", async () => {
+    mockGetWheelchairAccessibilityPreference.mockResolvedValue(false);
+    mockSaveWheelchairAccessibilityPreference.mockResolvedValue(false);
+
+    render(<UserProfileContent userInfo={{ email: "test@concordia.ca" }} mode="light" />);
+
+    await waitFor(() => {
+      expect(mockGetWheelchairAccessibilityPreference).toHaveBeenCalled();
+    });
+
+    const switchElement = screen.UNSAFE_getByType(Switch);
+    
+    await act(async () => {
+      fireEvent(switchElement, "onValueChange", true);
+    });
+
+    await waitFor(() => {
+      const container = screen.getByRole("switch", { name: /wheelchair-accessible/i });
+      expect(container.props.accessibilityState.checked).toBe(false);
+    });
   });
 });
