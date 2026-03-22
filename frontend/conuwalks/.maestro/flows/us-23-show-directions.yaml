@@ -1,0 +1,46 @@
+appId: com.conuwalks.app
+tags:
+  - feature
+  - navigation
+---
+- runFlow: 
+    file: ../subflows/launch.yaml
+    env:
+        USERNAME: "${USERNAME}"
+        PASSWORD: "${PASSWORD}"
+
+- doubleTapOn:
+    point: 50%, 50%
+
+- waitForAnimationToEnd
+
+- tapOn:
+    point: 45%, 30%
+- waitForAnimationToEnd
+- assertVisible: "Henry F. Hall Building.*"
+- tapOn:
+    id: "directions-button"
+
+- assertVisible: "Directions"
+- assertVisible: "Current Location"
+- assertVisible: "Henry F. Hall Building"
+
+- tapOn:
+    point: 30%, 70%
+- tapOn:
+    point: 15%, 70%
+- tapOn:
+    id: "navigate-button"
+    # point: 90%, 78%
+
+- waitForAnimationToEnd
+
+- assertVisible: "Walking.*"
+- assertVisible: "Next in.*"
+- assertVisible: ".*ETA"
+- assertVisible: 
+    id: "cancel-navigation-button"
+
+- tapOn:
+    id: "cancel-navigation-button"
+- assertNotVisible: "Turn right onto Blvd.*"

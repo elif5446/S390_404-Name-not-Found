@@ -18,6 +18,8 @@ export const POI_PALETTE = {
   wcShared: "#EDEAE4",// neutral     – shared WC
   wcA: "#E8445A",     // pink badge  – accessible WC
   labBg: "#EDEAE4",   // neutral     – lab badge
+  stairsBg: "#EDEAE4",
+  elevatorBg: "#EDEAE4",
   printBg: "#EDEAE4",
   itBg: "#EDEAE4",
 };
@@ -33,11 +35,11 @@ export const poiBadgeStyles = StyleSheet.create({
     ...Platform.select({
       ios: {
         shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.14,
-        shadowRadius: 5,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 3,
       },
-      android: { elevation: 4 },
+      android: { elevation: 2 },
     }),
   },
   badgeLarge: {
@@ -47,7 +49,7 @@ export const poiBadgeStyles = StyleSheet.create({
   },
   highlighted: {
     backgroundColor: POI_PALETTE.pink,
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: POI_PALETTE.white,
   },
 });

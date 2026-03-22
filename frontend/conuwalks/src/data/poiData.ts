@@ -1,4 +1,48 @@
 import { POI, POICategory } from "@/src/types/poi";
+import { hallBuildingNavConfig } from "@/src/indoors/data/HallBuilding";
+
+const NODE_COORD_MAX = 1024;
+
+const hallNodesById = new Map(
+  hallBuildingNavConfig.floors.flatMap((floor) =>
+    floor.nodes.map((node) => [node.id, node] as const),
+  ),
+);
+
+const mapPositionFromNode = (
+  nodeId: string,
+  fallback: POI["mapPosition"],
+): POI["mapPosition"] => {
+  const node = hallNodesById.get(nodeId);
+  if (!node) return fallback;
+
+  return {
+    x: Number((node.x / NODE_COORD_MAX).toFixed(3)),
+    y: Number((node.y / NODE_COORD_MAX).toFixed(3)),
+  };
+};
+//9th floor nodes 
+const hallFloor9RoomPOIs: POI[] =
+  hallBuildingNavConfig.floors
+    .find((floor) => floor.floorId === "H_9")
+    ?.nodes.filter(
+      (node) => node.type === "room" && /^H_\d+(?:\.\d+)?$/.test(node.id) && node.id !== "H_967",
+    )
+    .map((node) => {
+      const room = node.id.slice(2);
+      return {
+        id: `H-9-room-${room}`,
+        label: "Room",
+        category: "ROOM" as POICategory,
+        description: "Classroom",
+        room,
+        floor: 9,
+        mapPosition: mapPositionFromNode(node.id, {
+          x: Number((node.x / NODE_COORD_MAX).toFixed(3)),
+          y: Number((node.y / NODE_COORD_MAX).toFixed(3)),
+        }),
+      };
+    }) ?? [];
 
 
 const POI_DATA: Record<string, POI[]> = {
@@ -7,7 +51,7 @@ const POI_DATA: Record<string, POI[]> = {
   // Right column: 821, 823, 825, 827, 829
   // Left side: 801, 803, 805
   "H-8": [
-    // ── Top-row labs (left to right) ───────────────────────────────────────
+    //  Top-row labs 
     {
       id: "H-8-lab-807",
       label: "Lab",
@@ -15,17 +59,9 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Computer Lab",
       room: "807",
       floor: 8,
-      mapPosition: { x: 0.09, y: 0.15 },
+      mapPosition: mapPositionFromNode("H_807", { x: 0.446, y: 0.112 }),
     },
-    {
-      id: "H-8-lab-809",
-      label: "Lab",
-      category: "LAB" as POICategory,
-      description: "Computer Lab",
-      room: "809",
-      floor: 8,
-      mapPosition: { x: 0.21, y: 0.15 },
-    },
+    
     {
       id: "H-8-lab-811",
       label: "Lab",
@@ -33,7 +69,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Computer Lab",
       room: "811",
       floor: 8,
-      mapPosition: { x: 0.33, y: 0.15 },
+      mapPosition: mapPositionFromNode("H_811", { x: 0.633, y: 0.112 }),
     },
     {
       id: "H-8-lab-813",
@@ -42,7 +78,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Computer Lab",
       room: "813",
       floor: 8,
-      mapPosition: { x: 0.45, y: 0.15 },
+      mapPosition: mapPositionFromNode("H_813", { x: 0.719, y: 0.112 }),
     },
     {
       id: "H-8-lab-815",
@@ -51,7 +87,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Computer Lab",
       room: "815",
       floor: 8,
-      mapPosition: { x: 0.57, y: 0.15 },
+      mapPosition: mapPositionFromNode("H_815", { x: 0.804, y: 0.112 }),
     },
     {
       id: "H-8-lab-817",
@@ -60,7 +96,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Computer Lab",
       room: "817",
       floor: 8,
-      mapPosition: { x: 0.69, y: 0.15 },
+      mapPosition: mapPositionFromNode("H_817", { x: 0.928, y: 0.112 }),
     },
     {
       id: "H-8-lab-819",
@@ -69,9 +105,9 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Computer Lab",
       room: "819",
       floor: 8,
-      mapPosition: { x: 0.81, y: 0.15 },
+      mapPosition: mapPositionFromNode("H_819", { x: 0.928, y: 0.229 }),
     },
-    // ── Left-side rooms ────────────────────────────────────────────────────
+    //Left-side rooms
     {
       id: "H-8-lab-801",
       label: "Lab",
@@ -79,7 +115,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Computer Lab",
       room: "801",
       floor: 8,
-      mapPosition: { x: 0.08, y: 0.27 },
+      mapPosition: mapPositionFromNode("H_801", { x: 0.195, y: 0.111 }),
     },
     {
       id: "H-8-lab-803",
@@ -88,7 +124,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Computer Lab",
       room: "803",
       floor: 8,
-      mapPosition: { x: 0.08, y: 0.42 },
+      mapPosition: mapPositionFromNode("H_803", { x: 0.286, y: 0.112 }),
     },
     {
       id: "H-8-lab-805",
@@ -97,9 +133,9 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Computer Lab",
       room: "805",
       floor: 8,
-      mapPosition: { x: 0.08, y: 0.57 },
+      mapPosition: mapPositionFromNode("H_805.02", { x: 0.370, y: 0.119 }),
     },
-    // ── Right-column rooms (top to bottom) ─────────────────────────────────
+    //Right-column rooms (top to bottom) 
     {
       id: "H-8-lab-821",
       label: "Lab",
@@ -107,7 +143,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Computer Lab",
       room: "821",
       floor: 8,
-      mapPosition: { x: 0.90, y: 0.25 },
+      mapPosition: mapPositionFromNode("H_821", { x: 0.928, y: 0.316 }),
     },
     {
       id: "H-8-lab-823",
@@ -116,7 +152,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Computer Lab",
       room: "823",
       floor: 8,
-      mapPosition: { x: 0.90, y: 0.40 },
+      mapPosition: mapPositionFromNode("H_823", { x: 0.928, y: 0.406 }),
     },
     {
       id: "H-8-lab-825",
@@ -125,7 +161,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Computer Lab",
       room: "825",
       floor: 8,
-      mapPosition: { x: 0.90, y: 0.55 },
+      mapPosition: mapPositionFromNode("H_825", { x: 0.928, y: 0.494 }),
     },
     {
       id: "H-8-lab-827",
@@ -134,7 +170,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Computer Lab",
       room: "827",
       floor: 8,
-      mapPosition: { x: 0.90, y: 0.69 },
+      mapPosition: mapPositionFromNode("H_827", { x: 0.928, y: 0.586 }),
     },
     {
       id: "H-8-lab-829",
@@ -143,9 +179,9 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Computer Lab",
       room: "829",
       floor: 8,
-      mapPosition: { x: 0.90, y: 0.82 },
+      mapPosition: mapPositionFromNode("H_829", { x: 0.928, y: 0.698 }),
     },
-    // ── Washrooms ──────────────────────────────────────────────────────────
+    //  Washrooms 
     {
       id: "H-8-wc-shared",
       label: "WC",
@@ -153,9 +189,54 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Shared Washroom",
       room: "836",
       floor: 8,
-      mapPosition: { x: 0.36, y: 0.58 },
+      mapPosition: mapPositionFromNode("H_8_BATHROOM_1", { x: 0.367, y: 0.282 }),
     },
-    // ── Additional room targets from floor plan ───────────────────────────
+    {
+      id: "H-8-elevator-1",
+      label: "Elevator",
+      category: "ELEVATOR" as POICategory,
+      description: "Elevator",
+      room: "E1",
+      floor: 8,
+      mapPosition: { x: 0.330, y: 0.340 },
+    },
+    {
+      id: "H-8-stairs-1",
+      label: "Stairs",
+      category: "STAIRS" as POICategory,
+      description: "Stairs",
+      room: "S1",
+      floor: 8,
+      mapPosition: { x: 0.288, y: 0.288},
+    },
+    {
+      id: "H-8-stairs-2",
+      label: "Stairs",
+      category: "STAIRS" as POICategory,
+      description: "Stairs",
+      room: "S2",
+      floor: 8,
+      mapPosition: mapPositionFromNode("H_8_STAIRS_2", { x: 0.3, y: 0.710 }),
+    },
+    {
+      id: "H-8-stairs-3",
+      label: "Stairs",
+      category: "STAIRS" as POICategory,
+      description: "Stairs",
+      room: "S3",
+      floor: 8,
+      mapPosition: { x: 0.705, y: 0.710 },
+    },
+    {
+      id: "H-8-stairs-4",
+      label: "Stairs",
+      category: "STAIRS" as POICategory,
+      description: "Stairs",
+      room: "S4",
+      floor: 8,
+      mapPosition: { x: 0.705, y: 0.282 },
+    },
+    //  Additional room targets from floor plan 
     {
       id: "H-8-room-833",
       label: "Room",
@@ -163,7 +244,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Classroom",
       room: "833",
       floor: 8,
-      mapPosition: { x: 0.90, y: 0.94 },
+      mapPosition: mapPositionFromNode("H_833", { x: 0.812, y: 0.881 }),
     },
     {
       id: "H-8-room-835",
@@ -172,16 +253,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Classroom",
       room: "835",
       floor: 8,
-      mapPosition: { x: 0.79, y: 0.94 },
-    },
-    {
-      id: "H-8-room-839",
-      label: "Room",
-      category: "ROOM" as POICategory,
-      description: "Classroom",
-      room: "839",
-      floor: 8,
-      mapPosition: { x: 0.57, y: 0.93 },
+      mapPosition: mapPositionFromNode("H_835", { x: 0.723, y: 0.881 }),
     },
     {
       id: "H-8-room-841",
@@ -190,7 +262,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Computer Lab",
       room: "841",
       floor: 8,
-      mapPosition: { x: 0.46, y: 0.93 },
+      mapPosition: mapPositionFromNode("H_841", { x: 0.464, y: 0.881 }),
     },
     {
       id: "H-8-room-843",
@@ -199,7 +271,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Classroom",
       room: "843",
       floor: 8,
-      mapPosition: { x: 0.35, y: 0.93 },
+      mapPosition: mapPositionFromNode("H_843", { x: 0.370, y: 0.881 }),
     },
     {
       id: "H-8-room-845",
@@ -208,7 +280,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Classroom",
       room: "845",
       floor: 8,
-      mapPosition: { x: 0.24, y: 0.93 },
+      mapPosition: mapPositionFromNode("H_845", { x: 0.280, y: 0.881 }),
     },
     {
       id: "H-8-room-847",
@@ -217,34 +289,248 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Classroom",
       room: "847",
       floor: 8,
-      mapPosition: { x: 0.13, y: 0.93 },
+      mapPosition: mapPositionFromNode("H_847", { x: 0.195, y: 0.881 }),
+    },
+    {
+      id: "H-8-room-867",
+      label: "Room",
+      category: "ROOM" as POICategory,
+      description: "Classroom",
+      room: "867",
+      floor: 8,
+      mapPosition: mapPositionFromNode("H_867", { x: 0.059, y: 0.113 }),
+    },
+    {
+      id: "H-8-room-865",
+      label: "Room",
+      category: "ROOM" as POICategory,
+      description: "Classroom",
+      room: "865",
+      floor: 8,
+      mapPosition: mapPositionFromNode("H_865", { x: 0.072, y: 0.167 }),
+    },
+    {
+      id: "H-8-room-863",
+      label: "Room",
+      category: "ROOM" as POICategory,
+      description: "Classroom",
+      room: "863",
+      floor: 8,
+      mapPosition: mapPositionFromNode("H_863", { x: 0.072, y: 0.228 }),
+    },
+    {
+      id: "H-8-room-861",
+      label: "Room",
+      category: "ROOM" as POICategory,
+      description: "Classroom",
+      room: "861",
+      floor: 8,
+      mapPosition: mapPositionFromNode("H_861", { x: 0.072, y: 0.313 }),
+    },
+    {
+      id: "H-8-room-859",
+      label: "Room",
+      category: "ROOM" as POICategory,
+      description: "Classroom",
+      room: "859",
+      floor: 8,
+      mapPosition: mapPositionFromNode("H_859", { x: 0.072, y: 0.402 }),
+    },
+    {
+      id: "H-8-room-857",
+      label: "Room",
+      category: "ROOM" as POICategory,
+      description: "Classroom",
+      room: "857",
+      floor: 8,
+      mapPosition: mapPositionFromNode("H_857", { x: 0.072, y: 0.494 }),
+    },
+    {
+      id: "H-8-room-855",
+      label: "Room",
+      category: "ROOM" as POICategory,
+      description: "Classroom",
+      room: "855",
+      floor: 8,
+      mapPosition: mapPositionFromNode("H_855", { x: 0.072, y: 0.579 }),
+    },
+    {
+      id: "H-8-room-853",
+      label: "Room",
+      category: "ROOM" as POICategory,
+      description: "Classroom",
+      room: "853",
+      floor: 8,
+      mapPosition: mapPositionFromNode("H_853", { x: 0.072, y: 0.671 }),
+    },
+    {
+      id: "H-8-room-851.03",
+      label: "Room",
+      category: "ROOM" as POICategory,
+      description: "Classroom",
+      room: "851.03",
+      floor: 8,
+      mapPosition: mapPositionFromNode("H_851.03", { x: 0.05, y: 0.787 }),
+    },
+    {
+      id: "H-8-room-851.02",
+      label: "Room",
+      category: "ROOM" as POICategory,
+      description: "Classroom",
+      room: "851.02",
+      floor: 8,
+      mapPosition: mapPositionFromNode("H_851.02", { x: 0.05, y: 0.737 }),
+    },
+    {
+      id: "H-8-room-851.01",
+      label: "Room",
+      category: "ROOM" as POICategory,
+      description: "Classroom",
+      room: "851.01",
+      floor: 8,
+      mapPosition: mapPositionFromNode("H_851.01", { x: 0.119, y: 0.738 }),
+    },
+    {
+      id: "H-8-room-849",
+      label: "Room",
+      category: "ROOM" as POICategory,
+      description: "Classroom",
+      room: "849",
+      floor: 8,
+      mapPosition: mapPositionFromNode("H_849", { x: 0.077, y: 0.881 }),
+    },
+    {
+      id: "H-8-room-831",
+      label: "Room",
+      category: "ROOM" as POICategory,
+      description: "Classroom",
+      room: "831",
+      floor: 8,
+      mapPosition: mapPositionFromNode("H_831", { x: 0.928, y: 0.881 }),
+    },
+    {
+      id: "H-8-room-837",
+      label: "Room",
+      category: "ROOM" as POICategory,
+      description: "Classroom",
+      room: "837",
+      floor: 8,
+      mapPosition: mapPositionFromNode("H_837", { x: 0.633, y: 0.881 }),
+    },
+    {
+      id: "H-8-room-852",
+      label: "Room",
+      category: "ROOM" as POICategory,
+      description: "Classroom",
+      room: "852",
+      floor: 8,
+      mapPosition: mapPositionFromNode("H_852", { x: 0.244, y: 0.641 }),
+    },
+    {
+      id: "H-8-room-854",
+      label: "Room",
+      category: "ROOM" as POICategory,
+      description: "Classroom",
+      room: "854",
+      floor: 8,
+      mapPosition: mapPositionFromNode("H_854", { x: 0.257, y: 0.581 }),
+    },
+    {
+      id: "H-8-room-862",
+      label: "Room",
+      category: "ROOM" as POICategory,
+      description: "Classroom",
+      room: "862",
+      floor: 8,
+      mapPosition: mapPositionFromNode("H_862", { x: 0.369, y: 0.479 }),
+    },
+    {
+      id: "H-8-room-842",
+      label: "Room",
+      category: "ROOM" as POICategory,
+      description: "Classroom",
+      room: "842",
+      floor: 8,
+      mapPosition: mapPositionFromNode("H_842", { x: 0.369, y: 0.581 }),
+    },
+    {
+      id: "H-8-room-820",
+      label: "Room",
+      category: "ROOM" as POICategory,
+      description: "Classroom",
+      room: "820",
+      floor: 8,
+      mapPosition: mapPositionFromNode("H_820", { x: 0.67, y: 0.445 }),
+    },
+    {
+      id: "H-8-room-822",
+      label: "Room",
+      category: "ROOM" as POICategory,
+      description: "Classroom",
+      room: "822",
+      floor: 8,
+      mapPosition: mapPositionFromNode("H_822", { x: 0.739, y: 0.593 }),
+    },
+    {
+      id: "H-8-room-832.06",
+      label: "Room",
+      category: "ROOM" as POICategory,
+      description: "Classroom",
+      room: "832.06",
+      floor: 8,
+      mapPosition: mapPositionFromNode("H_832.06", { x: 0.635, y: 0.592 }),
+    },
+    {
+      id: "H-8-room-805.03",
+      label: "Room",
+      category: "ROOM" as POICategory,
+      description: "Classroom",
+      room: "805.03",
+      floor: 8,
+      mapPosition: mapPositionFromNode("H_805.03", { x: 0.37, y: 0.073 }),
+    },
+    {
+      id: "H-8-room-805.01",
+      label: "Room",
+      category: "ROOM" as POICategory,
+      description: "Classroom",
+      room: "805.01",
+      floor: 8,
+      mapPosition: mapPositionFromNode("H_805.01", { x: 0.37, y: 0.159 }),
+    },
+    {
+      id: "H-8-room-805.02",
+      label: "Room",
+      category: "ROOM" as POICategory,
+      description: "Classroom",
+      room: "805.02",
+      floor: 8,
+      mapPosition: mapPositionFromNode("H_805.02", { x: 0.37, y: 0.119 }),
+    },
+    // Escalators
+    {
+      id: "H-8-escalator-up-9",
+      label: "Escalator Up",
+      category: "ESCALATOR" as POICategory,
+      description: "Escalator Up to Floor 9",
+      room: "ESCALATOR_UP_9",
+      floor: 8,
+      mapPosition: mapPositionFromNode("H_8_ESCALATOR_UP_TO_FLOOR_9", { x: 0.477, y: 0.421 }),
+    },
+    {
+      id: "H-8-escalator-down-2",
+      label: "Escalator Down",
+      category: "ESCALATOR" as POICategory,
+      description: "Escalator Down to Floor 2",
+      room: "ESCALATOR_DOWN_2",
+      floor: 8,
+      mapPosition: mapPositionFromNode("H_8_ESCALATOR_DOWN_TO_FLOOR_2", { x: 0.477, y: 0.603 }),
     },
   ],
 
   // Hall Building – Floor 9
-  // From top floor plan image: 909, 911, 913, 915, 917, 919 (top row)
-  // Right column: 921, 923, 925, 927, 929
-  // Left side: 901, 903, 905
   "H-9": [
-    // ── Top-row labs (left to right) ───────────────────────────────────────
-    {
-      id: "H-9-lab-909",
-      label: "Lab",
-      category: "LAB" as POICategory,
-      description: "Computer Lab",
-      room: "909",
-      floor: 9,
-      mapPosition: { x: 0.09, y: 0.15 },
-    },
-    {
-      id: "H-9-lab-911",
-      label: "Lab",
-      category: "LAB" as POICategory,
-      description: "Computer Lab",
-      room: "911",
-      floor: 9,
-      mapPosition: { x: 0.21, y: 0.15 },
-    },
+    // Computer Labs 
     {
       id: "H-9-lab-913",
       label: "Lab",
@@ -252,7 +538,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Computer Lab",
       room: "913",
       floor: 9,
-      mapPosition: { x: 0.33, y: 0.15 },
+      mapPosition: mapPositionFromNode("H_913", { x: 0.98, y: 0.02 }),
     },
     {
       id: "H-9-lab-915",
@@ -261,7 +547,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Computer Lab",
       room: "915",
       floor: 9,
-      mapPosition: { x: 0.45, y: 0.15 },
+      mapPosition: mapPositionFromNode("H_915", { x: 0.802, y: 0.110 }),
     },
     {
       id: "H-9-lab-917",
@@ -270,46 +556,8 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Computer Lab",
       room: "917",
       floor: 9,
-      mapPosition: { x: 0.57, y: 0.15 },
+      mapPosition: mapPositionFromNode("H_917", { x: 0.915, y: 0.115 }),
     },
-    {
-      id: "H-9-lab-919",
-      label: "Lab",
-      category: "LAB" as POICategory,
-      description: "Computer Lab",
-      room: "919",
-      floor: 9,
-      mapPosition: { x: 0.69, y: 0.15 },
-    },
-    // ── Left-side rooms ────────────────────────────────────────────────────
-    {
-      id: "H-9-lab-901",
-      label: "Lab",
-      category: "LAB" as POICategory,
-      description: "Computer Lab",
-      room: "901",
-      floor: 9,
-      mapPosition: { x: 0.08, y: 0.27 },
-    },
-    {
-      id: "H-9-lab-903",
-      label: "Lab",
-      category: "LAB" as POICategory,
-      description: "Computer Lab",
-      room: "903",
-      floor: 9,
-      mapPosition: { x: 0.08, y: 0.42 },
-    },
-    {
-      id: "H-9-lab-905",
-      label: "Lab",
-      category: "LAB" as POICategory,
-      description: "Computer Lab",
-      room: "905",
-      floor: 9,
-      mapPosition: { x: 0.08, y: 0.57 },
-    },
-    // ── Right-column rooms including washrooms ─────────────────────────────
     {
       id: "H-9-lab-921",
       label: "Lab",
@@ -317,34 +565,16 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Computer Lab",
       room: "921",
       floor: 9,
-      mapPosition: { x: 0.90, y: 0.25 },
+      mapPosition: mapPositionFromNode("H_921", { x: 0.915, y: 0.319 }),
     },
     {
-      id: "H-9-lab-923",
+      id: "H-9-lab-928",
       label: "Lab",
       category: "LAB" as POICategory,
       description: "Computer Lab",
-      room: "923",
+      room: "928",
       floor: 9,
-      mapPosition: { x: 0.90, y: 0.40 },
-    },
-    {
-      id: "H-9-lab-925",
-      label: "Lab",
-      category: "LAB" as POICategory,
-      description: "Computer Lab",
-      room: "925",
-      floor: 9,
-      mapPosition: { x: 0.90, y: 0.55 },
-    },
-    {
-      id: "H-9-lab-927",
-      label: "Lab",
-      category: "LAB" as POICategory,
-      description: "Computer Lab",
-      room: "927",
-      floor: 9,
-      mapPosition: { x: 0.90, y: 0.69 },
+      mapPosition: mapPositionFromNode("H_928", { x: 0.85, y: 0.80 }),
     },
     {
       id: "H-9-lab-929",
@@ -353,132 +583,159 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Computer Lab",
       room: "929",
       floor: 9,
-      mapPosition: { x: 0.90, y: 0.82 },
+      mapPosition: mapPositionFromNode("H_929", { x: 0.894, y: 0.862 }),
     },
-    // ── Washrooms (from mockup) ────────────────────────────────────────────
     {
-      id: "H-9-wc-m",
-      label: "WC M",
-      category: "WC_M" as POICategory,
-      description: "Boys Washroom",
-      room: "912",
+      id: "H-9-lab-931",
+      label: "Lab",
+      category: "LAB" as POICategory,
+      description: "Computer Lab",
+      room: "931",
       floor: 9,
-      mapPosition: { x: 0.92, y: 0.34 },
+      mapPosition: mapPositionFromNode("H_931", { x: 0.88, y: 0.82 }),
     },
+    {
+      id: "H-9-lab-933",
+      label: "Lab",
+      category: "LAB" as POICategory,
+      description: "Computer Lab",
+      room: "933",
+      floor: 9,
+      mapPosition: mapPositionFromNode("H_933", { x: 0.735, y: 0.890 }),
+    },
+    {
+      id: "H-9-lab-967",
+      label: "Lab",
+      category: "LAB" as POICategory,
+      description: "Computer Lab",
+      room: "967",
+      floor: 9,
+      mapPosition: mapPositionFromNode("H_967", { x: 0.071, y: 0.162 }),
+    },
+
+    // Washrooms
     {
       id: "H-9-wc-f",
       label: "WC F",
       category: "WC_F" as POICategory,
-      description: "Girls Washroom",
-      room: "916",
+      description: "Womens Washroom",
+      room: "B1",
       floor: 9,
-      mapPosition: { x: 0.92, y: 0.48 },
+      mapPosition: mapPositionFromNode("H_9_BATHROOM_1_W", { x: 0.347, y: 0.275 }),
     },
     {
-      id: "H-9-wc-a",
-      label: "WC A",
-      category: "WC_A" as POICategory,
-      description: "Accessibility Washroom",
-      room: "918",
+      id: "H-9-wc-m",
+      label: "WC M",
+      category: "WC_M" as POICategory,
+      description: "Mens Washroom",
+      room: "B2",
       floor: 9,
-      mapPosition: { x: 0.92, y: 0.62 },
+      mapPosition: mapPositionFromNode("H_9_BATHROOM_2_M", { x: 0.614, y: 0.286 }),
     },
-    // ── Other facilities (from mockup) ─────────────────────────────────────
-    {
-      id: "H-9-print",
-      label: "Print",
-      category: "PRINT" as POICategory,
-      description: "Print Station",
-      room: "930",
-      floor: 9,
-      mapPosition: { x: 0.66, y: 0.60 },
-    },
+
+    // IT Help Desk 
     {
       id: "H-9-it",
       label: "IT",
       category: "IT" as POICategory,
       description: "IT Help Desk",
-      room: "933",
+      room: "IT",
       floor: 9,
-      mapPosition: { x: 0.75, y: 0.70 },
+      mapPosition: { x: 0.50, y: 0.50 },
     },
-    // ── Additional room targets from floor plan ───────────────────────────
+
+    // Printer (new location, not covered by escalator)
     {
-      id: "H-9-room-935",
-      label: "Room",
-      category: "ROOM" as POICategory,
-      description: "Classroom",
-      room: "935",
+      id: "H-9-print",
+      label: "",
+      category: "PRINT" as POICategory,
+      description: "Printer",
+      room: "PR1",
       floor: 9,
-      mapPosition: { x: 0.90, y: 0.93 },
+      mapPosition: mapPositionFromNode("H_9_PRINTER", { x: 0.586, y: 0.586 }),
     },
+
+    // Elevator
     {
-      id: "H-9-room-937",
-      label: "Room",
-      category: "ROOM" as POICategory,
-      description: "Classroom",
-      room: "937",
+      id: "H-9-elevator-1",
+      label: "Elevator",
+      category: "ELEVATOR" as POICategory,
+      description: "Elevator",
+      room: "E1",
       floor: 9,
-      mapPosition: { x: 0.79, y: 0.93 },
+      mapPosition: mapPositionFromNode("H_9_ELEVATOR", { x: 0.350, y: 0.348 }),
     },
+
+    // Stairs
     {
-      id: "H-9-room-939",
-      label: "Room",
-      category: "ROOM" as POICategory,
-      description: "Classroom",
-      room: "939",
+      id: "H-9-stairs-1",
+      label: "Stairs",
+      category: "STAIRS" as POICategory,
+      description: "Stairs",
+      room: "S1",
       floor: 9,
-      mapPosition: { x: 0.68, y: 0.93 },
-    },
-    {
-      id: "H-9-room-941",
-      label: "Room",
-      category: "ROOM" as POICategory,
-      description: "Classroom",
-      room: "941",
-      floor: 9,
-      mapPosition: { x: 0.57, y: 0.93 },
+      mapPosition: mapPositionFromNode("H_9_STAIRS_1", { x: 0.300, y: 0.356 }),
     },
     {
-      id: "H-9-room-943",
-      label: "Room",
-      category: "ROOM" as POICategory,
-      description: "Classroom",
-      room: "943",
+      id: "H-9-stairs-2",
+      label: "Stairs",
+      category: "STAIRS" as POICategory,
+      description: "Stairs",
+      room: "S2",
       floor: 9,
-      mapPosition: { x: 0.46, y: 0.93 },
+      mapPosition: mapPositionFromNode("H_9_STAIRS_2", { x: 0.692, y: 0.710 }),
     },
     {
-      id: "H-9-room-945",
-      label: "Room",
-      category: "ROOM" as POICategory,
-      description: "Classroom",
-      room: "945",
+      id: "H-9-stairs-3",
+      label: "Stairs",
+      category: "STAIRS" as POICategory,
+      description: "Stairs",
+      room: "S3",
       floor: 9,
-      mapPosition: { x: 0.35, y: 0.93 },
+      mapPosition: mapPositionFromNode("H_9_STAIRS_3", { x: 0.288, y: 0.707 }),
     },
     {
-      id: "H-9-room-947",
-      label: "Room",
-      category: "ROOM" as POICategory,
-      description: "Classroom",
-      room: "947",
+      id: "H-9-stairs-4",
+      label: "Stairs",
+      category: "STAIRS" as POICategory,
+      description: "Stairs",
+      room: "S4",
       floor: 9,
-      mapPosition: { x: 0.24, y: 0.93 },
+      mapPosition: mapPositionFromNode("H_9_STAIRS_4", { x: 0.697, y: 0.284 }),
+    },
+    // Escalators
+    {
+      id: "H-9-escalator-down-8",
+      label: "Escalator Down",
+      category: "ESCALATOR" as POICategory,
+      description: "Escalator Down to Floor 8",
+      room: "ESCALATOR_DOWN_8",
+      floor: 9,
+      mapPosition: mapPositionFromNode("H_9_ESCALATOR_DOWN_TO_FLOOR_8", { x: 0.469, y: 0.434 }),
+    },
+    {
+      id: "H-9-escalator-up-10",
+      label: "Escalator Up",
+      category: "ESCALATOR" as POICategory,
+      description: "Escalator Up to Floor 10",
+      room: "ESCALATOR_UP_10",
+      floor: 9,
+      mapPosition: mapPositionFromNode("H_9_ESCALATOR_UP_TO_FLOOR_10", { x: 0.503, y: 0.434 }),
     },
   ],
+
 };
 
 /**
  * Returns the POI list for the given building + floor combination.
- * @param buildingId  e.g. "H"
+ * @param buildingId  "H"
  * @param floor       numeric floor level
  */
 export function getPOIsForFloor(buildingId: string, floor: number): POI[] {
   return POI_DATA[`${buildingId}-${floor}`] ?? [];
 }
 
-/** Human-readable category labels used in filter chips. */
+//category labels used in filter chips.
 export const CATEGORY_LABELS: Record<POICategory, string> = {
   WC_F: "WC F",
   WC_M: "WC M",
@@ -486,6 +743,9 @@ export const CATEGORY_LABELS: Record<POICategory, string> = {
   WC_SHARED: "WC",
   LAB: "Lab",
   ROOM: "Room",
+  STAIRS: "Stairs",
+  ELEVATOR: "Elevator",
+  ESCALATOR: "Escalator",
   PRINT: "Print",
   IT: "IT",
 };
@@ -519,7 +779,7 @@ export function getDirectionsForPOI(
     const horizontalTurn = dx >= 0 ? "Turn right" : "Turn left";
     const verticalMove = dy >= 0 ? "Continue south" : "Continue north";
     const distance = Math.sqrt(dx * dx + dy * dy);
-    const estimatedMinutes = Math.max(1, Math.round(distance * 8));
+    const estimatedMinutes = Math.min(2, Math.max(1, Math.round(distance * 8)));
 
     return {
       steps: [

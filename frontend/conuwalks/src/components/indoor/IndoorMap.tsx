@@ -19,10 +19,10 @@ const MapContent = React.memo(({ floor, width, height }: MapContentProps) => {
     if (isValidComponent) {
       const SvgComponent = floor.image as React.ElementType;
       return (
-        <View style={{ width, height }}>
+        <View style={{ width, height, position: "relative" }}>
           <SvgComponent
-            width="100%"
-            height="100%"
+            width={width}
+            height={height}
             preserveAspectRatio="xMidYMid meet"
           />
         </View>
@@ -31,28 +31,25 @@ const MapContent = React.memo(({ floor, width, height }: MapContentProps) => {
       console.warn(
         `[IndoorMap] Floor ${floor.level} has type 'svg' but 'image' is not a valid component. Received: ${typeof floor.image}`,
       );
-      // fall through to error view
     }
   }
 
   // handle PNG/JPG Images
   if (floor.type === "png" && floor.image) {
     return (
-      <Image
-        source={floor.image as ImageSourcePropType}
-        style={[styles.floorImage, { width, height }]}
-        resizeMode="contain"
-      />
+      <View style={{ width, height, position: "relative" }}>
+        <Image
+          source={floor.image as ImageSourcePropType}
+          style={[styles.floorImage, { width, height }]}
+          resizeMode="contain"
+        />
+      </View>
     );
   }
 
   return (
     <View style={[styles.errorBox, { width, height }]}>
-      <Ionicons
-        name="alert-circle-outline"
-        size={32}
-        color={styles.errorText.color}
-      />
+      <Ionicons name="alert-circle-outline" size={32} color={styles.errorText.color} />
       <Text style={styles.errorText}>Map Image Unavailable</Text>
     </View>
   );

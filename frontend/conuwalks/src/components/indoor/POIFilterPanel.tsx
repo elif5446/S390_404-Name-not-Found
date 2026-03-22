@@ -1,12 +1,22 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { View, Text, TouchableOpacity, ScrollView, TextInput } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import React, { useMemo, useRef, useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  PanResponder,
+} from "react-native";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { POI, POICategory } from "@/src/types/poi";
 import { CATEGORY_LABELS } from "@/src/data/poiData";
 import {
   poiPanelStyles as S,
   POI_PALETTE,
 } from "@/src/styles/IndoorPOI.styles";
+
+type CategoryIcon =
+  | { lib: "ion"; name: keyof typeof Ionicons.glyphMap }
+  | { lib: "mci"; name: keyof typeof MaterialCommunityIcons.glyphMap };
 
 interface Props {
   pois: POI[];
@@ -23,192 +33,264 @@ interface Props {
 
 const POIFilterPanel: React.FC<Props> = ({
   pois,
-  categories,
   activeCategories,
   floorLabel,
-  targetMode,
   sourcePOI,
   destinationPOI,
-  onTargetModeChange,
-  onToggleCategory,
   onSelectPOI,
 }) => {
-  const [query, setQuery] = useState("");
-  const [listExpanded, setListExpanded] = useState(false);
+  const [query] = useState("");
+  const [expanded, setExpanded] = useState(false);
 
-  // Show only POIs whose category is active
+  const normalize = (value: string) =>
+    value.trim().toLowerCase().replace(/\s+/g, " ");
+
+  const queryNormalized = normalize(query);
+  const queryRoom = queryNormalized
+    .replace(/^h\s*-\s*/i, "")
+    .replace(/^room\s+/i, "");
+
   const visiblePOIs = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
     return pois
       .filter((p) => activeCategories.has(p.category))
       .filter((p) => {
-        if (!normalizedQuery) return true;
+        if (!queryNormalized) return true;
+
+        const roomOnly = p.room.toLowerCase();
+        const roomWithBuilding = `h-${roomOnly}`;
+        const desc = p.description.toLowerCase();
+        const label = p.label.toLowerCase();
+        const category = CATEGORY_LABELS[p.category].toLowerCase();
+
         return (
-          p.description.toLowerCase().includes(normalizedQuery) ||
-          p.room.toLowerCase().includes(normalizedQuery) ||
-          p.label.toLowerCase().includes(normalizedQuery) ||
-          CATEGORY_LABELS[p.category].toLowerCase().includes(normalizedQuery)
+          desc.includes(queryNormalized) ||
+          label.includes(queryNormalized) ||
+          category.includes(queryNormalized) ||
+          roomOnly.includes(queryNormalized) ||
+          roomWithBuilding.includes(queryNormalized) ||
+          roomOnly.includes(queryRoom) ||
+          roomWithBuilding.includes(queryRoom)
         );
       });
-  }, [activeCategories, pois, query]);
+  }, [activeCategories, pois, queryNormalized, queryRoom]);
 
-  useEffect(() => {
-    // Auto-open list when searching so users immediately see matches.
-    if (query.trim().length > 0) {
-      setListExpanded(true);
-    }
-  }, [query]);
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dy) > 8,
+      onPanResponderRelease: (_, gesture) => {
+        if (gesture.dy < -30) {
+          setExpanded(true);
+        } else if (gesture.dy > 30) {
+          setExpanded(false);
+        }
+      },
+    }),
+  ).current;
 
   return (
-    <View style={S.panelContainer}>
-      <View style={S.targetModeRow}>
-        <TouchableOpacity
-          onPress={() => onTargetModeChange("SOURCE")}
-          style={targetMode === "SOURCE" ? S.modeChipActive : S.modeChipInactive}
-          accessibilityRole="button"
-          accessibilityState={{ selected: targetMode === "SOURCE" }}
-          accessibilityLabel="Set source mode"
-        >
-          <Text style={targetMode === "SOURCE" ? S.modeChipTextActive : S.modeChipTextInactive}>
-            Set Source
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => onTargetModeChange("DESTINATION")}
-          style={targetMode === "DESTINATION" ? S.modeChipActive : S.modeChipInactive}
-          accessibilityRole="button"
-          accessibilityState={{ selected: targetMode === "DESTINATION" }}
-          accessibilityLabel="Set destination mode"
-        >
-          <Text style={targetMode === "DESTINATION" ? S.modeChipTextActive : S.modeChipTextInactive}>
-            Set Destination
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={S.searchRow}>
-        <Ionicons name="search-outline" size={14} color={POI_PALETTE.textMuted} />
-        <TextInput
-          value={query}
-          onChangeText={setQuery}
-          placeholder="Search POI or room"
-          placeholderTextColor={POI_PALETTE.textMuted}
-          style={S.searchInput}
-          accessibilityLabel="Search POIs"
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-      </View>
-
-      {/* ── Filter chips ──────────────────────────────────────── */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={S.filterRow}
+    <View
+      style={{
+        position: "absolute",
+        left: 12,
+        right: 12,
+        bottom: 12,
+        zIndex: 900,
+      }}
+      pointerEvents="box-none"
+    >
+      <View
+        style={{
+          backgroundColor: "#FFFFFF",
+          borderRadius: 18,
+          shadowColor: "#000",
+          shadowOpacity: 0.12,
+          shadowRadius: 8,
+          elevation: 8,
+          overflow: "hidden",
+        }}
       >
-        <Text style={S.showLabel}>SHOW</Text>
-        {categories.map((cat) => {
-          const isActive = activeCategories.has(cat);
-          return (
-            <TouchableOpacity
-              key={cat}
-              onPress={() => onToggleCategory(cat)}
-              style={isActive ? S.chipActive : S.chipInactive}
-              accessibilityRole="button"
-              accessibilityState={{ selected: isActive }}
-              accessibilityLabel={`Filter ${CATEGORY_LABELS[cat]}`}
+        <View
+          {...panResponder.panHandlers}
+          style={{
+            alignItems: "center",
+            paddingTop: 8,
+            paddingBottom: 10,
+            borderBottomWidth: expanded ? 1 : 0,
+            borderBottomColor: "#F0F0F0",
+          }}
+        >
+          <TouchableOpacity
+            onPress={() => setExpanded((v) => !v)}
+            style={{ width: "100%" }}
+            accessibilityRole="button"
+            accessibilityLabel="Expand or collapse points of interest panel"
+          >
+            <View
+              style={{
+                alignItems: "center",
+              }}
             >
-              <Text style={isActive ? S.chipTextActive : S.chipTextInactive}>
-                {CATEGORY_LABELS[cat]}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
-
-      <TouchableOpacity
-        onPress={() => setListExpanded((v) => !v)}
-        style={S.listToggleRow}
-        accessibilityRole="button"
-        accessibilityLabel="Toggle POI list"
-      >
-        <Text style={S.listToggleTitle}>Points of Interest ({visiblePOIs.length})</Text>
-        <Ionicons
-          name={listExpanded ? "chevron-up" : "chevron-down"}
-          size={16}
-          color={POI_PALETTE.textMid}
-        />
-      </TouchableOpacity>
-
-      {/* ── POI list card (collapsible) ───────────────────────────────────── */}
-      {listExpanded ? (
-        <View style={S.listCard}>
-          <Text style={S.listHeader}>
-            Floor {floorLabel}{"   "}Points of Interest
-          </Text>
-
-          {visiblePOIs.length > 0 ? (
-            <ScrollView
-              style={S.listScroll}
-              contentContainerStyle={S.listScrollContent}
-              showsVerticalScrollIndicator={true}
-              nestedScrollEnabled
-            >
-              {visiblePOIs.map((poi, idx) => (
-                <TouchableOpacity
-                  key={poi.id}
-                  onPress={() => onSelectPOI(poi)}
-                  style={[
-                    S.listRow,
-                    idx === visiblePOIs.length - 1 && S.listRowLast,
-                  ]}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Navigate to ${poi.description}, Room ${poi.room}`}
-                >
-                  <View
-                    style={{
-                      width: 26,
-                      height: 26,
-                      borderRadius: 8,
-                      backgroundColor: getBadgeBg(poi.category),
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    <Ionicons
-                      name={getCategoryIcon(poi.category)}
-                      size={14}
-                      color={getCategoryIconColor(poi.category)}
-                    />
-                  </View>
-
-                  <Text style={S.listRowDesc}>{poi.description}</Text>
-                  {sourcePOI?.id === poi.id ? (
-                    <Text style={S.rolePillSource}>Source</Text>
-                  ) : destinationPOI?.id === poi.id ? (
-                    <Text style={S.rolePillDestination}>Destination</Text>
-                  ) : null}
-                  <Text style={S.listRowRoom}>H-{poi.room}</Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          ) : (
-            <View style={S.emptyState}>
-              <Text style={S.emptyStateText}>No POIs found for your search/filter.</Text>
+              <View
+                style={{
+                  width: 38,
+                  height: 4,
+                  borderRadius: 2,
+                  backgroundColor: "#D0D0D0",
+                  marginBottom: 8,
+                }}
+              />
             </View>
-          )}
+
+            <View
+              style={{
+                width: "100%",
+                paddingHorizontal: 14,
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontWeight: "700",
+                  color: "#333333",
+                }}
+              >
+                Points of Interest ({visiblePOIs.length})
+              </Text>
+
+              <Ionicons
+                name={expanded ? "chevron-down" : "chevron-up"}
+                size={18}
+                color={POI_PALETTE.textMid}
+                style={{ marginTop: -2 }}
+              />
+            </View>
+          </TouchableOpacity>
         </View>
-      ) : null}
+
+        {expanded && (
+          <View style={{ maxHeight: 250 }}>
+            {visiblePOIs.length > 0 ? (
+              <ScrollView
+                style={{ maxHeight: 180 }}
+                contentContainerStyle={{
+                  paddingHorizontal: 10,
+                  paddingBottom: 12,
+                }}
+                showsVerticalScrollIndicator={true}
+                nestedScrollEnabled
+              >
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontWeight: "700",
+                    color: "#777777",
+                    marginBottom: 8,
+                    marginLeft: 4,
+                  }}
+                >
+                  Floor {floorLabel} · Points of Interest
+                </Text>
+
+                {visiblePOIs.map((poi, idx) => {
+                  const categoryIcon = getCategoryIcon(poi.category);
+
+                  return (
+                    <TouchableOpacity
+                      key={poi.id}
+                      onPress={() => onSelectPOI(poi)}
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        paddingVertical: 10,
+                        paddingHorizontal: 8,
+                        borderBottomWidth:
+                          idx === visiblePOIs.length - 1 ? 0 : 1,
+                        borderBottomColor: "#F1F1F1",
+                      }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Navigate to ${poi.description}, Room ${poi.room}`}
+                    >
+                      <View
+                        style={{
+                          width: 26,
+                          height: 26,
+                          borderRadius: 8,
+                          backgroundColor: getBadgeBg(poi.category),
+                          alignItems: "center",
+                          justifyContent: "center",
+                          marginRight: 10,
+                        }}
+                      >
+                        {categoryIcon.lib === "ion" ? (
+                          <Ionicons
+                            name={categoryIcon.name}
+                            size={14}
+                            color={getCategoryIconColor(poi.category)}
+                          />
+                        ) : (
+                          <MaterialCommunityIcons
+                            name={categoryIcon.name}
+                            size={14}
+                            color={getCategoryIconColor(poi.category)}
+                          />
+                        )}
+                      </View>
+
+                      <View style={{ flex: 1 }}>
+                        <Text
+                          style={{
+                            fontSize: 14,
+                            fontWeight: "600",
+                            color: "#222222",
+                          }}
+                        >
+                          {poi.description}
+                        </Text>
+                        <Text
+                          style={{
+                            fontSize: 12,
+                            color: "#777777",
+                            marginTop: 2,
+                          }}
+                        >
+                          {formatPoiRoomLabel(poi)}
+                        </Text>
+                      </View>
+
+                      {sourcePOI?.id === poi.id ? (
+                        <Text style={S.rolePillSource}>Source</Text>
+                      ) : destinationPOI?.id === poi.id ? (
+                        <Text style={S.rolePillDestination}>Destination</Text>
+                      ) : null}
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            ) : (
+              <View style={S.emptyState}>
+                <Text style={S.emptyStateText}>
+                  No POIs found for your search/filter.
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+      </View>
     </View>
   );
 };
 
-// Helpers (kept local — badge colour logic for list rows) 
 function getBadgeBg(cat: POICategory): string {
   switch (cat) {
     case "ROOM":
       return POI_PALETTE.wcShared;
+    case "STAIRS":
+      return POI_PALETTE.stairsBg;
+    case "ELEVATOR":
+      return POI_PALETTE.elevatorBg;
     case "WC_F":
       return POI_PALETTE.wcF;
     case "WC_M":
@@ -220,32 +302,40 @@ function getBadgeBg(cat: POICategory): string {
   }
 }
 
-function getCategoryIcon(cat: POICategory): keyof typeof Ionicons.glyphMap {
+function getCategoryIcon(cat: POICategory): CategoryIcon {
   switch (cat) {
     case "LAB":
-      return "desktop-outline";
+      return { lib: "ion", name: "desktop-outline" };
     case "ROOM":
-      return "business-outline";
+      return { lib: "ion", name: "business-outline" };
+    case "STAIRS":
+      return { lib: "mci", name: "stairs" };
+    case "ELEVATOR":
+      return { lib: "mci", name: "elevator" };
     case "WC_F":
-      return "female-outline";
+      return { lib: "ion", name: "female-outline" };
     case "WC_M":
-      return "male-outline";
+      return { lib: "ion", name: "male-outline" };
     case "WC_A":
-      return "accessibility-outline";
+      return { lib: "ion", name: "accessibility-outline" };
     case "WC_SHARED":
-      return "people-outline";
+      return { lib: "ion", name: "people-outline" };
     case "PRINT":
-      return "print-outline";
+      return { lib: "ion", name: "print-outline" };
     case "IT":
-      return "help-circle-outline";
+      return { lib: "ion", name: "help-circle-outline" };
     default:
-      return "location-outline";
+      return { lib: "ion", name: "location-outline" };
   }
 }
 
 function getCategoryIconColor(cat: POICategory): string {
   switch (cat) {
     case "ROOM":
+      return POI_PALETTE.iconDark;
+    case "STAIRS":
+      return POI_PALETTE.iconDark;
+    case "ELEVATOR":
       return POI_PALETTE.iconDark;
     case "WC_F":
       return POI_PALETTE.pink;
@@ -256,6 +346,13 @@ function getCategoryIconColor(cat: POICategory): string {
     default:
       return POI_PALETTE.iconDark;
   }
+}
+
+function formatPoiRoomLabel(poi: POI): string {
+  if (poi.category === "STAIRS" && /^S\d+$/i.test(poi.room)) {
+    return `H${poi.floor}-${poi.room.toUpperCase()}`;
+  }
+  return `H-${poi.room}`;
 }
 
 export default POIFilterPanel;

@@ -1,0 +1,29 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M1015.5 138.5V996.5H12.5V138.5H1015.5Z" fill="#EAE1D6" stroke="black"/>
+<rect x="379" y="591" width="98" height="148" fill="white" stroke="black" stroke-width="2"/>
+<rect x="370" y="439" width="107" height="153" fill="white" stroke="black" stroke-width="2"/>
+<path d="M216 855.5V830H325V854V855H326C330.184 855 335.118 856.556 338.995 859.144C342.545 861.515 345.025 864.618 345.439 868H326H215H198.412C200.234 863.501 205.405 856.5 215 856.5H216V855.5Z" fill="white" stroke="black" stroke-width="2"/>
+<path d="M15 439H185L149.977 830H15V439Z" fill="white" stroke="black" stroke-width="2"/>
+<path d="M439.711 354H366V141H560V354H498.488V321.144V318.681L493.363 318.884C482.689 319.31 470.045 321.794 459.631 327.665C449.78 333.217 442.143 341.666 439.711 354Z" fill="white" stroke="black" stroke-width="2"/>
+<path d="M970 636H910V722H970V636Z" fill="white" stroke="black" stroke-width="2"/>
+<path d="M933 292H637V358H933V292Z" fill="white" stroke="black" stroke-width="2"/>
+<path d="M463.5 470L415 536M415 470L463.5 536" stroke="black" stroke-width="2"/>
+<path d="M471 613L443 665M443 613L471 665" stroke="black" stroke-width="2"/>
+<path d="M70 600L42 652M42 600L70 652" stroke="black" stroke-width="2"/>
+<path d="M910 636H884V722H910V636Z" fill="white" stroke="black" stroke-width="2"/>
+<path d="M910 636L885 723M885 636L910 723" stroke="black" stroke-width="2"/>
+<path d="M910 636L885 723M885 636L910 723" stroke="black" stroke-width="2"/>
+<path d="M933 141H637V292H933V141Z" fill="white" stroke="black" stroke-width="2"/>
+<path d="M56 830.5L179.5 439.5H375L485 830.5H56Z" fill="white" stroke="black" stroke-width="2"/>
+<rect x="13" y="142" width="352" height="212" fill="white" stroke="black" stroke-width="2"/>
+<path d="M606 429V538" stroke="black" stroke-width="2"/>
+<path d="M561 536V695" stroke="black" stroke-width="2"/>
+<path d="M560 537H605" stroke="black" stroke-width="2"/>
+<path d="M741 797H641V859H741V797Z" fill="white" stroke="black" stroke-width="2"/>
+<path d="M849 797H740V963H849V797Z" fill="white" stroke="black" stroke-width="2"/>
+<path d="M642 797H533V963H642V797Z" fill="white" stroke="black" stroke-width="2"/>
+<line x1="588" y1="797" x2="588" y2="963" stroke="black" stroke-width="2"/>
+<line x1="692" y1="797" x2="692" y2="859" stroke="black" stroke-width="2"/>
+<line x1="795" y1="797" x2="795" y2="963" stroke="black" stroke-width="2"/>
+<path d="M15 511H156.5" stroke="black" stroke-width="2"/>
+</svg>

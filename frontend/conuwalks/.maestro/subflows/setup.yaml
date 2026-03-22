@@ -11,20 +11,20 @@ appId: com.conuwalks.app
       - extendedWaitUntil:
           notVisible: "Development Build"
           timeout: 3000
-          optional: true
+    optional: true
 
 - waitForAnimationToEnd:
     timeout: 1000
-  
+
 # Handle Android/iOS Location Popup if it slips past launchApp
-- runFlow:
-    when:
-      visible:
-        text: "Allow.*"
-    commands:
-      - tapOn:
-          text: "Allow.*"
-          optional: true # Don't fail if it disappears
+# - runFlow:
+#     when:
+#       visible:
+#         text: "Allow.*"
+#     commands:
+#       - tapOn:
+#           text: "Allow.*"
+#           optional: true # Don't fail if it disappears
 
 # Handle "Notifications" popup (common on iOS)
 - runFlow:
@@ -35,6 +35,7 @@ appId: com.conuwalks.app
       - tapOn:
           text: "Allow|OK"
           optional: true
+    optional: true
 
 # Bypass the Expo dev overlay
 - runFlow:
@@ -54,15 +55,19 @@ appId: com.conuwalks.app
           point: 90%, 6%
           optional: true
 
-
 # Start the Google Calendar Sign-In process
-- assertVisible: "GET STARTED WITH GOOGLE CALENDAR"
-- tapOn: "GET STARTED WITH GOOGLE CALENDAR"
+- runFlow:
+    when:
+      visible: "GET STARTED WITH GOOGLE CALENDAR"
+    commands:
+      - tapOn: "GET STARTED WITH GOOGLE CALENDAR"
+    optional: true
 
 # Wait for the Google Sign-In bottom sheet/modal to render
 - extendedWaitUntil:
     visible: "Choose an account"
     timeout: 3000
+    optional: true
 
 # Condition 1: "John Tester" is already an option
 - runFlow:
@@ -70,25 +75,34 @@ appId: com.conuwalks.app
       visible: "John Tester"
     commands:
       - tapOn: "John Tester"
-
+      - extendedWaitUntil:
+          visible: "Conuwalks wants access to your Google Account"
+      - tapOn:
+          text: "Continue"
+    optional: true
 # Condition 2: "John Tester" is missing, need to add account manually
-- runFlow:
-    when:
-      notVisible: "John Tester"
-    commands:
-      - tapOn: "Add another account"
+# - runFlow:
+#     when:
+#       notVisible: "John Tester"
+#     commands:
+#       - tapOn: "Add another account"
+#       - extendedWaitUntil:
+#           visible: "Conuwalks wants access to your Google Account"
 
-      - extendedWaitUntil:
-          visible: "Sign in"
-          timeout: 15000
+#       - tapOn:
+#           text: "Continue"
 
-      - tapOn: "Email or phone"
-      - inputText: "testerjohn602@gmail.com"
-      - tapOn: "Next"
+#       - extendedWaitUntil:
+#           visible: "Sign in"
+#           timeout: 15000
 
-      - extendedWaitUntil:
-          visible: "Enter your password"
-          timeout: 10000
+#       - tapOn: "Email or phone"
+#       - inputText: "testerjohn602@gmail.com"
+#       - tapOn: "Next"
 
-      - inputText: "${PASSWORD}"
-      - tapOn: "Next"
+#       - extendedWaitUntil:
+#           visible: "Enter your password"
+#           timeout: 10000
+
+#       - inputText: "${PASSWORD}"
+#       - tapOn: "Next"

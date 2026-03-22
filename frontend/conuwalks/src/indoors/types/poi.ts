@@ -5,6 +5,9 @@ export type POICategory =
   | "WC_SHARED"
   | "LAB"
   | "ROOM"
+  | "STAIRS"
+  | "ELEVATOR"
+  | "ESCALATOR"
   | "PRINT"
   | "IT";
 

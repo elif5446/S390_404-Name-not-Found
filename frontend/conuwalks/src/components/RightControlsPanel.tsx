@@ -2,10 +2,6 @@ import React, { useState } from "react";
 import {
   View,
   TouchableOpacity,
-  Image,
-  Text,
-  Button,
-  Alert,
   Platform,
   useColorScheme,
   ActivityIndicator,

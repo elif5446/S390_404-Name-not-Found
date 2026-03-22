@@ -1,0 +1,30 @@
+appId: com.conuwalks.app
+tags:
+  - feature
+  - directions
+---
+- runFlow: 
+    file: ../subflows/launch.yaml
+    env:
+        USERNAME: "${USERNAME}"
+        PASSWORD: "${PASSWORD}"
+
+- waitForAnimationToEnd
+
+- doubleTapOn:
+    point: 50%, 50%
+
+- waitForAnimationToEnd
+
+- tapOn:
+    point: 60%, 80%
+
+- assertVisible: "Faubourg Ste-Catherine Building"
+- assertVisible: "Schedule"
+- tapOn: 
+    id: "directions-button"
+    # text: ".*min" 
+
+- assertVisible: "Directions"
+- assertVisible: "Faubourg Ste-Catherine Building"
+- assertVisible: ".*min"

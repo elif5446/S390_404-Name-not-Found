@@ -49,7 +49,7 @@ const DestinationHeader: React.FC<DestinationHeaderProps> = ({
 
   let timeLabel = "Leave now";
   if (targetTime) {
-    const timeString = targetTime.toLocaleTimeString([], {
+    const timeString = targetTime.toLocaleTimeString("en-CA", {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
@@ -60,7 +60,7 @@ const DestinationHeader: React.FC<DestinationHeaderProps> = ({
       timeLabel = `${prefix} ${timeString}`;
     } else {
       // append the date if it's not today
-      const dateString = targetTime.toLocaleDateString([], {
+      const dateString = targetTime.toLocaleDateString("en-CA", {
         weekday: "short",
         month: "short",
         day: "numeric",
@@ -86,6 +86,7 @@ const DestinationHeader: React.FC<DestinationHeaderProps> = ({
                 accessibilityRole="button"
                 accessibilityLabel="Close directions"
                 accessibilityHint="Closes the directions panel"
+                testID="close-popup-button"
               >
                 {Platform.OS === "ios" ? (
                   <View
@@ -139,6 +140,7 @@ const DestinationHeader: React.FC<DestinationHeaderProps> = ({
                   accessibilityRole="button"
                   accessibilityLabel={`Select ${option.mode} mode`}
                   accessibilityHint={`Updates routes for ${option.mode} transportation`}
+                  testID={`route-${option.mode}`}
                 >
                   <PlatformIcon
                     materialName={option.icon}

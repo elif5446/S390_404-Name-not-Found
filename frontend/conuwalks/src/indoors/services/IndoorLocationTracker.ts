@@ -26,10 +26,13 @@ export class IndoorLocationTracker {
   setDefaultLocation(defaultStartNodeId: string): void {
     const startNode = this.graph.getNode(defaultStartNodeId);
     if (startNode) {
-      this.userLocation = { nodeId: defaultStartNodeId, floorId: startNode.floorId };
+      this.userLocation = {
+        nodeId: defaultStartNodeId,
+        floorId: startNode.floorId,
+      };
     } else {
       throw new Error(
-        `IndoorLocationTracker: defaultStartNodeId "${defaultStartNodeId}" not found in graph`
+        `IndoorLocationTracker: defaultStartNodeId "${defaultStartNodeId}" not found in graph`,
       );
     }
   }
