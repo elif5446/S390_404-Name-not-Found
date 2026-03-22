@@ -134,11 +134,11 @@ export const DirectionsProvider: React.FC<DirectionsProviderProps> = ({
   const [targetTime, _setTargetTimeState] = useState<Date | null>(null);
 
   const setTimeMode = useCallback(
-    (mode: "leave" | "arrive") => _setTimeMode(mode),
+    (mode: "leave" | "arrive") => _setTimeModeState(mode),
     [],
   );
   const setTargetTime = useCallback(
-    (time: Date | null) => _setTargetTime(time),
+    (time: Date | null) => _setTargetTimeState(time),
     [],
   );
 
@@ -256,6 +256,8 @@ export const DirectionsProvider: React.FC<DirectionsProviderProps> = ({
     _setIsNavigationActive(false);
     _setLoading(false);
     _setError(null);
+    _setTimeModeState("leave");
+    _setTargetTimeState(null);
   }, []);
 
   // Memoize the context value to prevent layout thrashing across the app

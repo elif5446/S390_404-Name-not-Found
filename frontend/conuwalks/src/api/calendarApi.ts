@@ -24,6 +24,48 @@ export class GoogleCalendarApi {
     console.log("GoogleCalendarApi initialize with tokens", accessToken);
   }
 
+  private normalizeCreateEventArgs(
+    calendarIdOrEvent?: string | Partial<CalendarEvent>,
+    maybeEvent?: Partial<CalendarEvent>,
+  ): { calendarId: string; event: Partial<CalendarEvent> } {
+    if (
+      typeof calendarIdOrEvent === 'object' &&
+      calendarIdOrEvent !== null &&
+      !Array.isArray(calendarIdOrEvent)
+    ) {
+      return {
+        calendarId: 'primary',
+        event: calendarIdOrEvent,
+      };
+    }
+
+    return {
+      calendarId:
+        typeof calendarIdOrEvent === 'string' ? calendarIdOrEvent : 'primary',
+      event: maybeEvent ?? {},
+    };
+  }
+
+  private normalizeEventsInRangeArgs(
+    calendarIdOrTimeMin: string | Date,
+    timeMinOrTimeMax: Date,
+    maybeTimeMax?: Date,
+  ): { calendarId: string; timeMin: Date; timeMax: Date } {
+    if (calendarIdOrTimeMin instanceof Date) {
+      return {
+        calendarId: 'primary',
+        timeMin: calendarIdOrTimeMin,
+        timeMax: timeMinOrTimeMax,
+      };
+    }
+
+    return {
+      calendarId: calendarIdOrTimeMin,
+      timeMin: timeMinOrTimeMax,
+      timeMax: maybeTimeMax as Date,
+    };
+  }
+
   private async fetchApi(endpoint: string, options: RequestInit = {}) {
     const url = `${CALENDAR_BASE_URL}${endpoint}`;
     console.log(`API Request: ${options.method || 'GET'} ${url}`);
@@ -171,10 +213,15 @@ export class GoogleCalendarApi {
   }
 
   // Create a new event
-  async createEvent(event: Partial<CalendarEvent>, calendarId: string = 'primary') {
+  async createEvent(calendarIdOrEvent?: string | Partial<CalendarEvent>, event?: Partial<CalendarEvent>) {
+    const { calendarId, event: normalizedEvent } = this.normalizeCreateEventArgs(
+      calendarIdOrEvent,
+      event,
+    );
+
     return this.fetchApi(`/calendars/${encodeURIComponent(calendarId)}/events`, {
       method: 'POST',
-      body: JSON.stringify(event),
+      body: JSON.stringify(normalizedEvent),
     });
   }
 
@@ -194,7 +241,13 @@ export class GoogleCalendarApi {
   }
 
   // Get events for a specific date range
-  async getEventsInRange(timeMin: Date, timeMax: Date, calendarId: string = 'primary') {
+  async getEventsInRange(calendarIdOrTimeMin: string | Date, timeMinOrTimeMax: Date, maybeTimeMax?: Date) {
+    const { calendarId, timeMin, timeMax } = this.normalizeEventsInRangeArgs(
+      calendarIdOrTimeMin,
+      timeMinOrTimeMax,
+      maybeTimeMax,
+    );
+
     console.log(`Fetching events from ${timeMin.toISOString()} to ${timeMax.toISOString()}`);
 
     try {

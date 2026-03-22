@@ -97,6 +97,18 @@ interface GeoJsonFeature {
   };
 }
 
+const getBuildingDisplayName = (
+  buildingId: string,
+  campus: "SGW" | "LOY",
+) => {
+  const metadata =
+    campus === "LOY"
+      ? LoyolaBuildingMetadata[buildingId]
+      : SGWBuildingMetadata[buildingId];
+
+  return metadata?.name || buildingId;
+};
+
 const PlatformIcon = ({
   materialName,
   iosName,
@@ -129,16 +141,20 @@ const BuildingGroup = React.memo(({
   markerRefSetter // helper to set the ref from parent
 }: any) => {
   const centerCoordinates = calculatePolygonCenter(coordinates);
+  const campusTheme = BuildingTheme[campus as keyof typeof BuildingTheme] as Record<
+    string,
+    string
+  >;
 
-  // Define missing local variables
-  const themeColor = BuildingTheme[campus][buildingId] || "#888888";
-  const meta = campus === "LOY" ? LoyolaBuildingMetadata[buildingId] : SGWBuildingMetadata[buildingId];
-  const name = meta?.name || buildingId;
+  const themeColor = campusTheme[buildingId] || "#888888";
+  const name = getBuildingDisplayName(buildingId, campus);
 
   return (
     <React.Fragment>
       <Polygon
         coordinates={coordinates}
+        accessibilityLabel={name}
+        testID={`polygon-${name}`}
         fillColor={
           isSelected ? themeColor + "F0" :
           isDestination ? themeColor + "C8" :
@@ -177,6 +193,8 @@ const BuildingGroup = React.memo(({
           zIndex={1000}
           tracksViewChanges={trackDestMarker}
           flat
+          accessibilityLabel={`${name} destination`}
+          testID={`marker-${name}-destination`}
         >
           <MaterialIcons name="place" size={26} color="#B03060" />
         </Marker>
@@ -189,6 +207,8 @@ const BuildingGroup = React.memo(({
         zIndex={200}
         tracksViewChanges={false}
         title={name}
+        accessibilityLabel={name}
+        testID={`marker-${name}`}
       >
         <View style={{ width: 44, height: 44, opacity: 0.01 }} />
       </Marker>
@@ -293,10 +313,12 @@ const CampusMap: React.FC<CampusMapProps> = ({
         preNavigationRegionRef.current = mapRegion;
       }
     } else if (preNavigationRegionRef.current && mapRef.current) {
+      const regionToRestore = preNavigationRegionRef.current;
+
       mapRef.current.animateCamera({ pitch: 0, heading: 0 }, { duration: 150 });
 
       setTimeout(() => {
-        mapRef.current?.animateToRegion(preNavigationRegionRef.current, 500);
+        mapRef.current?.animateToRegion(regionToRestore, 500);
         preNavigationRegionRef.current = null;
       }, 150);
     }
@@ -630,7 +652,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
         ).toLowerCase();
 
         // defining logic independently
-        const getVehicleLabel = (vehicle) => {
+        const getVehicleLabel = (vehicle: string) => {
           const v = vehicle.toLowerCase();
 
           if (v.includes("subway") || v.includes("metro")) {
