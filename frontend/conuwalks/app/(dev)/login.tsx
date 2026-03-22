@@ -1,11 +1,9 @@
-import { Text, View, StyleSheet, ActivityIndicator } from "react-native";
+import { Text, View, ActivityIndicator } from "react-native";
 import React, { useState, useRef, useEffect } from "react";
 import GoogleCalendarAuth from "@/src/screens/GoogleCalendarAuth";
 import { useRouter } from "expo-router";
 import {
   getTokens,
-  clearTokens,
-  getUserInfo,
   isTokenValid,
 } from "@/src/utils/tokenStorage";
 import { styles } from "@/src/styles/login";
@@ -15,7 +13,7 @@ export default function LoginScreen() {
   const [isNavigating, setIsNavigating] = useState(false);
   const isMounted = useRef(true);
   const navigationLock = useRef(false);
-  const hasNavigated = useRef(false);
+ // const hasNavigated = useRef(false);
 
   useEffect(() => {
     console.log("LoginScreen MOUNTED");

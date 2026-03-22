@@ -22,7 +22,9 @@ export const searchDestination = (input: string, events: CalendarEvent[]): { bui
 
 const search = (input: string, events: CalendarEvent[] | null = null, todayEvents: BuildingEvent[] | null = null, userLocationBuildingId: string | null = null) => {
     if (events === null && todayEvents === null) return [];
-    const location = events !== null ? guessFutureRoomLocation(events) : guessRoomLocation(null, todayEvents) ?? {buildingCode: userLocationBuildingId, roomNumber: null};
+    const location = events === null
+      ? guessRoomLocation(null, todayEvents) ?? { buildingCode: userLocationBuildingId, roomNumber: null }
+      : guessFutureRoomLocation(events);
 
     const inputTrim = input.trim().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
     const [preBuildingInput, preRoomInput] = inputTrim.split(/\s+(?=\S*\d)/, 2);
@@ -41,11 +43,13 @@ const search = (input: string, events: CalendarEvent[] | null = null, todayEvent
     ];
     
     
-    const preRoomNumbers = events !== null ? events.map(event => parseLocation(event.location)).filter(event => event != null) : todayEvents!.map(event => parseLocation(event.location)).filter(event => event != null);
+    const preRoomNumbers = events === null
+      ? todayEvents!.map(event => parseLocation(event.location)).filter(event => event != null)
+      : events.map(event => parseLocation(event.location)).filter(event => event != null);
     const roomNumbers = preRoomNumbers.map(room => ({buildingCode: room.buildingCode.toUpperCase(), roomNumber: room.roomNumber.toUpperCase()}));
 
     const searchSuggestions = [
-        ...(events !== null ? [] : [{buildingName: "Current", roomNumber: "Location", isLocation: true}]),
+        ...(events === null ? [{buildingName: "Current", roomNumber: "Location", isLocation: true}] : []),
         ...filteredBuildings.flatMap(([id, data]) => {
             const isLocation = location?.buildingCode === id;
             const rooms = roomNumbers.filter(room => room?.buildingCode === id && room.roomNumber.startsWith(roomInput));

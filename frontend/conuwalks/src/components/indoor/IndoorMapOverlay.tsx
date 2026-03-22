@@ -75,7 +75,7 @@ const calculateGeographicHeight = (
   const geographicRatio = (lonDiff * lonScale) / latDiff;
   const calculatedHeight = screenWidth / geographicRatio;
 
-  return isFinite(calculatedHeight) ? calculatedHeight : fallbackHeight;
+  return Number.isFinite(calculatedHeight) ? calculatedHeight : fallbackHeight;
 };
 
 // Hotspot & Search Management
@@ -654,10 +654,10 @@ const IndoorMapOverlay: React.FC<Props> = ({
           <Animated.View style={[styles.mapCanvas, { opacity: fadeAnim }]}>
             <ReactNativeZoomableView
               ref={zoomRef}
-              maxZoom={5.0}
-              minZoom={0.5}
+              maxZoom={3}
+              minZoom={1}
               zoomStep={0.5}
-              initialZoom={1.0}
+              initialZoom={1}
               bindToBorders={true}
               visualTouchFeedbackEnabled={false}
               contentWidth={panBufferX}

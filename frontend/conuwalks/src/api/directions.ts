@@ -128,6 +128,18 @@ interface DirectionsApiResponse {
   }[];
 }
 
+type TravelMode = "walking" | "driving" | "transit" | "bicycling";
+
+const normalizeTravelMode = (mode?: string): TravelMode | undefined => {
+  if (!mode) return undefined;
+  const upper = mode.toUpperCase();
+  if (upper.includes("WALK")) return "walking";
+  if (upper.includes("DRIVE")) return "driving";
+  if (upper.includes("BICYCLE")) return "bicycling";
+  if (upper === "TRANSIT") return "transit";
+  return undefined;
+};
+
 /**
  * Decode Google's polyline encoding algorithm
  * @param polyline - Encoded polyline string
@@ -145,7 +157,7 @@ export const decodePolyline = (polyline: string): LatLng[] => {
     let byte;
 
     do {
-      byte = polyline.charCodeAt(index++) - 63;
+      byte = (polyline.codePointAt(index++) ?? 0) - 63;
       result |= (byte & 0x1f) << shift;
       shift += 5;
     } while (byte >= 0x20);
@@ -157,7 +169,7 @@ export const decodePolyline = (polyline: string): LatLng[] => {
     shift = 0;
 
     do {
-      byte = polyline.charCodeAt(index++) - 63;
+      byte = (polyline.codePointAt(index++) ?? 0) - 63;
       result |= (byte & 0x1f) << shift;
       shift += 5;
     } while (byte >= 0x20);
@@ -203,7 +215,7 @@ const stripHtml = (input: string | undefined): string => {
   if (!input) {
     return "Continue";
   }
-  return input.replace(/<[^>]{0,1000}>/g, "").trim() || "Continue";
+  return input.replaceAll(/<[^>]{0,1000}>/g, "").trim() || "Continue";
 };
 
 const toLatLng = (
@@ -240,7 +252,7 @@ const toLatLng = (
 const fetchLegacyDirections = async (
   start: LatLng,
   destination: LatLng,
-  mode: "walking" | "driving" | "transit" | "bicycling",
+  mode: TravelMode,
   targetTime: Date | null,
   timeMode: "leave" | "arrive",
 ): Promise<RouteData[]> => {
@@ -258,11 +270,9 @@ const fetchLegacyDirections = async (
     }
 
     const timeSeconds = Math.floor(safeTargetTime.getTime() / 1000);
-    if (timeMode === "arrive") {
-      if (mode === "transit") {
-        url += `&arrival_time=${timeSeconds}`;
-      }
-    } else {
+    if (timeMode === "arrive" && mode === "transit") {
+      url += `&arrival_time=${timeSeconds}`;
+    } else if (timeMode === "leave") {
       url += `&departure_time=${timeSeconds}`;
     }
   }
@@ -329,7 +339,7 @@ const fetchLegacyDirections = async (
           duration: step.duration?.text || "",
           startLocation: toLatLng(step.start_location),
           endLocation: toLatLng(step.end_location),
-          travelMode: step.travel_mode,
+          travelMode: normalizeTravelMode(step.travel_mode),
           transitLineName: step.transit_details?.line?.name,
           transitLineShortName: step.transit_details?.line?.short_name,
           transitVehicleType: step.transit_details?.line?.vehicle?.type,
@@ -375,7 +385,7 @@ const fetchLegacyDirections = async (
 export const getDirections = async (
   start: LatLng | null,
   destination: LatLng | null,
-  mode: "walking" | "driving" | "transit" | "bicycling",
+  mode: TravelMode,
   targetTime: Date | null = null,
   timeMode: "leave" | "arrive" = "leave",
 ): Promise<RouteData[]> => {
@@ -387,7 +397,7 @@ export const getDirections = async (
   try {
     // Map modes to Routes API travel mode enum
     const modeMap: Record<
-      "walking" | "driving" | "transit" | "bicycling",
+      TravelMode,
       "WALK" | "DRIVE" | "TRANSIT" | "BICYCLE"
     > = {
       walking: "WALK",
@@ -513,7 +523,7 @@ export const getDirections = async (
             ),
             startLocation: toLatLng(step.startLocation?.latLng),
             endLocation: toLatLng(step.endLocation?.latLng),
-            travelMode: step.travelMode,
+            travelMode: normalizeTravelMode(step.travelMode),
             transitLineName: step.transitDetails?.transitLine?.name,
             transitLineShortName: step.transitDetails?.transitLine?.nameShort,
             transitVehicleType:
@@ -528,7 +538,9 @@ export const getDirections = async (
           };
         });
 
-        const outdoorSeconds = parseSeconds(route.duration ?? leg.duration);
+        const outdoorSeconds = parseSeconds(
+          route.duration ?? leg.duration ?? "0s",
+        );
 
         return {
           id: `route-${index}`,
@@ -537,7 +549,11 @@ export const getDirections = async (
           distance: formatDistance(route.distanceMeters ?? leg.distanceMeters),
           baseDurationSeconds: outdoorSeconds,
           duration: formatDurationFromSeconds(outdoorSeconds),
-          eta: calculateEtaFromSeconds(outdoorSeconds, safeTargetTime, timeMode),
+          eta: calculateEtaFromSeconds(
+            outdoorSeconds,
+            safeTargetTime,
+            timeMode,
+          ),
           steps,
           overviewPolyline,
         };

@@ -4,6 +4,7 @@ import { getDirections } from "@/src/api/directions";
 import { calculateIndoorPenaltySeconds } from "@/src/indoors/services/indoorRoutingHelper";
 import { formatDurationFromSeconds } from "../utils/time";
 
+type TravelMode = "walking" | "driving" | "transit" | "bicycling";
 export const useDestinationData = (
   visible: boolean,
   overrideDestination?: { latitude: number; longitude: number },
@@ -29,12 +30,12 @@ export const useDestinationData = (
   const effectiveDestination = overrideDestination || contextDestination;
   const effectiveStart = overrideStart || contextStart;
   const [baseModeSecondsCache, setBaseModeSecondsCache] = useState<
-    Partial<Record<"walking" | "driving" | "transit" | "bicycling", number>>
+    Partial<Record<TravelMode, number>>
   >({});
 
   const routeScopeKey = `${startBuildingId ?? "-"}->${destinationBuildingId ?? "-"}`;
 
-  const formatMinutes = (minutes: number): string => {
+  const formatMinutes = useCallback((minutes: number): string => {
     const rounded = Math.max(1, Math.round(minutes));
     if (rounded >= 60) {
       const hours = Math.floor(rounded / 60);
@@ -44,38 +45,40 @@ export const useDestinationData = (
         : `${hours} h`;
     }
     return `${rounded} min`;
-  };
-
-  const normalizeDurationLabel = useCallback((value: string): string => {
-    const lower = value.toLowerCase();
-    if (lower.includes("h") || lower.includes("hour")) {
-      const hourMatch = lower.match(/(\d{1,10})\s{0,10}h/);
-      const minuteMatch = lower.match(/(\d{1,10})\s{0,10}(?:mins?|minutes?)/);
-      const hours = hourMatch ? Number.parseInt(hourMatch[1], 10) : 0;
-      const minutes = minuteMatch ? Number.parseInt(minuteMatch[1], 10) : 0;
-      return minutes > 0 ? `${hours} h ${minutes} min` : `${hours} h`;
-    }
-    const minuteMatch = lower.match(/(\d{1,10})\s{0,10}(?:mins?|minutes?)/);
-    if (minuteMatch) {
-      return formatMinutes(Number.parseInt(minuteMatch[1], 10));
-    }
-    return value;
   }, []);
+
+  const normalizeDurationLabel = useCallback(
+    (value: string): string => {
+      const lower = value.toLowerCase();
+
+      const hourMatch = /(\d{1,10})\s{0,10}h/.exec(lower);
+      const minuteMatch = /(\d{1,10})\s{0,10}(?:mins?|minutes?)/.exec(lower);
+
+      if (hourMatch) {
+        const hours = Number.parseInt(hourMatch[1], 10);
+        const minutes = minuteMatch ? Number.parseInt(minuteMatch[1], 10) : 0;
+        return minutes > 0 ? `${hours} h ${minutes} min` : `${hours} h`;
+      }
+
+      if (minuteMatch) {
+        return formatMinutes(Number.parseInt(minuteMatch[1], 10));
+      }
+
+      return value;
+    },
+    [formatMinutes],
+  );
 
   useEffect(() => {
     setBaseModeSecondsCache({});
     setNavigationRouteId(null);
   }, [routeScopeKey]);
 
+  // sync active route duration into cache
   useEffect(() => {
     const activeRoute = routes[selectedRouteIndex] || routeData;
-    if (
-      !activeRoute ||
-      !activeRoute.requestMode ||
-      activeRoute.baseDurationSeconds == null
-    ) {
+    if (!activeRoute?.requestMode || activeRoute.baseDurationSeconds == null)
       return;
-    }
 
     setBaseModeSecondsCache((prev) => {
       if (prev[activeRoute.requestMode] === activeRoute.baseDurationSeconds) {
@@ -88,12 +91,13 @@ export const useDestinationData = (
     });
   }, [routes, selectedRouteIndex, routeData, travelMode]);
 
+  // fetch baseline durations for all modes when coordinates are ready
   useEffect(() => {
     // fix to only trigger fetch if we have both start (user) and the specific destination
     if (!visible || !effectiveStart || !effectiveDestination) return;
 
     let isCancelled = false;
-    const allModes: ("walking" | "driving" | "transit" | "bicycling")[] = [
+    const allModes: TravelMode[] = [
       "walking",
       "transit",
       "bicycling",
@@ -138,10 +142,10 @@ export const useDestinationData = (
   }, [visible, effectiveStart, effectiveDestination, routeScopeKey]);
 
   const getModeDurationLabel = useCallback(
-    (modeKey: "walking" | "driving" | "transit" | "bicycling"): string => {
+    (modeKey: TravelMode): string => {
       const baseSeconds = baseModeSecondsCache[modeKey];
 
-      if (baseSeconds) {
+      if (baseSeconds != null) {
         const indoorPenalty = calculateIndoorPenaltySeconds(
           startBuildingId,
           startRoom,
@@ -152,11 +156,7 @@ export const useDestinationData = (
       }
 
       const activeRoute = routeData || routes[selectedRouteIndex];
-      if (
-        activeRoute &&
-        activeRoute.requestMode === modeKey &&
-        activeRoute.duration
-      ) {
+      if (activeRoute?.requestMode === modeKey && activeRoute.duration) {
         return normalizeDurationLabel(activeRoute.duration);
       }
       return "--";
@@ -207,6 +207,8 @@ export const useDestinationData = (
         });
 
       if (labels.length === 0) return null;
+
+      // dedup consecutive identical labels
       return labels
         .filter((val, i) => i === 0 || val !== labels[i - 1])
         .join(" → ");

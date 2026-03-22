@@ -14,15 +14,17 @@ import { styles } from "../styles/DestinationPopup";
 import { isToday } from "../utils/time";
 import { themedStyles } from "../styles/additionalInfoPopup";
 
+type TravelMode = "walking" | "driving" | "transit" | "bicycling";
+
 interface DestinationHeaderProps {
   mode: "light" | "dark";
   showOpenIndoorButton?: boolean;
-  travelMode: "walking" | "driving" | "transit" | "bicycling";
+  travelMode: TravelMode;
   setTravelMode: (
-    mode: "walking" | "driving" | "transit" | "bicycling",
+    mode: TravelMode,
   ) => void;
   getModeDurationLabel: (
-    mode: "walking" | "driving" | "transit" | "bicycling",
+    mode: TravelMode,
   ) => string;
   onDismiss: () => void;
   onToggleHeight: () => void;
