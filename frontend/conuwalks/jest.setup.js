@@ -93,8 +93,9 @@ console.error = (...args) => {
         : "";
 
   if (
-    message.includes("Warning: An update to") &&
-    message.includes("was not wrapped in act")
+    (message.includes("Warning: An update to") &&
+      message.includes("was not wrapped in act")) ||
+    message.includes("When testing, code that causes React state updates should be wrapped into act(...)")
   ) {
     return;
   }

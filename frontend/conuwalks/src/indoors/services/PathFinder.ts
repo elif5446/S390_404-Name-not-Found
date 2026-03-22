@@ -10,7 +10,11 @@ export class PathFinder {
     this.graph = graph;
   }
 
-  findShortestPath(startNodeId: string, endNodeId: string, accessibleOnly: boolean = false): Route {
+  findShortestPath(
+    startNodeId: string,
+    endNodeId: string,
+    accessibleOnly: boolean = false,
+  ): Route {
     const startNode = this.graph.getNode(startNodeId);
     const endNode = this.graph.getNode(endNodeId);
 
@@ -60,10 +64,11 @@ export class PathFinder {
         if (!edge) continue;
         if (accessibleOnly && !edge.accessible) continue;
 
-
         // calculate the cost to reach this neighbor through current node
         if (edge.weight === undefined) {
-          throw new Error(`Edge between ${currentId} and ${neighbor.id} has no weight`);
+          throw new Error(
+            `Edge between ${currentId} and ${neighbor.id} has no weight`,
+          );
         }
         const tentativeGScore =
           (gScore.get(currentId) ?? Infinity) + edge.weight;
@@ -87,9 +92,14 @@ export class PathFinder {
 
   // straight line distance between two nodes (estimates how far we are from the goal)
   private heuristic(nodeA: Node, nodeB: Node): number {
-    return Math.sqrt(
+    const spatialDistance = Math.sqrt(
       Math.pow(nodeB.x - nodeA.x, 2) + Math.pow(nodeB.y - nodeA.y, 2),
     );
+
+    // add an arbitrary penalty if the floors don't match
+    const floorPenalty = nodeA.floorId !== nodeB.floorId ? 500 : 0;
+
+    return spatialDistance + floorPenalty;
   }
 
   // finds the node in the open set with the lowest fScore
@@ -130,8 +140,7 @@ export class PathFinder {
 
     return {
       nodes,
-      totalDistance
+      totalDistance,
     };
   }
-
 }
