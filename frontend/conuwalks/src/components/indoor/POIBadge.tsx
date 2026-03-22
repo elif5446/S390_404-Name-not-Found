@@ -5,17 +5,23 @@ import { POI, POICategory } from "@/src/types/poi";
 import { poiBadgeStyles, POI_PALETTE } from "@/src/styles/IndoorPOI.styles";
 
 //Category: icon name + background colour 
-type IconLib = "ion" | "mci";
+type IconLib = "ion" | "mci" | "custom";
 type IconOffset = { x: number; y: number };
 
 // Fine-tune icon placement by room number
 export const ICON_POSITION_OVERRIDES: Record<string, IconOffset> = {
-  // Floor 9 stairs and elevator icon positions
+  // Floor 9 stairs, elevator, and escalator icon positions
   "9-S1": { x: -15, y: -15 },
   "9-S2": { x: 10, y: 10 },
   "9-S3": { x: 5, y: 15 },
   "9-S4": { x: 10, y: 8},
-  "9-E1": { x: -3, y: -5},
+    "9-E1": { x: 2, y: -4 },
+  // Escalators 
+  "9-ESCALATOR_DOWN_8": { x: -20, y: 0 },
+  "9-ESCALATOR_UP_10": { x: 20, y: 0 },
+    // escalator POIs positions. 
+    "ESCALATOR_DOWN_8": { x: -1, y: 10 },
+    "ESCALATOR_UP_10": { x: 3, y: 10 },
 
   //Floor 9 icon positions. 
   "967": { x: 8, y: -4 },
@@ -76,31 +82,31 @@ const CATEGORY_CONFIG: Record<
   LAB: {
     icon: "desktop-outline",
     iconLib: "ion",
-    bg: POI_PALETTE.labBg,
+    bg: "#B76E79", // Lighter burgundy
     iconColor: POI_PALETTE.iconDark,
   },
   ROOM: {
     icon: "business-outline",
     iconLib: "ion",
-    bg: POI_PALETTE.wcShared,
+    bg: "#B76E79", // Lighter burgundy
     iconColor: POI_PALETTE.iconDark,
   },
   STAIRS: {
     icon: "stairs",
     iconLib: "mci",
-    bg: POI_PALETTE.stairsBg,
+    bg: "#B76E79", // Lighter burgundy
     iconColor: POI_PALETTE.iconDark,
   },
   ELEVATOR: {
     icon: "elevator",
     iconLib: "mci",
-    bg: POI_PALETTE.elevatorBg,
+    bg: "#B76E79", 
     iconColor: POI_PALETTE.iconDark,
   },
   ESCALATOR: {
     icon: "escalator",
     iconLib: "mci",
-    bg: POI_PALETTE.elevatorBg,
+    bg: "#B76E79", 
     iconColor: POI_PALETTE.iconDark,
   },
   WC_F: {
@@ -122,31 +128,37 @@ const CATEGORY_CONFIG: Record<
     iconColor: POI_PALETTE.white,
   },
   WC_SHARED: {
-    icon: "people-outline",
-    iconLib: "ion",
-    bg: POI_PALETTE.wcShared,
-    iconColor: POI_PALETTE.iconDark,
+    icon: "human-male-female", // Both genders symbol for shared washroom
+    iconLib: "mci",
+    bg: "#B0A7D1", // purple shade for shared washroom
+    iconColor: POI_PALETTE.white,
   },
   PRINT: {
     icon: "print-outline",
     iconLib: "ion",
-    bg: POI_PALETTE.printBg,
+    bg: "#B76E79", 
     iconColor: POI_PALETTE.iconDark,
   },
   IT: {
-    icon: "help-circle-outline",
-    iconLib: "ion",
-    bg: POI_PALETTE.itBg,
+    icon: "IT_TEXT", // IT icon
+    iconLib: "custom",
+    bg: "#B76E79", 
     iconColor: POI_PALETTE.iconDark,
   },
 };
 
 function renderCategoryIcon(
-  iconLib: IconLib,
+  iconLib: IconLib | "custom",
   icon: string,
   size: number,
   color: string,
 ) {
+  if (iconLib === "custom" && icon === "IT_TEXT") {
+    // Render 'IT' text for IT desk
+    return (
+      <Text style={{ fontWeight: "bold", fontSize: size * 0.85, color }}>{"IT"}</Text>
+    );
+  }
   if (iconLib === "mci") {
     return (
       <MaterialCommunityIcons
@@ -156,7 +168,6 @@ function renderCategoryIcon(
       />
     );
   }
-
   return (
     <Ionicons
       name={icon as keyof typeof Ionicons.glyphMap}
@@ -220,7 +231,7 @@ const POIBadge: React.FC<Props> = ({
   const iconColor = isDestination || isSource ? POI_PALETTE.white : cfg.iconColor;
   const isElevator = poi.category === "ELEVATOR";
   const isStairsS1 = poi.category === "STAIRS" && poi.room === "S1";
-  const markerSize = isCompactIconOnly ? 12 : isElevator ? 14 : isStairsS1 ? 15 : size;
+  const markerSize = isCompactIconOnly ? 12 : isElevator ? 14 : isStairsS1 ? 15 : size;//to change the size of the elavator icon. 
   const markerIconSize = isCompactIconOnly ? 8 : markerSize * 0.56;
   const radius = markerSize * 0.42;
   const anchorLeft = left + size / 2;
