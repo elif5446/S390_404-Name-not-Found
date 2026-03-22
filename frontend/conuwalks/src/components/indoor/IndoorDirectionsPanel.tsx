@@ -76,20 +76,6 @@ const IndoorDirectionsPanel: React.FC<Props> = ({
             avoid stairs
           </Text>
         </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => setAvoidElevator((v) => !v)}
-          style={[S.togglePill, avoidElevator && S.togglePillActive]}
-          accessibilityRole="button"
-          accessibilityState={{ selected: avoidElevator }}
-          accessibilityLabel="Avoid elevator"
-        >
-          <Text
-            style={[S.toggleText, avoidElevator && S.toggleTextActive]}
-          >
-            avoid elevator
-          </Text>
-        </TouchableOpacity>
       </View>
 
       {/* Starting room card */}
