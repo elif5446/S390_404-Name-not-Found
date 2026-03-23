@@ -9,6 +9,7 @@ import {
   clearTokens,
   getTokens,
   getUserInfo,
+  UserInfo,
   isTokenValid,
 } from "@/src/utils/tokenStorage";
 import { styles } from "@/src/styles/home";
@@ -20,7 +21,7 @@ import ScheduleView from "@/src/components/ScheduleView";
 
 export default function DevHomeScreen() {
   const [campus, setCampus] = useState<"SGW" | "Loyola">("SGW");
-  const [userInfo, setUserInfo] = useState<any>(null);
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const { isNavigationActive, clearDestination } = useDirections();

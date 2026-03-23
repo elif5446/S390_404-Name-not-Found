@@ -64,7 +64,7 @@ export const ICON_POSITION_OVERRIDES: Record<string, IconOffset> = {
   "2-ESCALATOR_UP_2": { x: 15, y: 20 },
   "2-S1": { x: 6, y: 8 },
   "2-S2": { x: 10, y: 14 },
-  "2-STUDENT_UNION": { x: 10, y: 15 },
+  "2-STUDENT_UNION": { x: 10, y: 5 },
   "2-ESCALATOR_DOWN_2": { x: 15, y: -3 },
   "2-ESCALATOR_UP_8": { x: 10, y: 25 },
 
@@ -112,6 +112,44 @@ export const ICON_POSITION_OVERRIDES: Record<string, IconOffset> = {
   // Floor 8 escalator positions
   ESCALATOR_UP_9: { x: 6, y: 10 },
   ESCALATOR_DOWN_2: { x: 6, y: 2 },
+
+  //MB-S2 positions:
+  "MB_S2.273": { x: 2, y: 40 },
+  "MB_S2.275": { x: 2, y: 40 },
+  "MB_S2.279": { x: 3, y: 40 },
+  MB_vinhs_cafe: { x: -15, y: 20 },
+  "MB_S2.428": { x: 65, y: 315 },
+  MB_S2_BATHROOM_M: { x: -1, y: 8 },
+  MB_S2_BATHROOM_W: { x: -1, y: -10 },
+  MB_S2_BATHROOM_H: { x: 1, y: -18 },
+  MB_S2_ELEVATOR_1: { x: 12, y: 8 },
+  MB_S2_ELEVATOR_2: { x: 14, y: 8 },
+  MB_S2_ELEVATOR_3: { x: 14, y: 8 },
+  MB_S2_ELEVATOR_4: { x: 14, y: 15 },
+  MB_S2_ELEVATOR_5: { x: 14, y: 15 },
+  MB_S2_ELEVATOR_6: { x: 14, y: 15 },
+  MB_S2_ESCALATOR_UP: { x: 1, y: -70 },
+  MB_S2_ESCALATOR_DOWN: { x: 10, y: -70 },
+  MB_S2_STAIRS_5: { x: 6, y: 5 },
+  MB_S2_STAIRS_2: { x: 15, y: 0 },
+  MB_S2_STAIRS_1: { x: 15, y: 40 },
+  MB_S2_STAIRS_3: { x: 15, y: 8 },
+  MB_S2_STAIRS_4: { x: 15, y: -8 },
+
+  //MB-Floor1
+  MB_0_secondcup: { x: -50, y: 380 },
+  MB_0_BATHROOM_W: { x: -26, y: 0 },
+  MB_0_SECURITY: { x: -113, y: 75 },
+  MB_0_ESCALATOR_DOWN: { x: -60, y: 110 },
+  MB_0_ESCALATOR_UP: { x: -55, y: 90 },
+  MB_0_STAIRS_1: { x: -45, y: 200 },
+  MB_0_STAIRS_2: { x: -122, y: -110 },
+  MB_0_ELEVATOR_1: { x: 40, y: 15 },
+  MB_0_ELEVATOR_2: { x: 36, y: 15 },
+  MB_0_ELEVATOR_3: { x: 32, y: 15 },
+  MB_0_ELEVATOR_4: { x: 10, y: -20 },
+  MB_0_ELEVATOR_5: { x: -28, y: -20 },
+  MB_0_ELEVATOR_6: { x: -66, y: -20 },
 };
 
 const CATEGORY_CONFIG: Record<
@@ -123,6 +161,31 @@ const CATEGORY_CONFIG: Record<
     iconColor: string;
   }
 > = {
+  // ...existing code...
+  STUDENT_UNION: {
+    icon: "account-group",
+    iconLib: "mci",
+    bg: "#6EC16E", // green for student union
+    iconColor: POI_PALETTE.iconDark,
+  },
+  SECOND_CUP: {
+    icon: "coffee",
+    iconLib: "mci",
+    bg: "#C2A661", // unique color for Second Cup
+    iconColor: POI_PALETTE.iconDark,
+  },
+  MICROWAVE: {
+    icon: "microwave",
+    iconLib: "mci",
+    bg: "#B76E79",
+    iconColor: POI_PALETTE.iconDark,
+  },
+  VINHS_CAFE: {
+    icon: "coffee",
+    iconLib: "mci",
+    bg: "#8D5524",
+    iconColor: POI_PALETTE.iconDark,
+  },
   FOOD: {
     icon: "coffee",
     iconLib: "mci",
@@ -136,8 +199,8 @@ const CATEGORY_CONFIG: Record<
     iconColor: POI_PALETTE.iconDark,
   },
   HELP_DESK: {
-    icon: "account-group",
-    iconLib: "mci",
+    icon: "shield-outline",
+    iconLib: "ion",
     bg: "#B76E79",
     iconColor: POI_PALETTE.iconDark,
   },
@@ -145,6 +208,12 @@ const CATEGORY_CONFIG: Record<
     icon: "business-outline",
     iconLib: "ion",
     bg: "#B76E79",
+    iconColor: POI_PALETTE.iconDark,
+  },
+  STUDY_ROOM: {
+    icon: "book-outline",
+    iconLib: "ion",
+    bg: "#6EC1E4",
     iconColor: POI_PALETTE.iconDark,
   },
   STAIRS: {
@@ -203,36 +272,15 @@ const CATEGORY_CONFIG: Record<
   },
 };
 
-function renderCategoryIcon(
-  iconLib: IconLib | "custom",
-  icon: string,
-  size: number,
-  color: string,
-) {
+function renderCategoryIcon(iconLib: IconLib | "custom", icon: string, size: number, color: string) {
   if (iconLib === "custom" && icon === "IT_TEXT") {
     // Render 'IT' text for IT desk
-    return (
-      <Text style={{ fontWeight: "bold", fontSize: size * 0.85, color }}>
-        {"IT"}
-      </Text>
-    );
+    return <Text style={{ fontWeight: "bold", fontSize: size * 0.85, color }}>{"IT"}</Text>;
   }
   if (iconLib === "mci") {
-    return (
-      <MaterialCommunityIcons
-        name={icon as keyof typeof MaterialCommunityIcons.glyphMap}
-        size={size}
-        color={color}
-      />
-    );
+    return <MaterialCommunityIcons name={icon as keyof typeof MaterialCommunityIcons.glyphMap} size={size} color={color} />;
   }
-  return (
-    <Ionicons
-      name={icon as keyof typeof Ionicons.glyphMap}
-      size={size}
-      color={color}
-    />
-  );
+  return <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={size} color={color} />;
 }
 
 interface Props {
@@ -269,67 +317,41 @@ function getRoomLabelOffset(room: string): { x: number; y: number } {
   return { x: 0, y: 0 };
 }
 
-const POIBadge: React.FC<Props> = ({
-  poi,
-  left,
-  top,
-  selectionType,
-  onPress,
-  size = 18,
-}) => {
+const POIBadge: React.FC<Props> = ({ poi, left, top, selectionType, onPress, size = 18 }) => {
   const cfg = CATEGORY_CONFIG[poi.category];
   const isRoom = poi.category === "ROOM";
   const isLab = poi.category === "LAB";
   const isVerticalTransport =
-    poi.category === "STAIRS" ||
-    poi.category === "ELEVATOR" ||
-    poi.category === "ESCALATOR" ||
-    poi.category === "HELP_DESK";
-  const isCompactIconOnly =
-    !isRoom && (poi.room === "805" || poi.room === "809");
+    poi.category === "STAIRS" || poi.category === "ELEVATOR" || poi.category === "ESCALATOR" || poi.category === "HELP_DESK";
+  const isCompactIconOnly = !isRoom && (poi.room === "805" || poi.room === "809");
   const hideTopMarker = !isRoom && (poi.room === "805" || poi.room === "809");
   const isDestination = selectionType === "destination";
   const isSource = selectionType === "source";
   const bg = isDestination ? POI_PALETTE.pink : isSource ? "#3A7BD5" : cfg.bg;
-  const iconColor =
-    isDestination || isSource ? POI_PALETTE.white : cfg.iconColor;
+  const iconColor = isDestination || isSource ? POI_PALETTE.white : cfg.iconColor;
   const isElevator = poi.category === "ELEVATOR";
   const isStairsS1 = poi.category === "STAIRS" && poi.room === "S1";
-  const markerSize = isCompactIconOnly
-    ? 12
-    : isElevator
-      ? 14
-      : isStairsS1
-        ? 15
-        : size; //to change the size of the elavator icon.
+  const markerSize = isCompactIconOnly ? 12 : isElevator ? 14 : isStairsS1 ? 15 : size; //to change the size of the elavator icon.
   const markerIconSize = isCompactIconOnly ? 8 : markerSize * 0.56;
   const radius = markerSize * 0.42;
   const anchorLeft = left + size / 2;
   const anchorTop = top + size / 2;
   const isCompactRoomLabel = poi.room === "851.01";
-  const iconBadgeShiftDown =
-    poi.room === "805" ? 5 : poi.room === "809" ? 1 : 0;
+  const iconBadgeShiftDown = poi.room === "805" ? 5 : poi.room === "809" ? 1 : 0;
   const markerShiftUp = poi.room === "836" ? -6 : poi.room === "809" ? -3 : 0;
   const markerShiftRight = poi.room === "836" ? 2 : poi.room === "809" ? 16 : 0;
   // Only use default LAB shift if no manual override
-  const hasManualLabOffset =
-    poi.category === "LAB" &&
-    Object.prototype.hasOwnProperty.call(ICON_POSITION_OVERRIDES, poi.room);
+  const hasManualLabOffset = poi.category === "LAB" && Object.prototype.hasOwnProperty.call(ICON_POSITION_OVERRIDES, poi.room);
   const labShiftRight = poi.category === "LAB" && !hasManualLabOffset ? 10 : 0;
   const labShiftUp = poi.category === "LAB" && !hasManualLabOffset ? -10 : 0;
   const transportShiftLeft = isVerticalTransport ? -12 : 0;
   const transportShiftUp = isVerticalTransport ? -12 : 0;
   // Always prefer POI id as unique key for icon offset, then floor-room, then room
   let manualRoomOffset: IconOffset = ICON_POSITION_OVERRIDES[poi.id] ??
-    (poi.floor
-      ? ICON_POSITION_OVERRIDES[`${poi.floor}-${poi.room}`]
-      : undefined) ??
+    (poi.floor ? ICON_POSITION_OVERRIDES[`${poi.floor}-${poi.room}`] : undefined) ??
     ICON_POSITION_OVERRIDES[poi.room] ?? { x: 0, y: 0 };
-  const markerZIndex =
-    poi.category === "ELEVATOR" ? 40 : poi.category === "STAIRS" ? 30 : 10;
-  const markerHitSlop = isVerticalTransport
-    ? { top: 14, bottom: 14, left: 14, right: 14 }
-    : { top: 8, bottom: 8, left: 8, right: 8 };
+  const markerZIndex = poi.category === "ELEVATOR" ? 40 : poi.category === "STAIRS" ? 30 : 10;
+  const markerHitSlop = isVerticalTransport ? { top: 14, bottom: 14, left: 14, right: 14 } : { top: 8, bottom: 8, left: 8, right: 8 };
 
   if (isRoom && !isLab) {
     // Render only the label for ROOMs (not LABs)
@@ -339,13 +361,8 @@ const POIBadge: React.FC<Props> = ({
     const estimatedLabelWidth = isCompactRoomLabel
       ? Math.max(16, Math.round(poi.room.length * 4 + 1))
       : Math.max(18, Math.round(poi.room.length * 4.5 + 4));
-    const roomLabelBg = isDestination
-      ? POI_PALETTE.pink
-      : isSource
-        ? "#3A7BD5"
-        : "transparent";
-    const roomLabelColor =
-      isDestination || isSource ? POI_PALETTE.white : POI_PALETTE.textDark;
+    const roomLabelBg = isDestination ? POI_PALETTE.pink : isSource ? "#3A7BD5" : "transparent";
+    const roomLabelColor = isDestination || isSource ? POI_PALETTE.white : POI_PALETTE.textDark;
 
     return (
       <View
@@ -400,22 +417,10 @@ const POIBadge: React.FC<Props> = ({
               borderRadius: 5,
               alignItems: "center",
               justifyContent: "center",
-              backgroundColor: isDestination
-                ? POI_PALETTE.pink
-                : isSource
-                  ? "#3A7BD5"
-                  : "rgba(255,255,255,0.92)",
+              backgroundColor: isDestination ? POI_PALETTE.pink : isSource ? "#3A7BD5" : "rgba(255,255,255,0.92)",
             }}
           >
-            <Ionicons
-              name="desktop-outline"
-              size={7}
-              color={
-                isDestination || isSource
-                  ? POI_PALETTE.white
-                  : POI_PALETTE.iconDark
-              }
-            />
+            <Ionicons name="desktop-outline" size={7} color={isDestination || isSource ? POI_PALETTE.white : POI_PALETTE.iconDark} />
           </TouchableOpacity>
         ) : null}
       </View>
@@ -431,11 +436,7 @@ const POIBadge: React.FC<Props> = ({
           markerSize / 2 +
           markerShiftRight +
           transportShiftLeft +
-          (poi.category === "LAB"
-            ? hasManualLabOffset
-              ? 0
-              : labShiftRight
-            : 0) +
+          (poi.category === "LAB" ? (hasManualLabOffset ? 0 : labShiftRight) : 0) +
           manualRoomOffset.x,
         top:
           anchorTop -
@@ -482,12 +483,10 @@ const POIBadge: React.FC<Props> = ({
         accessibilityLabel={`${poi.description} – Room ${poi.room}`}
         accessibilityRole="button"
       >
-        {(!isRoom || isLab) && !hideTopMarker
-          ? renderCategoryIcon(cfg.iconLib, cfg.icon, markerIconSize, iconColor)
-          : null}
+        {(!isRoom || isLab) && !hideTopMarker ? renderCategoryIcon(cfg.iconLib, cfg.icon, markerIconSize, iconColor) : null}
       </TouchableOpacity>
-      {/* Show label under icon for Hive Cafe (FOOD with showLabel) */}
-      {poi.category === "FOOD" && poi.showLabel && (
+      {/* Show label under icon for Hive Cafe and Vinh's Cafe */}
+      {((poi.category === "FOOD" && poi.showLabel) || poi.category === "VINHS_CAFE") && (
         <Text
           style={{
             marginTop: 2,
@@ -503,7 +502,7 @@ const POIBadge: React.FC<Props> = ({
             elevation: 2,
           }}
         >
-          HIVE CAFE
+          {poi.label}
         </Text>
       )}
     </View>

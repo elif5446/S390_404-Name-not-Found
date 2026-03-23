@@ -261,6 +261,53 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({ startLocation, zIndex = 5
         setError(null);
       }
 
+      const isSameBuilding =
+        startBuildingId && destinationBuildingId && startBuildingId === destinationBuildingId && startBuildingId !== "USER";
+
+      const isSameLocation =
+        Math.abs(effectiveStartLocation.latitude - destinationCoords.latitude) < 0.00001 &&
+        Math.abs(effectiveStartLocation.longitude - destinationCoords.longitude) < 0.00001;
+
+      if (isSameBuilding || isSameLocation) {
+        console.log("RoutePolyline: Indoor-only route detected. Skipping outdoor API fetch.");
+
+        const mockRoute: RouteData = {
+          id: "indoor-only-route",
+          distance: "0 m",
+          duration: "0 min",
+          eta: "",
+          baseDurationSeconds: 0,
+          polylinePoints: [effectiveStartLocation, destinationCoords],
+          overviewPolyline: "",
+          steps: [
+            {
+              instruction: "Navigate indoors",
+              distance: "0 m",
+              duration: "0 min",
+              travelMode: "walking",
+              startLocation: effectiveStartLocation,
+              endLocation: destinationCoords,
+            },
+          ],
+          isShuttle: false,
+          requestMode: "walking",
+        };
+
+        if (isMountedRef.current) {
+          setRoutes([mockRoute]);
+          setRouteData(mockRoute);
+          setLoading(false);
+          setError(null);
+        }
+
+        baseRoutesRef.current = [mockRoute];
+        lastFetchedKeyRef.current = outdoorRequestKey;
+        blockedRequestKeyRef.current = null;
+
+        await applyIndoorPatch([mockRoute]);
+        return;
+      }
+
       // Fetch directions from API
       let fetchedRoutes = await getDirections(effectiveStartLocation, destinationCoords, travelMode, targetTime, timeMode);
 
@@ -323,15 +370,17 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({ startLocation, zIndex = 5
       }
     }
   }, [
-    showDirections,
-    isNavigationActive,
+    shouldShowRoute,
     effectiveStartLocation,
     destinationCoords,
-    travelMode,
-    shouldShowRoute,
+    isNavigationActive,
     outdoorRequestKey,
+    showDirections,
+    travelMode,
     setRoutes,
     applyIndoorPatch,
+    startBuildingId,
+    destinationBuildingId,
     targetTime,
     timeMode,
     setRouteData,

@@ -1,13 +1,5 @@
 import React from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  TouchableOpacity,
-  ScrollView,
-  Keyboard,
-} from "react-native";
+import { View, Text, TextInput, Pressable, TouchableOpacity, ScrollView, Keyboard } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { bottomPanelStyles as styles } from "@/src/components/indoor/styles/IndoorTopPanel.styles";
 import { POICategory } from "@/src/types/poi";
@@ -16,11 +8,12 @@ import { CATEGORY_LABELS } from "@/src/data/poiData";
 export type IndoorSearchResult = {
   id: string;
   label: string;
-  floorLevel: number;
-  x: number;
-  y: number;
-  type: "room" | "poi";
+  floorLevel?: number; // Optional for external buildings
+  x?: number; // Optional for external
+  y?: number; // Optional for external
+  type: "room" | "poi" | "building" | "external_room";
   room?: string;
+  buildingId?: string;
 };
 
 interface Props {
@@ -45,7 +38,7 @@ interface Props {
   onToggleCategory: (cat: POICategory) => void;
 }
 
-const IndoorBottomPanel: React.FC<Props> = ({
+const IndoorTopPanel: React.FC<Props> = ({
   searchQuery,
   setSearchQuery,
   showSearchResults,
@@ -63,6 +56,9 @@ const IndoorBottomPanel: React.FC<Props> = ({
   activeCategories,
   onToggleCategory,
 }) => {
+  const startValue = activeField === "start" ? searchQuery : startLabel;
+  const destValue = activeField === "destination" ? searchQuery : destinationLabel;
+
   return (
     <View style={styles.container} pointerEvents="box-none">
       <View style={[styles.panel, { overflow: "visible", position: "relative" }]}>
@@ -76,26 +72,20 @@ const IndoorBottomPanel: React.FC<Props> = ({
             },
           ]}
         >
-          <Ionicons
-            name="ellipse"
-            size={10}
-            color="#3A7BD5"
-            style={styles.inputIcon}
-          />
+          <Ionicons name="ellipse" size={10} color="#3A7BD5" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
             placeholder="Start"
             placeholderTextColor="#A0A0A0"
-            value={activeField === "start" ? searchQuery : startLabel}
+            value={startValue}
             onFocus={() => {
               onFocusField("start");
-              setShowSearchResults(false);
+              setShowSearchResults(true);
             }}
-            onChangeText={(text) => {
+            onChangeText={text => {
               onFocusField("start");
               setSearchQuery(text);
-              const hasText = text.trim().length > 0;
-              setShowSearchResults(hasText);
+              setShowSearchResults(true);
             }}
             returnKeyType="search"
           />
@@ -113,27 +103,22 @@ const IndoorBottomPanel: React.FC<Props> = ({
             },
           ]}
         >
-          <Ionicons
-            name="location"
-            size={16}
-            color="#C2185B"
-            style={styles.inputIcon}
-          />
+          <Ionicons name="location" size={16} color="#C2185B" style={styles.inputIcon} />
 
           <TextInput
             style={styles.input}
             placeholder="Destination"
             placeholderTextColor="#A0A0A0"
-            value={activeField === "destination" ? searchQuery : destinationLabel}
+            value={destValue}
             onFocus={() => {
               onFocusField("destination");
-              setShowSearchResults(false);
+              setShowSearchResults(true);
             }}
-            onChangeText={(text) => {
+            onChangeText={text => {
               onFocusField("destination");
               setSearchQuery(text);
+              setShowSearchResults(true);
               const hasText = text.trim().length > 0;
-              setShowSearchResults(hasText);
               if (!hasText && activeField === "destination") {
                 onClearDestination();
               }
@@ -141,10 +126,12 @@ const IndoorBottomPanel: React.FC<Props> = ({
             returnKeyType="search"
           />
 
-          {searchQuery.length > 0 && (
+          {destValue.length > 0 && (
             <TouchableOpacity
               onPress={() => {
-                setSearchQuery("");
+                if (activeField === "destination") {
+                  setSearchQuery("");
+                }
                 setShowSearchResults(false);
                 onClearDestination();
               }}
@@ -183,7 +170,7 @@ const IndoorBottomPanel: React.FC<Props> = ({
               SHOW
             </Text>
 
-            {categories.map((cat) => {
+            {categories.map(cat => {
               const isActive = activeCategories.has(cat);
 
               return (
@@ -236,50 +223,46 @@ const IndoorBottomPanel: React.FC<Props> = ({
           </TouchableOpacity>
         </View>
 
-    {showSearchResults && searchQuery.trim().length > 0 && (
-       <View style={styles.resultsContainer}>
-        {searchResults.length > 0 ? (
-       <ScrollView
-        keyboardShouldPersistTaps="handled"
-        nestedScrollEnabled
-        showsVerticalScrollIndicator={false}
-      >
-        {searchResults.map((item) => (
-          <Pressable
-            key={`${item.type}-${item.id}`}
-            style={styles.resultItem}
-            onPress={() => {
-              onSelectResult(item);
-              setShowSearchResults(false);
-              Keyboard.dismiss();
-            }}
-          >
-            <Ionicons
-              name={item.type === "poi" ? "location-outline" : "search"}
-              size={14}
-              color={activeField === "start" ? "#3A7BD5" : "#C2185B"}
-              style={styles.resultIcon}
-            />
+        {showSearchResults && (
+          <View style={styles.resultsContainer}>
+            {searchResults.length > 0 ? (
+              <ScrollView keyboardShouldPersistTaps="handled" nestedScrollEnabled showsVerticalScrollIndicator={false}>
+                {searchResults.map(item => (
+                  <Pressable
+                    key={`${item.type}-${item.id}`}
+                    style={styles.resultItem}
+                    onPress={() => {
+                      onSelectResult(item);
+                      setShowSearchResults(false);
+                      Keyboard.dismiss();
+                    }}
+                  >
+                    <Ionicons
+                      name={item.type === "poi" ? "location-outline" : "search"}
+                      size={14}
+                      color={activeField === "start" ? "#3A7BD5" : "#C2185B"}
+                      style={styles.resultIcon}
+                    />
 
-            <View style={styles.resultTextContainer}>
-              <Text style={styles.resultTitle}>{item.label}</Text>
-              <Text style={styles.resultSubtitle}>
-                Floor {item.floorLevel} • {item.type === "poi" ? "POI" : "Room"}
-              </Text>
-            </View>
-          </Pressable>
-        ))}
-      </ScrollView>
-         ) : (
-      <View style={styles.emptyContainer}>
-        <Text style={styles.emptyText}>No matching results found</Text>
-      </View>
-         )}
-       </View>
-      )}
+                    <View style={styles.resultTextContainer}>
+                      <Text style={styles.resultTitle}>{item.label}</Text>
+                      <Text style={styles.resultSubtitle}>
+                        Floor {item.floorLevel} • {item.type === "poi" ? "POI" : "Room"}
+                      </Text>
+                    </View>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            ) : (
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No matching results found</Text>
+              </View>
+            )}
+          </View>
+        )}
       </View>
     </View>
   );
 };
 
-export default IndoorBottomPanel;
+export default IndoorTopPanel;

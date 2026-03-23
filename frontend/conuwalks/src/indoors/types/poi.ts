@@ -5,13 +5,19 @@ export type POICategory =
   | "WC_SHARED"
   | "LAB"
   | "ROOM"
+  | "STUDY_ROOM"
   | "STAIRS"
   | "ELEVATOR"
   | "ESCALATOR"
   | "PRINT"
   | "IT"
   | "HELP_DESK"
-  | "FOOD";
+  | "FOOD"
+  | "SECOND_CUP"
+  | "MICROWAVE"
+  | "VINHS_CAFE"
+  | "STUDENT_UNION"
+  | "STUDENT_UNION";
 
 export interface POI {
   id: string;

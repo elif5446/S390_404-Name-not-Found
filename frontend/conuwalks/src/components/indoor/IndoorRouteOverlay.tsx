@@ -5,7 +5,7 @@ import { Node } from "@/src/indoors/types/Navigation";
 
 interface Props {
   routeNodes: Node[];
-  currentLevel: number;
+  currentFloorId: string;
   canvasWidth: number;
   canvasHeight: number;
   offsetX: number;
@@ -13,12 +13,10 @@ interface Props {
   scale: number;
 }
 
-const IndoorRouteOverlay: React.FC<Props> = ({ routeNodes, currentLevel, canvasWidth, canvasHeight, offsetX, offsetY, scale }) => {
-  const floorIdSuffix = `_${currentLevel}`;
-
+const IndoorRouteOverlay: React.FC<Props> = ({ routeNodes, currentFloorId, canvasWidth, canvasHeight, offsetX, offsetY, scale }) => {
   const nodesForCurrentFloor = useMemo(() => {
-    return routeNodes.filter(node => node.floorId.endsWith(floorIdSuffix));
-  }, [routeNodes, floorIdSuffix]);
+    return routeNodes.filter(node => node.floorId === currentFloorId);
+  }, [routeNodes, currentFloorId]);
 
   const points = useMemo(() => {
     if (nodesForCurrentFloor.length < 2) return "";

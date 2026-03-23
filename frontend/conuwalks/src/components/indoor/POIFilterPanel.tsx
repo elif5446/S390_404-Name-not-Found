@@ -1,18 +1,9 @@
 import React, { useMemo, useRef, useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  PanResponder,
-} from "react-native";
+import { View, Text, TouchableOpacity, ScrollView, PanResponder } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { POI, POICategory } from "@/src/types/poi";
 import { CATEGORY_LABELS } from "@/src/data/poiData";
-import {
-  poiPanelStyles as S,
-  POI_PALETTE,
-} from "@/src/styles/IndoorPOI.styles";
+import { poiPanelStyles as S, POI_PALETTE } from "@/src/styles/IndoorPOI.styles";
 
 type CategoryIcon =
   | { lib: "ion"; name: keyof typeof Ionicons.glyphMap }
@@ -31,29 +22,19 @@ interface Props {
   onSelectPOI: (poi: POI) => void;
 }
 
-const POIFilterPanel: React.FC<Props> = ({
-  pois,
-  activeCategories,
-  floorLabel,
-  sourcePOI,
-  destinationPOI,
-  onSelectPOI,
-}) => {
+const POIFilterPanel: React.FC<Props> = ({ pois, activeCategories, floorLabel, sourcePOI, destinationPOI, onSelectPOI }) => {
   const [query] = useState("");
   const [expanded, setExpanded] = useState(false);
 
-  const normalize = (value: string) =>
-    value.trim().toLowerCase().replace(/\s+/g, " ");
+  const normalize = (value: string) => value.trim().toLowerCase().replace(/\s+/g, " ");
 
   const queryNormalized = normalize(query);
-  const queryRoom = queryNormalized
-    .replace(/^h\s*-\s*/i, "")
-    .replace(/^room\s+/i, "");
+  const queryRoom = queryNormalized.replace(/^h\s*-\s*/i, "").replace(/^room\s+/i, "");
 
   const visiblePOIs = useMemo(() => {
     return pois
-      .filter((p) => activeCategories.has(p.category))
-      .filter((p) => {
+      .filter(p => activeCategories.has(p.category))
+      .filter(p => {
         if (!queryNormalized) return true;
 
         const roomOnly = p.room.toLowerCase();
@@ -120,7 +101,7 @@ const POIFilterPanel: React.FC<Props> = ({
           }}
         >
           <TouchableOpacity
-            onPress={() => setExpanded((v) => !v)}
+            onPress={() => setExpanded(v => !v)}
             style={{ width: "100%" }}
             accessibilityRole="button"
             accessibilityLabel="Expand or collapse points of interest panel"
@@ -160,12 +141,7 @@ const POIFilterPanel: React.FC<Props> = ({
                 Points of Interest ({visiblePOIs.length})
               </Text>
 
-              <Ionicons
-                name={expanded ? "chevron-down" : "chevron-up"}
-                size={18}
-                color={POI_PALETTE.textMid}
-                style={{ marginTop: -2 }}
-              />
+              <Ionicons name={expanded ? "chevron-down" : "chevron-up"} size={18} color={POI_PALETTE.textMid} style={{ marginTop: -2 }} />
             </View>
           </TouchableOpacity>
         </View>
@@ -206,8 +182,7 @@ const POIFilterPanel: React.FC<Props> = ({
                         alignItems: "center",
                         paddingVertical: 10,
                         paddingHorizontal: 8,
-                        borderBottomWidth:
-                          idx === visiblePOIs.length - 1 ? 0 : 1,
+                        borderBottomWidth: idx === visiblePOIs.length - 1 ? 0 : 1,
                         borderBottomColor: "#F1F1F1",
                       }}
                       accessibilityRole="button"
@@ -225,17 +200,9 @@ const POIFilterPanel: React.FC<Props> = ({
                         }}
                       >
                         {categoryIcon.lib === "ion" ? (
-                          <Ionicons
-                            name={categoryIcon.name}
-                            size={14}
-                            color={getCategoryIconColor(poi.category)}
-                          />
+                          <Ionicons name={categoryIcon.name} size={14} color={getCategoryIconColor(poi.category)} />
                         ) : (
-                          <MaterialCommunityIcons
-                            name={categoryIcon.name}
-                            size={14}
-                            color={getCategoryIconColor(poi.category)}
-                          />
+                          <MaterialCommunityIcons name={categoryIcon.name} size={14} color={getCategoryIconColor(poi.category)} />
                         )}
                       </View>
 
@@ -271,9 +238,7 @@ const POIFilterPanel: React.FC<Props> = ({
               </ScrollView>
             ) : (
               <View style={S.emptyState}>
-                <Text style={S.emptyStateText}>
-                  No POIs found for your search/filter.
-                </Text>
+                <Text style={S.emptyStateText}>No POIs found for your search/filter.</Text>
               </View>
             )}
           </View>

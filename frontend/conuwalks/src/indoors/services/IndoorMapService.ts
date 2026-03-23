@@ -1,10 +1,10 @@
-import { BuildingNavConfig, Node } from "../types/Navigation";
 import { Route, UserLocation } from "../types/Routes";
 import { Graph } from "./Graph";
 import { PathFinder } from "./PathFinder";
 import { getWheelchairAccessibilityPreference } from "@/src/utils/tokenStorage";
 import { IndoorLocationTracker } from "./IndoorLocationTracker";
 import { generateRouteSteps, RouteStep } from "@/src/indoors/services/RouteInstructionService";
+import { BuildingNavConfig, Node, NodeType } from "../types/Navigation";
 
 export class IndoorMapService {
   private graph: Graph;
@@ -117,7 +117,9 @@ export class IndoorMapService {
 
   // finds the nearest room/poi node given cartesian x/y coordinates
   getNearestRoomNode(floorId: string, x: number, y: number): Node | null {
-    const nodesOnFloor = this.graph.getAllNodes().filter(n => n.floorId === floorId && (n.type === "room" || n.type === "poi"));
+    const validTypes: NodeType[] = ["room", "poi", "bathroom", "food", "helpDesk", "elevator", "escalator", "stairs", "entrance"];
+
+    const nodesOnFloor = this.graph.getAllNodes().filter(n => n.floorId === floorId && validTypes.includes(n.type));
 
     let nearestNode: Node | null = null;
     let minDistance = Infinity;
@@ -130,7 +132,7 @@ export class IndoorMapService {
       }
     }
 
-    return minDistance < 100 ? nearestNode : null;
+    return minDistance < 150 ? nearestNode : null;
   }
 
   getEntranceNode(): Node | null {

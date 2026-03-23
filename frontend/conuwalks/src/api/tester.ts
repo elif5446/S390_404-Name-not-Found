@@ -13,9 +13,7 @@ export async function pingBackend(): Promise<Record<string, unknown>> {
   return res.json();
 }
 
-export async function sendTestData(
-  data: TestData
-): Promise<Record<string, unknown>> {
+export async function sendTestData(data: TestData): Promise<Record<string, unknown>> {
   const res = await fetch(`${API_BASE_URL}/tester`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
