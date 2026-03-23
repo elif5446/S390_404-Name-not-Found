@@ -13,9 +13,8 @@ export interface BuildingEvent {
 
 export const parseLocation = (location: string = "") => {
   // bounded quantifier to ensure safe execution times
-  const match = location.match(
-    /^(?:(?:SGW|LOY)[\s-]{0,10})?([A-Za-z]{1,15})[\s-]{1,10}(.{1,50})$/i,
-  );
+  const match =
+    /^(?:(?:SGW|LOY)[\s-]{0,10})?([A-Za-z]{1,15})[\s-]{1,10}(.{1,50})$/i.exec(location);
 
   if (match) {
     return {
@@ -47,8 +46,8 @@ export const useBuildingEvents = (
 
     const filtered: BuildingEvent[] = [];
 
-    for (let i = 0; i < events.length; i++) {
-      const event = events[i];
+    for (const event of events) {
+      // const event = events[i];
       if (!event.location) continue;
       const parsed = parseLocation(event.location);
       if (!parsed) continue;

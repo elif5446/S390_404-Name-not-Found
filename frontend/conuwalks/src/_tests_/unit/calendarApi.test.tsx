@@ -10,7 +10,7 @@ describe("GoogleCalendarApi", () => {
 
     // mock fetch globally
     fetchMock = jest.fn();
-    global.fetch = fetchMock;
+    globalThis.fetch = fetchMock;
 
     // silence console to keep test output clean, but spy on them to check behavior
     jest.spyOn(console, "log").mockImplementation(() => {});

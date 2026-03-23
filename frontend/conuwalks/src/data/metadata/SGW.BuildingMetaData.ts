@@ -122,7 +122,7 @@ export const SGWBuildingSearchMetadata: Record<string, { name: string; coordinat
   },
   "FB": {
     name: "Faubourg Building",
-    coordinates: {latitude: 45.49480, longitude: -73.57762}
+    coordinates: {latitude: 45.4948, longitude: -73.57762}
   },
   "FG": {
     name: "Faubourg Ste-Catherine Building",
@@ -130,7 +130,7 @@ export const SGWBuildingSearchMetadata: Record<string, { name: string; coordinat
   },
   "CL": {
     name: "CL Annex",
-    coordinates: {latitude: 45.49425, longitude: -73.57910}
+    coordinates: {latitude: 45.49425, longitude: -73.5791}
   },
   "GM": {
     name: "Guy-De Maisonneuve Building",
@@ -174,11 +174,11 @@ export const SGWBuildingSearchMetadata: Record<string, { name: string; coordinat
   },
   "K": {
     name: "K Annex",
-    coordinates: {latitude: 45.49782, longitude: -73.57940}
+    coordinates: {latitude: 45.49782, longitude: -73.5794}
   },
   "LD": {
     name: "LD Building",
-    coordinates: {latitude: 45.49670, longitude: -73.57727}
+    coordinates: {latitude: 45.4967, longitude: -73.57727}
   },
   "M": {
     name: "M Annex",
@@ -190,7 +190,7 @@ export const SGWBuildingSearchMetadata: Record<string, { name: string; coordinat
   },
   "MU": {
     name: "MU Annex",
-    coordinates: {latitude: 45.49790, longitude: -73.57955}
+    coordinates: {latitude: 45.4979, longitude: -73.57955}
   },
   "P": {
     name: "P Annex",
@@ -202,7 +202,7 @@ export const SGWBuildingSearchMetadata: Record<string, { name: string; coordinat
   },
   "Q": {
     name: "Q Annex",
-    coordinates: {latitude: 45.49663, longitude: -73.57910}
+    coordinates: {latitude: 45.49663, longitude: -73.5791}
   },
   "R": {
     name: "R Annex",
@@ -222,7 +222,7 @@ export const SGWBuildingSearchMetadata: Record<string, { name: string; coordinat
   },
   "T": {
     name: "T Annex",
-    coordinates: {latitude: 45.49670, longitude: -73.57924}
+    coordinates: {latitude: 45.4967, longitude: -73.57924}
   },
   "TD": {
     name: "Toronto-Dominion Building",
