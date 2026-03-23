@@ -1,5 +1,5 @@
 //we can add the POIs later
-export type NodeType = 'room' | "poi" | 'hallway' | 'elevator' | 'stairs' | 'entrance' | 'bathroom'| 'escalator' | 'food' | 'helpDesk';
+export type NodeType = 'room' | "poi" | 'hallway' | 'elevator' | 'stairs' | 'entrance' | 'bathroom'| 'escalator' | 'food' | 'helpDesk'| 'lab'|'printer';
 
 export interface Node {
   id: string;

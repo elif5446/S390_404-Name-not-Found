@@ -35,15 +35,15 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
 
         //rooms 
           //top
-        {id: "H_801", floorId: "H_8", x: 200, y: 114, type: "room", label: "Room 801"},
-        {id: "H_803", floorId: "H_8", x: 293, y: 115, type: "room", label: "Room 803"},
+        {id: "H_801", floorId: "H_8", x: 200, y: 114, type: "lab", label: "Room 801"},
+        {id: "H_803", floorId: "H_8", x: 293, y: 115, type: "lab", label: "Room 803"},
         {id: "H_805.02", floorId: "H_8", x: 379, y: 122, type: "room", label: "Room 805.02"},
         {id: "H_805.01", floorId: "H_8", x: 379, y: 163, type: "room", label: "Room 805.01"},
         {id: "H_805.03", floorId: "H_8", x: 379, y: 75, type: "room", label: "Room 805.03"},
-        {id: "H_807", floorId: "H_8", x: 457, y: 115, type: "room", label: "Room 807"},
-        {id: "H_811", floorId: "H_8", x: 648, y: 115, type: "room", label: "Room 811"},
-        {id: "H_813", floorId: "H_8", x: 736, y: 115, type: "room", label: "Room 813"},
-        {id: "H_815", floorId: "H_8", x: 823, y: 115, type: "room", label: "Room 815"},
+        {id: "H_807", floorId: "H_8", x: 457, y: 115, type: "lab", label: "Room 807"},
+        {id: "H_811", floorId: "H_8", x: 648, y: 115, type: "lab", label: "Room 811"},
+        {id: "H_813", floorId: "H_8", x: 736, y: 115, type: "lab", label: "Room 813"},
+        {id: "H_815", floorId: "H_8", x: 823, y: 115, type: "lab", label: "Room 815"},
           //left
         {id: "H_867", floorId: "H_8", x: 60, y: 116, type: "room", label: "Room 867"},
         {id: "H_865", floorId: "H_8", x: 74, y: 171, type: "room", label: "Room 865"},
@@ -69,13 +69,13 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
         {id: "H_831", floorId: "H_8", x: 950, y: 902, type: "room", label: "Room 831"},
           
           //right
-        {id: "H_829", floorId: "H_8", x: 950, y: 714.5, type: "room", label: "Room 829"},
-        {id: "H_827", floorId: "H_8", x: 950, y: 600, type: "room", label: "Room 827"},
-        {id: "H_825", floorId: "H_8", x: 950, y: 506, type: "room", label: "Room 825"},
-        {id: "H_823", floorId: "H_8", x: 950, y: 416, type: "room", label: "Room 823"},
-        {id: "H_821", floorId: "H_8", x: 950, y: 324, type: "room", label: "Room 821"},
-        {id: "H_819", floorId: "H_8", x: 950, y: 234, type: "room", label: "Room 819"},
-        {id: "H_817", floorId: "H_8", x: 950, y: 115, type: "room", label: "Room 817"},
+        {id: "H_829", floorId: "H_8", x: 950, y: 714.5, type: "lab", label: "Room 829"},
+        {id: "H_827", floorId: "H_8", x: 950, y: 600, type: "lab", label: "Room 827"},
+        {id: "H_825", floorId: "H_8", x: 950, y: 506, type: "lab", label: "Room 825"},
+        {id: "H_823", floorId: "H_8", x: 950, y: 416, type: "lab", label: "Room 823"},
+        {id: "H_821", floorId: "H_8", x: 950, y: 324, type: "lab", label: "Room 821"},
+        {id: "H_819", floorId: "H_8", x: 950, y: 234, type: "lab", label: "Room 819"},
+        {id: "H_817", floorId: "H_8", x: 950, y: 115, type: "lab", label: "Room 817"},
         
           //middle section
         {id: "H_852", floorId: "H_8", x: 250, y: 656, type: "room", label: "Room 852"},
@@ -245,7 +245,7 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
 
         //rooms 
           //Left side 
-          {id: "H_967", floorId: "H_9", x: 73, y: 166, type: "room", label: "Room 967"},
+          {id: "H_967", floorId: "H_9", x: 73, y: 166, type: "lab", label: "Room 967"},
           {id: "H_965", floorId: "H_9", x: 74, y: 328, type: "room", label: "Room 965"},
           {id: "H_963", floorId: "H_9", x: 74, y: 440, type: "room", label: "Room 963"},
           {id: "H_961.01", floorId: "H_9", x: 32, y: 510, type: "room", label: "Room 961.01"},
@@ -262,9 +262,9 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
           {id: "H_961.19", floorId: "H_9", x: 32, y: 933, type: "room", label: "Room 961.19"},
 
           //Right side
-          {id: "H_917", floorId: "H_9", x: 937, y: 118, type: "room", label: "Room 917"},
+          {id: "H_917", floorId: "H_9", x: 937, y: 118, type: "lab", label: "Room 917"},
           {id: "H_919", floorId: "H_9", x: 937, y: 240, type: "room", label: "Room 919"},
-          {id: "H_921", floorId: "H_9", x: 937, y: 327, type: "room", label: "Room 921"},
+          {id: "H_921", floorId: "H_9", x: 937, y: 327, type: "lab", label: "Room 921"},
           {id: "H_923", floorId: "H_9", x: 939, y: 434, type: "room", label: "Room 923"},
           {id: "H_925.01", floorId: "H_9", x: 895, y: 536, type: "room", label: "Room 925.01"},
           {id: "H_925.02", floorId: "H_9", x: 966, y: 547, type: "room", label: "Room 925.02"},
@@ -273,8 +273,8 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
           {id: "H_927.04", floorId: "H_9", x: 879, y: 641, type: "room", label: "Room 927.04"},
           {id: "H_927.01", floorId: "H_9", x: 978, y: 664, type: "room", label: "Room 927.01"},
           {id: "H_927.03", floorId: "H_9", x: 978, y: 619, type: "room", label: "Room 927.03"},
-          {id: "H_931", floorId: "H_9", x: 848, y: 836, type: "room", label: "Room 931"},
-          {id: "H_929", floorId: "H_9", x: 916, y: 883, type: "room", label: "Room 929"},
+          {id: "H_931", floorId: "H_9", x: 848, y: 836, type: "lab", label: "Room 931"},
+          {id: "H_929", floorId: "H_9", x: 916, y: 883, type: "lab", label: "Room 929"},
 
           //Bottom
           {id: "H_961.21", floorId: "H_9", x: 81, y: 940, type: "room", label: "Room 961.21"},
@@ -286,17 +286,17 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
           {id: "H_961.33", floorId: "H_9", x: 346, y: 940, type: "room", label: "Room 961.33"},
           {id: "H_941", floorId: "H_9", x: 423, y: 933, type: "room", label: "Room 941"},
           {id: "H_937", floorId: "H_9", x: 543, y: 798, type: "room", label: "Room 937"},
-          {id: "H_933", floorId: "H_9", x: 753, y: 911, type: "room", label: "Room 933"},
+          {id: "H_933", floorId: "H_9", x: 753, y: 911, type: "lab", label: "Room 933"},
           {id: "H_932", floorId: "H_9", x: 738, y: 805, type: "room", label: "Room 932"},
-          {id: "H_928", floorId: "H_9", x: 789, y: 805, type: "room", label: "Room 928"},
+          {id: "H_928", floorId: "H_9", x: 789, y: 805, type: "lab", label: "Room 928"},
 
           //top
           {id: "H_903", floorId: "H_9", x: 235, y: 112, type: "room", label: "Room 903"},
           {id: "H_907", floorId: "H_9", x: 409, y: 112, type: "room", label: "Room 907"},
           {id: "H_909", floorId: "H_9", x: 544, y: 112, type: "room", label: "Room 909"},
           {id: "H_911", floorId: "H_9", x: 632, y: 112, type: "room", label: "Room 911"},
-          {id: "H_913", floorId: "H_9", x: 729, y: 112, type: "room", label: "Room 913"},
-          {id: "H_915", floorId: "H_9", x: 821, y: 113, type: "room", label: "Room 915"},
+          {id: "H_913", floorId: "H_9", x: 729, y: 112, type: "lab", label: "Room 913"},
+          {id: "H_915", floorId: "H_9", x: 821, y: 113, type: "lab", label: "Room 915"},
 
           //middle
           {id: "H_964", floorId: "H_9", x: 282, y: 488, type: "room", label: "Room 964"},
@@ -329,6 +329,8 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
         {id: "H_9_ESCALATOR_DOWN_TO_FLOOR_8", floorId: "H_9", x: 480, y: 444, type: "escalator", label: "Escalator Down to Floor 8"},
         {id: "H_9_ESCALATOR_UP_TO_FLOOR_10", floorId: "H_9", x: 515, y: 444, type: "escalator", label: "Escalator Up to Floor 10"}, 
         {id: "H_9_ESCALATOR_UP_TO_FLOOR_9", floorId: "H_9", x: 480, y: 627, type: "escalator", label: "Escalator Up to Floor 9"}, 
+        {id: "H_9_PRINTER", floorId: "H_9", x: 551, y: 660, type: "printer", label: "Printer"}, 
+        
       ],
       edges: [
         //hall to hall
@@ -471,6 +473,11 @@ export const hallBuildingNavConfig: BuildingNavConfig = {
         {nodeAId: "H_9_ESCALATOR_DOWN_TO_FLOOR_8", nodeBId: "H_9_N25" , accessible: false},
         {nodeAId: "H_9_ESCALATOR_UP_TO_FLOOR_10", nodeBId: "H_9_N25" , accessible: false},
         {nodeAId: "H_9_ESCALATOR_UP_TO_FLOOR_9", nodeBId: "H_9_N32" , accessible: false},
+
+        {nodeAId: "H_9_PRINTER", nodeBId: "H_9_N32" , accessible: true},
+        {nodeAId: "H_9_PRINTER", nodeBId: "H_9_N9" , accessible: true},
+
+
       ]
     },
     {

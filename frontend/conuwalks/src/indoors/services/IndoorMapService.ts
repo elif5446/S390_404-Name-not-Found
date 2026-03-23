@@ -4,7 +4,126 @@ import { Graph } from "./Graph";
 import { PathFinder } from "./PathFinder";
 import { getWheelchairAccessibilityPreference } from "@/src/utils/tokenStorage";
 import { IndoorLocationTracker } from "./IndoorLocationTracker";
-import { generateRouteSteps , RouteStep} from "@/src/indoors/services/RouteInstructionService";
+import { generateRouteSteps, RouteStep } from "@/src/indoors/services/RouteInstructionService";
+import { navConfigRegistry } from "@/src/indoors/data/navConfigRegistry";
+
+// ─── POI helpers (outside the class) ────────────────────────────────────────
+
+const NODE_COORD_MAX = 1024;
+
+const NODE_TYPE_CONFIG: Record<string, {
+  category: string;
+  icon: string;
+  iconLib: "ion" | "mci";
+  bg: string;
+  iconColor: string;
+  label: string;
+} | null> = {
+  hallway: null,
+  room: null,
+  lab: {
+    category: "LAB",
+    icon: "desktop-outline",
+    iconLib: "ion",
+    bg: "#B76E79",
+    iconColor: "#2d2d2d",
+    label: "Lab",
+  },
+  bathroom: null,
+  elevator: {
+    category: "ELEVATOR",
+    icon: "elevator",
+    iconLib: "mci",
+    bg: "#B76E79",
+    iconColor: "#2d2d2d",
+    label: "Elevator",
+  },
+  stairs: {
+    category: "STAIRS",
+    icon: "stairs",
+    iconLib: "mci",
+    bg: "#B76E79",
+    iconColor: "#2d2d2d",
+    label: "Stairs",
+  },
+  escalator: {
+    category: "ESCALATOR",
+    icon: "escalator",
+    iconLib: "mci",
+    bg: "#B76E79",
+    iconColor: "#2d2d2d",
+    label: "Escalator",
+  },
+  entrance: {
+    category: "ENTRANCE",
+    icon: "enter-outline",
+    iconLib: "ion",
+    bg: "#6EC1E4",
+    iconColor: "#2d2d2d",
+    label: "Entrance",
+  },
+  food: {
+    category: "FOOD",
+    icon: "coffee",
+    iconLib: "mci",
+    bg: "#F7C873",
+    iconColor: "#2d2d2d",
+    label: "Food",
+  },
+  helpDesk: {
+    category: "HELP_DESK",
+    icon: "shield-outline",
+    iconLib: "ion",
+    bg: "#B76E79",
+    iconColor: "#2d2d2d",
+    label: "Help Desk",
+  },
+  printer: {
+    category: "PRINT",
+    icon: "print-outline",
+    iconLib: "ion",
+    bg: "#B76E79",
+    iconColor: "#2d2d2d",
+    label: "Printer",
+  },
+};
+
+function resolveBathroomConfig(label: string = ""): {
+  category: string;
+  icon: string;
+  iconLib: "ion" | "mci";
+  bg: string;
+  iconColor: string;
+  label: string;
+} {
+  const l = label.toLowerCase();
+  if (l.includes("women") || l.includes("female") || l.includes("wc f")) {
+    return { category: "WC_F", icon: "female-outline", iconLib: "ion", bg: "#F2C4CE", iconColor: "#c0395a", label: "WC F" };
+  }
+  if (l.includes("men") || l.includes("male") || l.includes("wc m")) {
+    return { category: "WC_M", icon: "male-outline", iconLib: "ion", bg: "#C4D9F2", iconColor: "#3A7BD5", label: "WC M" };
+  }
+  if (l.includes("handicap") || l.includes("accessible")) {
+    return { category: "WC_A", icon: "accessibility-outline", iconLib: "ion", bg: "#A0C4A0", iconColor: "#fff", label: "WC A" };
+  }
+  return { category: "WC_SHARED", icon: "human-male-female", iconLib: "mci", bg: "#B0A7D1", iconColor: "#fff", label: "WC" };
+}
+
+export interface DynamicPOI {
+  id: string;
+  nodeId: string;
+  floorId: string;
+  label: string;
+  description: string;
+  category: string;
+  icon: string;
+  iconLib: "ion" | "mci";
+  bg: string;
+  iconColor: string;
+  mapPosition: { x: number; y: number };
+}
+
+// ─── Service class ───────────────────────────────────────────────────────────
 
 export class IndoorMapService {
   private graph: Graph;
@@ -18,12 +137,10 @@ export class IndoorMapService {
   }
 
   loadBuilding(config: BuildingNavConfig): void {
-    //this will reset the graph everytime a new building is pressed
     this.graph = new Graph();
     this.pathFinder = new PathFinder(this.graph);
     this.locationTracker.setGraph(this.graph);
 
-    //load the floors
     for (const floor of config.floors) {
       for (const node of floor.nodes) {
         this.graph.addNode(node);
@@ -33,10 +150,6 @@ export class IndoorMapService {
       }
     }
 
-    // add inter-floor edges (if they exist) after all floors are loaded
-    // this is done last because inter-floor edges reference nodes on different floors
-    // so all nodes must exist in the graph before these edges can be added.
-    //Escalator edges between floors will not be bi-directional
     if (config.interFloorEdges) {
       for (const edge of config.interFloorEdges) {
         const nodeA = this.graph.getNode(edge.nodeAId);
@@ -60,7 +173,6 @@ export class IndoorMapService {
     return this.graph;
   }
 
-  //you can find a route by giving a start and end node
   async getRoute(
     startNodeId: string,
     endNodeId: string,
@@ -68,11 +180,7 @@ export class IndoorMapService {
   ): Promise<Route> {
     const wheelchairOnly =
       accessibleOnly ?? (await getWheelchairAccessibilityPreference());
-    return this.pathFinder.findShortestPath(
-      startNodeId,
-      endNodeId,
-      wheelchairOnly,
-    );
+    return this.pathFinder.findShortestPath(startNodeId, endNodeId, wheelchairOnly);
   }
 
   setUserLocation(nodeId: string): void {
@@ -87,38 +195,26 @@ export class IndoorMapService {
     return this.locationTracker.getUserLocation();
   }
 
-  //find shortest route by giving only an end node (will use the default location or preset location as starting node)
-  getRouteFromCurrentLocation(
-    endNodeId: string,
-    accessibleOnly: boolean = false,
-  ): Route {
+  getRouteFromCurrentLocation(endNodeId: string, accessibleOnly: boolean = false): Route {
     const userLoc = this.getUserLocation();
     if (!userLoc) {
       throw new Error("IndoorMapService: user location not set");
     }
-    return this.pathFinder.findShortestPath(
-      userLoc.nodeId,
-      endNodeId,
-      accessibleOnly,
-    );
+    return this.pathFinder.findShortestPath(userLoc.nodeId, endNodeId, accessibleOnly);
   }
 
-  //this will get the default start node for the building that is being loaded
   getStartNode(): Node | null {
     return this.locationTracker.getStartNode();
   }
 
-  // resolves a raw room string (e.g. "847") to a node ID (e.g. "H_847")
   getNodeByRoomNumber(buildingId: string, roomNumber: string): Node | null {
     const cleanRoom = roomNumber.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
     const allNodes = this.graph.getAllNodes();
 
-    // try an exact match assuming standard prefix "H_964"
     const exactId = `${buildingId}_${cleanRoom}`;
     let targetNode = this.graph.getNode(exactId);
     if (targetNode) return targetNode;
 
-    // fallback: search all nodes for an ID that ends with the target number
     targetNode = allNodes.find((n) => {
       const cleanId = n.id.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
       return cleanId.endsWith(cleanRoom);
@@ -127,21 +223,16 @@ export class IndoorMapService {
     return targetNode || null;
   }
 
-  // finds the nearest room/poi node given cartesian x/y coordinates
   getNearestRoomNode(floorId: string, x: number, y: number): Node | null {
     const nodesOnFloor = this.graph
       .getAllNodes()
-      .filter(
-        (n) => n.floorId === floorId && (n.type === "room" || n.type === "poi"),
-      );
+      .filter((n) => n.floorId === floorId && (n.type === "room" || n.type === "poi"));
 
     let nearestNode: Node | null = null;
     let minDistance = Infinity;
 
     for (const node of nodesOnFloor) {
-      const distance = Math.sqrt(
-        Math.pow(node.x - x, 2) + Math.pow(node.y - y, 2),
-      );
+      const distance = Math.sqrt(Math.pow(node.x - x, 2) + Math.pow(node.y - y, 2));
       if (distance < minDistance) {
         minDistance = distance;
         nearestNode = node;
@@ -156,23 +247,12 @@ export class IndoorMapService {
     return entrances.length > 0 ? entrances[0] : null;
   }
 
-  /**
-   * Calculates the estimated walking time in seconds for an indoor route.
-   * @param route The generated indoor Route object
-   * @param pixelToMeterRatio The scale of SVG/Map. (e.g., if 10 pixels = 1 meter, pass 0.1)
-   */
-  public getRouteDurationSeconds(
-    route: Route | null,
-    pixelToMeterRatio: number = 1,
-  ): number {
+  public getRouteDurationSeconds(route: Route | null, pixelToMeterRatio: number = 1): number {
     if (!route || !route.totalDistance) return 0;
 
     const distanceInMeters = route.totalDistance * pixelToMeterRatio;
     const WALKING_SPEED_MPS = 1.35;
-
     let baseSeconds = distanceInMeters / WALKING_SPEED_MPS;
-
-    // add a time penalty for floor changes (e.g., 15 seconds per elevator/stair transition)
     const floorChanges = this.calculateFloorChanges(route);
     baseSeconds += floorChanges * 15;
 
@@ -188,9 +268,55 @@ export class IndoorMapService {
     }
     return changes;
   }
-  getRouteInstructions (route: Route) : {steps: RouteStep[]} {
-    return {
-      steps: generateRouteSteps(route.nodes)
-    };
+
+  getRouteInstructions(route: Route): { steps: RouteStep[] } {
+    return { steps: generateRouteSteps(route.nodes) };
+  }
+
+  public getPOIsFromConfig(buildingId: string, floorId: string | null = null): DynamicPOI[] {
+    const config = navConfigRegistry[buildingId];
+    if (!config) return [];
+
+    const floors = floorId
+      ? config.floors.filter((f) => f.floorId === floorId)
+      : config.floors;
+
+    const results: DynamicPOI[] = [];
+
+    for (const floor of floors) {
+      for (const node of floor.nodes) {
+        const type = node.type;
+
+        if (type === "hallway") continue;
+
+        let cfg;
+
+        if (type === "bathroom") {
+          cfg = resolveBathroomConfig(node.label);
+        } else {
+          cfg = NODE_TYPE_CONFIG[type];
+          if (!cfg) continue;
+        }
+
+        results.push({
+          id: `${buildingId}-poi-${node.id}`,
+          nodeId: node.id,
+          floorId: floor.floorId,
+          label: cfg.label,
+          description: node.label ?? cfg.label,
+          category: cfg.category,
+          icon: cfg.icon,
+          iconLib: cfg.iconLib,
+          bg: cfg.bg,
+          iconColor: cfg.iconColor,
+          mapPosition: {
+            x: Number((node.x / NODE_COORD_MAX).toFixed(3)),
+            y: Number((node.y / NODE_COORD_MAX).toFixed(3)),
+          },
+        });
+      }
+    }
+
+    return results;
   }
 }
