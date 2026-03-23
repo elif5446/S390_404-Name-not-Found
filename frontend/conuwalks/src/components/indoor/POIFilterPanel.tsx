@@ -356,7 +356,7 @@ function formatPoiRoomLabel(poi: POI): string {
   if (poi.category === "STAIRS" && /^S\d+$/i.test(poi.room)) {
     return `H${poi.floor}-${poi.room.toUpperCase()}`;
   }
-  return `H-${poi.room}`;
+  return `${poi.floor}-${poi.room}`;
 }
 
 export default POIFilterPanel;
