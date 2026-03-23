@@ -10,7 +10,7 @@ type IconOffset = { x: number; y: number };
 
 // Fine-tune icon placement by room number
 export const ICON_POSITION_OVERRIDES: Record<string, IconOffset> = {
-      "MB_S2_BATHROOM_W": { x: 20, y: 0 },
+        
       
     
   // VL-2 icon positions
@@ -125,11 +125,34 @@ export const ICON_POSITION_OVERRIDES: Record<string, IconOffset> = {
 
 
   //MB-S2 positions:   
-    "MB_S2.273": { x: 0, y: 40 },
-    "MB_S2.275": { x: 0, y: 40 },
-    "MB_S2.279": { x: 0, y: 40 },
+    "MB_S2.273": { x: 2, y: 40 },
+    "MB_S2.275": { x: 2, y: 40 },
+    "MB_S2.279": { x: 3, y: 40 },
     "MB_vinhs_cafe": { x: -15, y: 20 }, 
-    "MB_S2_MIC": { x: 5, y: 20 },
+    "MB_S2.428": { x: 65, y: 315 },
+    "MB_S2_BATHROOM_M": { x: -1, y: 8},
+    "MB_S2_BATHROOM_W": { x: -1, y: -10},
+    "MB_S2_BATHROOM_H": { x: 1, y: -18 },
+    "MB_S2_ELEVATOR_1": { x: 12, y: 8 }, 
+    "MB_S2_ELEVATOR_2": { x: 14, y: 8},
+    "MB_S2_ELEVATOR_3": { x: 14, y: 8 },
+    "MB_S2_ELEVATOR_4": { x: 14, y: 15 },
+    "MB_S2_ELEVATOR_5": { x: 14, y: 15 },
+    "MB_S2_ELEVATOR_6": { x: 14, y: 15 },
+    "MB_S2_ESCALATOR_UP": { x: 1, y: -70 },
+    "MB_S2_ESCALATOR_DOWN": { x: 10, y: -70 },
+    "MB_S2_STAIRS_5": { x: 6, y: 5 },
+    "MB_S2_STAIRS_2": { x: 15, y: 0 },
+    "MB_S2_STAIRS_1": { x: 15, y: 40 },
+    "MB_S2_STAIRS_3": { x: 15, y: 8 },
+    "MB_S2_STAIRS_4": { x: 15, y: -8 },
+
+
+
+
+
+
+
 
 
 

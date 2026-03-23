@@ -1074,7 +1074,9 @@ const POI_DATA: Record<string, POI[]> = {
   
   // MB Building – Floor S2
 "MB-1": [
+   
   // Study Rooms
+  { id: "MB_S2.428", label: "428", category: "STUDY_ROOM" as POICategory, description: "Study Room 428", room: "428", floor: 0, mapPosition: { x: 0.677, y: 0.120 } },
   { id: "MB_S2.273", label: "273", category: "STUDY_ROOM" as POICategory, description: "Study Room 273", room: "273", floor: 0, mapPosition: { x: 0.621, y: 0.120 } },
   { id: "MB_S2.275", label: "275", category: "STUDY_ROOM" as POICategory, description: "Study Room 275", room: "275", floor: 0, mapPosition: { x: 0.658, y: 0.120 } },
   { id: "MB_S2.279", label: "279", category: "STUDY_ROOM" as POICategory, description: "Study Room 279", room: "279", floor: 0, mapPosition: { x: 0.695, y: 0.120 } },
@@ -1108,7 +1110,7 @@ const POI_DATA: Record<string, POI[]> = {
 
 // MB Building – Floor 1 (MB-0)
   "MB-2": [
-    // Elevators
+  
     { id: "MB_0_ELEVATOR_1", label: "Elevator", category: "ELEVATOR" as POICategory, description: "Elevator", room: "ELEVATOR_1", floor: 0, mapPosition: { x: 0.400, y: 0.620 } },
     { id: "MB_0_ELEVATOR_2", label: "Elevator", category: "ELEVATOR" as POICategory, description: "Elevator", room: "ELEVATOR_2", floor: 0, mapPosition: { x: 0.450, y: 0.620 } },
     { id: "MB_0_ELEVATOR_3", label: "Elevator", category: "ELEVATOR" as POICategory, description: "Elevator", room: "ELEVATOR_3", floor: 0, mapPosition: { x: 0.500, y: 0.620 } },
