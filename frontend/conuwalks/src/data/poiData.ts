@@ -14,26 +14,26 @@ const mapPositionFromNode = (nodeId: string, fallback: POI["mapPosition"]): POI[
     y: Number((node.y / NODE_COORD_MAX).toFixed(3)),
   };
 };
-//9th floor nodes
-const hallFloor9RoomPOIs: POI[] =
-  hallBuildingNavConfig.floors
-    .find(floor => floor.floorId === "H_9")
-    ?.nodes.filter(node => node.type === "room" && /^H_\d+(?:\.\d+)?$/.test(node.id) && node.id !== "H_967")
-    .map(node => {
-      const room = node.id.slice(2);
-      return {
-        id: `H-9-room-${room}`,
-        label: "Room",
-        category: "ROOM" as POICategory,
-        description: "Classroom",
-        room,
-        floor: 9,
-        mapPosition: mapPositionFromNode(node.id, {
-          x: Number((node.x / NODE_COORD_MAX).toFixed(3)),
-          y: Number((node.y / NODE_COORD_MAX).toFixed(3)),
-        }),
-      };
-    }) ?? [];
+// //9th floor nodes
+// const hallFloor9RoomPOIs: POI[] =
+//   hallBuildingNavConfig.floors
+//     .find(floor => floor.floorId === "H_9")
+//     ?.nodes.filter(node => node.type === "room" && /^H_\d+(?:\.\d+)?$/.test(node.id) && node.id !== "H_967")
+//     .map(node => {
+//       const room = node.id.slice(2);
+//       return {
+//         id: `H-9-room-${room}`,
+//         label: "Room",
+//         category: "ROOM" as POICategory,
+//         description: "Classroom",
+//         room,
+//         floor: 9,
+//         mapPosition: mapPositionFromNode(node.id, {
+//           x: Number((node.x / NODE_COORD_MAX).toFixed(3)),
+//           y: Number((node.y / NODE_COORD_MAX).toFixed(3)),
+//         }),
+//       };
+//     }) ?? [];
 
 const POI_DATA: Record<string, POI[]> = {
   // VL Building – Floor 2

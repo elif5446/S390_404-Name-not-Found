@@ -4,6 +4,20 @@ import { IndoorHotspot, IndoorDestination } from "@/src/indoors/types/hotspot";
 
 function getRoomLabelFontSize(label: string): number {
   const room = label.replace("Room ", "");
+   if (room === "273") {
+    return 7;//MB-S2
+  }
+  if (room === "275") {
+    return 7;//MB-S2
+  }
+  if (room === "279") {
+    return 7;//MB-S2
+  }
+  if (room === "428") {
+    return 7;//MB-S2
+  }
+
+
   if (room === "106.1") {
     return 7;//VL-1
   }
@@ -52,6 +66,18 @@ function getRoomLabelFontSize(label: string): number {
 //rooms positions 
 function getRoomLabelOffsetX(label: string): number {
   const room = label.replace("Room ", "");
+   if (room === "273") {
+    return 7; // MB-S2, 
+  }
+  if (room === "275") {
+    return 7; // MB-S2, 
+  }
+  if (room === "279") {
+    return 7; // MB-S2, 
+  }
+  if (room === "428") {
+    return 2; // MB-S2, 
+  }
   if (room === "202.30") {
     return 2; // VL-2, 
   }
