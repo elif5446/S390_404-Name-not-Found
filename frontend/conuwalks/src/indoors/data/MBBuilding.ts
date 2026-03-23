@@ -22,11 +22,11 @@ export const MBBuildingNavConfig: BuildingNavConfig = {
         
         //POI
         //Study Rooms
-        {id: "MB_S2.273", floorId: "MB_S2", x: 636, y: 123, type: "room", label: "Study Room"},
-        {id: "MB_S2.275", floorId: "MB_S2", x: 674, y: 123, type: "room", label: "Study Room"},
-        {id: "MB_S2.279", floorId: "MB_S2", x: 712, y: 123, type: "room", label: "Study Room"},
-        {id: "MB_S2.135", floorId: "MB_S2", x: 492, y: 727, type: "room", label: "Study Room"},
-        {id: "MB_S2.428", floorId: "MB_S2", x: 810, y: 800, type: "room", label: "Study Room"},
+        {id: "MB_S2.273", floorId: "MB_S2", x: 636, y: 123, type: "room", label: "273"},
+        {id: "MB_S2.275", floorId: "MB_S2", x: 674, y: 123, type: "room", label: "275"},
+        {id: "MB_S2.279", floorId: "MB_S2", x: 712, y: 123, type: "room", label: "279"},
+        {id: "MB_S2.135", floorId: "MB_S2", x: 492, y: 727, type: "room", label: "135"},
+        {id: "MB_S2.428", floorId: "MB_S2", x: 810, y: 800, type: "room", label: "428"},
         
 
         //Washrooms

@@ -10,6 +10,9 @@ type IconOffset = { x: number; y: number };
 
 // Fine-tune icon placement by room number
 export const ICON_POSITION_OVERRIDES: Record<string, IconOffset> = {
+      "MB_S2_BATHROOM_W": { x: 20, y: 0 },
+      
+    
   // VL-2 icon positions
                 "VL-2-wc-m-1": { x: 0, y: 78 }, 
                 "VL-2-wc-f-1": { x: 5, y: 105 },
@@ -64,7 +67,7 @@ export const ICON_POSITION_OVERRIDES: Record<string, IconOffset> = {
         "2-ESCALATOR_UP_2": { x: 15, y: 20 },
         "2-S1": { x: 6, y: 8 },
         "2-S2": { x: 10, y: 14 },
-       "2-STUDENT_UNION": { x: 10, y: 15 },
+      "2-STUDENT_UNION": { x: 10, y: 5 },
       "2-ESCALATOR_DOWN_2": { x: 15, y: -3 },
     "2-ESCALATOR_UP_8": { x: 10, y: 25},
    
@@ -119,7 +122,38 @@ export const ICON_POSITION_OVERRIDES: Record<string, IconOffset> = {
   // Floor 8 escalator positions
   "ESCALATOR_UP_9": { x: 6, y: 10 },
   "ESCALATOR_DOWN_2": { x: 6, y: 2 },
+
+
+  //MB-S2 positions:   
+    "MB_S2.273": { x: 0, y: 40 },
+    "MB_S2.275": { x: 0, y: 40 },
+    "MB_S2.279": { x: 0, y: 40 },
+    "MB_vinhs_cafe": { x: -15, y: 20 }, 
+    "MB_S2_MIC": { x: 5, y: 20 },
+
+
+
+
+
+    //MB-Floor1
+    "MB_0_secondcup": { x: -50, y: 380 },
+    "MB_0_BATHROOM_W": { x: -26, y: 0 },
+    "MB_0_SECURITY": { x: -113, y: 75 },
+    "MB_0_ESCALATOR_DOWN": { x: -60, y: 110 },
+    "MB_0_ESCALATOR_UP": { x: -55, y: 90 },
+    "MB_0_STAIRS_1": { x: -45, y: 200},
+    "MB_0_STAIRS_2": { x: -122, y: -110},
+    "MB_0_ELEVATOR_1": { x: 40, y:15 },
+    "MB_0_ELEVATOR_2": { x: 36, y:15 },
+    "MB_0_ELEVATOR_3": { x: 32, y:15 },
+    "MB_0_ELEVATOR_4": { x: 10, y:-20 },
+    "MB_0_ELEVATOR_5": { x: -28, y:-20 },
+    "MB_0_ELEVATOR_6": { x: -66, y:-20 },
+
+    
 };
+
+
 
 const CATEGORY_CONFIG: Record<POICategory, {
   icon: string;
@@ -127,6 +161,31 @@ const CATEGORY_CONFIG: Record<POICategory, {
   bg: string;
   iconColor: string;
 }> = {
+  // ...existing code...
+  STUDENT_UNION: {
+    icon: "account-group",
+    iconLib: "mci",
+    bg: "#6EC16E", // green for student union
+    iconColor: POI_PALETTE.iconDark,
+  },
+  SECOND_CUP: {
+    icon: "coffee",
+    iconLib: "mci",
+    bg: "#C2A661", // unique color for Second Cup
+    iconColor: POI_PALETTE.iconDark,
+  },
+  MICROWAVE: {
+    icon: "microwave",
+    iconLib: "mci",
+    bg: "#B76E79",
+    iconColor: POI_PALETTE.iconDark,
+  },
+  VINHS_CAFE: {
+    icon: "coffee",
+    iconLib: "mci",
+    bg: "#8D5524",
+    iconColor: POI_PALETTE.iconDark,
+  },
   FOOD: {
     icon: "coffee",
     iconLib: "mci",
@@ -140,8 +199,8 @@ const CATEGORY_CONFIG: Record<POICategory, {
     iconColor: POI_PALETTE.iconDark,
   },
   HELP_DESK: {
-    icon: "account-group",
-    iconLib: "mci",
+    icon: "shield-outline",
+    iconLib: "ion",
     bg: "#B76E79",
     iconColor: POI_PALETTE.iconDark,
   },
@@ -149,6 +208,12 @@ const CATEGORY_CONFIG: Record<POICategory, {
     icon: "business-outline",
     iconLib: "ion",
     bg: "#B76E79",
+    iconColor: POI_PALETTE.iconDark,
+  },
+  STUDY_ROOM: {
+    icon: "book-outline",
+    iconLib: "ion",
+    bg: "#6EC1E4",
     iconColor: POI_PALETTE.iconDark,
   },
   STAIRS: {
@@ -471,8 +536,8 @@ const POIBadge: React.FC<Props> = ({
           ? renderCategoryIcon(cfg.iconLib, cfg.icon, markerIconSize, iconColor)
           : null}
       </TouchableOpacity>
-      {/* Show label under icon for Hive Cafe (FOOD with showLabel) */}
-      {poi.category === "FOOD" && poi.showLabel && (
+      {/* Show label under icon for Hive Cafe and Vinh's Cafe */}
+      {((poi.category === "FOOD" && poi.showLabel) || poi.category === "VINHS_CAFE") && (
         <Text
           style={{
             marginTop: 2,
@@ -488,7 +553,7 @@ const POIBadge: React.FC<Props> = ({
             elevation: 2,
           }}
         >
-          HIVE CAFE
+          {poi.label}
         </Text>
       )}
     </View>
