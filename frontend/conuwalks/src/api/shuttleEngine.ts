@@ -63,12 +63,16 @@ const parseDur = (d?: string) => {
   if (!d) return 0;
   const h = /(\d{1,5})\s{0,5}h/.exec(d);
   const m = /(\d{1,5})\s{0,5}min/.exec(d);
-  return (h ? Number.parseInt(h[1], 10) * 60 : 0) + (m ? Number.parseInt(m[1], 10) : 0);
+  return (
+    (h ? Number.parseInt(h[1], 10) * 60 : 0) +
+    (m ? Number.parseInt(m[1], 10) : 0)
+  );
 };
 
 const parseDist = (d?: string) => {
   if (!d) return 0;
-  if (d.includes("km")) return Number.parseFloat(d.replaceAll(/[^\d.]/g, "")) * 1000;
+  if (d.includes("km"))
+    return Number.parseFloat(d.replaceAll(/[^\d.]/g, "")) * 1000;
   return Number.parseFloat(d.replaceAll(/[^\d.]/g, ""));
 };
 
@@ -151,7 +155,7 @@ export const getShuttleRouteIfApplicable = async (
       walkToDist = parseDist(walkToRoute.distance);
     }
   } catch (e) {
-      console.log("skipping...", e);
+    console.log("skipping...", e);
     walkToMins = Math.max(
       1,
       Math.round((isSGWtoLOY ? distToSGW : distToLOY) / 80),
@@ -166,7 +170,7 @@ export const getShuttleRouteIfApplicable = async (
       walkFromDist = parseDist(walkFromRoute.distance);
     }
   } catch (e) {
-      console.log("skipping...", e);
+    console.log("skipping...", e);
     walkFromMins = Math.max(
       1,
       Math.round((isSGWtoLOY ? destToLOY : destToSGW) / 80),

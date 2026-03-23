@@ -54,14 +54,23 @@ export class PathFinder {
       closedSet.add(currentId);
 
       // extracted logic
-      this.processNeighbors(currentId, endNode, accessibleOnly, openSet, closedSet, gScore, fScore, cameFrom);
+      this.processNeighbors(
+        currentId,
+        endNode,
+        accessibleOnly,
+        openSet,
+        closedSet,
+        gScore,
+        fScore,
+        cameFrom,
+      );
     }
     throw new Error(
       `PathFinder: no path found between ${startNodeId} and ${endNodeId}`,
     );
   }
 
-// new private helper to handle the inner loop complexity
+  // new private helper to handle the inner loop complexity
   private processNeighbors(
     currentId: string,
     endNode: Node,
@@ -70,7 +79,7 @@ export class PathFinder {
     closedSet: Set<string>,
     gScore: Map<string, number>,
     fScore: Map<string, number>,
-    cameFrom: Map<string, string>
+    cameFrom: Map<string, string>,
   ): void {
     const neighbors = this.graph.getNeighbors(currentId);
 
@@ -81,7 +90,9 @@ export class PathFinder {
       if (!edge || (accessibleOnly && !edge.accessible)) continue;
 
       if (edge.weight === undefined) {
-        throw new Error(`Edge between ${currentId} and ${neighbor.id} has no weight`);
+        throw new Error(
+          `Edge between ${currentId} and ${neighbor.id} has no weight`,
+        );
       }
 
       const tentativeGScore = (gScore.get(currentId) ?? Infinity) + edge.weight;
@@ -89,7 +100,10 @@ export class PathFinder {
       if (tentativeGScore < (gScore.get(neighbor.id) ?? Infinity)) {
         cameFrom.set(neighbor.id, currentId);
         gScore.set(neighbor.id, tentativeGScore);
-        fScore.set(neighbor.id, tentativeGScore + this.heuristic(neighbor, endNode));
+        fScore.set(
+          neighbor.id,
+          tentativeGScore + this.heuristic(neighbor, endNode),
+        );
         openSet.add(neighbor.id);
       }
     }
