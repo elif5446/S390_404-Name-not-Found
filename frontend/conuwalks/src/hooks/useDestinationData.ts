@@ -24,25 +24,42 @@ export const useDestinationData = (
     destinationRoom,
   } = directions;
 
-  const [navigationRouteId, setNavigationRouteId] = useState<string | null>(
-    null,
-  );
+  const [navigationRouteId, setNavigationRouteId] = useState<string | null>(null);
   const effectiveDestination = overrideDestination || contextDestination;
   const effectiveStart = overrideStart || contextStart;
-  const [baseModeSecondsCache, setBaseModeSecondsCache] = useState<
-    Partial<Record<TravelMode, number>>
-  >({});
+  const [baseModeSecondsCache, setBaseModeSecondsCache] = useState<Partial<Record<TravelMode, number>>>({});
+  const [indoorPenaltyCache, setIndoorPenaltyCache] = useState<number>(0);
 
   const routeScopeKey = `${startBuildingId ?? "-"}->${destinationBuildingId ?? "-"}`;
+
+  // fetch and cache the indoor penalty asynchronously whenever the rooms change
+  useEffect(() => {
+    let isCancelled = false;
+
+    const fetchPenalty = async () => {
+      try {
+        const penalty = await calculateIndoorPenaltySeconds(startBuildingId, startRoom, destinationBuildingId, destinationRoom);
+        if (!isCancelled) {
+          setIndoorPenaltyCache(penalty || 0);
+        }
+      } catch (e) {
+        if (!isCancelled) setIndoorPenaltyCache(0);
+      }
+    };
+
+    fetchPenalty();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [startBuildingId, startRoom, destinationBuildingId, destinationRoom]);
 
   const formatMinutes = useCallback((minutes: number): string => {
     const rounded = Math.max(1, Math.round(minutes));
     if (rounded >= 60) {
       const hours = Math.floor(rounded / 60);
       const remainingMinutes = rounded % 60;
-      return remainingMinutes > 0
-        ? `${hours} h ${remainingMinutes} min`
-        : `${hours} h`;
+      return remainingMinutes > 0 ? `${hours} h ${remainingMinutes} min` : `${hours} h`;
     }
     return `${rounded} min`;
   }, []);
@@ -77,10 +94,9 @@ export const useDestinationData = (
   // sync active route duration into cache
   useEffect(() => {
     const activeRoute = routes[selectedRouteIndex] || routeData;
-    if (!activeRoute?.requestMode || activeRoute.baseDurationSeconds == null)
-      return;
+    if (!activeRoute?.requestMode || activeRoute.baseDurationSeconds == null) return;
 
-    setBaseModeSecondsCache((prev) => {
+    setBaseModeSecondsCache(prev => {
       if (prev[activeRoute.requestMode] === activeRoute.baseDurationSeconds) {
         return prev;
       }
@@ -97,21 +113,12 @@ export const useDestinationData = (
     if (!visible || !effectiveStart || !effectiveDestination) return;
 
     let isCancelled = false;
-    const allModes: TravelMode[] = [
-      "walking",
-      "transit",
-      "bicycling",
-      "driving",
-    ];
+    const allModes: TravelMode[] = ["walking", "transit", "bicycling", "driving"];
 
     const fetchModeDurations = async () => {
       const results = await Promise.allSettled(
-        allModes.map(async (modeKey) => {
-          const fetchedRoutes = await getDirections(
-            effectiveStart,
-            effectiveDestination,
-            modeKey,
-          );
+        allModes.map(async modeKey => {
+          const fetchedRoutes = await getDirections(effectiveStart, effectiveDestination, modeKey);
           return {
             modeKey,
             baseSeconds: fetchedRoutes[0]?.baseDurationSeconds || null,
@@ -121,13 +128,10 @@ export const useDestinationData = (
 
       if (isCancelled) return;
 
-      setBaseModeSecondsCache((prev) => {
+      setBaseModeSecondsCache(prev => {
         const next = { ...prev };
-        results.forEach((result) => {
-          if (
-            result.status === "fulfilled" &&
-            result.value.baseSeconds !== null
-          ) {
+        results.forEach(result => {
+          if (result.status === "fulfilled" && result.value.baseSeconds !== null) {
             next[result.value.modeKey] = result.value.baseSeconds;
           }
         });
@@ -146,13 +150,7 @@ export const useDestinationData = (
       const baseSeconds = baseModeSecondsCache[modeKey];
 
       if (baseSeconds != null) {
-        const indoorPenalty = calculateIndoorPenaltySeconds(
-          startBuildingId,
-          startRoom,
-          destinationBuildingId,
-          destinationRoom,
-        );
-        return formatDurationFromSeconds(baseSeconds + indoorPenalty);
+        return formatDurationFromSeconds(baseSeconds + indoorPenaltyCache);
       }
 
       const activeRoute = routeData || routes[selectedRouteIndex];
@@ -161,17 +159,7 @@ export const useDestinationData = (
       }
       return "--";
     },
-    [
-      baseModeSecondsCache,
-      routeData,
-      routes,
-      selectedRouteIndex,
-      startBuildingId,
-      startRoom,
-      destinationBuildingId,
-      destinationRoom,
-      normalizeDurationLabel,
-    ],
+    [baseModeSecondsCache, routeData, routes, selectedRouteIndex, indoorPenaltyCache, normalizeDurationLabel],
   );
 
   const getTransitBadgeLabel = useCallback((step: DirectionStep): string => {
@@ -181,50 +169,32 @@ export const useDestinationData = (
     return step.transitVehicleType || "Transit";
   }, []);
 
-  const getRouteTransitSummary = useCallback(
-    (steps: DirectionStep[]): string | null => {
-      const labels = steps
-        .filter(
-          (step) =>
-            step.transitLineShortName ||
-            step.transitLineName ||
-            step.transitVehicleType,
-        )
-        .map((step) => {
-          const type = (step.transitVehicleType || "Transit").toLowerCase();
-          const vehicle =
-            type.includes("subway") || type.includes("metro")
-              ? "Metro"
-              : type.includes("bus") || type.includes("shuttle")
-                ? "Bus"
-                : "Transit";
-          const line = (
-            step.transitLineShortName ||
-            step.transitLineName ||
-            ""
-          ).trim();
-          return line ? `${vehicle} ${line}` : vehicle;
-        });
+  const getRouteTransitSummary = useCallback((steps: DirectionStep[]): string | null => {
+    const labels = steps
+      .filter(step => step.transitLineShortName || step.transitLineName || step.transitVehicleType)
+      .map(step => {
+        const type = (step.transitVehicleType || "Transit").toLowerCase();
+        const vehicle =
+          type.includes("subway") || type.includes("metro")
+            ? "Metro"
+            : type.includes("bus") || type.includes("shuttle")
+              ? "Bus"
+              : "Transit";
+        const line = (step.transitLineShortName || step.transitLineName || "").trim();
+        return line ? `${vehicle} ${line}` : vehicle;
+      });
 
-      if (labels.length === 0) return null;
+    if (labels.length === 0) return null;
 
-      // dedup consecutive identical labels
-      return labels
-        .filter((val, i) => i === 0 || val !== labels[i - 1])
-        .join(" → ");
-    },
-    [],
-  );
+    // dedup consecutive identical labels
+    return labels.filter((val, i) => i === 0 || val !== labels[i - 1]).join(" → ");
+  }, []);
 
   const transitSteps = useMemo(() => {
     const selectedRoute = routes[selectedRouteIndex] || routeData;
     return (selectedRoute?.steps || []).filter(
-      (step) =>
-        step.transitLineName ||
-        step.transitLineShortName ||
-        step.transitDepartureStop ||
-        step.transitArrivalStop ||
-        step.transitHeadsign,
+      step =>
+        step.transitLineName || step.transitLineShortName || step.transitDepartureStop || step.transitArrivalStop || step.transitHeadsign,
     );
   }, [routes, selectedRouteIndex, routeData]);
 

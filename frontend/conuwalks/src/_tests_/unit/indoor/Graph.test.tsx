@@ -124,7 +124,6 @@ describe("Graph", () => {
         5,
       );
     });
-
     it("should create a one-way edge when oneWay is true (A→B only)", () => {
       graph.addEdge(makeEdge("A", "B"), true);
       expect(graph.getEdge("A", "B")).toBeDefined();

@@ -90,7 +90,7 @@ describe("useBottomSheet Hook", () => {
       },
     );
 
-    // initially off-screen
+    // initially off-screen — translateY already at screenHeight, so no animation needed
     expect(mockTiming).not.toHaveBeenCalled();
 
     // rerender with visible: true

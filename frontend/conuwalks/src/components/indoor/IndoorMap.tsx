@@ -162,11 +162,7 @@ const MapContent = React.memo(({ floor, width, height }: MapContentProps) => {
 
   return (
     <View style={[styles.errorBox, { width, height }]}>
-      <Ionicons
-        name="alert-circle-outline"
-        size={32}
-        color={styles.errorText.color}
-      />
+      <Ionicons name="alert-circle-outline" size={32} color={styles.errorText.color} />
       <Text style={styles.errorText}>Map Image Unavailable</Text>
     </View>
   );

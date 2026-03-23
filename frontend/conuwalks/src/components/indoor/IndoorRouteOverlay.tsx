@@ -13,32 +13,28 @@ interface Props {
   scale: number;
 }
 
-const IndoorRouteOverlay: React.FC<Props> = ({
-  routeNodes,
-  currentLevel,
-  canvasWidth,
-  canvasHeight,
-  offsetX,
-  offsetY,
-  scale,
-}) => {
+const IndoorRouteOverlay: React.FC<Props> = ({ routeNodes, currentLevel, canvasWidth, canvasHeight, offsetX, offsetY, scale }) => {
   const floorIdSuffix = `_${currentLevel}`;
 
-  const nodesForCurrentFloor = routeNodes.filter((node) =>
-    node.floorId.endsWith(floorIdSuffix),
-  );
+  const nodesForCurrentFloor = useMemo(() => {
+    return routeNodes.filter(node => node.floorId.endsWith(floorIdSuffix));
+  }, [routeNodes, floorIdSuffix]);
 
-  if (nodesForCurrentFloor.length < 2) return null;
+  const points = useMemo(() => {
+    if (nodesForCurrentFloor.length < 2) return "";
 
-  const points = useMemo(() =>
-    nodesForCurrentFloor
-      .map((node) => {
+    return nodesForCurrentFloor
+      .map(node => {
         const x = offsetX + node.x * scale;
         const y = offsetY + node.y * scale;
         return `${x},${y}`;
       })
-      .join(" ")
-  , [nodesForCurrentFloor, offsetX, offsetY, scale]);
+      .join(" ");
+  }, [nodesForCurrentFloor, offsetX, offsetY, scale]);
+
+  if (nodesForCurrentFloor.length < 2) {
+    return null;
+  }
 
   const firstNode = nodesForCurrentFloor[0];
   const lastNode = nodesForCurrentFloor[nodesForCurrentFloor.length - 1];
@@ -59,29 +55,21 @@ const IndoorRouteOverlay: React.FC<Props> = ({
         height: canvasHeight,
       }}
     >
-    <Svg width={canvasWidth} height={canvasHeight}>
+      <Svg width={canvasWidth} height={canvasHeight}>
+        <Polyline points={points} fill="none" stroke="#FFFFFF" strokeWidth={8} strokeLinecap="round" strokeLinejoin="round" opacity={0.9} />
         <Polyline
-            points={points}
-            fill="none"
-            stroke="#FFFFFF"
-            strokeWidth={8}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            opacity={0.9}
-        />
-        <Polyline
-            points={points}
-            fill="none"
-            stroke="#C2185B"
-            strokeWidth={4.5}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeDasharray="10 8"
+          points={points}
+          fill="none"
+          stroke="#C2185B"
+          strokeWidth={4.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeDasharray="10 8"
         />
 
         <Circle cx={startX} cy={startY} r={4} fill="#3A7BD5" />
         <Circle cx={endX} cy={endY} r={5} fill="#C2185B" />
-        </Svg>
+      </Svg>
     </View>
   );
 };

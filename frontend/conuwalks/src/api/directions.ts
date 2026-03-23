@@ -1,15 +1,8 @@
 import { LatLng } from "react-native-maps";
 import { DirectionStep, RouteData } from "@/src/context/DirectionsContext";
-import {
-  parseSeconds,
-  formatDurationFromSeconds,
-  calculateEtaFromSeconds,
-} from "@/src/utils/time";
+import { parseSeconds, formatDurationFromSeconds, calculateEtaFromSeconds } from "@/src/utils/time";
 
-const GOOGLE_DIRECTIONS_API_KEY =
-  process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ??
-  process.env.GOOGLE_MAPS_API_KEY ??
-  "";
+const GOOGLE_DIRECTIONS_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ?? process.env.GOOGLE_MAPS_API_KEY ?? "";
 
 interface RoutesApiResponse {
   routes?: {
@@ -205,9 +198,7 @@ const isRoutesBlockedError = (message: string): boolean => {
     normalized.includes("routes.googleapis.com") ||
     normalized.includes("google.maps.routing.v2.routes.computeroutes") ||
     normalized.includes("routes api has not been used") ||
-    normalized.includes(
-      "method google.maps.routing.v2.routes.computeroutes are blocked",
-    )
+    normalized.includes("method google.maps.routing.v2.routes.computeroutes are blocked")
   );
 };
 
@@ -234,10 +225,8 @@ const toLatLng = (
     return undefined;
   }
 
-  const latitude =
-    "latitude" in value ? value.latitude : (value as { lat?: number }).lat;
-  const longitude =
-    "longitude" in value ? value.longitude : (value as { lng?: number }).lng;
+  const latitude = "latitude" in value ? value.latitude : (value as { lat?: number }).lat;
+  const longitude = "longitude" in value ? value.longitude : (value as { lng?: number }).lng;
 
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
     return undefined;
@@ -289,18 +278,13 @@ const fetchLegacyDirections = async (
   const data: DirectionsApiResponse = await response.json();
 
   if (!response.ok) {
-    throw new Error(
-      data.error_message ||
-        `Directions API request failed with status ${response.status}`,
-    );
+    throw new Error(data.error_message || `Directions API request failed with status ${response.status}`);
   }
 
   if (data.status !== "OK" || !data.routes?.length) {
     throw new Error(
       data.error_message ||
-        (data.status === "ZERO_RESULTS"
-          ? "No route found between these locations"
-          : `Directions API error: ${data.status}`),
+        (data.status === "ZERO_RESULTS" ? "No route found between these locations" : `Directions API error: ${data.status}`),
     );
   }
 
@@ -312,7 +296,7 @@ const fetchLegacyDirections = async (
         return null;
       }
 
-      const steps: DirectionStep[] = (leg.steps || []).map((step) => {
+      const steps: DirectionStep[] = (leg.steps || []).map(step => {
         const polylineStr = step.polyline?.points;
         let instr = stripHtml(step.html_instructions);
         const tMode = (step.travel_mode || "").toUpperCase();
@@ -322,9 +306,7 @@ const fetchLegacyDirections = async (
             const details = step.transit_details;
             const vehicle = details?.line?.vehicle?.name || "Transit";
             const line = details?.line?.short_name || "";
-            const headsign = details?.headsign
-              ? ` toward ${details.headsign}`
-              : "";
+            const headsign = details?.headsign ? ` toward ${details.headsign}` : "";
             instr = `Take ${vehicle} ${line}${headsign}`.trim();
           } else if (tMode === "WALK" || tMode === "WALKING") {
             instr = `Walk to next location`;
@@ -391,15 +373,11 @@ export const getDirections = async (
 ): Promise<RouteData[]> => {
   if (!start) throw new Error("Start location is required");
   if (!destination) throw new Error("Destination location is required");
-  if (!GOOGLE_DIRECTIONS_API_KEY)
-    throw new Error("Google Maps API key is not configured");
+  if (!GOOGLE_DIRECTIONS_API_KEY) throw new Error("Google Maps API key is not configured");
 
   try {
     // Map modes to Routes API travel mode enum
-    const modeMap: Record<
-      TravelMode,
-      "WALK" | "DRIVE" | "TRANSIT" | "BICYCLE"
-    > = {
+    const modeMap: Record<TravelMode, "WALK" | "DRIVE" | "TRANSIT" | "BICYCLE"> = {
       walking: "WALK",
       driving: "DRIVE",
       transit: "TRANSIT",
@@ -472,10 +450,7 @@ export const getDirections = async (
     const data: RoutesApiResponse = await response.json();
 
     if (!response.ok) {
-      throw new Error(
-        data.error?.message ||
-          `Routes API request failed with status ${response.status}`,
-      );
+      throw new Error(data.error?.message || `Routes API request failed with status ${response.status}`);
     }
 
     if (!data.routes || data.routes.length === 0) {
@@ -494,7 +469,7 @@ export const getDirections = async (
           return null;
         }
 
-        const steps: DirectionStep[] = (leg.steps || []).map((step) => {
+        const steps: DirectionStep[] = (leg.steps || []).map(step => {
           const polylineStr = step.polyline?.encodedPolyline;
           let instr = stripHtml(step.navigationInstruction?.instructions);
           const tMode = (step.travelMode || "").toUpperCase();
@@ -502,12 +477,9 @@ export const getDirections = async (
           if (!instr || instr === "Continue") {
             if (tMode === "TRANSIT") {
               const details = step.transitDetails;
-              const vehicle =
-                details?.transitLine?.vehicle?.name?.text || "Transit";
+              const vehicle = details?.transitLine?.vehicle?.name?.text || "Transit";
               const line = details?.transitLine?.nameShort || "";
-              const headsign = details?.headsign
-                ? ` toward ${details.headsign}`
-                : "";
+              const headsign = details?.headsign ? ` toward ${details.headsign}` : "";
               instr = `Take ${vehicle} ${line}${headsign}`.trim();
             } else if (tMode === "WALK" || tMode === "WALKING") {
               instr = `Walk to next location`;
@@ -518,29 +490,21 @@ export const getDirections = async (
           return {
             instruction: instr,
             distance: formatDistance(step.distanceMeters),
-            duration: formatDurationFromSeconds(
-              parseSeconds(step.staticDuration),
-            ),
+            duration: formatDurationFromSeconds(parseSeconds(step.staticDuration)),
             startLocation: toLatLng(step.startLocation?.latLng),
             endLocation: toLatLng(step.endLocation?.latLng),
             travelMode: normalizeTravelMode(step.travelMode),
             transitLineName: step.transitDetails?.transitLine?.name,
             transitLineShortName: step.transitDetails?.transitLine?.nameShort,
-            transitVehicleType:
-              step.transitDetails?.transitLine?.vehicle?.name?.text ||
-              step.transitDetails?.transitLine?.vehicle?.type,
+            transitVehicleType: step.transitDetails?.transitLine?.vehicle?.name?.text || step.transitDetails?.transitLine?.vehicle?.type,
             transitHeadsign: step.transitDetails?.headsign,
-            transitDepartureStop:
-              step.transitDetails?.stopDetails?.departureStop?.name,
-            transitArrivalStop:
-              step.transitDetails?.stopDetails?.arrivalStop?.name,
+            transitDepartureStop: step.transitDetails?.stopDetails?.departureStop?.name,
+            transitArrivalStop: step.transitDetails?.stopDetails?.arrivalStop?.name,
             polylinePoints: polylineStr ? decodePolyline(polylineStr) : [],
           };
         });
 
-        const outdoorSeconds = parseSeconds(
-          route.duration ?? leg.duration ?? "0s",
-        );
+        const outdoorSeconds = parseSeconds(route.duration ?? leg.duration ?? "0s") || 0;
 
         return {
           id: `route-${index}`,
@@ -549,11 +513,7 @@ export const getDirections = async (
           distance: formatDistance(route.distanceMeters ?? leg.distanceMeters),
           baseDurationSeconds: outdoorSeconds,
           duration: formatDurationFromSeconds(outdoorSeconds),
-          eta: calculateEtaFromSeconds(
-            outdoorSeconds,
-            safeTargetTime,
-            timeMode,
-          ),
+          eta: calculateEtaFromSeconds(outdoorSeconds, safeTargetTime, timeMode),
           steps,
           overviewPolyline,
         };
@@ -572,13 +532,7 @@ export const getDirections = async (
       }
 
       if (start && destination && isRoutesBlockedError(error.message)) {
-        return fetchLegacyDirections(
-          start,
-          destination,
-          mode,
-          targetTime,
-          timeMode,
-        );
+        return fetchLegacyDirections(start, destination, mode, targetTime, timeMode);
       }
 
       throw error;

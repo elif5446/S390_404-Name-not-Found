@@ -2,7 +2,7 @@ import { BuildingNavConfig } from '../types/Navigation';
 
 export const MBBuildingNavConfig: BuildingNavConfig = {
   buildingId: "MB", //needs to match the id of the BuildingIndoorConfig
-  defaultStartNodeId: "MB_S2_N17",
+  defaultStartNodeId: "",
   floors: [
     {
       floorId: "MB_S2",

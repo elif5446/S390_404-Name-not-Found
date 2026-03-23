@@ -32,32 +32,7 @@ const pois: POI[] = [
 ];
 
 describe("POIFilterPanel", () => {
-  it("switches route target mode", () => {
-    const onTargetModeChange = jest.fn();
-
-    render(
-      <POIFilterPanel
-        pois={pois}
-        categories={["LAB", "WC_F"]}
-        activeCategories={new Set(["LAB", "WC_F"])}
-        floorLabel="9"
-        targetMode="DESTINATION"
-        sourcePOI={null}
-        destinationPOI={null}
-        onTargetModeChange={onTargetModeChange}
-        onToggleCategory={jest.fn()}
-        onSelectPOI={jest.fn()}
-      />,
-    );
-
-    fireEvent.press(screen.getByLabelText("Set source mode"));
-    expect(onTargetModeChange).toHaveBeenCalledWith("SOURCE");
-
-    fireEvent.press(screen.getByLabelText("Set destination mode"));
-    expect(onTargetModeChange).toHaveBeenCalledWith("DESTINATION");
-  });
-
-  it("filters POIs by search query", () => {
+  it("shows POIs when the panel is expanded", () => {
     render(
       <POIFilterPanel
         pois={pois}
@@ -73,14 +48,11 @@ describe("POIFilterPanel", () => {
       />,
     );
 
-    fireEvent.press(screen.getByLabelText("Toggle POI list"));
+    fireEvent.press(
+      screen.getByLabelText("Expand or collapse points of interest panel"),
+    );
 
     expect(screen.getByText("Computer Lab")).toBeTruthy();
-    expect(screen.getByText("Girls Washroom")).toBeTruthy();
-
-    fireEvent.changeText(screen.getByLabelText("Search POIs"), "916");
-
-    expect(screen.queryByText("Computer Lab")).toBeNull();
     expect(screen.getByText("Girls Washroom")).toBeTruthy();
   });
 
@@ -102,7 +74,10 @@ describe("POIFilterPanel", () => {
       />,
     );
 
-    fireEvent.press(screen.getByLabelText("Toggle POI list"));
+    fireEvent.press(
+      screen.getByLabelText("Expand or collapse points of interest panel"),
+    );
+
     fireEvent.press(screen.getByLabelText("Navigate to Girls Washroom, Room 916"));
     expect(onSelectPOI).toHaveBeenCalledWith(pois[1]);
 

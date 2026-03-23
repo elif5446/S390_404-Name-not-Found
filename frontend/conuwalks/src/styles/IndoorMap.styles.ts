@@ -45,10 +45,59 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
   },
+  headerTitleWrap: {
+    flex: 1,
+    justifyContent: "center",
+  },
   buildingTitle: {
-    fontSize: 18,
+    fontSize: 19,
     fontWeight: "800",
     color: THEME.text,
+  },
+  floorBadge: {
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+  },
+  floorTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: THEME.text,
+  },
+  headerFloorToggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  headerFloorToggle: {
+    minWidth: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1,
+    borderColor: "#C6C6C8",
+    backgroundColor: "#ECECF1",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerFloorToggleActive: {
+    minWidth: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1,
+    borderColor: THEME.secondary,
+    backgroundColor: THEME.secondary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerFloorToggleText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#4A4A53",
+  },
+  headerFloorToggleTextActive: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: THEME.white,
   },
 
   currentFloorButton: {
@@ -145,5 +194,54 @@ export const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 5,
     elevation: 8,
-  }
+  },
+  // floor picker
+  pickerContainer: {
+    position: "absolute",
+    right: 12,
+    top: "50%",
+    maxHeight: 300,
+    width: 50,
+    transform: [{ translateY: -100 }], // centering logic
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
+    zIndex: 5003,
+  },
+  glassPanel: {
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    borderRadius: 25,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.4)",
+    overflow: "hidden",
+    paddingVertical: 8,
+  },
+  scrollContent: {
+    alignItems: "center",
+    paddingVertical: 4,
+    gap: 8,
+  },
+  floorButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#E5E5EA",
+  },
+  activeButton: {
+    backgroundColor: THEME.primary,
+    transform: [{ scale: 1.15 }],
+  },
+  pickerText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#8E8E93",
+  },
+  activePickerText: {
+    color: THEME.white,
+    fontWeight: "800",
+  },
 });
