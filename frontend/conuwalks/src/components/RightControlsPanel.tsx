@@ -5,21 +5,28 @@ import {
   Platform,
   useColorScheme,
   ActivityIndicator,
+  ViewStyle
 } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { SymbolView } from "expo-symbols";
 import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import UserProfilePopup from "./UserProfilePopup";
+import BuildingSearchButton from "../components/BuildingSearchButton";
+import { UserInfo } from "@/src/utils/tokenStorage";
+import { LatLng } from 'react-native-maps';
 
 interface Props {
-  userInfo: any;
+  userInfo: UserInfo | null;
   onSignOut: () => void;
-  userLocation: any;
+  userLocation: LatLng | null;
   onLocationPress: () => void;
   locationLoading?: boolean;
   indoorBuildingId?: string | null;
   isInfoPopupExpanded?: boolean;
+  handleOpenBuildingSearch: () => void;
+  isDirections: boolean;
+  isNavigation: boolean;
 }
 // helper for complexity
 const GlassBackground: React.FC<{ mode: "light" | "dark" }> = ({ mode }) => {
@@ -40,6 +47,9 @@ const RightControlsPanel: React.FC<Props> = ({
   locationLoading = false,
   indoorBuildingId = null,
   isInfoPopupExpanded = false,
+  handleOpenBuildingSearch,
+  isDirections,
+  isNavigation
 }) => {
   const mode = useColorScheme() || "light";
   const [isProfileExpanded, setIsProfileExpanded] = useState(false);
@@ -53,10 +63,23 @@ const RightControlsPanel: React.FC<Props> = ({
   const buttonSize = 50;
   const buttonSpacing = 12;
   const userIconSize = 50;
+  
+  const style: ViewStyle = {
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    backgroundColor: Platform.OS === "ios" ? "transparent" : mode === "dark" ? "#2C2C2E" : "#FFFFFF",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: Platform.OS === "ios" ? 0.18 : 0.22,
+    shadowRadius: 4,
+    elevation: Platform.OS === "ios" ? 0 : 4,
+    marginBottom: buttonSpacing
+  }
 
   return (
     <>
-      {/* Controls panel, user icon + location button stacked */}
+      {/* Controls panel, user icon + location button + search button stacked */}
       <View
         style={{
           position: "absolute",
@@ -68,28 +91,14 @@ const RightControlsPanel: React.FC<Props> = ({
         pointerEvents="box-none"
       >
         {/* User Profile Icon */}
-        <TouchableOpacity
+        {!isDirections && <>
+        {!isNavigation && <TouchableOpacity
           onPress={() => setIsProfileExpanded(!isProfileExpanded)}
-          style={{
+          style={[style, {
             width: userIconSize,
             height: userIconSize,
-            borderRadius: userIconSize / 2,
-            backgroundColor:
-              Platform.OS === "ios"
-                ? "transparent"
-                : mode === "dark"
-                  ? "#2C2C2E"
-                  : "#FFFFFF",
-            justifyContent: "center",
-            alignItems: "center",
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: Platform.OS === "ios" ? 0.18 : 0.22,
-            shadowRadius: 4,
-            elevation: Platform.OS === "ios" ? 0 : 4,
-            marginBottom: buttonSpacing,
-            overflow: "hidden",
-          }}
+            borderRadius: userIconSize / 2
+          }]}
           pointerEvents="auto"
           accessible={true}
           accessibilityLabel="Open user profile"
@@ -97,34 +106,19 @@ const RightControlsPanel: React.FC<Props> = ({
         >
           <GlassBackground mode={mode}/>
           <MaterialIcons name="person" size={24} color="#B03060" />
-        </TouchableOpacity>
+        </TouchableOpacity>}
 
         {/* Location Recenter Button */}
         {showLocationButton && (
           <TouchableOpacity
             onPress={onLocationPress}
             activeOpacity={0.85}
-            style={{
+            style={[style, {
               position: "relative",
               width: buttonSize,
               height: buttonSize,
-              borderRadius: buttonSize / 2,
-              alignItems: "center",
-              justifyContent: "center",
-              overflow: "hidden",
-              backgroundColor:
-                Platform.OS === "ios"
-                  ? "transparent"
-                  : mode === "dark"
-                    ? "#2C2C2E"
-                    : "#FFFFFF",
-              shadowColor: "#000",
-              shadowOffset: { width: 0, height: 2 },
-              shadowOpacity: Platform.OS === "ios" ? 0.18 : 0.22,
-              shadowRadius: 4,
-              elevation: Platform.OS === "ios" ? 0 : 4,
-              marginBottom: buttonSpacing,
-            }}
+              borderRadius: buttonSize / 2
+            }]}
             pointerEvents="auto"
             accessible={true}
             accessibilityLabel="Recenter to your location"
@@ -145,6 +139,9 @@ const RightControlsPanel: React.FC<Props> = ({
             )}
           </TouchableOpacity>
         )}
+        {/* Search Button */}
+        {!isNavigation && <BuildingSearchButton onPress={handleOpenBuildingSearch} buttonSize={buttonSize} mode={mode} buttonSpacing={buttonSpacing} />}
+        </>}
       </View>
       <UserProfilePopup
         visible={isProfileExpanded}
