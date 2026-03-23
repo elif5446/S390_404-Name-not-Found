@@ -15,8 +15,7 @@ export class PathFinder {
     const endNode = this.graph.getNode(endNodeId);
 
     if (!startNode || !endNode) {
-      console.warn(`[PathFinder] Cannot calculate route. Start or end node missing.`);
-      return null;
+      throw new Error(`[PathFinder] Cannot calculate route. Start or end node not found.`);
     }
 
     // gScore = actual cost from start to this node
@@ -53,8 +52,8 @@ export class PathFinder {
       // extracted logic
       this.processNeighbors(currentId, endNode, accessibleOnly, openSet, closedSet, gScore, fScore, cameFrom);
     }
-    console.warn(`[PathFinder] No path found between ${startNodeId} and ${endNodeId}`);
-    return null;
+
+    throw new Error(`[PathFinder] No path found between ${startNodeId} and ${endNodeId}`);
   }
 
   // new private helper to handle the inner loop complexity

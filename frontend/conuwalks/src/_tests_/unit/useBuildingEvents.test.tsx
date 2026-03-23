@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from "@testing-library/react";
+import { renderHook, waitFor } from "@testing-library/react-native";
 import { useBuildingEvents } from "../../hooks/useBuildingEvents";
 import { useGoogleCalendar } from "../../hooks/useGoogleCalendar";
 
@@ -16,11 +16,7 @@ const mockEvent = (overrides = {}) => ({
   ...overrides,
 });
 
-const setupMock = (
-  events: any[],
-  loading = false,
-  error: Error | null = null,
-) => {
+const setupMock = (events: any[], loading = false, error: Error | null = null) => {
   (useGoogleCalendar as jest.Mock).mockReturnValue({
     events,
     fetchUpcomingEvents: mockFetchUpcomingEvents,
@@ -64,10 +60,7 @@ describe("Location Parsing", () => {
 //event filtering
 describe("Event Filtering", () => {
   it("filters events by exact building code match", async () => {
-    setupMock([
-      mockEvent({ id: "1", location: "H 820" }),
-      mockEvent({ id: "2", location: "MB 3.255" }),
-    ]);
+    setupMock([mockEvent({ id: "1", location: "H 820" }), mockEvent({ id: "2", location: "MB 3.255" })]);
     const { result } = renderHook(() => useBuildingEvents("H", "SGW"));
     await waitFor(() => expect(result.current.buildingEvents).toHaveLength(1));
     expect(result.current.buildingEvents[0].id).toBe("1");
@@ -98,12 +91,12 @@ describe("Event Filtering", () => {
 describe("Today's Events", () => {
   it("filters only today events", async () => {
     const futureTime = new Date(Date.now() + 7200000).toISOString();
-        const todayEvent = mockEvent({
-          id: "1",
-          location: "H 820",
-          start: { dateTime: futureTime },
-          end: { dateTime: new Date(Date.now() + 10800000).toISOString() },
-        });
+    const todayEvent = mockEvent({
+      id: "1",
+      location: "H 820",
+      start: { dateTime: futureTime },
+      end: { dateTime: new Date(Date.now() + 10800000).toISOString() },
+    });
 
     const futureEvent = mockEvent({
       id: "2",
@@ -156,7 +149,6 @@ describe("Today's Events", () => {
   });
 });
 
-
 //next event
 describe("Next Event", () => {
   it("identifies the next upcoming event correctly", async () => {
@@ -199,7 +191,7 @@ describe("Next Event", () => {
   });
 });
 
-//state management 
+//state management
 describe("State Management", () => {
   it("propagates loading state from useGoogleCalendar", () => {
     setupMock([], true, null);
