@@ -5,7 +5,7 @@ import { Node } from "@/src/indoors/types/Navigation";
 
 interface Props {
   routeNodes: Node[];
-  currentLevel: number;
+  currentFloorId: string;
   canvasWidth: number;
   canvasHeight: number;
   offsetX: number;
@@ -15,17 +15,15 @@ interface Props {
 
 const IndoorRouteOverlay: React.FC<Props> = ({
   routeNodes,
-  currentLevel,
+  currentFloorId,
   canvasWidth,
   canvasHeight,
   offsetX,
   offsetY,
   scale,
 }) => {
-  const floorIdSuffix = `_${currentLevel}`;
-
-  const nodesForCurrentFloor = routeNodes.filter((node) =>
-    node.floorId.endsWith(floorIdSuffix),
+   const nodesForCurrentFloor = routeNodes.filter((node) =>
+    node.floorId === currentFloorId,
   );
 
   if (nodesForCurrentFloor.length < 2) return null;

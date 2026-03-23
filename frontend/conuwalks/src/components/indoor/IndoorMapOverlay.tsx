@@ -444,7 +444,9 @@ const hotspots = useMemo<IndoorHotspot[]>(() => {
         // Fallback to nearest node for map-tapped POIs
         const xPos = Math.round(poi.mapPosition.x * 1024);
         const yPos = Math.round(poi.mapPosition.y * 1024);
-        const floorIdStr = `${buildingData.id}_${currentLevel}`;
+      const floorIdStr = buildingData.floors.find(
+  (f) => f.level === currentLevel
+)?.id ?? `${buildingData.id}_${currentLevel}`;
         
         const nearestNode = indoorMapService.getNearestRoomNode(floorIdStr, xPos, yPos);
         
@@ -617,7 +619,7 @@ const hotspots = useMemo<IndoorHotspot[]>(() => {
               {route && (
                 <IndoorRouteOverlay
                   routeNodes={route.nodes}
-                  currentLevel={currentLevel}
+                  currentFloorId={activeFloor.id}
                   canvasWidth={width}
                   canvasHeight={contentHeight}
                   offsetX={offsetX}
