@@ -8,7 +8,7 @@ import { IndoorLocationTracker } from "./IndoorLocationTracker";
 export class IndoorMapService {
   private graph: Graph;
   private pathFinder: PathFinder;
-  private locationTracker: IndoorLocationTracker;
+  private readonly locationTracker: IndoorLocationTracker;
 
   constructor() {
     this.graph = new Graph();
@@ -109,7 +109,7 @@ export class IndoorMapService {
 
   // resolves a raw room string (e.g. "847") to a node ID (e.g. "H_847")
   getNodeByRoomNumber(buildingId: string, roomNumber: string): Node | null {
-    const cleanRoom = roomNumber.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+    const cleanRoom = roomNumber.replaceAll(/[^a-zA-Z0-9]/g, "").toUpperCase();
     const allNodes = this.graph.getAllNodes();
 
     // try an exact match assuming standard prefix "H_964"
@@ -119,7 +119,7 @@ export class IndoorMapService {
 
     // fallback: search all nodes for an ID that ends with the target number
     targetNode = allNodes.find((n) => {
-      const cleanId = n.id.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+      const cleanId = n.id.replaceAll(/[^a-zA-Z0-9]/g, "").toUpperCase();
       return cleanId.endsWith(cleanRoom);
     });
 
@@ -164,7 +164,7 @@ export class IndoorMapService {
     route: Route | null,
     pixelToMeterRatio: number = 1,
   ): number {
-    if (!route || !route.totalDistance) return 0;
+    if (!route?.totalDistance) return 0;
 
     const distanceInMeters = route.totalDistance * pixelToMeterRatio;
     const WALKING_SPEED_MPS = 1.35;

@@ -94,7 +94,7 @@ describe("PathFinder", () =>{
             const route = pathFinder.findShortestPath("A", "C");
             const ids = route.nodes.map((n) => n.id);
             expect(ids[0]).toBe("A");
-            expect(ids[ids.length - 1]).toBe("C");
+            expect(ids.at(-1)).toBe("C");
         });
     });
 

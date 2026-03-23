@@ -9,7 +9,7 @@ import {
 } from "../../utils/tokenStorage";
 
 // Mock the global fetch API used for revoking the token
-global.fetch = jest.fn(() =>
+globalThis.fetch = jest.fn(() =>
   Promise.resolve({
     ok: true,
     json: () => Promise.resolve({}),
@@ -75,7 +75,7 @@ describe("tokenStorage utils", () => {
     ]);
 
     // Verify the fetch call was made to Google's revocation endpoint
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(globalThis.fetch).toHaveBeenCalledWith(
       "https://accounts.google.com/o/oauth2/revoke?token=fake-access-token",
       expect.objectContaining({
         method: "POST",

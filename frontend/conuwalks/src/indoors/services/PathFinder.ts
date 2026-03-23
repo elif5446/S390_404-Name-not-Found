@@ -102,7 +102,7 @@ export class PathFinder {
     );
 
     // add an arbitrary penalty if the floors don't match
-    const floorPenalty = nodeA.floorId !== nodeB.floorId ? 500 : 0;
+    const floorPenalty = nodeA.floorId == nodeB.floorId ? 0 : 500;
 
     return spatialDistance + floorPenalty;
   }

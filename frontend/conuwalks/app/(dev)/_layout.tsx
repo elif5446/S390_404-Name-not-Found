@@ -23,7 +23,7 @@ export default function DevLayout() {
     if (isAuthenticated === null || isNavigating.current) return;
 
     const currentRouteSegments = segments as string[];
-    const inAuthGroup = currentRouteSegments[currentRouteSegments.length - 1] === "login";
+    const inAuthGroup = currentRouteSegments.at(-1) === "login";
 
     console.log("Navigation check:", {
       isAuthenticated,

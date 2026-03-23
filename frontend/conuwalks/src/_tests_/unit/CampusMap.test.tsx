@@ -419,7 +419,7 @@ describe("CampusMap", () => {
     // Using spyOn ensures the original is restored after each test, preventing
     // global state leakage into other test files.
     rafSpy = jest
-      .spyOn(global, "requestAnimationFrame")
+      .spyOn(globalThis, "requestAnimationFrame")
       .mockImplementation((cb: FrameRequestCallback) => {
         cb(0);
         return 0;
