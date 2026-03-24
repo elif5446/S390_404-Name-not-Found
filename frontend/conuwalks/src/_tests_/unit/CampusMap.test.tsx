@@ -384,7 +384,7 @@ describe("CampusMap", () => {
     // Call rAF callbacks synchronously so effects that use it resolve immediately.
     // Using spyOn ensures the original is restored after each test, preventing
     // global state leakage into other test files.
-    rafSpy = jest.spyOn(global, "requestAnimationFrame").mockImplementation((cb: FrameRequestCallback) => {
+    rafSpy = jest.spyOn(globalThis, "requestAnimationFrame").mockImplementation((cb: FrameRequestCallback) => {
       cb(0);
       return 0;
     });

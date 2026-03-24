@@ -50,7 +50,16 @@ export class PathFinder {
       closedSet.add(currentId);
 
       // extracted logic
-      this.processNeighbors(currentId, endNode, accessibleOnly, openSet, closedSet, gScore, fScore, cameFrom);
+      this.processNeighbors(
+        currentId,
+        endNode,
+        accessibleOnly,
+        openSet,
+        closedSet,
+        gScore,
+        fScore,
+        cameFrom,
+      );
     }
 
     throw new Error(`[PathFinder] No path found between ${startNodeId} and ${endNodeId}`);
@@ -76,7 +85,9 @@ export class PathFinder {
       if (!edge || (accessibleOnly && !edge.accessible)) continue;
 
       if (edge.weight === undefined) {
-        throw new Error(`Edge between ${currentId} and ${neighbor.id} has no weight`);
+        throw new Error(
+          `Edge between ${currentId} and ${neighbor.id} has no weight`,
+        );
       }
 
       const tentativeGScore = (gScore.get(currentId) ?? Infinity) + edge.weight;
@@ -84,7 +95,10 @@ export class PathFinder {
       if (tentativeGScore < (gScore.get(neighbor.id) ?? Infinity)) {
         cameFrom.set(neighbor.id, currentId);
         gScore.set(neighbor.id, tentativeGScore);
-        fScore.set(neighbor.id, tentativeGScore + this.heuristic(neighbor, endNode));
+        fScore.set(
+          neighbor.id,
+          tentativeGScore + this.heuristic(neighbor, endNode),
+        );
         openSet.add(neighbor.id);
       }
     }
@@ -95,7 +109,7 @@ export class PathFinder {
     const spatialDistance = Math.sqrt(Math.pow(nodeB.x - nodeA.x, 2) + Math.pow(nodeB.y - nodeA.y, 2));
 
     // add an arbitrary penalty if the floors don't match
-    const floorPenalty = nodeA.floorId !== nodeB.floorId ? 500 : 0;
+    const floorPenalty = nodeA.floorId == nodeB.floorId ? 0 : 500;
 
     return spatialDistance + floorPenalty;
   }

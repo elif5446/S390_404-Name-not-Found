@@ -63,7 +63,7 @@ const parseDur = (d?: string) => {
   if (!d) return 0;
   const h = /(\d{1,5})\s{0,5}h/.exec(d);
   const m = /(\d{1,5})\s{0,5}min/.exec(d);
-  return (h ? parseInt(h[1], 10) * 60 : 0) + (m ? parseInt(m[1], 10) : 0);
+  return (h ? Number.parseInt(h[1], 10) * 60 : 0) + (m ? Number.parseInt(m[1], 10) : 0);
 };
 
 const parseDist = (d?: string) => {
