@@ -31,49 +31,52 @@ interface DestinationContentProps {
 
 const HIT_SLACK = { top: 10, bottom: 10, left: 10, right: 10 };
 
-const DestinationContent: React.FC<DestinationContentProps> = ({
-  isDark,
-  loading,
-  error,
-  routes,
-  selectedRouteIndex,
-  travelMode,
-  navigationRouteId,
-  transitSteps,
-  getRouteTransitSummary,
-  getTransitBadgeLabel,
-  handleSelectRoute,
-  handleStartNavigation,
-  scrollViewRef,
-  onScroll,
-}) => {
-  return (
-    <ScrollView
-      ref={scrollViewRef}
-      onScroll={onScroll}
-      scrollEventThrottle={16}
-      style={[styles.routeList, { flex: 1, maxHeight: "100%" }]}
-      contentContainerStyle={{ paddingBottom: 24 }}
-      showsVerticalScrollIndicator={false}
-    >
-      {loading ? (
+// helper function
+const RouteList = memo(
+  ({
+    routes,
+    loading,
+    error,
+    isDark,
+    selectedRouteIndex,
+    handleSelectRoute,
+    handleStartNavigation,
+    navigationRouteId,
+    getRouteTransitSummary,
+    travelMode,
+  }: any) => {
+    if (loading) {
+      return (
         <View style={styles.centerInline}>
           <ActivityIndicator color="#B03060" />
           <Text style={{ color: isDark ? "#FFFFFF" : "#111111" }}>
             Loading routes...
           </Text>
         </View>
-      ) : error ? (
-        <Text style={{ color: "#FF4444" }}>{error}</Text>
-      ) : routes.length > 0 ? (
-        routes.map((route, index) => {
+      );
+    }
+
+    if (error) {
+      return <Text style={{ color: "#FF4444" }}>{error}</Text>;
+    }
+
+    if (routes.length === 0) {
+      return (
+        <Text style={{ color: isDark ? "#AFAFAF" : "#666666" }}>
+          Select a destination to see available routes.
+        </Text>
+      );
+    }
+
+    return (
+      <>
+        {routes.map((route: any, index: number) => {
           const selected = index === selectedRouteIndex;
           const transitSummary = getRouteTransitSummary(route.steps || []);
           return (
             <TouchableOpacity
               key={route.id}
               onPress={() => handleSelectRoute(index)}
-              accessible={false}
               style={[
                 styles.routeCard,
                 {
@@ -87,13 +90,14 @@ const DestinationContent: React.FC<DestinationContentProps> = ({
               ]}
             >
               <View style={{ flex: 1 }}>
-                {/* Shuttle badge injection */}
                 {route.isShuttle && (
                   <View style={styles.shuttleBadgeContainer}>
                     <View style={styles.shuttleBadgeIcon}>
                       <Text style={styles.shuttleBadgeLetter}>C</Text>
                     </View>
-                    <Text style={styles.shuttleBadgeText}>Concordia Shuttle</Text>
+                    <Text style={styles.shuttleBadgeText}>
+                      Concordia Shuttle
+                    </Text>
                   </View>
                 )}
                 <Text style={styles.durationText}>{route.duration}</Text>
@@ -111,7 +115,7 @@ const DestinationContent: React.FC<DestinationContentProps> = ({
                   styles.startButton,
                   navigationRouteId === route.id && { opacity: 0.8 },
                 ]}
-                hitSlop={HIT_SLACK}
+                hitSlop={10}
                 accessibilityRole="button"
                 accessibilityLabel={`Start navigation for route ${index + 1}`}
                 accessibilityHint="Begins turn by turn navigation with this route"
@@ -126,12 +130,37 @@ const DestinationContent: React.FC<DestinationContentProps> = ({
               </TouchableOpacity>
             </TouchableOpacity>
           );
-        })
-      ) : (
-        <Text style={{ color: isDark ? "#AFAFAF" : "#666666" }}>
-          Select a destination to see available routes.
-        </Text>
-      )}
+        })}
+      </>
+    );
+  },
+);
+
+const DestinationContent: React.FC<DestinationContentProps> = (props) => {
+  // extracting variables from props for the transit section
+  const { travelMode, routes, transitSteps, isDark, getTransitBadgeLabel } =
+    props;
+  return (
+    <ScrollView
+      ref={props.scrollViewRef}
+      onScroll={props.onScroll}
+      scrollEventThrottle={16}
+      style={[styles.routeList, { flex: 1, maxHeight: "100%" }]}
+      contentContainerStyle={{ paddingBottom: 24 }}
+      showsVerticalScrollIndicator={false}
+    >
+      <RouteList
+        loading={props.loading}
+        error={props.error}
+        routes={props.routes}
+        isDark={props.isDark}
+        selectedRouteIndex={props.selectedRouteIndex}
+        handleSelectRoute={props.handleSelectRoute}
+        handleStartNavigation={props.handleStartNavigation}
+        navigationRouteId={props.navigationRouteId}
+        getRouteTransitSummary={props.getRouteTransitSummary}
+        travelMode={props.travelMode}
+      />
 
       {travelMode === "transit" && routes.length > 0 && (
         <View style={styles.transitSection}>

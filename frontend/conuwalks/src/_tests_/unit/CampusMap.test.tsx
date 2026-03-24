@@ -5,10 +5,7 @@ import CampusMap from "../../components/CampusMap";
 import { useUserLocation } from "@/src/hooks/useUserLocation";
 import { useDirections } from "@/src/context/DirectionsContext";
 import { isPointInPolygon } from "@/src/utils/geo";
-import {
-  calculatePolygonCenter,
-  distanceMetersBetween,
-} from "@/src/utils/geometry";
+import { calculatePolygonCenter, distanceMetersBetween } from "@/src/utils/geometry";
 
 //Module mocks (hoisted by Jest before imports)
 
@@ -80,10 +77,16 @@ jest.mock("@/src/data/indoorData", () => ({
 
 jest.mock("@/src/data/metadata/SGW.BuildingMetaData", () => ({
   SGWBuildingMetadata: { H: { name: "Hall Building" } },
+  SGWBuildingSearchMetadata: {
+    H: { name: "Hall Building", coordinates: { latitude: 45.495, longitude: -73.578 } },
+  },
 }));
 
 jest.mock("@/src/data/metadata/LOY.BuildingMetadata", () => ({
   LoyolaBuildingMetadata: { AD: { name: "Administration Building" } },
+  LoyolaBuildingSearchMetadata: {
+    AD: { name: "Administration Building", coordinates: { latitude: 45.458, longitude: -73.64 } },
+  },
 }));
 
 jest.mock("@/src/styles/BuildingTheme", () => ({
@@ -119,30 +122,15 @@ jest.mock("react-native-maps", () => {
   const { TouchableOpacity, View } = require("react-native");
 
   const MockMapView = React.forwardRef(
-    (
-      {
-        children,
-        onLongPress,
-        onPress,
-        onPanDrag,
-        onRegionChangeComplete,
-        googleMapId,
-      }: any,
-      ref: any,
-    ) => {
+    ({ children, onLongPress, onPress, onPanDrag, onRegionChangeComplete, googleMapId }: any, ref: any) => {
       React.useImperativeHandle(ref, () => ({
         animateCamera: jest.fn(),
         animateToRegion: jest.fn(),
       }));
       return (
-        <View
-          testID="map-view"
-          accessibilityLabel={String(googleMapId ?? "none")}
-        >
+        <View testID="map-view" accessibilityLabel={String(googleMapId ?? "none")}>
           {children}
-          {onPress && (
-            <TouchableOpacity testID="map-press-trigger" onPress={onPress} />
-          )}
+          {onPress && <TouchableOpacity testID="map-press-trigger" onPress={onPress} />}
           {onLongPress && (
             <TouchableOpacity
               testID="map-long-press-trigger"
@@ -182,18 +170,16 @@ jest.mock("react-native-maps", () => {
     />
   );
 
-  const MockMarker = React.forwardRef(
-    ({ children, onPress, accessibilityLabel, testID }: any, ref: any) => (
-      <TouchableOpacity
-        ref={ref}
-        testID={testID ?? `marker-${accessibilityLabel ?? "unknown"}`}
-        accessibilityLabel={accessibilityLabel ?? undefined}
-        onPress={onPress}
-      >
-        {children}
-      </TouchableOpacity>
-    ),
-  );
+  const MockMarker = React.forwardRef(({ children, onPress, accessibilityLabel, testID }: any, ref: any) => (
+    <TouchableOpacity
+      ref={ref}
+      testID={testID ?? `marker-${accessibilityLabel ?? "unknown"}`}
+      accessibilityLabel={accessibilityLabel ?? undefined}
+      onPress={onPress}
+    >
+      {children}
+    </TouchableOpacity>
+  ));
   MockMarker.displayName = "MockMarker";
 
   return {
@@ -209,37 +195,19 @@ jest.mock("react-native-maps", () => {
 jest.mock("@/src/components/AdditionalInfoPopup", () => {
   const React = require("react");
   const { View, TouchableOpacity } = require("react-native");
-  const Mock = React.forwardRef(
-    (
-      {
-        visible,
-        directionsEtaLabel,
-        onDirectionsTrigger,
-        onExpansionChange,
-      }: any,
-      ref: any,
-    ) => {
-      React.useImperativeHandle(ref, () => ({
-        minimize: jest.fn(),
-        collapse: jest.fn(),
-      }));
-      if (!visible) return null;
-      return (
-        <View testID="additional-info-popup">
-          <View
-            testID="eta-display"
-            accessibilityLabel={String(directionsEtaLabel)}
-          />
-          {onExpansionChange && (
-            <TouchableOpacity
-              testID="expansion-change-trigger"
-              onPress={() => onExpansionChange(true)}
-            />
-          )}
-        </View>
-      );
-    },
-  );
+  const Mock = React.forwardRef(({ visible, directionsEtaLabel, onDirectionsTrigger, onExpansionChange }: any, ref: any) => {
+    React.useImperativeHandle(ref, () => ({
+      minimize: jest.fn(),
+      collapse: jest.fn(),
+    }));
+    if (!visible) return null;
+    return (
+      <View testID="additional-info-popup">
+        <View testID="eta-display" accessibilityLabel={String(directionsEtaLabel)} />
+        {onExpansionChange && <TouchableOpacity testID="expansion-change-trigger" onPress={() => onExpansionChange(true)} />}
+      </View>
+    );
+  });
   Mock.displayName = "MockAdditionalInfoPopup";
   return { __esModule: true, default: Mock };
 });
@@ -295,9 +263,7 @@ jest.mock("@/src/components/indoor/IndoorMapOverlay", () => {
   const { TouchableOpacity } = require("react-native");
   return {
     __esModule: true,
-    default: ({ onExit }: any) => (
-      <TouchableOpacity testID="indoor-map-overlay" onPress={onExit} />
-    ),
+    default: ({ onExit }: any) => <TouchableOpacity testID="indoor-map-overlay" onPress={onExit} />,
   };
 });
 
@@ -418,12 +384,10 @@ describe("CampusMap", () => {
     // Call rAF callbacks synchronously so effects that use it resolve immediately.
     // Using spyOn ensures the original is restored after each test, preventing
     // global state leakage into other test files.
-    rafSpy = jest
-      .spyOn(global, "requestAnimationFrame")
-      .mockImplementation((cb: FrameRequestCallback) => {
-        cb(0);
-        return 0;
-      });
+    rafSpy = jest.spyOn(globalThis, "requestAnimationFrame").mockImplementation((cb: FrameRequestCallback) => {
+      cb(0);
+      return 0;
+    });
   });
 
   afterEach(() => {
@@ -448,7 +412,15 @@ describe("CampusMap", () => {
       expect(screen.getByTestId(TEST_IDS.administrationPolygon)).toBeTruthy();
     });
 
-    it("always renders RoutePolyline", () => {
+    it("renders RoutePolyline when start and destination differ", () => {
+      // Mock different start and destination IDs
+      (useDirections as jest.Mock).mockReturnValue(
+        makeDirections({
+          startBuildingId: "H",
+          destinationBuildingId: "MB",
+        }),
+      );
+
       render(<CampusMap />);
       expect(screen.getByTestId("route-polyline")).toBeTruthy();
     });
@@ -474,17 +446,13 @@ describe("CampusMap", () => {
     });
 
     it("omits the current-location marker when location is null", () => {
-      (useUserLocation as jest.Mock).mockReturnValue(
-        makeUserLocation({ location: null }),
-      );
+      (useUserLocation as jest.Mock).mockReturnValue(makeUserLocation({ location: null }));
       render(<CampusMap />);
       expect(screen.queryByLabelText("Current Location")).toBeNull();
     });
 
     it("renders loading state safely while location is loading", () => {
-      (useUserLocation as jest.Mock).mockReturnValue(
-        makeUserLocation({ loading: true, location: null }),
-      );
+      (useUserLocation as jest.Mock).mockReturnValue(makeUserLocation({ loading: true, location: null }));
       render(<CampusMap />);
       expect(screen.getByTestId("map-view")).toBeTruthy();
       expect(screen.queryByLabelText("Current Location")).toBeNull();
@@ -492,9 +460,7 @@ describe("CampusMap", () => {
     });
 
     it("shows an error banner when location permission is denied", () => {
-      (useUserLocation as jest.Mock).mockReturnValue(
-        makeUserLocation({ error: "Location permission denied" }),
-      );
+      (useUserLocation as jest.Mock).mockReturnValue(makeUserLocation({ error: "Location permission denied" }));
       render(<CampusMap />);
       expect(screen.getByText("Location permission denied")).toBeTruthy();
     });
@@ -509,7 +475,17 @@ describe("CampusMap", () => {
 
   describe("RightControlsPanel", () => {
     it("renders when userInfo and onSignOut are provided", () => {
-      render(<CampusMap userInfo={{ name: "Alice" }} onSignOut={jest.fn()} />);
+      render(
+        <CampusMap
+          userInfo={{
+            id: "test-user-123",
+            name: "Alice",
+            email: "alice@concordia.ca",
+            photo: "https://example.com/avatar.jpg",
+          }}
+          onSignOut={jest.fn()}
+        />,
+      );
       expect(screen.getByTestId("right-controls-panel")).toBeTruthy();
     });
 
@@ -535,20 +511,14 @@ describe("CampusMap", () => {
 
     it("calls setDestination with building id and metadata name on press", () => {
       const mockSetDestination = jest.fn();
-      (useDirections as jest.Mock).mockReturnValue(
-        makeDirections({ setDestination: mockSetDestination }),
-      );
+      (useDirections as jest.Mock).mockReturnValue(makeDirections({ setDestination: mockSetDestination }));
 
       render(<CampusMap />);
       act(() => {
         fireEvent.press(screen.getByTestId(TEST_IDS.hallPolygon));
       });
 
-      expect(mockSetDestination).toHaveBeenCalledWith(
-        "H",
-        expect.objectContaining({ latitude: expect.any(Number) }),
-        "Hall Building",
-      );
+      expect(mockSetDestination).toHaveBeenCalledWith("H", expect.objectContaining({ latitude: expect.any(Number) }), "Hall Building");
     });
 
     it("calls setIsNavigationActive(false) and setShowDirections(false) on building press", () => {
@@ -571,17 +541,13 @@ describe("CampusMap", () => {
     });
 
     it("renders destination pin when building is the current destination (not selected)", () => {
-      (useDirections as jest.Mock).mockReturnValue(
-        makeDirections({ destinationBuildingId: "H" }),
-      );
+      (useDirections as jest.Mock).mockReturnValue(makeDirections({ destinationBuildingId: "H" }));
       render(<CampusMap />);
       expect(screen.getByLabelText("Hall Building destination")).toBeTruthy();
     });
 
     it("hides destination pin when that building is selected", () => {
-      (useDirections as jest.Mock).mockReturnValue(
-        makeDirections({ destinationBuildingId: "H" }),
-      );
+      (useDirections as jest.Mock).mockReturnValue(makeDirections({ destinationBuildingId: "H" }));
       render(<CampusMap />);
 
       // Select the building
@@ -612,9 +578,7 @@ describe("CampusMap", () => {
       });
 
       // Switch showDirections to true – popup must now be hidden.
-      (useDirections as jest.Mock).mockReturnValue(
-        makeDirections({ showDirections: true }),
-      );
+      (useDirections as jest.Mock).mockReturnValue(makeDirections({ showDirections: true }));
       act(() => {
         rerender(<CampusMap />);
       });
@@ -649,9 +613,7 @@ describe("CampusMap", () => {
     });
 
     it("is visible when showDirections is true", () => {
-      (useDirections as jest.Mock).mockReturnValue(
-        makeDirections({ showDirections: true }),
-      );
+      (useDirections as jest.Mock).mockReturnValue(makeDirections({ showDirections: true }));
       render(<CampusMap />);
       expect(screen.getByTestId("destination-popup")).toBeTruthy();
     });
@@ -661,9 +623,7 @@ describe("CampusMap", () => {
 
   describe("DirectionsSearchPanel", () => {
     it("is rendered when showDirections is true and not navigating", () => {
-      (useDirections as jest.Mock).mockReturnValue(
-        makeDirections({ showDirections: true, isNavigationActive: false }),
-      );
+      (useDirections as jest.Mock).mockReturnValue(makeDirections({ showDirections: true, isNavigationActive: false }));
       render(<CampusMap />);
       expect(screen.getByTestId("directions-search-panel")).toBeTruthy();
     });
@@ -748,9 +708,7 @@ describe("CampusMap", () => {
     });
 
     it("does not render navigation UI when routeData is null", () => {
-      (useDirections as jest.Mock).mockReturnValue(
-        makeDirections({ isNavigationActive: true, routeData: null }),
-      );
+      (useDirections as jest.Mock).mockReturnValue(makeDirections({ isNavigationActive: true, routeData: null }));
       render(<CampusMap />);
       expect(screen.queryByLabelText("End trip")).toBeNull();
     });
@@ -983,9 +941,7 @@ describe("CampusMap", () => {
 
   describe("ETA label computation", () => {
     it("shows '--' when there is no user location", () => {
-      (useUserLocation as jest.Mock).mockReturnValue(
-        makeUserLocation({ location: null }),
-      );
+      (useUserLocation as jest.Mock).mockReturnValue(makeUserLocation({ location: null }));
       // Select a building so the popup (and its eta-display) is visible
       render(<CampusMap />);
       act(() => {
@@ -1039,9 +995,7 @@ describe("CampusMap", () => {
   describe("Map color scheme", () => {
     it("renders correctly in dark color scheme", () => {
       const reactNative = require("react-native");
-      const useColorSchemeSpy = jest
-        .spyOn(reactNative, "useColorScheme")
-        .mockReturnValue("dark");
+      const useColorSchemeSpy = jest.spyOn(reactNative, "useColorScheme").mockReturnValue("dark");
       const darkMapId = "eb0ccd6d2f7a95e23f1ec398";
       jest.replaceProperty(Platform, "OS", "android");
 
@@ -1059,11 +1013,7 @@ describe("CampusMap", () => {
     it("stores the pre-navigation region and restores it when navigation ends", () => {
       jest.useFakeTimers();
 
-      const { rerender } = render(
-        <CampusMap
-          initialLocation={{ latitude: 45.495, longitude: -73.578 }}
-        />,
-      );
+      const { rerender } = render(<CampusMap initialLocation={{ latitude: 45.495, longitude: -73.578 }} />);
 
       // Start navigation
       (useDirections as jest.Mock).mockReturnValue(
@@ -1072,21 +1022,11 @@ describe("CampusMap", () => {
           routeData: BASE_ROUTE_DATA,
         }),
       );
-      rerender(
-        <CampusMap
-          initialLocation={{ latitude: 45.495, longitude: -73.578 }}
-        />,
-      );
+      rerender(<CampusMap initialLocation={{ latitude: 45.495, longitude: -73.578 }} />);
 
       // End navigation
-      (useDirections as jest.Mock).mockReturnValue(
-        makeDirections({ isNavigationActive: false, routeData: null }),
-      );
-      rerender(
-        <CampusMap
-          initialLocation={{ latitude: 45.495, longitude: -73.578 }}
-        />,
-      );
+      (useDirections as jest.Mock).mockReturnValue(makeDirections({ isNavigationActive: false, routeData: null }));
+      rerender(<CampusMap initialLocation={{ latitude: 45.495, longitude: -73.578 }} />);
 
       act(() => {
         jest.runAllTimers();
@@ -1106,15 +1046,9 @@ describe("CampusMap", () => {
       jest.useFakeTimers();
 
       const mockClearDestination = jest.fn();
-      (useDirections as jest.Mock).mockReturnValue(
-        makeDirections({ clearDestination: mockClearDestination }),
-      );
+      (useDirections as jest.Mock).mockReturnValue(makeDirections({ clearDestination: mockClearDestination }));
 
-      const { rerender } = render(
-        <CampusMap
-          initialLocation={{ latitude: 45.495, longitude: -73.578 }}
-        />,
-      );
+      const { rerender } = render(<CampusMap initialLocation={{ latitude: 45.495, longitude: -73.578 }} />);
 
       // Select a building first
       act(() => {
@@ -1126,9 +1060,7 @@ describe("CampusMap", () => {
       mockClearDestination.mockClear();
 
       // Switching campus location triggers the useEffect
-      rerender(
-        <CampusMap initialLocation={{ latitude: 45.458, longitude: -73.64 }} />,
-      );
+      rerender(<CampusMap initialLocation={{ latitude: 45.458, longitude: -73.64 }} />);
 
       // fast-forward past the 250ms animation delay
       act(() => {
@@ -1147,14 +1079,10 @@ describe("CampusMap", () => {
 
   describe("searchPanelHeight reset", () => {
     it("resets search panel height to 0 when showDirections becomes false", () => {
-      (useDirections as jest.Mock).mockReturnValue(
-        makeDirections({ showDirections: true }),
-      );
+      (useDirections as jest.Mock).mockReturnValue(makeDirections({ showDirections: true }));
       const { rerender } = render(<CampusMap />);
 
-      (useDirections as jest.Mock).mockReturnValue(
-        makeDirections({ showDirections: false }),
-      );
+      (useDirections as jest.Mock).mockReturnValue(makeDirections({ showDirections: false }));
       rerender(<CampusMap />);
 
       // No crash and map is still rendered
@@ -1178,9 +1106,7 @@ describe("CampusMap", () => {
       const { rerender } = render(<CampusMap />);
       await act(async () => {});
 
-      (useUserLocation as jest.Mock).mockReturnValue(
-        makeUserLocation({ location: null }),
-      );
+      (useUserLocation as jest.Mock).mockReturnValue(makeUserLocation({ location: null }));
       rerender(<CampusMap />);
 
       expect(screen.queryByLabelText("Current Location")).toBeNull();
@@ -1207,9 +1133,7 @@ describe("CampusMap", () => {
       expect(screen.getByText(TEST_IDS.boardMetroGL)).toBeTruthy();
 
       // Turn off navigation
-      (useDirections as jest.Mock).mockReturnValue(
-        makeDirections({ isNavigationActive: false }),
-      );
+      (useDirections as jest.Mock).mockReturnValue(makeDirections({ isNavigationActive: false }));
       rerender(<CampusMap />);
 
       expect(screen.queryByText(TEST_IDS.boardMetroGL)).toBeNull();

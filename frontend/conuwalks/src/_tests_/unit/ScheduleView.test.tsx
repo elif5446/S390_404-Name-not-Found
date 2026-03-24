@@ -3,7 +3,6 @@ import { render, screen, fireEvent } from "@testing-library/react-native";
 import ScheduleView from "../../components/ScheduleView";
 import { useGoogleCalendar } from "@/src/hooks/useGoogleCalendar";
 import { useDirections } from "@/src/context/DirectionsContext";
-import { useDestinationData } from "@/src/hooks/useDestinationData";
 
 // Mock SafeAreaView to return a standard View for testing
 jest.mock("react-native-safe-area-context", () => {

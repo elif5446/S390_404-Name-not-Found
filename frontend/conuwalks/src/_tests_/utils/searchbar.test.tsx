@@ -7,6 +7,14 @@ import {
 import * as scheduleUtils from "../../utils/schedule";
 import { BuildingEvent } from "../../hooks/useBuildingEvents";
 import { CalendarEvent } from "../../api/calendarApi";
+import CampusMap from "../../components/CampusMap";
+import {
+  render,
+  fireEvent,
+  waitFor,
+  screen
+} from "@testing-library/react-native";
+import { DirectionsProvider } from "@/src/context/DirectionsContext";
 
 jest.mock("../../utils/schedule");
 jest.mock("../../data/metadata/SGW.BuildingMetaData", () => ({
@@ -20,12 +28,44 @@ jest.mock("../../data/metadata/SGW.BuildingMetaData", () => ({
       coordinates: { latitude: 0, longitude: 0 },
     },
   },
+  SGWBuildingMetadata: {
+    H: { name: "Henry F. Hall Building" },
+    LB: { name: "Library Building" },
+  }
 }));
 jest.mock("../../data/metadata/LOY.BuildingMetadata", () => ({
   LoyolaBuildingSearchMetadata: {
     VL: { name: "Vanier Library", coordinates: { latitude: 0, longitude: 0 } },
   },
+  LoyolaBuildingMetadata: {
+    VL: { name: "Vanier Library" },
+  }
 }));
+
+jest.mock("@/src/utils/geo", () => ({
+  isPointInPolygon: jest.fn(() => false),
+}));
+
+jest.mock("@/src/utils/geometry", () => ({
+  calculatePolygonCenter: jest.fn(() => ({ latitude: 45.495, longitude: -73.578 })),
+  distanceMetersBetween: jest.fn(() => 100),
+}));
+
+jest.mock("react-native-maps", () => {
+  const React = require("react");
+  class MockMapView extends React.Component {
+    animateCamera = jest.fn();
+    animateToRegion = jest.fn();
+    render() { return null; }
+  }
+  return {
+    __esModule: true,
+    default: MockMapView,
+    PROVIDER_GOOGLE: "google",
+    Marker: "Marker",
+    Polygon: "Polygon",
+  };
+});
 
 describe("searchbar utils", () => {
   const mockTodayEvents: BuildingEvent[] = [
@@ -179,6 +219,57 @@ describe("searchbar utils", () => {
       }));
       const result = searchStartPoint("H", manyEvents);
       expect(result.length).toBeLessThanOrEqual(10); //
+    });
+  });
+});
+
+describe("CampusMap Building Search Integration", () => {
+  
+  it("opens the search modal when the search button is pressed", () => {
+    render(
+      <DirectionsProvider>
+        <CampusMap userInfo={{ name: "John" }} onSignOut={jest.fn()} />
+      </DirectionsProvider>
+    );
+
+    const searchBtn = screen.getByLabelText("Open building search");
+    fireEvent.press(searchBtn);
+
+    expect(screen.getByPlaceholderText("Type building name...")).toBeTruthy();
+  });
+
+  it("filters the building list when the user types", async () => {
+    render(
+      <DirectionsProvider>
+        <CampusMap userInfo={{ name: "John" }} onSignOut={jest.fn()} />
+      </DirectionsProvider>
+    );
+
+    fireEvent.press(screen.getByLabelText("Open building search"));
+    const input = screen.getByPlaceholderText("Type building name...");
+
+    fireEvent.changeText(input, "Hall");
+
+    expect(screen.getByText("Henry F. Hall Building")).toBeTruthy();
+    expect(screen.queryByText("Vanier Library")).toBeNull();
+  });
+
+  it("completes the selection flow correctly", async () => {
+    render(
+      <DirectionsProvider>
+        <CampusMap userInfo={{ name: "John" }} onSignOut={jest.fn()} />
+      </DirectionsProvider>
+    );
+
+    fireEvent.press(screen.getByLabelText("Open building search"));
+    
+    const buildingItem = screen.getByText("Henry F. Hall Building");
+    fireEvent.press(buildingItem);
+
+    expect(screen.queryByPlaceholderText("Type building name...")).toBeNull();
+
+    await waitFor(() => {
+      expect(screen.getByText("Henry F. Hall Building")).toBeTruthy();
     });
   });
 });
