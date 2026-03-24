@@ -44,10 +44,14 @@ export const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 10,
+    width: "100%",
   },
   headerTitleWrap: {
     flex: 1,
-    justifyContent: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    paddingRight: 10,
   },
   buildingTitle: {
     fontSize: 19,

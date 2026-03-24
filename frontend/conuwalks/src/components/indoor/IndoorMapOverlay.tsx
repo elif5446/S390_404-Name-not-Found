@@ -27,6 +27,7 @@ import { SGWBuildingMetadata } from "@/src/data/metadata/SGW.BuildingMetaData";
 import { LoyolaBuildingMetadata } from "@/src/data/metadata/LOY.BuildingMetadata";
 import { styles } from "@/src/styles/IndoorMap.styles";
 import { getWheelchairAccessibilityPreference } from "@/src/utils/tokenStorage";
+import DestinationMarker from "./DestinationMarker";
 
 const MAP_POI_BADGE_SIZE = 18;
 const FALLBACK_SVG_SIZE = 1024;
@@ -502,15 +503,21 @@ const IndoorMapOverlay: React.FC<Props> = ({
         .toLowerCase();
       const floorId = `${buildingData.id}_${item.floorLevel}`;
 
-      const matchedNode = graph.getAllNodes().find(node => {
+      let matchedNode = graph.getAllNodes().find(node => {
         const nodeLabel = (node.label ?? node.id)
           .replace(/^Room\s+/i, "")
           .trim()
           .toLowerCase();
-
         return node.floorId === floorId && nodeLabel === normalizedLabel;
       });
 
+      // try fuzzy match
+      if (!matchedNode) {
+        matchedNode = graph.getAllNodes().find(node => {
+          const nodeLabel = (node.label ?? node.id).toLowerCase();
+          return node.floorId === floorId && (nodeLabel.includes(normalizedLabel) || normalizedLabel.includes(nodeLabel));
+        });
+      }
       return matchedNode?.id ?? null;
     },
     [indoorMapService, buildingData.id],
@@ -925,6 +932,7 @@ const IndoorMapOverlay: React.FC<Props> = ({
                   .filter(poi => activeCategories.has(poi.category))
                   .map(poi => {
                     const selectionType = destinationPOI?.id === poi.id ? "destination" : sourcePOI?.id === poi.id ? "source" : undefined;
+                    const manualRoomOffset = ICON_POSITION_OVERRIDES[poi.room] ?? { x: 0, y: 0 };
                     const poiX = offsetX + poi.mapPosition.x * floorSvgWidth * scale;
                     const poiY = offsetY + poi.mapPosition.y * floorSvgHeight * scale;
 
@@ -932,8 +940,8 @@ const IndoorMapOverlay: React.FC<Props> = ({
                       <POIBadge
                         key={poi.id}
                         poi={poi}
-                        left={poiX - MAP_POI_BADGE_SIZE / 2}
-                        top={poiY - MAP_POI_BADGE_SIZE / 2}
+                        left={poiX - MAP_POI_BADGE_SIZE / 2 + manualRoomOffset.x}
+                        top={poiY - MAP_POI_BADGE_SIZE / 2 + manualRoomOffset.y}
                         size={MAP_POI_BADGE_SIZE}
                         selectionType={selectionType}
                         onPress={poi => handleSelectPOI(poi, activeField === "start")}
@@ -950,14 +958,9 @@ const IndoorMapOverlay: React.FC<Props> = ({
                   />
                 )}
 
-                {/* {destination && destination.floorLevel === currentLevel && (
-                  <IndoorPointMarker // <DestinationMarker
-                    x={offsetX + destination.x * scale}
-                    y={offsetY + destination.y * scale}
-                    emoji="📍"
-                    bgColor="transparent"
-                  />
-                )} */}
+                {destination && destination.floorLevel === currentLevel && (
+                  <DestinationMarker x={offsetX + destination.x * scale} y={offsetY + destination.y * scale} />
+                )}
 
                 {baseStartNode && baseStartNode.floorId === activeFloor.id && (
                   <View

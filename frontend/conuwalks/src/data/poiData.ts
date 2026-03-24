@@ -275,7 +275,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Security Desk",
       room: "SECURITY",
       floor: 1,
-      mapPosition: mapPositionFromNode("H_1_SECURITY", { x: 0.839, y: 0.404 }),
+      mapPosition: mapPositionFromNode("H_1_SECURITY", { x: 0.82, y: 0.5 }),
     },
     // Auditorium (Room 110)
     {
@@ -1034,7 +1034,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Escalator Up to Floor 10",
       room: "ESCALATOR_UP_10",
       floor: 9,
-      mapPosition: mapPositionFromNode("H_9_ESCALATOR_UP_TO_FLOOR_10", { x: 0.503, y: 0.434 }),
+      mapPosition: mapPositionFromNode("H_9_ESCALATOR_UP_TO_FLOOR_10", { x: 0.469, y: 0.455 }),
     },
   ],
 

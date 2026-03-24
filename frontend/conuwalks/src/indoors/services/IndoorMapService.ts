@@ -117,7 +117,18 @@ export class IndoorMapService {
 
   // finds the nearest room/poi node given cartesian x/y coordinates
   getNearestRoomNode(floorId: string, x: number, y: number): Node | null {
-    const validTypes: NodeType[] = ["room", "poi", "bathroom", "food", "helpDesk", "elevator", "escalator", "stairs", "entrance"];
+    const validTypes: NodeType[] = [
+      "room",
+      "poi",
+      "bathroom",
+      "food",
+      "helpDesk",
+      "elevator",
+      "escalator",
+      "stairs",
+      "entrance",
+      "hallway",
+    ];
 
     const nodesOnFloor = this.graph.getAllNodes().filter(n => n.floorId === floorId && validTypes.includes(n.type));
 
