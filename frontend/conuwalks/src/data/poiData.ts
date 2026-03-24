@@ -1048,7 +1048,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Study Room 428",
       room: "428",
       floor: 0,
-      mapPosition: { x: 0.677, y: 0.12 },
+      mapPosition: { x: 0.81, y: 0.8 },
     },
     {
       id: "MB_S2.273",
@@ -1057,7 +1057,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Study Room 273",
       room: "273",
       floor: 0,
-      mapPosition: { x: 0.621, y: 0.12 },
+      mapPosition: { x: 0.625, y: 0.13 },
     },
     {
       id: "MB_S2.275",
@@ -1066,7 +1066,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Study Room 275",
       room: "275",
       floor: 0,
-      mapPosition: { x: 0.658, y: 0.12 },
+      mapPosition: { x: 0.665, y: 0.13 },
     },
     {
       id: "MB_S2.279",
@@ -1075,7 +1075,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Study Room 279",
       room: "279",
       floor: 0,
-      mapPosition: { x: 0.695, y: 0.12 },
+      mapPosition: { x: 0.7, y: 0.13 },
     },
     // Vinh's Cafe
     {
@@ -1085,7 +1085,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Vinh's Cafe",
       room: "Vinh's Cafe",
       floor: 0,
-      mapPosition: { x: 0.432, y: 0.144 },
+      mapPosition: { x: 0.4, y: 0.144 },
       showLabel: true,
     },
     // Microwave
@@ -1106,7 +1106,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Help Desk",
       room: "145",
       floor: 0,
-      mapPosition: { x: 0.479, y: 0.642 },
+      mapPosition: { x: 0.49, y: 0.675 },
     },
     // Bathrooms
     {
@@ -1134,7 +1134,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Handicap Washroom",
       room: "BATHROOM_H",
       floor: 0,
-      mapPosition: { x: 0.674, y: 0.758 },
+      mapPosition: { x: 0.674, y: 0.76 },
     },
     // Elevators
     {
@@ -1144,7 +1144,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Elevator",
       room: "ELEVATOR_1",
       floor: 0,
-      mapPosition: { x: 0.615, y: 0.62 },
+      mapPosition: { x: 0.645, y: 0.66 },
     },
     {
       id: "MB_S2_ELEVATOR_2",
@@ -1153,7 +1153,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Elevator",
       room: "ELEVATOR_2",
       floor: 0,
-      mapPosition: { x: 0.656, y: 0.62 },
+      mapPosition: { x: 0.69, y: 0.66 },
     },
     {
       id: "MB_S2_ELEVATOR_3",
@@ -1162,7 +1162,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Elevator",
       room: "ELEVATOR_3",
       floor: 0,
-      mapPosition: { x: 0.697, y: 0.62 },
+      mapPosition: { x: 0.735, y: 0.66 },
     },
     {
       id: "MB_S2_ELEVATOR_4",
@@ -1171,7 +1171,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Elevator",
       room: "ELEVATOR_4",
       floor: 0,
-      mapPosition: { x: 0.613, y: 0.542 },
+      mapPosition: { x: 0.645, y: 0.58 },
     },
     {
       id: "MB_S2_ELEVATOR_5",
@@ -1180,7 +1180,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Elevator",
       room: "ELEVATOR_5",
       floor: 0,
-      mapPosition: { x: 0.655, y: 0.542 },
+      mapPosition: { x: 0.69, y: 0.58 },
     },
     {
       id: "MB_S2_ELEVATOR_6",
@@ -1189,7 +1189,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Elevator",
       room: "ELEVATOR_6",
       floor: 0,
-      mapPosition: { x: 0.695, y: 0.542 },
+      mapPosition: { x: 0.735, y: 0.58 },
     },
     // Escalators
     {
@@ -1199,7 +1199,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Escalator Up",
       room: "ESCALATOR_UP",
       floor: 0,
-      mapPosition: { x: 0.457, y: 0.554 },
+      mapPosition: { x: 0.5, y: 0.55 },
     },
     {
       id: "MB_S2_ESCALATOR_DOWN",
@@ -1208,7 +1208,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Escalator Down",
       room: "ESCALATOR_DOWN",
       floor: 0,
-      mapPosition: { x: 0.48, y: 0.553 },
+      mapPosition: { x: 0.5, y: 0.6 },
     },
     // Stairs
     {
@@ -1218,7 +1218,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Stairs",
       room: "STAIRS_1",
       floor: 0,
-      mapPosition: { x: 0.566, y: 0.138 },
+      mapPosition: { x: 0.6, y: 0.17 },
     },
     {
       id: "MB_S2_STAIRS_2",
@@ -1227,7 +1227,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Stairs",
       room: "STAIRS_2",
       floor: 0,
-      mapPosition: { x: 0.419, y: 0.555 },
+      mapPosition: { x: 0.44, y: 0.58 },
     },
     {
       id: "MB_S2_STAIRS_3",
@@ -1236,7 +1236,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Stairs",
       room: "STAIRS_3",
       floor: 0,
-      mapPosition: { x: 0.788, y: 0.62 },
+      mapPosition: { x: 0.82, y: 0.66 },
     },
     {
       id: "MB_S2_STAIRS_4",
@@ -1245,7 +1245,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Stairs",
       room: "STAIRS_4",
       floor: 0,
-      mapPosition: { x: 0.775, y: 0.861 },
+      mapPosition: { x: 0.79, y: 0.9 },
     },
     {
       id: "MB_S2_STAIRS_5",
@@ -1254,7 +1254,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Stairs",
       room: "STAIRS_5",
       floor: 0,
-      mapPosition: { x: 0.403, y: 0.401 },
+      mapPosition: { x: 0.42, y: 0.43 },
     },
   ],
 
@@ -1267,7 +1267,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Elevator",
       room: "ELEVATOR_1",
       floor: 0,
-      mapPosition: { x: 0.4, y: 0.62 },
+      mapPosition: { x: 0.49, y: 0.59 },
     },
     {
       id: "MB_0_ELEVATOR_2",
@@ -1276,7 +1276,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Elevator",
       room: "ELEVATOR_2",
       floor: 0,
-      mapPosition: { x: 0.45, y: 0.62 },
+      mapPosition: { x: 0.535, y: 0.59 },
     },
     {
       id: "MB_0_ELEVATOR_3",
@@ -1285,7 +1285,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Elevator",
       room: "ELEVATOR_3",
       floor: 0,
-      mapPosition: { x: 0.5, y: 0.62 },
+      mapPosition: { x: 0.575, y: 0.59 },
     },
     {
       id: "MB_0_ELEVATOR_4",
@@ -1294,7 +1294,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Elevator",
       room: "ELEVATOR_4",
       floor: 0,
-      mapPosition: { x: 0.55, y: 0.62 },
+      mapPosition: { x: 0.49, y: 0.68 },
     },
     {
       id: "MB_0_ELEVATOR_5",
@@ -1303,7 +1303,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Elevator",
       room: "ELEVATOR_5",
       floor: 0,
-      mapPosition: { x: 0.6, y: 0.62 },
+      mapPosition: { x: 0.535, y: 0.68 },
     },
     {
       id: "MB_0_ELEVATOR_6",
@@ -1312,7 +1312,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Elevator",
       room: "ELEVATOR_6",
       floor: 0,
-      mapPosition: { x: 0.65, y: 0.62 },
+      mapPosition: { x: 0.575, y: 0.68 },
     },
     // Stairs
     {
@@ -1322,7 +1322,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Stairs",
       room: "STAIRS_1",
       floor: 0,
-      mapPosition: { x: 0.5, y: 0.138 },
+      mapPosition: { x: 0.25, y: 0.25 },
     },
     {
       id: "MB_0_STAIRS_2",
@@ -1331,7 +1331,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Stairs",
       room: "STAIRS_2",
       floor: 0,
-      mapPosition: { x: 0.55, y: 0.555 },
+      mapPosition: { x: 0.32, y: 0.8 },
     },
     // Escalators
     {
@@ -1341,7 +1341,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Escalator Up",
       room: "ESCALATOR_UP",
       floor: 0,
-      mapPosition: { x: 0.48, y: 0.553 },
+      mapPosition: { x: 0.36, y: 0.77 },
     },
     {
       id: "MB_0_ESCALATOR_DOWN",
@@ -1350,7 +1350,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Escalator Down",
       room: "ESCALATOR_DOWN",
       floor: 0,
-      mapPosition: { x: 0.457, y: 0.554 },
+      mapPosition: { x: 0.36, y: 0.82 },
     },
     // Washrooms
     {
@@ -1360,7 +1360,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Women Washroom",
       room: "BATHROOM_W",
       floor: 0,
-      mapPosition: { x: 0.6, y: 0.744 },
+      mapPosition: { x: 0.54, y: 0.78 },
     },
     {
       id: "MB_0_BATHROOM_M",
@@ -1369,7 +1369,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Men Washroom",
       room: "BATHROOM_M",
       floor: 0,
-      mapPosition: { x: 0.65, y: 0.744 },
+      mapPosition: { x: 0.64, y: 0.79 },
     },
     // Security
     {
@@ -1379,7 +1379,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Security Desk",
       room: "SECURITY",
       floor: 0,
-      mapPosition: { x: 0.75, y: 0.642 },
+      mapPosition: { x: 0.48, y: 0.85 },
     },
     // Second Cup Cafe
     {
@@ -1389,7 +1389,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Second Cup Cafe",
       room: "Second Cup",
       floor: 0,
-      mapPosition: { x: 0.8, y: 0.144 },
+      mapPosition: { x: 0.6, y: 0.95 },
       showLabel: true,
     },
   ],

@@ -114,19 +114,6 @@ const AdditionalInfoPopupHeader: React.FC<AdditionalInfoPopupHeaderProps> = ({
               <Text style={styles.directionsEtaText}>{directionsEtaLabel || "--"}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={onDirectionsPress}
-              style={styles.directionsButton}
-              accessibilityRole="button"
-              accessibilityLabel={`Directions, ${directionsEtaLabel || "--"}`}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <View style={styles.directionsArrowCircle}>
-                <MaterialIcons name="subdirectory-arrow-right" size={12} color={campusPink} />
-              </View>
-              <Text style={styles.directionsEtaText}>{directionsEtaLabel || "--"}</Text>
-            </TouchableOpacity>
-
             {accessibilityIcons.length > 0 && (
               <View style={[styles.accessibilityIconsContainer, styles.rightAccessibilityRow]}>
                 {accessibilityIcons.map(icon => (

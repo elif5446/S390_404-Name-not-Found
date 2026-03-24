@@ -14,19 +14,21 @@ const IndoorPointMarker: React.FC<Props> = ({ x, y, emoji, bgColor }) => {
       pointerEvents="none"
       style={{
         position: "absolute",
-        left: x -15,
-        top: y - 18,
+        left: x + 2,
+        top: y - 12,
         width: 14,
         height: 14,
-        borderRadius: 14,
+        borderRadius: 7,
         backgroundColor: bgColor,
         alignItems: "center",
         justifyContent: "center",
         borderWidth: 1.5,
         borderColor: "#fff",
+        elevation: 4,
+        zIndex: 1000,
       }}
     >
-      <Text style={{ fontSize: 8 }}>{emoji}</Text>
+      {emoji && emoji !== "📍" ? <Text style={{ fontSize: 7 }}>{emoji}</Text> : null}
     </View>
   );
 };

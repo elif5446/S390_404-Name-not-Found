@@ -805,8 +805,8 @@ const IndoorMapOverlay: React.FC<Props> = ({
         handleSetLocation(
           {
             id: nearestNode ? nearestNode.id : poi.id,
-            x: nearestNode ? nearestNode.x : xPos,
-            y: nearestNode ? nearestNode.y : yPos,
+            x: xPos,
+            y: yPos,
             floorLevel: currentLevel,
             label: `${poi.description} (Room ${poi.room})`,
           },
@@ -911,27 +911,6 @@ const IndoorMapOverlay: React.FC<Props> = ({
                   />
                 )}
 
-                {nonRoomPOIs
-                  .filter(poi => activeCategories.has(poi.category))
-                  .map(poi => {
-                    const selectionType = destinationPOI?.id === poi.id ? "destination" : sourcePOI?.id === poi.id ? "source" : undefined;
-                    const manualRoomOffset = ICON_POSITION_OVERRIDES[poi.room] ?? { x: 0, y: 0 };
-                    const poiX = offsetX + poi.mapPosition.x * floorSvgWidth * scale;
-                    const poiY = offsetY + poi.mapPosition.y * floorSvgHeight * scale;
-
-                    return (
-                      <POIBadge
-                        key={poi.id}
-                        poi={poi}
-                        left={poiX - MAP_POI_BADGE_SIZE / 2 + manualRoomOffset.x}
-                        top={poiY - MAP_POI_BADGE_SIZE / 2 + manualRoomOffset.y}
-                        size={MAP_POI_BADGE_SIZE}
-                        selectionType={selectionType}
-                        onPress={poi => handleSelectPOI(poi, activeField === "start")}
-                      />
-                    );
-                  })}
-
                 <IndoorRoomLabels
                   hotspots={hotspots}
                   currentLevel={currentLevel}
@@ -942,6 +921,26 @@ const IndoorMapOverlay: React.FC<Props> = ({
                   onSelectDestination={item => handleSetLocation(item, activeField === "start")}
                 />
 
+                {nonRoomPOIs
+                  .filter(poi => activeCategories.has(poi.category))
+                  .map(poi => {
+                    const selectionType = destinationPOI?.id === poi.id ? "destination" : sourcePOI?.id === poi.id ? "source" : undefined;
+                    const poiX = offsetX + poi.mapPosition.x * floorSvgWidth * scale;
+                    const poiY = offsetY + poi.mapPosition.y * floorSvgHeight * scale;
+
+                    return (
+                      <POIBadge
+                        key={poi.id}
+                        poi={poi}
+                        left={poiX - MAP_POI_BADGE_SIZE / 2}
+                        top={poiY - MAP_POI_BADGE_SIZE / 2}
+                        size={MAP_POI_BADGE_SIZE}
+                        selectionType={selectionType}
+                        onPress={poi => handleSelectPOI(poi, activeField === "start")}
+                      />
+                    );
+                  })}
+
                 {startLocation && !showDirections && startLocation.floorLevel === currentLevel && (
                   <IndoorPointMarker
                     x={offsetX + startLocation.x * scale}
@@ -951,14 +950,14 @@ const IndoorMapOverlay: React.FC<Props> = ({
                   />
                 )}
 
-                {destination && destination.floorLevel === currentLevel && (
+                {/* {destination && destination.floorLevel === currentLevel && (
                   <IndoorPointMarker // <DestinationMarker
                     x={offsetX + destination.x * scale}
                     y={offsetY + destination.y * scale}
                     emoji="📍"
                     bgColor="transparent"
                   />
-                )}
+                )} */}
 
                 {baseStartNode && baseStartNode.floorId === activeFloor.id && (
                   <View
