@@ -11,25 +11,25 @@ type IconOffset = { x: number; y: number };
 // Fine-tune icon placement by room number
 export const ICON_POSITION_OVERRIDES: Record<string, IconOffset> = {
   // VL-2 icon positions
-  "VL-2-wc-m-1": { x: 0, y: 78 },
-  "VL-2-wc-f-1": { x: 5, y: 105 },
+  //   "VL-2-wc-m-1": { x: 0, y: 78 },
+  //   "VL-2-wc-f-1": { x: 5, y: 105 },
 
-  "VL-2-elevator-1": { x: 5, y: 1 },
-  "VL-2-stairs-1": { x: 6, y: -90 },
-  "VL-2-stairs-2": { x: 6, y: 80 },
-  "VL-2-stairs-3": { x: 8, y: 85 },
+  //   "VL-2-elevator-1": { x: 5, y: 1 },
+  //   "VL-2-stairs-1": { x: 6, y: -90 },
+  //   "VL-2-stairs-2": { x: 6, y: 80 },
+  //   "VL-2-stairs-3": { x: 8, y: 85 },
   // VL-1 icon positions
   // Bathrooms
-  "VL-1-wc-f-1": { x: 5, y: 110 },
-  "VL-1-wc-f-2": { x: -1, y: 44 },
-  "VL-1-wc-m-1": { x: 0, y: 140 },
-  "VL-1-wc-m-2": { x: 5, y: 75 },
+  //   "VL-1-wc-f-1": { x: 5, y: 110 },
+  //   "VL-1-wc-f-2": { x: -1, y: 44 },
+  //   "VL-1-wc-m-1": { x: 0, y: 140 },
+  //   "VL-1-wc-m-2": { x: 5, y: 75 },
   // Stairs
-  "VL-1-stairs-1": { x: 5, y: -25 },
-  "VL-1-stairs-2": { x: 4, y: 25 },
-  "VL-1-stairs-3": { x: 6, y: 90 },
+  //   "VL-1-stairs-1": { x: 5, y: -25 },
+  //   "VL-1-stairs-2": { x: 4, y: 25 },
+  //   "VL-1-stairs-3": { x: 6, y: 90 },
   // Elevator
-  "VL-1-elevator-1": { x: 7, y: 17 },
+  //   "VL-1-elevator-1": { x: 7, y: 17 },
 
   // Hall Floor 9  icon positions
   "9-S1": { x: -15, y: -15 },

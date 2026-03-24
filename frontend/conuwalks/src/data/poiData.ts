@@ -14,26 +14,6 @@ const mapPositionFromNode = (nodeId: string, fallback: POI["mapPosition"]): POI[
     y: Number((node.y / NODE_COORD_MAX).toFixed(3)),
   };
 };
-// //9th floor nodes
-// const hallFloor9RoomPOIs: POI[] =
-//   hallBuildingNavConfig.floors
-//     .find(floor => floor.floorId === "H_9")
-//     ?.nodes.filter(node => node.type === "room" && /^H_\d+(?:\.\d+)?$/.test(node.id) && node.id !== "H_967")
-//     .map(node => {
-//       const room = node.id.slice(2);
-//       return {
-//         id: `H-9-room-${room}`,
-//         label: "Room",
-//         category: "ROOM" as POICategory,
-//         description: "Classroom",
-//         room,
-//         floor: 9,
-//         mapPosition: mapPositionFromNode(node.id, {
-//           x: Number((node.x / NODE_COORD_MAX).toFixed(3)),
-//           y: Number((node.y / NODE_COORD_MAX).toFixed(3)),
-//         }),
-//       };
-//     }) ?? [];
 
 const POI_DATA: Record<string, POI[]> = {
   // VL Building – Floor 2
@@ -46,7 +26,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Womens Washroom",
       room: "B1",
       floor: 2,
-      mapPosition: { x: 0.654, y: 0.214 }, // 670/1024, 219/1024
+      mapPosition: { x: 0.66, y: 0.214 }, // 670/1024, 219/1024
     },
     {
       id: "VL-2-wc-m-1",
@@ -55,7 +35,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Mens Washroom",
       room: "B2",
       floor: 2,
-      mapPosition: { x: 0.654, y: 0.293 }, // 670/1024, 300/1024
+      mapPosition: { x: 0.64, y: 0.29 }, // 670/1024, 300/1024
     },
     // Stairs
     {
@@ -93,7 +73,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Elevator",
       room: "E1",
       floor: 2,
-      mapPosition: { x: 0.22, y: 0.517 }, // 225/1024, 530/1024
+      mapPosition: { x: 0.21, y: 0.51 }, // 225/1024, 530/1024
     },
   ],
   // VL Building – Floor 1
@@ -106,7 +86,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Womens Washroom",
       room: "B1",
       floor: 1,
-      mapPosition: { x: 0.728, y: 0.215 }, // 746/1024, 220/1024
+      mapPosition: { x: 0.732, y: 0.23 },
     },
     {
       id: "VL-1-wc-f-2",
@@ -115,7 +95,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Womens Washroom",
       room: "B2",
       floor: 1,
-      mapPosition: { x: 0.655, y: 0.294 }, // 671/1024, 301/1024
+      mapPosition: { x: 0.64, y: 0.29 }, // 671/1024, 301/1024
     },
     {
       id: "VL-1-wc-m-1",
@@ -124,7 +104,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Mens Washroom",
       room: "B3",
       floor: 1,
-      mapPosition: { x: 0.655, y: 0.215 }, // 671/1024, 220/1024
+      mapPosition: { x: 0.66, y: 0.22 },
     },
     {
       id: "VL-1-wc-m-2",
@@ -133,7 +113,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Mens Washroom",
       room: "B4",
       floor: 1,
-      mapPosition: { x: 0.728, y: 0.294 }, // 746/1024, 301/1024
+      mapPosition: { x: 0.732, y: 0.3 }, // 746/1024, 301/1024
     },
     // Stairs
     {
@@ -143,7 +123,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Stairs",
       room: "S1",
       floor: 1,
-      mapPosition: { x: 0.801, y: 0.578 }, // 820/1024, 592/1024
+      mapPosition: { x: 0.8, y: 0.578 },
     },
     {
       id: "VL-1-stairs-2",
@@ -152,7 +132,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Stairs",
       room: "S2",
       floor: 1,
-      mapPosition: { x: 0.218, y: 0.458 }, // 223/1024, 469/1024
+      mapPosition: { x: 0.22, y: 0.45 },
     },
     {
       id: "VL-1-stairs-3",
@@ -161,7 +141,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Stairs",
       room: "S3",
       floor: 1,
-      mapPosition: { x: 0.552, y: 0.251 }, // 565/1024, 257/1024
+      mapPosition: { x: 0.55, y: 0.252 },
     },
     // Elevator
     {
