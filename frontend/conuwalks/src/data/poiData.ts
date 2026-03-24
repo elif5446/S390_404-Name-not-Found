@@ -1048,7 +1048,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Study Room 428",
       room: "428",
       floor: 0,
-      mapPosition: { x: 0.81, y: 0.8 },
+      mapPosition: { x: 0.829, y: 0.79 },
     },
     {
       id: "MB_S2.273",
@@ -1057,7 +1057,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Study Room 273",
       room: "273",
       floor: 0,
-      mapPosition: { x: 0.625, y: 0.13 },
+      mapPosition: { x: 0.625, y: 0.15 },
     },
     {
       id: "MB_S2.275",
@@ -1066,7 +1066,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Study Room 275",
       room: "275",
       floor: 0,
-      mapPosition: { x: 0.665, y: 0.13 },
+      mapPosition: { x: 0.665, y: 0.15 },
     },
     {
       id: "MB_S2.279",
@@ -1075,7 +1075,16 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Study Room 279",
       room: "279",
       floor: 0,
-      mapPosition: { x: 0.7, y: 0.13 },
+      mapPosition: { x: 0.7, y: 0.15 },
+    },
+     {
+      id: "MB_S2.135",
+      label: "135",
+      category: "STUDY_ROOM" as POICategory,
+      description: "Study Room 135",
+      room: "135",
+      floor: 0,
+      mapPosition: { x: 0.53, y: 0.73 },
     },
     // Vinh's Cafe
     {
@@ -1389,7 +1398,7 @@ const POI_DATA: Record<string, POI[]> = {
       description: "Second Cup Cafe",
       room: "Second Cup",
       floor: 0,
-      mapPosition: { x: 0.6, y: 0.95 },
+      mapPosition: { x: 0.58, y: 0.95 },
       showLabel: true,
     },
   ],

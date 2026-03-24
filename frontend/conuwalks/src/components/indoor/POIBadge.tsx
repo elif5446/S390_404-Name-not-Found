@@ -113,43 +113,7 @@ export const ICON_POSITION_OVERRIDES: Record<string, IconOffset> = {
   ESCALATOR_UP_9: { x: 6, y: 10 },
   ESCALATOR_DOWN_2: { x: 6, y: 2 },
 
-  //MB-S2 positions:
-  //   "MB_S2.273": { x: 2, y: 40 },
-  //   "MB_S2.275": { x: 2, y: 40 },
-  //   "MB_S2.279": { x: 3, y: 40 },
-  //   MB_vinhs_cafe: { x: -15, y: 20 },
-  //   "MB_S2.428": { x: 65, y: 315 },
-  //   MB_S2_BATHROOM_M: { x: -1, y: 8 },
-  //   MB_S2_BATHROOM_W: { x: -1, y: -10 },
-  //   MB_S2_BATHROOM_H: { x: 1, y: -18 },
-  //   MB_S2_ELEVATOR_1: { x: 12, y: 8 },
-  //   MB_S2_ELEVATOR_2: { x: 14, y: 8 },
-  //   MB_S2_ELEVATOR_3: { x: 14, y: 8 },
-  //   MB_S2_ELEVATOR_4: { x: 14, y: 15 },
-  //   MB_S2_ELEVATOR_5: { x: 14, y: 15 },
-  //   MB_S2_ELEVATOR_6: { x: 14, y: 15 },
-  //   MB_S2_ESCALATOR_UP: { x: 30, y: 0 },
-  //   MB_S2_ESCALATOR_DOWN: { x: 3, y: 0 },
-  //   MB_S2_STAIRS_5: { x: 6, y: 5 },
-  //   MB_S2_STAIRS_2: { x: 10, y: 0 },
-  //   MB_S2_STAIRS_1: { x: 15, y: 40 },
-  //   MB_S2_STAIRS_3: { x: 15, y: 8 },
-  //   MB_S2_STAIRS_4: { x: 15, y: -8 },
-
-  //   //MB-Floor1
-  //   MB_0_secondcup: { x: -50, y: 380 },
-  //   MB_0_BATHROOM_W: { x: -26, y: 0 },
-  //   MB_0_SECURITY: { x: -113, y: 75 },
-  //   MB_0_ESCALATOR_DOWN: { x: -60, y: 110 },
-  //   MB_0_ESCALATOR_UP: { x: -55, y: 90 },
-  //   MB_0_STAIRS_1: { x: -45, y: 200 },
-  //   MB_0_STAIRS_2: { x: -122, y: -110 },
-  //   MB_0_ELEVATOR_1: { x: 40, y: 15 },
-  //   MB_0_ELEVATOR_2: { x: 36, y: 15 },
-  //   MB_0_ELEVATOR_3: { x: 32, y: 15 },
-  //   MB_0_ELEVATOR_4: { x: 10, y: -20 },
-  //   MB_0_ELEVATOR_5: { x: -28, y: -20 },
-  //   MB_0_ELEVATOR_6: { x: -66, y: -20 },
+  
 };
 
 const CATEGORY_CONFIG: Record<
@@ -161,7 +125,7 @@ const CATEGORY_CONFIG: Record<
     iconColor: string;
   }
 > = {
-  // ...existing code...
+  
   STUDENT_UNION: {
     icon: "account-group",
     iconLib: "mci",
@@ -331,8 +295,9 @@ const POIBadge: React.FC<Props> = ({ poi, left, top, selectionType, onPress, siz
   const iconColor = isDestination || isSource ? POI_PALETTE.white : cfg.iconColor;
   const isElevator = poi.category === "ELEVATOR";
   const isStairsS1 = poi.category === "STAIRS" && poi.room === "S1";
-  const markerSize = isCompactIconOnly ? 12 : isElevator ? 14 : isStairsS1 ? 15 : size; //to change the size of the elavator icon.
-  const markerIconSize = isCompactIconOnly ? 8 : markerSize * 0.56;
+  const isSecondCup = poi.category === "SECOND_CUP";
+  const markerSize = isSecondCup ? 12 : isCompactIconOnly ? 12 : isElevator ? 14 : isStairsS1 ? 15 : size; //to change the size of the elavator icon.
+  const markerIconSize = isSecondCup ? 7 : isCompactIconOnly ? 8 : markerSize * 0.56;
   const radius = markerSize * 0.42;
   const anchorLeft = left + size / 2;
   const anchorTop = top + size / 2;
@@ -485,12 +450,12 @@ const POIBadge: React.FC<Props> = ({ poi, left, top, selectionType, onPress, siz
       >
         {(!isRoom || isLab) && !hideTopMarker ? renderCategoryIcon(cfg.iconLib, cfg.icon, markerIconSize, iconColor) : null}
       </TouchableOpacity>
-      {/* Show label under icon for Hive Cafe and Vinh's Cafe */}
-      {((poi.category === "FOOD" && poi.showLabel) || poi.category === "VINHS_CAFE") && (
+      {/* Show label under icon for Hive Cafe, Vinh's Cafe and second cup cafe */}
+      {((["FOOD", "SECOND_CUP"].includes(poi.category) && poi.showLabel) || poi.category === "VINHS_CAFE") && (
         <Text
           style={{
             marginTop: 2,
-            fontSize: 10,
+            fontSize: poi.category === "SECOND_CUP" ? 8 : 10,
             fontWeight: "bold",
             color: POI_PALETTE.textDark,
             textAlign: "center",

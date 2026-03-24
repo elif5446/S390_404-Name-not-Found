@@ -7,7 +7,8 @@ import { poiPanelStyles as S, POI_PALETTE } from "@/src/styles/IndoorPOI.styles"
 
 type CategoryIcon =
   | { lib: "ion"; name: keyof typeof Ionicons.glyphMap }
-  | { lib: "mci"; name: keyof typeof MaterialCommunityIcons.glyphMap };
+  | { lib: "mci"; name: keyof typeof MaterialCommunityIcons.glyphMap }
+  | { lib: "custom"; name: string };
 
 interface Props {
   pois: POI[];
@@ -201,8 +202,11 @@ const POIFilterPanel: React.FC<Props> = ({ pois, activeCategories, floorLabel, s
                       >
                         {categoryIcon.lib === "ion" ? (
                           <Ionicons name={categoryIcon.name} size={14} color={getCategoryIconColor(poi.category)} />
-                        ) : (
+                        ) : categoryIcon.lib === "mci" ? (
                           <MaterialCommunityIcons name={categoryIcon.name} size={14} color={getCategoryIconColor(poi.category)} />
+                        ) : (
+                          // Fallback for custom icons (e.g., IT_TEXT)
+                          <Text style={{ fontSize: 10, fontWeight: "bold", color: getCategoryIconColor(poi.category) }}>IT</Text>
                         )}
                       </View>
 
@@ -277,6 +281,8 @@ function getCategoryIcon(cat: POICategory): CategoryIcon {
       return { lib: "mci", name: "stairs" };
     case "ELEVATOR":
       return { lib: "mci", name: "elevator" };
+    case "ESCALATOR":
+      return { lib: "mci", name: "escalator" };
     case "WC_F":
       return { lib: "ion", name: "female-outline" };
     case "WC_M":
@@ -284,13 +290,23 @@ function getCategoryIcon(cat: POICategory): CategoryIcon {
     case "WC_A":
       return { lib: "ion", name: "accessibility-outline" };
     case "WC_SHARED":
-      return { lib: "ion", name: "people-outline" };
+      return { lib: "mci", name: "human-male-female" };
     case "PRINT":
       return { lib: "ion", name: "print-outline" };
     case "IT":
-      return { lib: "ion", name: "help-circle-outline" };
+      return { lib: "custom", name: "IT_TEXT" };
     case "HELP_DESK":
+      return { lib: "ion", name: "shield-outline" };
+    case "STUDENT_UNION":
       return { lib: "mci", name: "account-group" };
+    case "STUDY_ROOM":
+      return { lib: "ion", name: "book-outline" };
+    case "SECOND_CUP":
+      return { lib: "mci", name: "coffee" };
+    case "MICROWAVE":
+      return { lib: "mci", name: "microwave" };
+    case "VINHS_CAFE":
+      return { lib: "mci", name: "coffee" };
     case "FOOD":
       return { lib: "mci", name: "coffee" };
     default:
