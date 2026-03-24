@@ -42,7 +42,7 @@ const getBuildingCenter = (buildingCode: string): LatLng | null => {
   );
 
   if (feature?.geometry?.type === "Polygon" && feature.geometry.coordinates) {
-    const polygonCoords = feature.geometry.coordinates[0] as number[][];
+    const polygonCoords = feature.geometry.coordinates[0];
 
     // Convert [longitude, latitude] to { latitude, longitude }
     const latLngCoords: LatLng[] = polygonCoords

@@ -33,6 +33,36 @@ interface AdditionalInfoPopupHeaderProps {
   onDragHandleAccessibilityAction: (e: AccessibilityActionEvent) => void;
 }
 
+// helper logic
+const renderAccessibilityIcon = (icon: AccessibilityIconDef, mode: "light" | "dark") => {
+  const iconColor = themedStyles.subtext(mode).color;
+
+  if (icon.key === "metro") {
+    return <MetroIcon width={25} height={25} color={iconColor} />;
+  }
+
+  if (Platform.OS === "ios") {
+    return (
+      <SymbolView
+        name={icon.sf}
+        size={25}
+        weight="heavy"
+        tintColor={iconColor}
+      />
+    );
+  }
+
+  return (
+    <PlatformIcon
+      materialName={icon.material}
+      iosName={icon.sf}
+      size={25}
+      color={iconColor}
+      weight="heavy"
+    />
+  );
+};
+
 const AdditionalInfoPopupHeader: React.FC<AdditionalInfoPopupHeaderProps> = ({
   mode,
   buildingId,
@@ -162,34 +192,9 @@ const AdditionalInfoPopupHeader: React.FC<AdditionalInfoPopupHeaderProps> = ({
       ]}
     >
       {accessibilityIcons.map((icon) => (
-        <View
-          key={icon.key}
-          accessible={true}
-          accessibilityLabel={icon.label}
-        >
-          {icon.key === "metro" ? (
-            <MetroIcon
-              width={25}
-              height={25}
-              color={themedStyles.subtext(mode).color}
-            />
-          ) : Platform.OS === "ios" ? (
-            <SymbolView
-              name={icon.sf}
-              size={25}
-              weight="heavy"
-              tintColor={themedStyles.subtext(mode).color}
-            />
-          ) : (
-            <PlatformIcon
-              materialName={icon.material}
-              iosName={icon.sf}
-              size={25}
-              color={themedStyles.subtext(mode).color}
-              weight="heavy"
-            />
-          )}
-        </View>
+        <View key={icon.key} accessible={true} accessibilityLabel={icon.label}>
+            {renderAccessibilityIcon(icon, mode)}
+          </View>
       ))}
     </View>
   )}

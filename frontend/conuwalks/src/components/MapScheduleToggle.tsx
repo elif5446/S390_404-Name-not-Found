@@ -65,6 +65,18 @@ const MapCalendarToggle: React.FC<Props> = ({
 
   if (!visible) return null;
 
+  const isIOS = Platform.OS === "ios";
+  const isCalendar = selected === "calendar";
+
+// extracted shadow logic
+  let shadowOpacity = 0;
+  let elevation = 0;
+
+  if (!isCalendar) {
+    shadowOpacity = isIOS ? 0.18 : 0.22;
+    elevation = isIOS ? 0 : 6;
+  }
+
 const colors = {
    background : mode === "dark" ? "#1C1B1F" : "#FFFFFF",
    activeBg : "#B03060",
@@ -72,7 +84,6 @@ const colors = {
    inactiveColor : mode === "dark" ? "#FFFFFF" : "#333333",
   };
 
-const isIOS = Platform.OS === "ios";
 
   return (
     <View
@@ -99,13 +110,9 @@ const isIOS = Platform.OS === "ios";
           overflow: "hidden",
           shadowColor: "#000",
           shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: selected === "calendar"
-                ? 0
-                : (isIOS ? 0.18 : 0.22),
+          shadowOpacity: shadowOpacity,
           shadowRadius: 4,
-          elevation: selected === "calendar"
-                ? 0
-                : (isIOS ? 0 : 6),
+          elevation: elevation,
         }}
       >
 
