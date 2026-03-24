@@ -5,7 +5,13 @@ import CampusMap from "@/src/components/CampusMap";
 import StatusGradient from "@/src/components/StatusGradient";
 import SegmentedToggle from "@/src/components/SegmentedToggle";
 import UpcomingClassBanner from "@/src/components/UpcomingClassBanner";
-import { clearTokens, getUserInfo } from "@/src/utils/tokenStorage";
+import {
+  clearTokens,
+  getTokens,
+  getUserInfo,
+  UserInfo,
+  isTokenValid,
+} from "@/src/utils/tokenStorage";
 import { styles } from "@/src/styles/home";
 import { useDirections } from "@/src/context/DirectionsContext";
 import { syncShuttleScheduleInBackground } from "@/src/api/shuttleSyncService";
@@ -15,13 +21,26 @@ import ScheduleView from "@/src/components/ScheduleView";
 
 export default function DevHomeScreen() {
   const [campus, setCampus] = useState<"SGW" | "Loyola">("SGW");
-  const [userInfo, setUserInfo] = useState<any>(null);
+  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const { isNavigationActive, clearDestination } = useDirections();
 
   const [isInfoPopupVisible, setIsInfoPopupVisible] = useState(false);
   const [selectedView, setSelectedView] = useState<"map" | "calendar">("map");
+
+  useEffect(() => {
+    const checkAuthAfterLogout = async () => {
+      const tokens = await getTokens();
+      if (!tokens || !isTokenValid(tokens)) {
+        // If no valid tokens, redirect to login
+        router.replace("/(dev)/login");
+      }
+    };
+
+    // Check auth status when component mounts and after any potential changes
+    checkAuthAfterLogout();
+  }, []);
 
   useEffect(() => {
     syncShuttleScheduleInBackground();
@@ -54,6 +73,7 @@ export default function DevHomeScreen() {
           try {
             console.log("Signing out...");
             await clearTokens();
+
             router.replace("/(dev)/login");
             console.log("Sign out complete, navigated to login");
           } catch (error) {
