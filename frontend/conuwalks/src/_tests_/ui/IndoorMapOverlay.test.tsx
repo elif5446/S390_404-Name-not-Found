@@ -1,24 +1,23 @@
 import React from "react";
 import { render, fireEvent, act, screen } from "@testing-library/react-native";
 import IndoorMapOverlay from "../../components/indoor/IndoorMapOverlay";
-import { BuildingIndoorConfig } from '@/src/indoors/types/FloorPlans'; 
-import { SvgProps } from 'react-native-svg';
-
+import { BuildingIndoorConfig } from "@/src/indoors/types/FloorPlans";
+import { SvgProps } from "react-native-svg";
 
 // mock safeareaview to pass children through
-jest.mock('react-native-safe-area-context', () => ({
+jest.mock("react-native-safe-area-context", () => ({
   SafeAreaView: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
-jest.mock('@expo/vector-icons', () => {
-  const { Text } = require('react-native');
+jest.mock("@expo/vector-icons", () => {
+  const { Text } = require("react-native");
   return {
     Ionicons: () => <Text>Icon</Text>,
   };
 });
 
-jest.mock('@/src/components/indoor/IndoorMap', () => {
-  const { View, Text } = require('react-native');
+jest.mock("@/src/components/indoor/IndoorMap", () => {
+  const { View, Text } = require("react-native");
   const MockIndoorMap = (props: any) => (
     <View testID="map-content">
       <Text>Map for Floor Level {props.floor.level}</Text>
@@ -28,23 +27,7 @@ jest.mock('@/src/components/indoor/IndoorMap', () => {
   return MockIndoorMap;
 });
 
-jest.mock('@/src/components/indoor/FloorPicker', () => {
-  const { View, Text, Button } = require('react-native');
-  const MockFloorPicker = ({ onFloorSelect, currentFloor }: any) => (
-    <View testID="floor-picker">
-      <Text>Current Picker Floor: {currentFloor}</Text>
-      <Button
-        testID="change-floor-btn"
-        title="Change Floor"
-        onPress={() => onFloorSelect(9)} // Hardcoded to 9 for test
-      />
-    </View>
-  );
-  return MockFloorPicker;
-});
-
-
-jest.mock('@/src/styles/IndoorMap.styles', () => ({
+jest.mock("@/src/styles/IndoorMap.styles", () => ({
   styles: {
     container: {},
     mapContainer: {},
@@ -61,21 +44,21 @@ jest.mock('@/src/styles/IndoorMap.styles', () => ({
   },
 }));
 
-const MockSvgImage: React.FC<SvgProps> = (props) => {
-  const { View } = require('react-native');
+const MockSvgImage: React.FC<SvgProps> = props => {
+  const { View } = require("react-native");
   return <View testID="mock-svg-image" {...props} />;
 };
 
 const mockBuildingData: BuildingIndoorConfig = {
-  id: 'hall-building',
-  name: 'Hall Building',
+  id: "hall-building",
+  name: "Hall Building",
   defaultFloor: 8,
   floors: [
     {
-      id: 'h-8',
+      id: "h-8",
       level: 8,
-      label: '8',
-      type: 'svg',
+      label: "8",
+      type: "svg",
       image: MockSvgImage,
       bounds: {
         northEast: { latitude: 45.4973, longitude: -73.5785 },
@@ -83,10 +66,10 @@ const mockBuildingData: BuildingIndoorConfig = {
       },
     },
     {
-      id: 'h-9',
+      id: "h-9",
       level: 9,
-      label: '9',
-      type: 'svg',
+      label: "9",
+      type: "svg",
       image: MockSvgImage,
       bounds: {
         northEast: { latitude: 45.4973, longitude: -73.5785 },
@@ -108,35 +91,42 @@ describe("IndoorMapOverlay", () => {
     jest.useRealTimers();
   });
 
-  it('renders correctly with initial floor data (Level 8)', () => {
+  it("renders correctly with initial floor data (Level 8)", () => {
     render(
-      <IndoorMapOverlay 
-        buildingData={mockBuildingData} 
-        onExit={mockOnExit} 
-      />
+      <IndoorMapOverlay
+        buildingData={mockBuildingData}
+        onExit={mockOnExit}
+        onToggleOutdoorMap={function (): void {
+          throw new Error("Function not implemented.");
+        }}
+      />,
     );
 
-    expect(screen.getByText('Hall Building')).toBeTruthy();
-    expect(screen.getByLabelText('Switch to floor 8')).toBeTruthy();
-    expect(screen.getByText('Map for Floor Level 8')).toBeTruthy();
+    expect(screen.getByText("Hall Building")).toBeTruthy();
+    expect(screen.getByLabelText("Switch to floor 8")).toBeTruthy();
+    expect(screen.getByText("Map for Floor Level 8")).toBeTruthy();
   });
 
-  it('switches from Level 8 to Level 9 correctly', () => {
+  it("switches from Level 8 to Level 9 correctly", () => {
     render(
-      <IndoorMapOverlay 
-        buildingData={mockBuildingData} 
-        onExit={mockOnExit} 
-      />
+      <IndoorMapOverlay
+        buildingData={mockBuildingData}
+        onExit={mockOnExit}
+        onToggleOutdoorMap={function (): void {
+          throw new Error("Function not implemented.");
+        }}
+      />,
     );
 
-    expect(screen.getByText('Map for Floor Level 8')).toBeTruthy();
-    const changeFloorBtn = screen.getByLabelText('Switch to floor 9');
+    expect(screen.getByText("Map for Floor Level 8")).toBeTruthy();
+    const changeFloorBtn = screen.getByLabelText("Switch to floor 9");
     fireEvent.press(changeFloorBtn);
 
     act(() => {
       jest.advanceTimersByTime(500);
     });
 
-    expect(screen.getByText('Map for Floor Level 9')).toBeTruthy();
-    expect(screen.getByLabelText('Hall Building Floor 9')).toBeTruthy();  });
+    expect(screen.getByText("Map for Floor Level 9")).toBeTruthy();
+    expect(screen.getByLabelText("Hall Building Floor 9")).toBeTruthy();
+  });
 });

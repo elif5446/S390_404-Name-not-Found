@@ -14,6 +14,14 @@ module.exports = {
     "@react-native-async-storage/async-storage": require.resolve("@react-native-async-storage/async-storage/jest/async-storage-mock"),
     "@react-native-google-signin/google-signin": "<rootDir>/jest.setup.tsx",
   },
-  collectCoverageFrom: ["src/**/*.{ts,tsx}", "!src/**/*.d.ts", "!src/**/__tests__/**", "!src/**/*.test.{ts,tsx}"],
+  collectCoverageFrom: [
+    "src/**/*.{ts,tsx}",
+    "!src/**/*.d.ts",
+    "!src/**/__tests__/**",
+    "!src/**/*.test.{ts,tsx}",
+    "!src/styles/**",
+    "!src/types/**",
+  ],
   testMatch: ["**/__tests__/**/*.(test|spec).[jt]s?(x)", "**/?(*.)+(spec|test).[jt]s?(x)"],
+  testPathIgnorePatterns: ["/node_modules/", "<rootDir>/src/styles/", "<rootDir>/src/types/", "<rootDir>/src/indoors/types/"],
 };

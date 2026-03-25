@@ -1,17 +1,3 @@
-import { View, ViewProps } from "react-native";
-import { ReactNode } from "react";
-import { LatLng } from "react-native-maps";
-
-interface MockPolygonProps extends ViewProps {
-  children?: ReactNode;
-  testID?: string;
-  accessibilityLabel?: string;
-  coordinates?: LatLng[];
-  fillColor?: string;
-  strokeColor?: string;
-  strokeWidth?: number;
-}
-
 // Mock expo-location
 jest.mock("expo-location", () => ({
   requestForegroundPermissionsAsync: jest.fn(),
