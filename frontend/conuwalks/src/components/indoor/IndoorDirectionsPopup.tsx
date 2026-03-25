@@ -9,6 +9,8 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   Platform,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useBottomSheet } from "@/src/hooks/useBottomSheet";
@@ -31,23 +33,22 @@ interface IndoorDirectionsPopupProps {
   onNextStep: () => void;
   onPrevStep: () => void;
   onClose: () => void;
+  onFinish?: () => void;
+  finishLabel?: string;
 }
 
 const IndoorDirectionsPopup = forwardRef<IndoorDirectionsPopupHandle, IndoorDirectionsPopupProps>(
-  ({ visible, steps, activeStepIndex, onNextStep, onPrevStep, onClose }, ref) => {
+  ({ visible, steps, activeStepIndex, onNextStep, onPrevStep, onClose, onFinish, finishLabel }, ref) => {
     const isDark = (useColorScheme() || "light") === "dark";
     const scrollViewRef = useRef<ScrollView>(null);
     const stepLayouts = useRef<{ [key: number]: number }>({});
-
-    const handleSheetDismiss = useCallback(() => {
-      onClose();
-    }, [onClose]);
 
     const {
       translateY,
       MAX_HEIGHT,
       SNAP_OFFSET,
       MINIMIZED_OFFSET,
+      scrollOffsetRef,
       minimize,
       snapTo,
       handleToggleHeight,
@@ -56,7 +57,7 @@ const IndoorDirectionsPopup = forwardRef<IndoorDirectionsPopupHandle, IndoorDire
       dismiss,
     } = useBottomSheet({
       visible,
-      onDismiss: handleSheetDismiss,
+      onDismiss: onClose,
     });
     useImperativeHandle(ref, () => ({
       minimize: () => minimize(MINIMIZED_OFFSET - 60),
@@ -74,12 +75,23 @@ const IndoorDirectionsPopup = forwardRef<IndoorDirectionsPopupHandle, IndoorDire
           y: targetY,
           animated: true,
         });
-      }, 0);
+      }, 50);
 
       return () => clearTimeout(timeoutId);
     }, [activeStepIndex, steps.length]);
 
+    const handleScroll = useCallback(
+      (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+        scrollOffsetRef.current = e.nativeEvent.contentOffset.y;
+      },
+      [scrollOffsetRef],
+    );
+
     if (!visible || steps.length === 0) return null;
+
+    const disablePrev = activeStepIndex === 0;
+    const isLastStep = activeStepIndex === steps.length - 1;
+    const disableNext = isLastStep && !onFinish;
 
     return (
       <View
@@ -89,7 +101,7 @@ const IndoorDirectionsPopup = forwardRef<IndoorDirectionsPopupHandle, IndoorDire
           left: 0,
           right: 0,
           height: "100%",
-          zIndex: 1000,
+          zIndex: 3000,
           justifyContent: "flex-end",
         }}
         pointerEvents="box-none"
@@ -119,6 +131,7 @@ const IndoorDirectionsPopup = forwardRef<IndoorDirectionsPopupHandle, IndoorDire
             borderTopLeftRadius: 24,
             borderTopRightRadius: 24,
             overflow: "hidden",
+            backgroundColor: isDark ? "#1F1A1D" : "#FFF7FA",
           }}
         >
           <View
@@ -228,6 +241,7 @@ const IndoorDirectionsPopup = forwardRef<IndoorDirectionsPopupHandle, IndoorDire
               style={{ flex: 1 }}
               // hack to show current step in middle
               contentContainerStyle={{ padding: 16, paddingBottom: 600 }}
+              onScroll={handleScroll}
               scrollEventThrottle={16}
               showsVerticalScrollIndicator={false}
               nestedScrollEnabled
@@ -246,11 +260,11 @@ const IndoorDirectionsPopup = forwardRef<IndoorDirectionsPopupHandle, IndoorDire
                       flexDirection: "row",
                       alignItems: "center",
                       marginBottom: isLast ? 0 : 16,
-                      opacity: isActive ? 1 : 0.35,
+                      opacity: isActive ? 1 : 0.3,
                       backgroundColor: isActive ? (isDark ? "#2A2025" : "#FFF0F5") : "transparent",
-                      padding: isActive ? 16 : 8,
-                      borderRadius: 12,
-                      transform: [{ scale: isActive ? 1.02 : 0.98 }],
+                      padding: isActive ? 18 : 10,
+                      borderRadius: 14,
+                      transform: [{ scale: isActive ? 1.02 : 1 }],
                     }}
                   >
                     <View
@@ -261,7 +275,7 @@ const IndoorDirectionsPopup = forwardRef<IndoorDirectionsPopupHandle, IndoorDire
                         backgroundColor: isActive || isLast ? "#C2185B" : isDark ? "#4B3D44" : "#FCE4EC",
                         alignItems: "center",
                         justifyContent: "center",
-                        marginRight: 12,
+                        marginRight: 14,
                       }}
                     >
                       <Text
@@ -279,9 +293,8 @@ const IndoorDirectionsPopup = forwardRef<IndoorDirectionsPopupHandle, IndoorDire
                       style={{
                         flex: 1,
                         fontSize: isActive ? 18 : 15,
-                        lineHeight: isActive ? 26 : 22,
-                        color: isActive || isLast ? "#C2185B" : isDark ? "#E0D7DB" : "#4A4A4A",
                         fontWeight: isActive ? "800" : "500",
+                        color: isActive || isLast ? "#C2185B" : isDark ? "#E0D7DB" : "#4A4A4A",
                       }}
                     >
                       {step.text}
@@ -302,7 +315,8 @@ const IndoorDirectionsPopup = forwardRef<IndoorDirectionsPopupHandle, IndoorDire
             right: 16,
             backgroundColor: isDark ? "#1F1A1D" : "#FFFFFF",
             borderRadius: 16,
-            padding: 12,
+            gap: 12,
+            padding: 8,
             flexDirection: "row",
             justifyContent: "space-between",
             shadowColor: "#000",
@@ -319,38 +333,26 @@ const IndoorDirectionsPopup = forwardRef<IndoorDirectionsPopupHandle, IndoorDire
               snapTo(SNAP_OFFSET);
               onPrevStep();
             }}
-            disabled={activeStepIndex === 0}
-            style={{
-              paddingVertical: 12,
-              paddingHorizontal: 16,
-              borderRadius: 8,
-              backgroundColor: activeStepIndex === 0 ? (isDark ? "#332A2F" : "#F5F5F5") : "#C2185B",
-              flex: 1,
-              marginRight: 8,
-              alignItems: "center",
-            }}
+            disabled={disablePrev}
+            style={[styles.navBtn, { backgroundColor: disablePrev ? "#DDD" : "#B03060" }]}
           >
-            <Text style={{ color: activeStepIndex === 0 ? (isDark ? "#776D72" : "#A0A0A0") : "white", fontWeight: "700" }}>Previous</Text>
+            <Text style={{ color: disablePrev ? (isDark ? "#776D72" : "#A0A0A0") : "white", fontWeight: "700" }}>Previous</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => {
-              snapTo(SNAP_OFFSET);
-              onNextStep();
+              if (isLastStep && onFinish) {
+                onFinish();
+              } else {
+                snapTo(SNAP_OFFSET);
+                onNextStep();
+              }
             }}
-            disabled={activeStepIndex === steps.length - 1}
-            style={{
-              paddingVertical: 12,
-              paddingHorizontal: 16,
-              borderRadius: 8,
-              backgroundColor: activeStepIndex === steps.length - 1 ? (isDark ? "#332A2F" : "#F5F5F5") : "#C2185B",
-              flex: 1,
-              marginLeft: 8,
-              alignItems: "center",
-            }}
+            disabled={disableNext}
+            style={[styles.navBtn, { backgroundColor: disableNext ? "#DDD" : "#B03060" }]}
           >
-            <Text style={{ color: activeStepIndex === steps.length - 1 ? (isDark ? "#776D72" : "#A0A0A0") : "white", fontWeight: "700" }}>
-              Next
+            <Text style={{ color: disableNext ? (isDark ? "#776D72" : "#FFF") : "white", fontWeight: "700" }}>
+              {isLastStep ? finishLabel || "Finish" : "Next"}
             </Text>
           </TouchableOpacity>
         </View>
@@ -358,6 +360,21 @@ const IndoorDirectionsPopup = forwardRef<IndoorDirectionsPopupHandle, IndoorDire
     );
   },
 );
+
+const styles = StyleSheet.create({
+  navBtn: {
+    flex: 1,
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+  },
+});
 
 IndoorDirectionsPopup.displayName = "IndoorDirectionsPopup";
 export default IndoorDirectionsPopup;

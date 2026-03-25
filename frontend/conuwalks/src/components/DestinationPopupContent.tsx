@@ -1,13 +1,5 @@
 import React, { memo } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  ActivityIndicator,
-  NativeSyntheticEvent,
-  NativeScrollEvent,
-} from "react-native";
+import { View, Text, TouchableOpacity, ScrollView, ActivityIndicator, NativeSyntheticEvent, NativeScrollEvent } from "react-native";
 import PlatformIcon from "./ui/PlatformIcon";
 import { DirectionStep } from "@/src/context/DirectionsContext";
 import { styles } from "../styles/DestinationPopup";
@@ -29,8 +21,6 @@ interface DestinationContentProps {
   onScroll: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
 }
 
-const HIT_SLACK = { top: 10, bottom: 10, left: 10, right: 10 };
-
 // helper function
 const RouteList = memo(
   ({
@@ -49,9 +39,7 @@ const RouteList = memo(
       return (
         <View style={styles.centerInline}>
           <ActivityIndicator color="#B03060" />
-          <Text style={{ color: isDark ? "#FFFFFF" : "#111111" }}>
-            Loading routes...
-          </Text>
+          <Text style={{ color: isDark ? "#FFFFFF" : "#111111" }}>Loading routes...</Text>
         </View>
       );
     }
@@ -61,11 +49,7 @@ const RouteList = memo(
     }
 
     if (routes.length === 0) {
-      return (
-        <Text style={{ color: isDark ? "#AFAFAF" : "#666666" }}>
-          Select a destination to see available routes.
-        </Text>
-      );
+      return <Text style={{ color: isDark ? "#AFAFAF" : "#666666" }}>Select a destination to see available routes.</Text>;
     }
 
     return (
@@ -81,11 +65,7 @@ const RouteList = memo(
                 styles.routeCard,
                 {
                   backgroundColor: isDark ? "#323235" : "#F8F8FA",
-                  borderColor: selected
-                    ? "#C48BA1"
-                    : isDark
-                      ? "#3F3F42"
-                      : "#ECECEF",
+                  borderColor: selected ? "#C48BA1" : isDark ? "#3F3F42" : "#ECECEF",
                 },
               ]}
             >
@@ -95,9 +75,7 @@ const RouteList = memo(
                     <View style={styles.shuttleBadgeIcon}>
                       <Text style={styles.shuttleBadgeLetter}>C</Text>
                     </View>
-                    <Text style={styles.shuttleBadgeText}>
-                      Concordia Shuttle
-                    </Text>
+                    <Text style={styles.shuttleBadgeText}>Concordia Shuttle</Text>
                   </View>
                 )}
                 <Text style={styles.durationText}>{route.duration}</Text>
@@ -111,22 +89,14 @@ const RouteList = memo(
               <Text style={styles.distanceText}>{route.distance}</Text>
               <TouchableOpacity
                 onPress={() => handleStartNavigation(route.id, index)}
-                style={[
-                  styles.startButton,
-                  navigationRouteId === route.id && { opacity: 0.8 },
-                ]}
+                style={[styles.startButton, navigationRouteId === route.id && { opacity: 0.8 }]}
                 hitSlop={10}
                 accessibilityRole="button"
                 accessibilityLabel={`Start navigation for route ${index + 1}`}
                 accessibilityHint="Begins turn by turn navigation with this route"
                 testID="navigate-button"
               >
-                <PlatformIcon
-                  materialName="subdirectory-arrow-right"
-                  iosName="arrow.turn.up.right"
-                  size={14}
-                  color="#FFFFFF"
-                />
+                <PlatformIcon materialName="subdirectory-arrow-right" iosName="arrow.turn.up.right" size={14} color="#FFFFFF" />
               </TouchableOpacity>
             </TouchableOpacity>
           );
@@ -136,10 +106,11 @@ const RouteList = memo(
   },
 );
 
-const DestinationContent: React.FC<DestinationContentProps> = (props) => {
+RouteList.displayName = "RouteListl";
+
+const DestinationContent: React.FC<DestinationContentProps> = props => {
   // extracting variables from props for the transit section
-  const { travelMode, routes, transitSteps, isDark, getTransitBadgeLabel } =
-    props;
+  const { travelMode, routes, transitSteps, isDark, getTransitBadgeLabel } = props;
   return (
     <ScrollView
       ref={props.scrollViewRef}
@@ -167,8 +138,7 @@ const DestinationContent: React.FC<DestinationContentProps> = (props) => {
           <Text style={styles.transitSectionTitle}>Transit details</Text>
           {transitSteps.length > 0 ? (
             transitSteps.map((step, index) => {
-              const lineLabel =
-                step.transitLineShortName || step.transitLineName || "Transit";
+              const lineLabel = step.transitLineShortName || step.transitLineName || "Transit";
               const vehicleLabel = getTransitBadgeLabel(step);
               const stopLabel =
                 step.transitDepartureStop && step.transitArrivalStop
@@ -188,9 +158,7 @@ const DestinationContent: React.FC<DestinationContentProps> = (props) => {
                   <View style={styles.transitCardHeader}>
                     <Text style={styles.transitLineName}>{lineLabel}</Text>
                     <View style={styles.transitTypeBadge}>
-                      <Text style={styles.transitTypeBadgeText}>
-                        {vehicleLabel}
-                      </Text>
+                      <Text style={styles.transitTypeBadgeText}>{vehicleLabel}</Text>
                     </View>
                   </View>
                   {!!step.transitHeadsign && (
@@ -205,9 +173,7 @@ const DestinationContent: React.FC<DestinationContentProps> = (props) => {
               );
             })
           ) : (
-            <Text style={{ color: isDark ? "#AFAFAF" : "#666666" }}>
-              Detailed transit lines are not available for this route yet.
-            </Text>
+            <Text style={{ color: isDark ? "#AFAFAF" : "#666666" }}>Detailed transit lines are not available for this route yet.</Text>
           )}
         </View>
       )}

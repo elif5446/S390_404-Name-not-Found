@@ -1,16 +1,33 @@
-import React, { useMemo, useRef, useState } from "react";
-import { View, Text, TouchableOpacity, ScrollView, PanResponder } from "react-native";
+import React, { useMemo, useState, useCallback, forwardRef, useImperativeHandle } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  Animated,
+  TouchableWithoutFeedback,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
+} from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { POI, POICategory } from "@/src/types/poi";
 import { CATEGORY_LABELS } from "@/src/data/poiData";
 import { poiPanelStyles as S, POI_PALETTE } from "@/src/styles/IndoorPOI.styles";
+import { useBottomSheet } from "@/src/hooks/useBottomSheet";
+import BottomSheetDragHandle from "@/src/components/ui/BottomSheetDragHandle";
 
 type CategoryIcon =
   | { lib: "ion"; name: keyof typeof Ionicons.glyphMap }
   | { lib: "mci"; name: keyof typeof MaterialCommunityIcons.glyphMap }
   | { lib: "custom"; name: string };
 
+export interface POIFilterPanelHandle {
+  minimize: () => void;
+}
+
 interface Props {
+  visible: boolean;
+  buildingId: string;
   pois: POI[];
   categories: POICategory[];
   activeCategories: Set<POICategory>;
@@ -23,138 +40,138 @@ interface Props {
   onSelectPOI: (poi: POI) => void;
 }
 
-const POIFilterPanel: React.FC<Props> = ({ pois, activeCategories, floorLabel, sourcePOI, destinationPOI, onSelectPOI }) => {
-  const [query] = useState("");
-  const [expanded, setExpanded] = useState(false);
+const POIFilterPanel = forwardRef<POIFilterPanelHandle, Props>(
+  ({ visible, buildingId, pois, activeCategories, floorLabel, sourcePOI, destinationPOI, onSelectPOI }, ref) => {
+    const [query] = useState("");
+    const [expanded, setExpanded] = useState(false);
 
-  const normalize = (value: string) => value.trim().toLowerCase().replace(/\s+/g, " ");
-
-  const queryNormalized = normalize(query);
-  const queryRoom = queryNormalized.replace(/^h\s*-\s*/i, "").replace(/^room\s+/i, "");
-
-  const visiblePOIs = useMemo(() => {
-    return pois
-      .filter(p => activeCategories.has(p.category))
-      .filter(p => {
-        if (!queryNormalized) return true;
-
-        const roomOnly = p.room.toLowerCase();
-        const roomWithBuilding = `h-${roomOnly}`;
-        const desc = p.description.toLowerCase();
-        const label = p.label.toLowerCase();
-        const category = CATEGORY_LABELS[p.category].toLowerCase();
-
-        return (
-          desc.includes(queryNormalized) ||
-          label.includes(queryNormalized) ||
-          category.includes(queryNormalized) ||
-          roomOnly.includes(queryNormalized) ||
-          roomWithBuilding.includes(queryNormalized) ||
-          roomOnly.includes(queryRoom) ||
-          roomWithBuilding.includes(queryRoom)
-        );
+    const { translateY, MAX_HEIGHT, scrollOffsetRef, handleToggleHeight, handlePanResponder, scrollAreaPanResponder, minimize } =
+      useBottomSheet({
+        visible,
+        onDismiss: () => {},
+        onExpansionChange: setExpanded,
+        peekHeightRatio: 0.11,
       });
-  }, [activeCategories, pois, queryNormalized, queryRoom]);
 
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dy) > 8,
-      onPanResponderRelease: (_, gesture) => {
-        if (gesture.dy < -30) {
-          setExpanded(true);
-        } else if (gesture.dy > 30) {
-          setExpanded(false);
-        }
+    useImperativeHandle(
+      ref,
+      () => ({
+        minimize: () => {
+          if (visible) {
+            minimize();
+          }
+        },
+      }),
+      [minimize, visible],
+    );
+
+    const handleScroll = useCallback(
+      (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+        scrollOffsetRef.current = e.nativeEvent.contentOffset.y;
       },
-    }),
-  ).current;
+      [scrollOffsetRef],
+    );
 
-  return (
-    <View
-      style={{
-        position: "absolute",
-        left: 12,
-        right: 12,
-        bottom: 12,
-        zIndex: 900,
-      }}
-      pointerEvents="box-none"
-    >
+    const normalize = (value: string) => value.trim().toLowerCase().replace(/\s+/g, " ");
+
+    const queryNormalized = normalize(query);
+    const queryRoom = queryNormalized.replace(/^h\s*-\s*/i, "").replace(/^room\s+/i, "");
+
+    const visiblePOIs = useMemo(() => {
+      return pois
+        .filter(p => activeCategories.has(p.category))
+        .filter(p => {
+          if (!queryNormalized) return true;
+
+          const roomOnly = p.room.toLowerCase();
+          const roomWithBuilding = `${buildingId.toLowerCase()}-${roomOnly}`;
+          const desc = p.description.toLowerCase();
+          const label = p.label.toLowerCase();
+          const category = CATEGORY_LABELS[p.category].toLowerCase();
+
+          return (
+            desc.includes(queryNormalized) ||
+            label.includes(queryNormalized) ||
+            category.includes(queryNormalized) ||
+            roomOnly.includes(queryNormalized) ||
+            roomWithBuilding.includes(queryNormalized) ||
+            roomOnly.includes(queryRoom) ||
+            roomWithBuilding.includes(queryRoom)
+          );
+        });
+    }, [activeCategories, buildingId, pois, queryNormalized, queryRoom]);
+
+    return (
       <View
         style={{
-          backgroundColor: "#FFFFFF",
-          borderRadius: 18,
-          shadowColor: "#000",
-          shadowOpacity: 0.12,
-          shadowRadius: 8,
-          elevation: 8,
-          overflow: "hidden",
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: "100%",
+          zIndex: 2000,
+          justifyContent: "flex-end",
         }}
+        pointerEvents="box-none"
       >
-        <View
-          {...panResponder.panHandlers}
+        <Animated.View
           style={{
-            alignItems: "center",
-            paddingTop: 8,
-            paddingBottom: 10,
-            borderBottomWidth: expanded ? 1 : 0,
-            borderBottomColor: "#F0F0F0",
+            height: MAX_HEIGHT,
+            transform: [{ translateY }],
+            backgroundColor: "#FFFFFF",
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: -4 },
+            shadowOpacity: 0.12,
+            shadowRadius: 12,
+            elevation: 16,
           }}
         >
-          <TouchableOpacity
-            onPress={() => setExpanded(v => !v)}
-            style={{ width: "100%" }}
-            accessibilityRole="button"
-            accessibilityLabel="Expand or collapse points of interest panel"
+          {/* Header & Drag Handle Area */}
+          <View
+            {...handlePanResponder.panHandlers}
+            style={{
+              paddingBottom: 16,
+              borderBottomWidth: expanded ? 1 : 0,
+              borderBottomColor: "#F0F0F0",
+            }}
           >
-            <View
-              style={{
-                alignItems: "center",
-              }}
-            >
-              <View
-                style={{
-                  width: 38,
-                  height: 4,
-                  borderRadius: 2,
-                  backgroundColor: "#D0D0D0",
-                  marginBottom: 8,
-                }}
-              />
-            </View>
+            <TouchableWithoutFeedback onPress={handleToggleHeight}>
+              <View>
+                <BottomSheetDragHandle isDark={false} onToggleHeight={handleToggleHeight} />
 
-            <View
-              style={{
-                width: "100%",
-                paddingHorizontal: 14,
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "700",
-                  color: "#333333",
-                }}
-              >
-                Points of Interest ({visiblePOIs.length})
-              </Text>
+                <View
+                  style={{
+                    paddingHorizontal: 20,
+                    flexDirection: "row",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      fontWeight: "700",
+                      color: "#333333",
+                    }}
+                  >
+                    Points of Interest ({visiblePOIs.length})
+                  </Text>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
 
-              <Ionicons name={expanded ? "chevron-down" : "chevron-up"} size={18} color={POI_PALETTE.textMid} style={{ marginTop: -2 }} />
-            </View>
-          </TouchableOpacity>
-        </View>
-
-        {expanded && (
-          <View style={{ maxHeight: 250 }}>
+          {/* Scrollable POI List */}
+          <View style={{ flex: 1 }} {...scrollAreaPanResponder.panHandlers}>
             {visiblePOIs.length > 0 ? (
               <ScrollView
-                style={{ maxHeight: 180 }}
+                onScroll={handleScroll}
+                scrollEventThrottle={16}
                 contentContainerStyle={{
-                  paddingHorizontal: 10,
-                  paddingBottom: 12,
+                  paddingHorizontal: 16,
+                  paddingBottom: 600,
                 }}
                 showsVerticalScrollIndicator={true}
                 nestedScrollEnabled
@@ -164,7 +181,8 @@ const POIFilterPanel: React.FC<Props> = ({ pois, activeCategories, floorLabel, s
                     fontSize: 12,
                     fontWeight: "700",
                     color: "#777777",
-                    marginBottom: 8,
+                    marginBottom: 12,
+                    marginTop: 8,
                     marginLeft: 4,
                   }}
                 >
@@ -181,39 +199,46 @@ const POIFilterPanel: React.FC<Props> = ({ pois, activeCategories, floorLabel, s
                       style={{
                         flexDirection: "row",
                         alignItems: "center",
-                        paddingVertical: 10,
+                        paddingVertical: 12,
                         paddingHorizontal: 8,
                         borderBottomWidth: idx === visiblePOIs.length - 1 ? 0 : 1,
                         borderBottomColor: "#F1F1F1",
                       }}
                       accessibilityRole="button"
-                      accessibilityLabel={`Navigate to ${poi.description}, Room ${poi.room}`}
+                      accessibilityLabel={`Maps to ${poi.description}, Room ${poi.room}`}
                     >
                       <View
                         style={{
-                          width: 26,
-                          height: 26,
+                          width: 28,
+                          height: 28,
                           borderRadius: 8,
                           backgroundColor: getBadgeBg(poi.category),
                           alignItems: "center",
                           justifyContent: "center",
-                          marginRight: 10,
+                          marginRight: 12,
                         }}
                       >
                         {categoryIcon.lib === "ion" ? (
-                          <Ionicons name={categoryIcon.name} size={14} color={getCategoryIconColor(poi.category)} />
+                          <Ionicons name={categoryIcon.name} size={16} color={getCategoryIconColor(poi.category)} />
                         ) : categoryIcon.lib === "mci" ? (
-                          <MaterialCommunityIcons name={categoryIcon.name} size={14} color={getCategoryIconColor(poi.category)} />
+                          <MaterialCommunityIcons name={categoryIcon.name} size={16} color={getCategoryIconColor(poi.category)} />
                         ) : (
-                          // Fallback for custom icons (e.g., IT_TEXT)
-                          <Text style={{ fontSize: 10, fontWeight: "bold", color: getCategoryIconColor(poi.category) }}>IT</Text>
+                          <Text
+                            style={{
+                              fontSize: 10,
+                              fontWeight: "bold",
+                              color: getCategoryIconColor(poi.category),
+                            }}
+                          >
+                            IT
+                          </Text>
                         )}
                       </View>
 
                       <View style={{ flex: 1 }}>
                         <Text
                           style={{
-                            fontSize: 14,
+                            fontSize: 15,
                             fontWeight: "600",
                             color: "#222222",
                           }}
@@ -222,12 +247,12 @@ const POIFilterPanel: React.FC<Props> = ({ pois, activeCategories, floorLabel, s
                         </Text>
                         <Text
                           style={{
-                            fontSize: 12,
+                            fontSize: 13,
                             color: "#777777",
                             marginTop: 2,
                           }}
                         >
-                          {formatPoiRoomLabel(poi)}
+                          {formatPoiRoomLabel(poi, buildingId, floorLabel)}
                         </Text>
                       </View>
 
@@ -246,11 +271,13 @@ const POIFilterPanel: React.FC<Props> = ({ pois, activeCategories, floorLabel, s
               </View>
             )}
           </View>
-        )}
+        </Animated.View>
       </View>
-    </View>
-  );
-};
+    );
+  },
+);
+
+POIFilterPanel.displayName = "POIFilterPanel";
 
 function getBadgeBg(cat: POICategory): string {
   switch (cat) {
@@ -333,11 +360,8 @@ function getCategoryIconColor(cat: POICategory): string {
   }
 }
 
-function formatPoiRoomLabel(poi: POI): string {
-  if (poi.category === "STAIRS" && /^S\d+$/i.test(poi.room)) {
-    return `H${poi.floor}-${poi.room.toUpperCase()}`;
-  }
-  return `${poi.floor}-${poi.room}`;
+function formatPoiRoomLabel(poi: POI, buildingId: string, floorLabel: string): string {
+  return `${buildingId}.${floorLabel}.${poi.room}`;
 }
 
 export default POIFilterPanel;
