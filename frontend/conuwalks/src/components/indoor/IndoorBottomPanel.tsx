@@ -1,12 +1,5 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  TouchableOpacity,
-  ScrollView,
-} from "react-native";
+import { View, Text, TextInput, Pressable, TouchableOpacity, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { IndoorHotspot, IndoorDestination } from "@/src/indoors/types/hotspot";
 import { bottomPanelStyles as styles } from "@/src/styles/IndoorBottomPanel";
@@ -45,15 +38,13 @@ const IndoorBottomPanel: React.FC<Props> = ({
           <View
             style={[
               styles.destinationCard,
-              isDestinationFocused
-                ? styles.destinationCardFocusedBorder
-                : styles.destinationCardDefaultBorder,
+              isDestinationFocused ? styles.destinationCardFocusedBorder : styles.destinationCardDefaultBorder,
             ]}
           >
             <View style={styles.destinationInputWrapper}>
               <TextInput
                 value={searchQuery}
-                onChangeText={(text) => {
+                onChangeText={text => {
                   setSearchQuery(text);
                   setShowSearchResults(text.trim().length > 0);
                 }}
@@ -68,9 +59,7 @@ const IndoorBottomPanel: React.FC<Props> = ({
             </View>
 
             <View style={styles.destinationRightSide}>
-              {searchQuery.length === 0 && (
-                <Text style={styles.destinationLabel}>Destination</Text>
-              )}
+              {searchQuery.length === 0 && <Text style={styles.destinationLabel}>Destination</Text>}
               <TouchableOpacity activeOpacity={0.8} style={styles.arrowButton}>
                 <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
               </TouchableOpacity>
@@ -81,7 +70,7 @@ const IndoorBottomPanel: React.FC<Props> = ({
         {showSearchResults && filteredRooms.length > 0 && (
           <View style={styles.resultsContainer}>
             <ScrollView keyboardShouldPersistTaps="always">
-              {filteredRooms.map((room) => (
+              {filteredRooms.map(room => (
                 <Pressable
                   key={room.id}
                   onPress={() =>
@@ -91,14 +80,13 @@ const IndoorBottomPanel: React.FC<Props> = ({
                       y: room.y,
                       floorLevel: room.floorLevel,
                       label: room.label,
+                      buildingId: "",
                     })
                   }
                   style={styles.resultItem}
                 >
                   <Text style={styles.resultTitle}>{room.label}</Text>
-                  <Text style={styles.resultSubtitle}>
-                    Floor {room.floorLevel}
-                  </Text>
+                  <Text style={styles.resultSubtitle}>Floor {room.floorLevel}</Text>
                 </Pressable>
               ))}
             </ScrollView>
@@ -113,11 +101,7 @@ const IndoorBottomPanel: React.FC<Props> = ({
           </TouchableOpacity>
 
           <View style={styles.rightActions}>
-            <TouchableOpacity
-              onPress={onExit}
-              activeOpacity={0.8}
-              style={styles.exitButton}
-            >
+            <TouchableOpacity onPress={onExit} activeOpacity={0.8} style={styles.exitButton}>
               <Ionicons name="close" size={18} color="#FFFFFF" />
               <Text style={styles.exitText}>Exit</Text>
             </TouchableOpacity>

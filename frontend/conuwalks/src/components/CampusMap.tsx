@@ -1324,6 +1324,10 @@ const CampusMap: React.FC<CampusMapProps> = ({
           destinationBuildingId={destinationBuildingId}
           destinationRoomId={destinationRoom}
           isNavigationActive={isNavigationActive}
+          onStartNavigation={() => {
+            setIsNavigationActive(true);
+            setShowDirections(false);
+          }}
           onSetStartRoom={(roomLabel, targetBuildingId) => {
             const bId = targetBuildingId || indoorBuildingId;
             if (!bId) return;
@@ -1345,12 +1349,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
             setShowDirections(true);
           }}
           onExit={handleIndoorExit}
-          onCancelNavigation={() => {
-            setIsNavigationActive(false);
-            setShowDirections(false);
-            clearRouteData();
-            clearDestination();
-          }}
+          onCancelNavigation={handleEndNavigation}
           onToggleOutdoorMap={handleToggleOutdoorMap}
         />
       )}

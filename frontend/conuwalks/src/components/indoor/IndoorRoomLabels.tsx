@@ -4,22 +4,21 @@ import { IndoorHotspot, IndoorDestination } from "@/src/indoors/types/hotspot";
 
 function getRoomLabelFontSize(label: string): number {
   const room = label.replace("Room ", "");
-   if (room === "273") {
-    return 7;//MB-S2
+  if (room === "273") {
+    return 7; //MB-S2
   }
   if (room === "275") {
-    return 7;//MB-S2
+    return 7; //MB-S2
   }
   if (room === "279") {
-    return 7;//MB-S2
+    return 7; //MB-S2
   }
   if (room === "428") {
-    return 7;//MB-S2
+    return 7; //MB-S2
   }
 
-
   if (room === "106.1") {
-    return 7;//VL-1
+    return 7; //VL-1
   }
   if (room === "202.30") {
     return 5.5; // VL-2
@@ -28,22 +27,22 @@ function getRoomLabelFontSize(label: string): number {
     return 4; // VL-2
   }
   if (["101.07", "101.06", "101.03", "101.04"].includes(room)) {
-    return 6;//VL-1
+    return 6; //VL-1
   }
   if (["927.01", "927.02", "927.03"].includes(room)) {
-    return 6;//HALL-9
+    return 6; //HALL-9
   }
   if (["925.01", "925.02", "925.03"].includes(room)) {
-    return 5.5;//HALL- 9
+    return 5.5; //HALL- 9
   }
   if (room === "122.1") {
-    return 8; // VL-1 
+    return 8; // VL-1
   }
   if (room === "102.3") {
-    return 7; // VL-1 
-  } 
+    return 7; // VL-1
+  }
   if (room === "928" || room === "932") {
-    return 7;//HALL-9
+    return 7; //HALL-9
   }
   if (room === "832.06") {
     return 10;
@@ -63,23 +62,23 @@ function getRoomLabelFontSize(label: string): number {
   }
   return 8;
 }
-//rooms positions 
+//rooms positions
 function getRoomLabelOffsetX(label: string): number {
   const room = label.replace("Room ", "");
-   if (room === "273") {
-    return 7; // MB-S2, 
+  if (room === "273") {
+    return 7; // MB-S2,
   }
   if (room === "275") {
-    return 7; // MB-S2, 
+    return 7; // MB-S2,
   }
   if (room === "279") {
-    return 7; // MB-S2, 
+    return 7; // MB-S2,
   }
   if (room === "428") {
-    return 2; // MB-S2, 
+    return 2; // MB-S2,
   }
   if (room === "202.30") {
-    return 2; // VL-2, 
+    return 2; // VL-2,
   }
   if (room === "203.30") {
     return 6; // VL-2
@@ -91,44 +90,44 @@ function getRoomLabelOffsetX(label: string): number {
     return 4; // VL-2
   }
   if (room === "197.1") {
-    return 4;//VL-1
+    return 4; //VL-1
   }
   if (room === "120") {
-    return 6;//VL-1
+    return 6; //VL-1
   }
   if (room === "140") {
     return 10; //VL-1
   }
   if (["101.07", "101.06", "101.03", "101.04"].includes(room)) {
-    return 4;//VL-1
+    return 4; //VL-1
   }
   if (["927.01", "927.02", "927.03"].includes(room)) {
-    return 8;//HALL-9
+    return 8; //HALL-9
   }
   if (["925.01", "925.03"].includes(room)) {
-    return 10;//HALL -9
+    return 10; //HALL -9
   }
-   if (room === "928") {
-    return 10; 
+  if (room === "928") {
+    return 10;
   }
   if (room === "931") {
-    return 10; 
+    return 10;
   }
-  
+
   if (room === "124") {
-    return 10; //VL-1 
+    return 10; //VL-1
   }
   if (room === "122.1") {
-    return 5; // VL-1 
+    return 5; // VL-1
   }
   if (room === "102") {
-    return 5; // VL-1 
+    return 5; // VL-1
   }
   if (room === "102.2") {
-    return 4; // VL-1 
+    return 4; // VL-1
   }
   if (room === "102.3") {
-    return 2; // VL-1 
+    return 2; // VL-1
   }
   //floor 9 rooms positions
   if (room === "928" || room === "932") {
@@ -159,7 +158,7 @@ function getRoomLabelOffsetY(label: string): number {
     return -3;
   }
   if (room === "931") {
-    return 10;//HALL  -9
+    return 10; //HALL  -9
   }
   return 0;
 }
@@ -171,55 +170,37 @@ interface Props {
   offsetX: number;
   offsetY: number;
   scale: number;
-  onSelectDestination: (item: IndoorDestination) => void;
+  onSelectDestination: (item: IndoorHotspot) => void;
 }
 
-const IndoorRoomLabels: React.FC<Props> = ({
-  hotspots,
-  currentLevel,
-  destination,
-  offsetX,
-  offsetY,
-  scale,
-  onSelectDestination,
-}) => {
+const IndoorRoomLabels: React.FC<Props> = ({ hotspots, currentLevel, destination, offsetX, offsetY, scale, onSelectDestination }) => {
   return (
     <>
       {hotspots
-        .filter((spot) => spot.floorLevel === currentLevel)
-        .map((spot) => {
+        .filter(spot => spot.floorLevel === currentLevel)
+        .map(spot => {
           const isSelected = destination?.id === spot.id;
 
           return (
             <Pressable
               key={spot.id}
-              onPress={() =>
-                onSelectDestination({
-                  id: spot.id,
-                  x: spot.x,
-                  y: spot.y,
-                  floorLevel: spot.floorLevel,
-                  label: spot.label,
-                })
-              }
+              onPress={() => onSelectDestination(spot)}
               style={{
                 position: "absolute",
-                left:
-                  (() => {
-                    const room = spot.label.replace("Room ", "");
-                    if (/^961\.(1[9]|2[0-9]|3[0-3])$/.test(room)) {
-                      return offsetX + spot.x * scale - 16 + getRoomLabelOffsetX(spot.label) + 4;
-                    }
-                    return offsetX + spot.x * scale - 16 + getRoomLabelOffsetX(spot.label);
-                  })(),
-                top:
-                  (() => {
-                    const room = spot.label.replace("Room ", "");
-                    if (/^961\.(1[9]|2[0-9]|3[0-3])$/.test(room)) {
-                      return offsetY + spot.y * scale - 8 + getRoomLabelOffsetY(spot.label) + 8;
-                    }
-                    return offsetY + spot.y * scale - 8 + getRoomLabelOffsetY(spot.label);
-                  })(),
+                left: (() => {
+                  const room = spot.label.replace("Room ", "");
+                  if (/^961\.(1[9]|2[0-9]|3[0-3])$/.test(room)) {
+                    return offsetX + spot.x * scale - 16 + getRoomLabelOffsetX(spot.label) + 4;
+                  }
+                  return offsetX + spot.x * scale - 16 + getRoomLabelOffsetX(spot.label);
+                })(),
+                top: (() => {
+                  const room = spot.label.replace("Room ", "");
+                  if (/^961\.(1[9]|2[0-9]|3[0-3])$/.test(room)) {
+                    return offsetY + spot.y * scale - 8 + getRoomLabelOffsetY(spot.label) + 8;
+                  }
+                  return offsetY + spot.y * scale - 8 + getRoomLabelOffsetY(spot.label);
+                })(),
                 paddingHorizontal: 4,
                 paddingVertical: 2,
               }}

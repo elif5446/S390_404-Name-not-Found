@@ -7,6 +7,7 @@ export type IndoorHotspot = {
 };
 
 export type IndoorDestination = {
+  buildingId: string;
   id: string;
   x: number;
   y: number;

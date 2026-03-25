@@ -1,12 +1,10 @@
 import React, { useEffect, useState, useRef, useMemo, useCallback } from "react";
-import { View, Text, Animated, useWindowDimensions, TouchableOpacity, LayoutChangeEvent } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { View, Text, Animated, useWindowDimensions } from "react-native";
 import { ReactNativeZoomableView } from "@openspacelabs/react-native-zoomable-view";
-import { Ionicons } from "@expo/vector-icons";
 
 // Services & Types
 import { IndoorMapService } from "@/src/indoors/services/IndoorMapService";
-import { BuildingIndoorConfig } from "@/src/indoors/types/FloorPlans";
+import { BuildingIndoorConfig, FloorData } from "@/src/indoors/types/FloorPlans";
 import { POI, POICategory } from "@/src/types/poi";
 import { getPOIsForFloor, getCategoriesForFloor } from "@/src/data/poiData";
 import { Route } from "@/src/indoors/types/Routes";
@@ -15,12 +13,14 @@ import { IndoorHotspot, IndoorDestination } from "@/src/indoors/types/hotspot";
 import { navConfigRegistry } from "@/src/indoors/data/navConfigRegistry";
 
 // Components & Metadata
+import IndoorMapHeader from "./IndoorMapHeader";
+import PulsingUserMarker from "./PulsingUserMarker";
 import POIBadge, { ICON_POSITION_OVERRIDES } from "./POIBadge";
 import POIFilterPanel from "./POIFilterPanel";
 import IndoorTopPanel, { IndoorSearchResult } from "./IndoorTopPanel";
 import IndoorRouteOverlay from "./IndoorRouteOverlay";
 import IndoorPointMarker from "./IndoorPointMarker";
-import IndoorDirectionsPopup from "./IndoorDirectionsPopup";
+import IndoorDirectionsPopup, { IndoorDirectionsPopupHandle } from "./IndoorDirectionsPopup";
 import MapContent from "./IndoorMap";
 import IndoorRoomLabels from "./IndoorRoomLabels";
 import { SGWBuildingMetadata } from "@/src/data/metadata/SGW.BuildingMetaData";
@@ -44,19 +44,11 @@ interface Props {
   onExit: () => void;
   onCancelNavigation?: () => void;
   onToggleOutdoorMap: () => void;
+  onStartNavigation?: () => void;
 }
 
 // helper
-const calculateGeographicHeight = (
-  bounds:
-    | {
-        northEast: { latitude: number; longitude: number };
-        southWest: { latitude: number; longitude: number };
-      }
-    | undefined,
-  screenWidth: number,
-  fallbackHeight: number,
-): number => {
+const calculateGeographicHeight = (bounds: any, screenWidth: number, fallbackHeight: number): number => {
   if (!bounds) return fallbackHeight;
   const latDiff = Math.abs(bounds.northEast.latitude - bounds.southWest.latitude);
   const lonDiff = Math.abs(bounds.northEast.longitude - bounds.southWest.longitude);
@@ -68,6 +60,112 @@ const calculateGeographicHeight = (
   const calculatedHeight = screenWidth / geographicRatio;
   return Number.isFinite(calculatedHeight) ? calculatedHeight : fallbackHeight;
 };
+
+// Hook for Map Scaling and Layout Math
+function useMapLayout(activeFloor: FloorData | undefined, width: number, height: number) {
+  const MAP_SECTION_MAX_HEIGHT = height * 0.5;
+  const floorSvgWidth = (activeFloor as any)?.width ?? FALLBACK_SVG_SIZE;
+  const floorSvgHeight = (activeFloor as any)?.height ?? FALLBACK_SVG_SIZE;
+
+  const contentHeight = useMemo(
+    () => calculateGeographicHeight(activeFloor?.bounds, width, MAP_SECTION_MAX_HEIGHT),
+    [activeFloor, width, MAP_SECTION_MAX_HEIGHT],
+  );
+
+  const scale = useMemo(
+    () => Math.min(width / floorSvgWidth, contentHeight / floorSvgHeight),
+    [width, contentHeight, floorSvgWidth, floorSvgHeight],
+  );
+
+  const offsetX = useMemo(() => (width - floorSvgWidth * scale) / 2, [width, scale, floorSvgWidth]);
+  const offsetY = useMemo(() => (contentHeight - floorSvgHeight * scale) / 2, [contentHeight, scale, floorSvgHeight]);
+
+  return {
+    floorSvgWidth,
+    floorSvgHeight,
+    contentHeight,
+    scale,
+    offsetX,
+    offsetY,
+    panBufferX: width * 2,
+    panBufferY: Math.max(contentHeight * 2, height * 2),
+  };
+}
+
+// Hook for Search & Filtering Logic
+function useIndoorSearch(
+  searchQuery: string,
+  buildingData: BuildingIndoorConfig,
+  currentLevel: number,
+  hotspots: IndoorHotspot[],
+  nonRoomPOIs: POI[],
+  layout: any,
+) {
+  return useMemo<IndoorSearchResult[]>(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return [];
+
+    const roomResults: IndoorSearchResult[] = hotspots.map(spot => ({
+      type: "room",
+      id: spot.id,
+      label: spot.label,
+      x: spot.x,
+      y: spot.y,
+      floorLevel: spot.floorLevel,
+      buildingId: buildingData.id,
+    }));
+
+    const poiResults: IndoorSearchResult[] = nonRoomPOIs.map(poi => ({
+      type: "poi",
+      id: poi.id,
+      label: `${poi.description} (Room ${poi.room})`,
+      room: poi.room,
+      floorLevel: currentLevel,
+      x: Math.round(poi.mapPosition.x * layout.floorSvgWidth),
+      y: Math.round(poi.mapPosition.y * layout.floorSvgHeight),
+      buildingId: buildingData.id,
+    }));
+
+    if (!query) {
+      return [...roomResults, ...poiResults];
+    }
+
+    const filteredLocals = [...roomResults, ...poiResults].filter(
+      item => item.label.toLowerCase().includes(query) || item.id.toLowerCase().includes(query),
+    );
+
+    // Cross-Building Results omitted for brevity in this hook, but logic remains the same as your original
+    const externalResults: IndoorSearchResult[] = [];
+    const allBuildings = { ...SGWBuildingMetadata, ...LoyolaBuildingMetadata };
+
+    Object.entries(allBuildings).forEach(([bId, meta]) => {
+      if (bId !== buildingData.id && (meta.name.toLowerCase().includes(query) || bId.toLowerCase().includes(query))) {
+        externalResults.push({ type: "building", id: bId, label: meta.name, buildingId: bId });
+      }
+    });
+
+    Object.entries(navConfigRegistry).forEach(([bId, config]) => {
+      if (bId === buildingData.id) return;
+      config.floors.forEach(floor => {
+        floor.nodes.forEach(node => {
+          if (node.type === "room") {
+            const nodeLabel = node.label || node.id;
+            if (nodeLabel.toLowerCase().includes(query) || node.id.toLowerCase().includes(query)) {
+              externalResults.push({
+                type: "external_room",
+                id: node.id,
+                label: `${bId} ${nodeLabel}`,
+                buildingId: bId,
+              });
+            }
+          }
+        });
+      });
+    });
+
+    return [...filteredLocals, ...externalResults].slice(0, 40);
+  }, [searchQuery, hotspots, nonRoomPOIs, currentLevel, layout.floorSvgWidth, layout.floorSvgHeight, buildingData.id]);
+}
 
 const determineInitialFloor = (
   buildingData: BuildingIndoorConfig,
@@ -163,11 +261,22 @@ function useStartSync(
     const cleanInput = startRoomId.toLowerCase().replace(/[^a-z0-9]/g, "");
     let targetNode: IndoorDestination | undefined;
 
-    targetNode = hotspots.find(spot => {
+    const foundSpot = hotspots.find(spot => {
       const spotId = spot.id.toLowerCase().replace(/[^a-z0-9]/g, "");
       const spotLabel = (spot.label || "").toLowerCase().replace(/[^a-z0-9]/g, "");
       return spotId === cleanInput || spotLabel === cleanInput || spotId.endsWith(cleanInput) || spotLabel.endsWith(cleanInput);
     });
+
+    if (foundSpot) {
+      targetNode = {
+        id: foundSpot.id,
+        x: foundSpot.x,
+        y: foundSpot.y,
+        floorLevel: foundSpot.floorLevel,
+        label: foundSpot.label,
+        buildingId: buildingData.id,
+      };
+    }
 
     // if not in hotspots, search ALL nodes
     if (!targetNode) {
@@ -189,6 +298,7 @@ function useStartSync(
               y: foundNode.y,
               floorLevel: visualFloor ? visualFloor.level : buildingData.defaultFloor,
               label: foundNode.label ?? foundNode.id,
+              buildingId: buildingData.id,
             };
             break;
           }
@@ -210,6 +320,7 @@ function useStartSync(
             y: Math.round(foundPoi.mapPosition.y * fallbackHeight),
             floorLevel: floor.level,
             label: foundPoi.label,
+            buildingId: buildingData.id,
           };
           break;
         }
@@ -252,11 +363,22 @@ function useDestinationSync(
     const cleanInput = destinationRoomId.toLowerCase().replace(/[^a-z0-9]/g, "");
     let targetNode: IndoorDestination | undefined;
 
-    targetNode = hotspots.find(spot => {
+    const foundSpot = hotspots.find(spot => {
       const spotId = spot.id.toLowerCase().replace(/[^a-z0-9]/g, "");
       const spotLabel = (spot.label || "").toLowerCase().replace(/[^a-z0-9]/g, "");
       return spotId === cleanInput || spotLabel === cleanInput || spotId.endsWith(cleanInput) || spotLabel.endsWith(cleanInput);
     });
+
+    if (foundSpot) {
+      targetNode = {
+        id: foundSpot.id,
+        x: foundSpot.x,
+        y: foundSpot.y,
+        floorLevel: foundSpot.floorLevel,
+        label: foundSpot.label,
+        buildingId: buildingData.id,
+      };
+    }
 
     // if not in hotspots, search ALL nodes
     if (!targetNode) {
@@ -278,6 +400,7 @@ function useDestinationSync(
               y: foundNode.y,
               floorLevel: visualFloor ? visualFloor.level : buildingData.defaultFloor,
               label: foundNode.label ?? foundNode.id,
+              buildingId: buildingData.id,
             };
             break;
           }
@@ -299,6 +422,7 @@ function useDestinationSync(
             y: Math.round(foundPoi.mapPosition.y * fallbackHeight),
             floorLevel: floor.level,
             label: foundPoi.label,
+            buildingId: buildingData.id,
           };
           break;
         }
@@ -308,8 +432,7 @@ function useDestinationSync(
     if (targetNode) {
       setDestination(targetNode);
       lastSyncedDestRef.current = destinationRoomId;
-      const targetLevel = isNavigationActive ? buildingData.floors.find(f => f.id === baseStartNode.floorId)?.level : targetNode.floorLevel;
-
+      const targetLevel = targetNode.floorLevel;
       if (targetLevel !== undefined && currentLevel !== targetLevel) {
         setTimeout(() => handleFloorChange(targetLevel), 100);
       }
@@ -343,6 +466,7 @@ const IndoorMapOverlay: React.FC<Props> = ({
   onSetStartRoom,
   onExit,
   onCancelNavigation,
+  onStartNavigation,
 }) => {
   const { width, height } = useWindowDimensions();
   const MAP_SECTION_MAX_HEIGHT = height * 0.5;
@@ -352,8 +476,8 @@ const IndoorMapOverlay: React.FC<Props> = ({
   const zoomRef = useRef<ReactNativeZoomableView>(null);
   const isMounted = useRef(true);
   const isProgrammaticDismissRef = useRef(false);
-  const [headerHeight, setHeaderHeight] = useState(72);
-  const initialRouteComputed = useRef(false);
+  const popupRef = useRef<IndoorDirectionsPopupHandle>(null);
+  const [activeStepIndex, setActiveStepIndex] = useState(0);
 
   // Core Service Memoization
   const indoorMapService = useMemo(() => {
@@ -392,7 +516,7 @@ const IndoorMapOverlay: React.FC<Props> = ({
   const [searchQuery, setSearchQuery] = useState(destinationPointLabel);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [activeField, setActiveField] = useState<"start" | "destination">("destination");
-  const [showDirections, setShowDirections] = useState(false);
+  //   const [showDirections, setShowDirections] = useState(false);
   const [routeTargetMode, setRouteTargetMode] = useState<"SOURCE" | "DESTINATION">("DESTINATION");
   const [sourcePOI, setSourcePOI] = useState<POI | null>(null);
   const [destinationPOI, setDestinationPOI] = useState<POI | null>(null);
@@ -429,12 +553,12 @@ const IndoorMapOverlay: React.FC<Props> = ({
   const panBufferY = Math.max(contentHeight * 2, height * 2);
 
   useEffect(() => {
-    getWheelchairAccessibilityPreference().then(setAvoidStairs);
-  }, []);
-
-  useEffect(() => {
     setSearchQuery(destinationPointLabel);
   }, [destinationPointLabel]);
+
+  const handleMapInteraction = useCallback(() => {
+    popupRef.current?.minimize();
+  }, []);
 
   useEffect(() => {
     setActiveCategories(new Set(getCategoriesForFloor(buildingData.id, currentLevel).filter(c => c !== "ROOM")));
@@ -466,6 +590,8 @@ const IndoorMapOverlay: React.FC<Props> = ({
     [currentLevel, fadeAnim],
   );
 
+  const layout = useMapLayout(activeFloor, width, height);
+
   const { destination, setDestination } = useDestinationSync(
     buildingData,
     destinationBuildingId,
@@ -477,9 +603,12 @@ const IndoorMapOverlay: React.FC<Props> = ({
     handleFloorChange,
   );
 
+  const combinedSearchResults = useIndoorSearch(searchQuery, buildingData, currentLevel, hotspots, nonRoomPOIs, layout);
+
   // UI lifecycle
   useEffect(() => {
     isMounted.current = true;
+    getWheelchairAccessibilityPreference().then(setAvoidStairs);
     return () => {
       isMounted.current = false;
     };
@@ -511,7 +640,6 @@ const IndoorMapOverlay: React.FC<Props> = ({
         return node.floorId === floorId && nodeLabel === normalizedLabel;
       });
 
-      // try fuzzy match
       if (!matchedNode) {
         matchedNode = graph.getAllNodes().find(node => {
           const nodeLabel = (node.label ?? node.id).toLowerCase();
@@ -523,13 +651,12 @@ const IndoorMapOverlay: React.FC<Props> = ({
     [indoorMapService, buildingData.id],
   );
 
-  // action handlers
-  const handleDirectionsPress = useCallback(async () => {
+  // Auto-Routing Calculator
+  const calculateRoute = useCallback(async () => {
     try {
       const navConfig = navConfigRegistry[buildingData.id];
       if (!navConfig) {
         setRoute(null);
-        setShowDirections(false);
         return;
       }
 
@@ -550,25 +677,19 @@ const IndoorMapOverlay: React.FC<Props> = ({
       if (destination && destinationBuildingId === buildingData.id) {
         endNodeId = resolveDestinationNodeId(destination);
       } else if (destinationBuildingId && destinationBuildingId !== buildingData.id) {
-        // destination is outside this building - Route to the exit
         endNodeId = indoorMapService.getEntranceNode()?.id || null;
       }
 
       if (!startNodeId || !endNodeId) {
-        console.warn("Could not resolve start or destination node");
         setRoute(null);
-        setShowDirections(false);
         return;
       }
 
       const nextRoute = await indoorMapService.getRoute(startNodeId, endNodeId, avoidStairs);
       setRoute(nextRoute);
-      setShowSearchResults(false);
-      setShowDirections(true);
     } catch (error) {
       console.warn("Failed to compute indoor route:", error);
       setRoute(null);
-      setShowDirections(false);
     }
   }, [
     buildingData.id,
@@ -583,40 +704,14 @@ const IndoorMapOverlay: React.FC<Props> = ({
     avoidStairs,
   ]);
 
+  // Immediately draw route when destination, start, or stairs preference changes
   useEffect(() => {
-    if (!baseStartNode || initialRouteComputed.current) return;
-
-    const isStartInBuilding = startBuildingId === buildingData.id && startRoomId;
-    const isDestInBuilding = destinationBuildingId === buildingData.id && destinationRoomId;
-    const isDestOutside = destinationBuildingId && destinationBuildingId !== buildingData.id;
-
-    if (isDestInBuilding) {
-      if (destination) {
-        handleDirectionsPress();
-        initialRouteComputed.current = true;
-      }
-    } else if (isStartInBuilding && isDestOutside) {
-      handleDirectionsPress();
-      initialRouteComputed.current = true;
+    if (destination || (destinationBuildingId && destinationBuildingId !== buildingData.id)) {
+      calculateRoute();
+    } else {
+      setRoute(null);
     }
-  }, [
-    destination,
-    baseStartNode,
-    startBuildingId,
-    startRoomId,
-    destinationBuildingId,
-    destinationRoomId,
-    buildingData.id,
-    handleDirectionsPress,
-  ]);
-
-  // Re-compute route automatically if the user changes the preference
-  // while the directions panel is already open
-  useEffect(() => {
-    if (showDirections && destination) {
-      handleDirectionsPress();
-    }
-  }, [avoidStairs, destination, handleDirectionsPress, showDirections]);
+  }, [destination, startLocation, calculateRoute, destinationBuildingId, buildingData.id, avoidStairs]);
 
   const handleClearDestination = useCallback(() => {
     if (activeField === "start") setStartLocation(null);
@@ -624,7 +719,6 @@ const IndoorMapOverlay: React.FC<Props> = ({
 
     setSearchQuery("");
     setShowSearchResults(false);
-    setShowDirections(false);
     setRoute(null);
   }, [activeField, setDestination, setStartLocation]);
 
@@ -641,84 +735,11 @@ const IndoorMapOverlay: React.FC<Props> = ({
       setCurrentLevel(item.floorLevel);
       setSearchQuery(item.label ?? item.id);
       setShowSearchResults(false);
-      setShowDirections(false);
-      setRoute(null);
+      //   setShowDirections(false);
+      //   setRoute(null);
     },
     [setStartLocation, onSetStartRoom, setDestination, onSetDestinationRoom],
   );
-
-  // search results
-  const combinedSearchResults = useMemo<IndoorSearchResult[]>(() => {
-    const query = searchQuery.trim().toLowerCase();
-    if (!query) return [];
-
-    const roomResults: IndoorSearchResult[] = hotspots.map(spot => ({
-      type: "room",
-      id: spot.id,
-      label: spot.label,
-      x: spot.x,
-      y: spot.y,
-      floorLevel: spot.floorLevel,
-      buildingId: buildingData.id,
-    }));
-
-    const poiResults: IndoorSearchResult[] = nonRoomPOIs.map(poi => ({
-      type: "poi",
-      id: poi.id,
-      label: `${poi.description} (Room ${poi.room})`,
-      room: poi.room,
-      floorLevel: currentLevel,
-      x: Math.round(poi.mapPosition.x * floorSvgWidth),
-      y: Math.round(poi.mapPosition.y * floorSvgHeight),
-      buildingId: buildingData.id,
-    }));
-
-    if (!query) {
-      return [...roomResults, ...poiResults];
-    }
-
-    const filteredLocals = [...roomResults, ...poiResults].filter(
-      item => item.label.toLowerCase().includes(query) || item.id.toLowerCase().includes(query),
-    );
-
-    // Cross-Building Results (External)
-    const externalResults: IndoorSearchResult[] = [];
-    const allBuildings = { ...SGWBuildingMetadata, ...LoyolaBuildingMetadata };
-
-    // Search External Buildings
-    Object.entries(allBuildings).forEach(([bId, meta]) => {
-      if (bId !== buildingData.id && (meta.name.toLowerCase().includes(query) || bId.toLowerCase().includes(query))) {
-        externalResults.push({
-          type: "building",
-          id: bId,
-          label: meta.name,
-          buildingId: bId,
-        });
-      }
-    });
-
-    // Search External Rooms
-    Object.entries(navConfigRegistry).forEach(([bId, config]) => {
-      if (bId === buildingData.id) return;
-      config.floors.forEach(floor => {
-        floor.nodes.forEach(node => {
-          if (node.type === "room") {
-            const nodeLabel = node.label || node.id;
-            if (nodeLabel.toLowerCase().includes(query) || node.id.toLowerCase().includes(query)) {
-              externalResults.push({
-                type: "external_room",
-                id: node.id,
-                label: `${bId} ${nodeLabel}`,
-                buildingId: bId,
-              });
-            }
-          }
-        });
-      });
-    });
-
-    return [...filteredLocals, ...externalResults].slice(0, 40); // Slice to protect UI performance
-  }, [searchQuery, hotspots, nonRoomPOIs, currentLevel, floorSvgWidth, floorSvgHeight, buildingData.id]);
 
   const handleSelectSearchResult = useCallback(
     (item: IndoorSearchResult) => {
@@ -731,6 +752,7 @@ const IndoorMapOverlay: React.FC<Props> = ({
           floorLevel: -999,
           x: 0,
           y: 0,
+          buildingId: item.buildingId || item.id,
         };
 
         if (isStart) {
@@ -748,7 +770,10 @@ const IndoorMapOverlay: React.FC<Props> = ({
       }
 
       if (item.type === "room") {
-        handleSetLocation({ id: item.id, x: item.x!, y: item.y!, floorLevel: item.floorLevel!, label: item.label }, isStart);
+        handleSetLocation(
+          { id: item.id, x: item.x!, y: item.y!, floorLevel: item.floorLevel!, label: item.label, buildingId: buildingData.id },
+          isStart,
+        );
         return;
       }
 
@@ -756,7 +781,14 @@ const IndoorMapOverlay: React.FC<Props> = ({
       const matchingRoom = hotspots.find(spot => spot.label.replace("Room ", "") === item.room);
       if (matchingRoom) {
         handleSetLocation(
-          { id: matchingRoom.id, x: matchingRoom.x, y: matchingRoom.y, floorLevel: matchingRoom.floorLevel, label: matchingRoom.label },
+          {
+            id: matchingRoom.id,
+            x: matchingRoom.x,
+            y: matchingRoom.y,
+            floorLevel: matchingRoom.floorLevel,
+            label: matchingRoom.label,
+            buildingId: buildingData.id,
+          },
           isStart,
         );
       } else if (item.x !== undefined && item.y !== undefined) {
@@ -768,6 +800,7 @@ const IndoorMapOverlay: React.FC<Props> = ({
             y: item.y,
             floorLevel: item.floorLevel!,
             label: item.label,
+            buildingId: buildingData.id,
           },
           isStart,
         );
@@ -800,7 +833,14 @@ const IndoorMapOverlay: React.FC<Props> = ({
       const matchingRoom = hotspots.find(spot => spot.label.replace("Room ", "") === poi.room);
       if (matchingRoom) {
         handleSetLocation(
-          { id: matchingRoom.id, x: matchingRoom.x, y: matchingRoom.y, floorLevel: matchingRoom.floorLevel, label: matchingRoom.label },
+          {
+            id: matchingRoom.id,
+            x: matchingRoom.x,
+            y: matchingRoom.y,
+            floorLevel: matchingRoom.floorLevel,
+            label: matchingRoom.label,
+            buildingId: buildingData.id,
+          },
           isStart,
         );
       } else if (activeFloor) {
@@ -816,12 +856,13 @@ const IndoorMapOverlay: React.FC<Props> = ({
             y: yPos,
             floorLevel: currentLevel,
             label: `${poi.description} (Room ${poi.room})`,
+            buildingId: buildingData.id,
           },
           isStart,
         );
       }
     },
-    [activeField, hotspots, currentLevel, activeFloor, indoorMapService, handleSetLocation, floorSvgWidth, floorSvgHeight],
+    [activeField, hotspots, activeFloor, handleSetLocation, buildingData.id, floorSvgWidth, floorSvgHeight, indoorMapService, currentLevel],
   );
 
   const handleToggleCategory = useCallback((cat: POICategory) => {
@@ -835,6 +876,37 @@ const IndoorMapOverlay: React.FC<Props> = ({
 
   const routeSteps = useMemo(() => (route ? indoorMapService.getRouteInstructions(route).steps : []), [route, indoorMapService]);
 
+  useEffect(() => {
+    if (route) setActiveStepIndex(0);
+  }, [route]);
+
+  const lastAutoSwitchStepRef = useRef<number | null>(null);
+  // auto-switch floors when the step changes
+  useEffect(() => {
+    if (lastAutoSwitchStepRef.current !== activeStepIndex) {
+      lastAutoSwitchStepRef.current = activeStepIndex;
+
+      if (routeSteps.length > 0 && routeSteps[activeStepIndex]) {
+        const activeNode = routeSteps[activeStepIndex].node;
+        const stepFloorId = activeNode.floorId;
+
+        const floorLevelRaw = stepFloorId.split("_").pop();
+        const floorLevel = parseInt(floorLevelRaw || "1", 10);
+
+        if (!isNaN(floorLevel)) {
+          handleFloorChange(floorLevel);
+        }
+      }
+    }
+  }, [activeStepIndex, handleFloorChange, routeSteps]);
+
+  const activeLocationNode = useMemo(() => {
+    if (isNavigationActive && routeSteps.length > 0 && routeSteps[activeStepIndex]) {
+      return routeSteps[activeStepIndex].node;
+    }
+    return baseStartNode;
+  }, [isNavigationActive, routeSteps, activeStepIndex, baseStartNode]);
+
   if (!activeFloor) {
     return (
       <View style={styles.container}>
@@ -845,53 +917,23 @@ const IndoorMapOverlay: React.FC<Props> = ({
 
   return (
     <View style={[styles.container]} pointerEvents="auto">
-      <SafeAreaView
-        style={styles.headerWrapper}
-        edges={["top"]}
-        onLayout={(event: LayoutChangeEvent) => {
-          const nextHeight = Math.ceil(event.nativeEvent.layout.height);
-          if (nextHeight > 0 && nextHeight !== headerHeight) {
-            setHeaderHeight(nextHeight);
-          }
-        }}
-      >
-        <View style={styles.headerContent} accessible={true} accessibilityLabel={`${buildingData.name} Floor ${activeFloor.label}`}>
-          <View style={[styles.headerTitleWrap, { flexDirection: "row", alignItems: "center" }]}>
-            <TouchableOpacity
-              onPress={() => !isProgrammaticDismissRef.current && onExit()}
-              style={{ paddingHorizontal: 16, paddingVertical: 8, marginRight: 4 }}
-              accessibilityRole="button"
-              accessibilityLabel="Go back"
-            >
-              <Ionicons name="arrow-back" size={24} color="#0d0d0dff" />
-            </TouchableOpacity>
-            <Text style={styles.buildingTitle} numberOfLines={1} accessibilityRole="header">
-              {buildingData.name}
-            </Text>
-          </View>
-
-          <View style={styles.headerFloorToggleRow}>
-            {buildingData.floors.map(floor => {
-              const isActive = floor.level === currentLevel;
-              return (
-                <TouchableOpacity
-                  key={floor.level}
-                  onPress={() => handleFloorChange(floor.level)}
-                  style={isActive ? styles.headerFloorToggleActive : styles.headerFloorToggle}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: isActive }}
-                  accessibilityLabel={`Switch to floor ${floor.label}`}
-                >
-                  <Text style={isActive ? styles.headerFloorToggleTextActive : styles.headerFloorToggleText}>{floor.label}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
-      </SafeAreaView>
+      <IndoorMapHeader
+        buildingData={buildingData}
+        activeFloor={activeFloor}
+        currentLevel={currentLevel}
+        onFloorChange={handleFloorChange}
+        onExit={onExit}
+        isProgrammaticDismissRef={isProgrammaticDismissRef}
+      />
 
       <View style={[styles.mapContainer, { marginTop: 60 }]}>
-        <Animated.View style={[styles.mapCanvas, { opacity: fadeAnim }]}>
+        <Animated.View
+          style={[styles.mapCanvas, { opacity: fadeAnim }]}
+          onStartShouldSetResponderCapture={() => {
+            handleMapInteraction();
+            return false;
+          }}
+        >
           <ReactNativeZoomableView
             ref={zoomRef}
             maxZoom={3}
@@ -925,7 +967,7 @@ const IndoorMapOverlay: React.FC<Props> = ({
                   offsetX={offsetX}
                   offsetY={offsetY}
                   scale={scale}
-                  onSelectDestination={item => handleSetLocation(item, activeField === "start")}
+                  onSelectDestination={item => handleSetLocation({ ...item, buildingId: buildingData.id }, activeField === "start")}
                 />
 
                 {nonRoomPOIs
@@ -949,7 +991,7 @@ const IndoorMapOverlay: React.FC<Props> = ({
                     );
                   })}
 
-                {startLocation && !showDirections && startLocation.floorLevel === currentLevel && (
+                {startLocation && startLocation.floorLevel === currentLevel && (
                   <IndoorPointMarker
                     x={offsetX + startLocation.x * scale}
                     y={offsetY + startLocation.y * scale}
@@ -962,26 +1004,8 @@ const IndoorMapOverlay: React.FC<Props> = ({
                   <DestinationMarker x={offsetX + destination.x * scale} y={offsetY + destination.y * scale} />
                 )}
 
-                {baseStartNode && baseStartNode.floorId === activeFloor.id && (
-                  <View
-                    style={{
-                      position: "absolute",
-                      left: offsetX + baseStartNode.x * scale - 12,
-                      top: offsetY + baseStartNode.y * scale - 12,
-                      width: 24,
-                      height: 24,
-                      borderRadius: 12,
-                      backgroundColor: "#B03060BF",
-                      borderWidth: 3,
-                      borderColor: "#FFFFFF",
-                      shadowColor: "#000",
-                      shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: 0.25,
-                      shadowRadius: 3,
-                      elevation: 4,
-                      zIndex: 1005,
-                    }}
-                  />
+                {activeLocationNode && activeLocationNode.floorId === activeFloor.id && (
+                  <PulsingUserMarker x={offsetX + activeLocationNode.x * scale} y={offsetY + activeLocationNode.y * scale} />
                 )}
               </View>
             </View>
@@ -989,33 +1013,43 @@ const IndoorMapOverlay: React.FC<Props> = ({
         </Animated.View>
       </View>
 
-      <IndoorTopPanel
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        showSearchResults={showSearchResults}
-        setShowSearchResults={setShowSearchResults}
-        searchResults={combinedSearchResults}
-        onSelectResult={handleSelectSearchResult}
-        onClearDestination={handleClearDestination}
-        startLabel={startLocation?.label ?? startPointLabel}
-        destinationLabel={destination?.label ?? destinationPointLabel}
-        activeField={activeField}
-        onFocusField={field => {
-          setActiveField(field);
-          setSearchQuery("");
-          setShowSearchResults(false);
-        }}
-        onDirectionsPress={handleDirectionsPress}
-        canShowDirections={!!destination || (!!destinationBuildingId && destinationBuildingId !== buildingData.id)}
-        categories={categoriesForFloor}
-        activeCategories={activeCategories}
-        onToggleCategory={handleToggleCategory}
-      />
+      {!isNavigationActive && (
+        <IndoorTopPanel
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          showSearchResults={showSearchResults}
+          setShowSearchResults={setShowSearchResults}
+          searchResults={combinedSearchResults}
+          onSelectResult={handleSelectSearchResult}
+          onClearDestination={handleClearDestination}
+          startLabel={startLocation?.label ?? startPointLabel}
+          destinationLabel={destination?.label ?? destinationPointLabel}
+          activeField={activeField}
+          onFocusField={field => {
+            setActiveField(field);
+            setSearchQuery("");
+            setShowSearchResults(false);
+          }}
+          onStartNavigation={() => {
+            if (onStartNavigation) onStartNavigation();
+          }}
+          canStartNavigation={!!route || (!!destinationBuildingId && destinationBuildingId !== buildingData.id)}
+          categories={categoriesForFloor}
+          activeCategories={activeCategories}
+          onToggleCategory={handleToggleCategory}
+        />
+      )}
 
       <IndoorDirectionsPopup
-        visible={showDirections && routeSteps.length > 0}
+        ref={popupRef}
+        visible={!!isNavigationActive && routeSteps.length > 0}
         steps={routeSteps}
-        onClose={() => setShowDirections(false)}
+        activeStepIndex={activeStepIndex}
+        onNextStep={() => setActiveStepIndex(prev => Math.min(prev + 1, routeSteps.length - 1))}
+        onPrevStep={() => setActiveStepIndex(prev => Math.max(prev - 1, 0))}
+        onClose={() => {
+          if (onCancelNavigation) onCancelNavigation();
+        }}
       />
 
       <POIFilterPanel
