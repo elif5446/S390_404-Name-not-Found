@@ -334,9 +334,6 @@ function getCategoryIconColor(cat: POICategory): string {
 }
 
 function formatPoiRoomLabel(poi: POI): string {
-  if (poi.category === "STAIRS" && /^S\d+$/i.test(poi.room)) {
-    return `H${poi.floor}-${poi.room.toUpperCase()}`;
-  }
   return `${poi.floor}-${poi.room}`;
 }
 
