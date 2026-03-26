@@ -150,4 +150,57 @@ describe("IndoorMapService", () => {
       );
     });
   });
+
+  describe("Location Management", () => {
+    it("setUserLocation throws error if node does not exist in graph", () => {
+      mockGraphInstance.getNode.mockReturnValue(undefined);
+      
+      expect(() => service.setUserLocation("non-existent"))
+        .toThrow("Node: non-existent does not exist in the graph");
+    });
+
+    it("getRouteFromCurrentLocation throws error if user location is not set", () => {
+      expect(() => service.getRouteFromCurrentLocation("B"))
+        .toThrow("IndoorMapService: user location not set");
+    });
+
+    it("getRouteFromCurrentLocation calls pathfinder with current user location", () => {
+      const mockNode = { id: "A", floorId: "floor-1" };
+      mockGraphInstance.getNode.mockReturnValue(mockNode as any);
+      
+      service.setUserLocation("A");
+      
+      service.getRouteFromCurrentLocation("B", true);
+      
+      expect(mockPathFinderInstance.findShortestPath).toHaveBeenCalledWith(
+        "A",
+        "B",
+        true
+      );
+    });
+  });
+
+  describe("getRouteDurationSeconds", () => {
+    const mockRouteWithFloors = {
+      totalDistance: 13.5, // 13.5 meters / 1.35 mps = 10 seconds
+      nodes: [
+        { id: "1", floorId: "L1" },
+        { id: "2", floorId: "L1" },
+        { id: "3", floorId: "L2" }, // One floor change here
+      ]
+    };
+
+    it("calculates duration with walking speed and floor change penalties", () => {
+      // 13.5m / 1.35mps = 10s
+      // + 15s penalty for 1 floor change (L1 -> L2)
+      // Total = 25s
+      const duration = service.getRouteDurationSeconds(mockRouteWithFloors as any, 1);
+      expect(duration).toBe(25);
+    });
+
+    it("returns 0 if route or distance is missing", () => {
+      expect(service.getRouteDurationSeconds(null)).toBe(0);
+      expect(service.getRouteDurationSeconds({ totalDistance: 0 } as any)).toBe(0);
+    });
+  });
 });

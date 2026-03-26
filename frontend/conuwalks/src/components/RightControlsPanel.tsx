@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { View, TouchableOpacity, Platform, useColorScheme, ActivityIndicator, ViewStyle } from "react-native";
+import {
+  View,
+  TouchableOpacity,
+  Platform,
+  useColorScheme,
+  ActivityIndicator,
+  ViewStyle,
+} from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { SymbolView } from "expo-symbols";
 import { BlurView } from "expo-blur";
@@ -62,18 +69,39 @@ const RightControlsPanel: React.FC<Props> = ({
   const buttonSize = 50;
   const buttonSpacing = 12;
   const userIconSize = 50;
+  const isIOS = Platform.OS === "ios";
+  const backgroundColor = isIOS
+    ? "transparent"
+    : mode === "dark"
+      ? "#2C2C2E"
+      : "#FFFFFF";
 
-  const baseButtonStyle: ViewStyle = {
+  const style: ViewStyle = {
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: Platform.OS === "ios" ? "transparent" : mode === "dark" ? "#2C2C2E" : "#FFFFFF",
+    overflow: "hidden",
+    backgroundColor,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: Platform.OS === "ios" ? 0.18 : 0.22,
+    shadowOpacity: isIOS ? 0.18 : 0.22,
     shadowRadius: 4,
-    elevation: Platform.OS === "ios" ? 0 : 4,
+    elevation: isIOS ? 0 : 4,
     marginBottom: buttonSpacing,
   };
+
+  const locationIcon = locationLoading ? (
+    <ActivityIndicator size="small" color="#B03060" />
+  ) : isIOS ? (
+    <SymbolView
+      name="location.north.fill"
+      size={20}
+      weight="medium"
+      tintColor="#B03060"
+    />
+  ) : (
+    <MaterialIcons name="navigation" size={20} color="#B03060" />
+  );
+
   return (
     <>
       {/* Controls panel, user icon + location button + search button stacked */}
@@ -94,19 +122,19 @@ const RightControlsPanel: React.FC<Props> = ({
               <TouchableOpacity
                 onPress={() => setIsProfileExpanded(!isProfileExpanded)}
                 style={[
-                  baseButtonStyle,
+                  style,
                   {
                     width: userIconSize,
                     height: userIconSize,
                     borderRadius: userIconSize / 2,
                   },
                 ]}
-                // pointerEvents="auto"
+                pointerEvents="auto"
                 accessible={true}
                 accessibilityLabel="Open user profile"
                 accessibilityRole="button"
               >
-                <GlassBackground mode={mode} borderRadius={userIconSize / 2} />
+                <GlassBackground mode={mode} />
                 <MaterialIcons name="person" size={24} color="#B03060" />
               </TouchableOpacity>
             )}
@@ -117,7 +145,7 @@ const RightControlsPanel: React.FC<Props> = ({
                 onPress={onLocationPress}
                 activeOpacity={0.85}
                 style={[
-                  baseButtonStyle,
+                  style,
                   {
                     position: "relative",
                     width: buttonSize,
@@ -125,24 +153,23 @@ const RightControlsPanel: React.FC<Props> = ({
                     borderRadius: buttonSize / 2,
                   },
                 ]}
-                // pointerEvents="auto"
+                pointerEvents="auto"
                 accessible={true}
                 accessibilityLabel="Recenter to your location"
                 accessibilityHint="Moves the map camera back to your current location"
               >
-                <GlassBackground mode={mode} borderRadius={userIconSize / 2} />
-                {locationLoading ? (
-                  <ActivityIndicator size="small" color="#B03060" />
-                ) : Platform.OS === "ios" ? (
-                  <SymbolView name="location.north.fill" size={20} weight="medium" tintColor="#B03060" />
-                ) : (
-                  <MaterialIcons name="navigation" size={20} color="#B03060" />
-                )}
+                <GlassBackground mode={mode} />
+                {locationIcon}
               </TouchableOpacity>
             )}
             {/* Search Button */}
             {!isNavigation && (
-              <BuildingSearchButton onPress={handleOpenBuildingSearch} buttonSize={buttonSize} mode={mode} buttonSpacing={buttonSpacing} />
+              <BuildingSearchButton
+                onPress={handleOpenBuildingSearch}
+                buttonSize={buttonSize}
+                mode={mode}
+                buttonSpacing={buttonSpacing}
+              />
             )}
           </>
         )}
