@@ -13,24 +13,16 @@ interface MapContentProps {
 const MapContent = React.memo(({ floor, width, height }: MapContentProps) => {
   // handle SVG Components
   if (floor.type === "svg" && floor.image) {
-    const isValidComponent =
-      typeof floor.image === "function" ||
-      (typeof floor.image === "object" && floor.image !== null);
+    const isValidComponent = typeof floor.image === "function" || (typeof floor.image === "object" && floor.image !== null);
     if (isValidComponent) {
       const SvgComponent = floor.image as React.ElementType;
       return (
         <View style={{ width, height, position: "relative" }}>
-          <SvgComponent
-            width={width}
-            height={height}
-            preserveAspectRatio="xMidYMid meet"
-          />
+          <SvgComponent width={width} height={height} preserveAspectRatio="xMidYMid meet" />
         </View>
       );
     } else {
-      console.warn(
-        `[IndoorMap] Floor ${floor.level} has type 'svg' but 'image' is not a valid component. Received: ${typeof floor.image}`,
-      );
+      console.warn(`[IndoorMap] Floor ${floor.level} has type 'svg' but 'image' is not a valid component. Received: ${typeof floor.image}`);
     }
   }
 
@@ -38,22 +30,14 @@ const MapContent = React.memo(({ floor, width, height }: MapContentProps) => {
   if (floor.type === "png" && floor.image) {
     return (
       <View style={{ width, height, position: "relative" }}>
-        <Image
-          source={floor.image as ImageSourcePropType}
-          style={[styles.floorImage, { width, height }]}
-          resizeMode="contain"
-        />
+        <Image source={floor.image as ImageSourcePropType} style={[styles.floorImage, { width, height }]} resizeMode="contain" />
       </View>
     );
   }
 
   return (
     <View style={[styles.errorBox, { width, height }]}>
-      <Ionicons
-        name="alert-circle-outline"
-        size={32}
-        color={styles.errorText.color}
-      />
+      <Ionicons name="alert-circle-outline" size={32} color={styles.errorText.color} />
       <Text style={styles.errorText}>Map Image Unavailable</Text>
     </View>
   );

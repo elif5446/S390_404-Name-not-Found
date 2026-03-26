@@ -2,13 +2,7 @@ import CampusLabels from "@/src/components/campusLabels";
 import RoutePolyline from "@/src/components/RoutePolyline";
 import { CampusConfig } from "@/src/data/campus/campusConfig";
 import { UserInfo } from "@/src/utils/tokenStorage";
-import React, {
-  useState,
-  useRef,
-  useMemo,
-  useCallback,
-  useEffect,
-} from "react";
+import React, { useState, useRef, useMemo, useCallback, useEffect } from "react";
 import {
   Modal,
   TextInput,
@@ -22,31 +16,19 @@ import {
   TouchableOpacity,
   useColorScheme,
 } from "react-native";
-import MapView, {
-  LatLng,
-  Region,
-  Marker,
-  PROVIDER_GOOGLE,
-  Polygon,
-  LongPressEvent,
-} from "react-native-maps";
+import MapView, { LatLng, Region, Marker, PROVIDER_GOOGLE, Polygon, LongPressEvent } from "react-native-maps";
 
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { SymbolView, SFSymbol } from "expo-symbols";
 import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import AdditionalInfoPopup, {
-  AdditionalInfoPopupHandle,
-} from "./AdditionalInfoPopup";
+import AdditionalInfoPopup, { AdditionalInfoPopupHandle } from "./AdditionalInfoPopup";
 import DestinationPopup, { DestinationPopupHandle } from "./DestinationPopup";
 import RightControlsPanel from "./RightControlsPanel";
 
 import { useUserLocation } from "@/src/hooks/useUserLocation";
 import { useDirections } from "@/src/context/DirectionsContext";
-import {
-  calculatePolygonCenter,
-  distanceMetersBetween,
-} from "@/src/utils/geometry";
+import { calculatePolygonCenter, distanceMetersBetween } from "@/src/utils/geometry";
 import { isPointInPolygon } from "@/src/utils/geo";
 import SGW from "@/src/data/campus/SGW.geojson";
 import LOY from "@/src/data/campus/LOY.geojson";
@@ -66,8 +48,7 @@ import BuildingTheme from "@/src/styles/BuildingTheme";
 import styles from "@/src/styles/campusMap";
 
 // Convert GeoJSON coordinates to LatLng
-const polygonFromGeoJSON = (coordinates: number[][]): LatLng[] =>
-  coordinates.map(([longitude, latitude]) => ({ latitude, longitude }));
+const polygonFromGeoJSON = (coordinates: number[][]): LatLng[] => coordinates.map(([longitude, latitude]) => ({ latitude, longitude }));
 
 interface CampusMapProps {
   initialLocation?: {
@@ -109,29 +90,14 @@ interface GeoJsonFeature {
 }
 
 const getBuildingDisplayName = (buildingId: string, campus: "SGW" | "LOY") => {
-  const metadata =
-    campus === "LOY"
-      ? LoyolaBuildingMetadata[buildingId]
-      : SGWBuildingMetadata[buildingId];
+  const metadata = campus === "LOY" ? LoyolaBuildingMetadata[buildingId] : SGWBuildingMetadata[buildingId];
 
   return metadata?.name || buildingId;
 };
 
-const PlatformIcon = ({
-  materialName,
-  iosName,
-  size,
-  color,
-}: PlatformIconProps) => {
+const PlatformIcon = ({ materialName, iosName, size, color }: PlatformIconProps) => {
   if (Platform.OS === "ios") {
-    return (
-      <SymbolView
-        name={iosName}
-        size={size}
-        weight="medium"
-        tintColor={color}
-      />
-    );
+    return <SymbolView name={iosName} size={size} weight="medium" tintColor={color} />;
   }
   return <MaterialIcons name={materialName} size={size} color={color} />;
 };
@@ -216,9 +182,7 @@ const BuildingGroup = React.memo(
         <Marker
           ref={markerRefSetter} // Use the passed setter
           coordinate={centerCoordinates}
-          onPress={() =>
-            handleBuildingPress(buildingId, campus, centerCoordinates)
-          }
+          onPress={() => handleBuildingPress(buildingId, campus, centerCoordinates)}
           zIndex={200}
           tracksViewChanges={false}
           title={name}
@@ -242,11 +206,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
   const colorScheme = useColorScheme() || "light";
 
   // Get user's location with permission handling
-  const {
-    location: userLocation,
-    error: locationError,
-    loading: locationLoading,
-  } = useUserLocation();
+  const { location: userLocation, error: locationError, loading: locationLoading } = useUserLocation();
 
   const INITIAL_DELTA = 0.008;
 
@@ -295,9 +255,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
     visible: false,
   });
   const [navigationStepIndex, setNavigationStepIndex] = useState(0);
-  const [selectedTransitStopKey, setSelectedTransitStopKey] = useState<
-    string | null
-  >(null);
+  const [selectedTransitStopKey, setSelectedTransitStopKey] = useState<string | null>(null);
   const [indoorBuildingId, setIndoorBuildingId] = useState<string | null>(null);
   const [isInfoPopupExpanded, setIsInfoPopupExpanded] = useState(false);
   const additionalInfoPopupRef = useRef<AdditionalInfoPopupHandle>(null);
@@ -305,10 +263,10 @@ const CampusMap: React.FC<CampusMapProps> = ({
   const preNavigationRegionRef = useRef<Region | null>(null);
   const [trackLocationMarker, setTrackLocationMarker] = useState(true);
   const [trackDestMarker, setTrackDestMarker] = useState(true);
+  const [userLocationBuildingId, setUserLocationBuildingId] = useState<string | null>(null);
 
-  const trackMarkerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
+  const trackMarkerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // unmount cleanup logic for dest marker
   useEffect(() => {
     return () => {
@@ -324,6 +282,11 @@ const CampusMap: React.FC<CampusMapProps> = ({
     }
   }, [destinationBuildingId]);
 
+  const geofenceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const confirmedBuildingIdRef = useRef<string | null>(null);
+  const [manuallyExitedBuildingId, setManuallyExitedBuildingId] = useState<string | null>(null);
+
+  // handle restoring the camera view when navigation ends
   const [searchQuery, setSearchQuery] = useState("");
 
   // Combine all buildings from SGW and LOY
@@ -389,29 +352,17 @@ const CampusMap: React.FC<CampusMapProps> = ({
     [onInfoPopupExpansionChange],
   );
 
-  const handleOpenIndoorMap = useCallback(
-    (buildingId: string) => {
-      if (!INDOOR_DATA[buildingId]) return;
+  const handleOpenIndoorMap = useCallback((buildingId: string) => {
+    if (!INDOOR_DATA[buildingId]) return;
 
-      setSelectedTransitStopKey(null);
-      setShowDirections(false);
-      setIsNavigationActive(false);
-      clearRouteData();
-      setSelectedBuilding((prev) => ({ ...prev, visible: false }));
-      setIndoorBuildingId(buildingId);
-    },
-    [setShowDirections, setIsNavigationActive, clearRouteData],
-  );
-
-  // Calculate circle radius based on zoom level (longitudeDelta)
-  // Larger longitudeDelta = zoomed out = bigger circle
-  //   const circleRadius = Math.max(2.5, mapRegion.longitudeDelta * 2000);
+    setSelectedTransitStopKey(null);
+    setSelectedBuilding(prev => ({ ...prev, visible: false }));
+    setIndoorBuildingId(buildingId);
+  }, []);
 
   // Create a ref to the MapView so we can control it
   const mapRef = useRef<MapView>(null);
-  const buildingMarkerRefs = useRef<
-    Record<string, { showCallout?: () => void } | null>
-  >({});
+  const buildingMarkerRefs = useRef<Record<string, { showCallout?: () => void } | null>>({});
   const lastCameraUpdateAtRef = useRef(0);
   const ignoreNextMapPressRef = useRef(false);
   const lastBuildingPressAtRef = useRef(0);
@@ -459,7 +410,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
         destinationPopupRef.current?.dismiss();
         setTimeout(() => {
           clearDestination();
-          setSelectedBuilding((prev) => ({ ...prev, visible: false }));
+          setSelectedBuilding(prev => ({ ...prev, visible: false }));
         }, 250);
       }
     }
@@ -483,9 +434,9 @@ const CampusMap: React.FC<CampusMapProps> = ({
       let coordinates = coords;
       if (!coordinates) {
         const sourceGeo = campus === "LOY" ? LOY : SGW;
-        const feature = sourceGeo.features.find(
-          (item) => (item as GeoJsonFeature).properties.id === buildingId,
-        ) as GeoJsonFeature | undefined;
+        const feature = sourceGeo.features.find(item => (item as GeoJsonFeature).properties.id === buildingId) as
+          | GeoJsonFeature
+          | undefined;
         // optional chaining for more concise check
         if (feature?.geometry.type === "Polygon") {
           coordinates = calculatePolygonCenter(feature.geometry.coordinates[0]);
@@ -512,10 +463,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
         buildingMarkerRefs.current[markerKey]?.showCallout?.();
       });
 
-      const buildingMetadata =
-        campus === "LOY"
-          ? LoyolaBuildingMetadata[buildingId]
-          : SGWBuildingMetadata[buildingId];
+      const buildingMetadata = campus === "LOY" ? LoyolaBuildingMetadata[buildingId] : SGWBuildingMetadata[buildingId];
 
       if (buildingMetadata && coordinates) {
         setDestination(buildingId, coordinates, buildingMetadata.name);
@@ -526,33 +474,46 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
   const handleClosePopup = useCallback(() => {
     setIsInfoPopupExpanded(false);
-    setSelectedBuilding((prev) => ({ ...prev, visible: false }));
+    setSelectedBuilding(prev => ({ ...prev, visible: false }));
   }, []);
 
   const handleMapLongPress = useCallback((e: LongPressEvent) => {
     const coordinate = e.nativeEvent.coordinate;
 
-    const findBuildingId = (geojson: typeof SGW | typeof LOY) => {
-      const feature = geojson.features.find((item) => {
+    let foundCampus: "SGW" | "LOY" = "SGW";
+    let foundCenter: LatLng | null = null;
+
+    const findBuildingId = (geojson: typeof SGW | typeof LOY, campusStr: "SGW" | "LOY") => {
+      const feature = geojson.features.find(item => {
         const currentFeature = item as GeoJsonFeature;
         if (currentFeature.geometry.type !== "Polygon") {
           return false;
         }
 
-        const polygonCoords = polygonFromGeoJSON(
-          currentFeature.geometry.coordinates[0],
-        );
+        const polygonCoords = polygonFromGeoJSON(currentFeature.geometry.coordinates[0]);
         return isPointInPolygon(coordinate, polygonCoords);
       });
 
-      return (feature?.properties as { id?: string } | undefined)?.id ?? null;
+      if (feature) {
+        foundCampus = campusStr;
+        const polygonCoords = polygonFromGeoJSON((feature as GeoJsonFeature).geometry.coordinates[0]);
+        foundCenter = calculatePolygonCenter(polygonCoords);
+        return (feature.properties as { id?: string } | undefined)?.id ?? null;
+      }
+      return null;
     };
 
-    const foundId = findBuildingId(SGW) || findBuildingId(LOY);
+    const foundId = findBuildingId(SGW, "SGW") || findBuildingId(LOY, "LOY");
 
     if (foundId && INDOOR_DATA[foundId]) {
       setIndoorBuildingId(foundId);
-      setSelectedBuilding((prev) => ({ ...prev, visible: false }));
+      setManuallyExitedBuildingId(null);
+      setSelectedBuilding({
+        name: foundId,
+        campus: foundCampus,
+        coords: foundCenter || coordinate,
+        visible: false,
+      });
     }
   }, []);
 
@@ -584,61 +545,55 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
     const walkingMetersPerSecond = 1.35;
     const meters = distanceMetersBetween(userLocation, selectedBuilding.coords);
-    const minutes = Math.max(
-      1,
-      Math.round(meters / walkingMetersPerSecond / 60),
-    );
+    const minutes = Math.max(1, Math.round(meters / walkingMetersPerSecond / 60));
 
     if (minutes >= 60) {
       const hours = Math.floor(minutes / 60);
       const remainingMinutes = minutes % 60;
-      return remainingMinutes > 0
-        ? `${hours} h ${remainingMinutes} min`
-        : `${hours} h`;
+      return remainingMinutes > 0 ? `${hours} h ${remainingMinutes} min` : `${hours} h`;
     }
 
     return `${minutes} min`;
   }, [userLocation, selectedBuilding.coords]);
 
   const handleOpenDirectionsPopup = useCallback(() => {
-    setSelectedBuilding((prev) => ({ ...prev, visible: false }));
+    setSelectedBuilding(prev => ({ ...prev, visible: false }));
     setShowDirections(true);
   }, [setShowDirections]);
 
-  const handleSetAsDestination = useCallback(() => {
-    if (!selectedBuilding.name || !selectedBuilding.coords) return;
+  const handleSetAsDestination = useCallback(
+    (room?: string) => {
+      if (!selectedBuilding.name || !selectedBuilding.coords) return;
 
-    const buildingMetadata =
-      selectedBuilding.campus === "LOY"
-        ? LoyolaBuildingMetadata[selectedBuilding.name]
-        : SGWBuildingMetadata[selectedBuilding.name];
+      const buildingMetadata =
+        selectedBuilding.campus === "LOY" ? LoyolaBuildingMetadata[selectedBuilding.name] : SGWBuildingMetadata[selectedBuilding.name];
 
-    if (!buildingMetadata) {
-      return;
-    }
+      if (!buildingMetadata) {
+        return;
+      }
 
-    setDestination(
-      selectedBuilding.name,
-      selectedBuilding.coords,
-      buildingMetadata.name,
-    );
-  }, [selectedBuilding, setDestination]);
+      const finalRoom = room || destinationRoom;
 
-  const handleDirectionsTrigger = useCallback(() => {
-    setSelectedBuilding((prev) => ({ ...prev, visible: false }));
-    handleSetAsDestination();
+      setDestination(selectedBuilding.name, selectedBuilding.coords, buildingMetadata.name, finalRoom);
+    },
+    [selectedBuilding, setDestination, destinationRoom],
+  );
 
-    if (userLocation) {
-      setStartPoint("USER", userLocation, "Your Location");
-    }
+  const handleDirectionsTrigger = useCallback(
+    (room?: string) => {
+      setSelectedBuilding(prev => ({ ...prev, visible: false }));
+      handleSetAsDestination(room);
 
-    handleOpenDirectionsPopup();
-  }, [
-    handleSetAsDestination,
-    userLocation,
-    setStartPoint,
-    handleOpenDirectionsPopup,
-  ]);
+      if (userLocationBuildingId && startRoom) {
+        setStartPoint(userLocationBuildingId, userLocation || initialLocation, userLocationBuildingId, startRoom);
+      } else if (userLocation) {
+        setStartPoint("USER", userLocation, "Your Location");
+      }
+
+      handleOpenDirectionsPopup();
+    },
+    [handleSetAsDestination, userLocationBuildingId, startRoom, userLocation, handleOpenDirectionsPopup, setStartPoint, initialLocation],
+  );
 
   const handleCloseDestinationPopup = useCallback(() => {
     setShowDirections(false);
@@ -649,21 +604,21 @@ const CampusMap: React.FC<CampusMapProps> = ({
     setShowDirections(true);
   }, [setIsNavigationActive, setShowDirections]);
 
+  const handleToggleOutdoorMap = useCallback(() => {
+    setIndoorBuildingId(null);
+    if (destinationBuildingId && !isNavigationActive) {
+      setShowDirections(true);
+    }
+  }, [destinationBuildingId, isNavigationActive, setShowDirections]);
+
   const shouldUseLiveUserStart = startBuildingId === "USER" && !!userLocation;
 
-  const routeStartLocation = shouldUseLiveUserStart
-    ? userLocation
-    : startCoords || userLocation || initialLocation;
+  const routeStartLocation = shouldUseLiveUserStart ? userLocation : startCoords || userLocation || initialLocation;
 
-  const activeInstruction =
-    routeData?.steps?.[navigationStepIndex] || routeData?.steps?.[0];
+  const activeInstruction = routeData?.steps?.[navigationStepIndex] || routeData?.steps?.[0];
 
   const activeInstructionDistanceMeters =
-    userLocation && activeInstruction?.endLocation
-      ? Math.round(
-          distanceMetersBetween(userLocation, activeInstruction.endLocation),
-        )
-      : null;
+    userLocation && activeInstruction?.endLocation ? Math.round(distanceMetersBetween(userLocation, activeInstruction.endLocation)) : null;
 
   const [searchPanelHeight, setSearchPanelHeight] = useState(0);
   useEffect(() => {
@@ -672,13 +627,9 @@ const CampusMap: React.FC<CampusMapProps> = ({
     }
   }, [showDirections, isNavigationActive]);
 
-  const isSheetVisibleForAccessibility =
-    (selectedBuilding.visible && !showDirections) || showDirections;
+  const isSheetVisibleForAccessibility = (selectedBuilding.visible && !showDirections) || showDirections;
 
-  const modeLabelMap: Record<
-    "walking" | "driving" | "transit" | "bicycling",
-    string
-  > = {
+  const modeLabelMap: Record<"walking" | "driving" | "transit" | "bicycling", string> = {
     walking: "Walking",
     driving: "Driving",
     transit: "Transit",
@@ -693,19 +644,13 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
     return routeData.steps
       .flatMap((step, index) => {
-        const hasTransitMeta =
-          !!step.transitLineName ||
-          !!step.transitLineShortName ||
-          !!step.transitVehicleType;
+        const hasTransitMeta = !!step.transitLineName || !!step.transitLineShortName || !!step.transitVehicleType;
         if (!hasTransitMeta) {
           return [] as TransitStopMarker[];
         }
 
-        const lineLabel =
-          step.transitLineShortName || step.transitLineName || "Transit";
-        const normalizedVehicle = (
-          step.transitVehicleType || "Transit"
-        ).toLowerCase();
+        const lineLabel = step.transitLineShortName || step.transitLineName || "Transit";
+        const normalizedVehicle = (step.transitVehicleType || "Transit").toLowerCase();
 
         // defining logic independently
         const getVehicleLabel = (vehicle: string) => {
@@ -722,8 +667,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
           return "Transit";
         };
         const vehicleLabel = getVehicleLabel(normalizedVehicle);
-        const markerIcon: "directions-bus" | "subway" =
-          vehicleLabel === "Metro" ? "subway" : "directions-bus";
+        const markerIcon: "directions-bus" | "subway" = vehicleLabel === "Metro" ? "subway" : "directions-bus";
 
         const boardPoint = step.startLocation
           ? {
@@ -749,26 +693,17 @@ const CampusMap: React.FC<CampusMapProps> = ({
             }
           : null;
 
-        return [boardPoint, exitPoint].filter(
-          (item): item is TransitStopMarker => Boolean(item),
-        );
+        return [boardPoint, exitPoint].filter((item): item is TransitStopMarker => Boolean(item));
       })
-      .filter((item) => item.stepIndex >= navigationStepIndex)
+      .filter(item => item.stepIndex >= navigationStepIndex)
       .slice(0, 4);
   }, [isNavigationActive, travelMode, routeData?.steps, navigationStepIndex]);
 
-  const selectedTransitStop =
-    transitNavigationStops.find(
-      (stop) => stop.key === selectedTransitStopKey,
-    ) || null;
+  const selectedTransitStop = transitNavigationStops.find(stop => stop.key === selectedTransitStopKey) || null;
 
   useEffect(() => {
     if (showDirections) {
-      setSelectedBuilding((previousState) =>
-        previousState.visible
-          ? { ...previousState, visible: false }
-          : previousState,
-      );
+      setSelectedBuilding(previousState => (previousState.visible ? { ...previousState, visible: false } : previousState));
     }
   }, [showDirections]);
 
@@ -778,12 +713,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
       return;
     }
 
-    if (
-      selectedTransitStopKey &&
-      !transitNavigationStops.some(
-        (stop) => stop.key === selectedTransitStopKey,
-      )
-    ) {
+    if (selectedTransitStopKey && !transitNavigationStops.some(stop => stop.key === selectedTransitStopKey)) {
       setSelectedTransitStopKey(null);
     }
   }, [isNavigationActive, selectedTransitStopKey, transitNavigationStops]);
@@ -797,13 +727,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
   }, [showDirections, isNavigationActive, routeData?.id]);
 
   useEffect(() => {
-    if (
-      !(showDirections || isNavigationActive) ||
-      !routeData ||
-      !userLocation ||
-      !routeData.steps ||
-      routeData.steps.length === 0
-    ) {
+    if (!(showDirections || isNavigationActive) || !routeData || !userLocation || !routeData.steps || routeData.steps.length === 0) {
       return;
     }
 
@@ -820,38 +744,18 @@ const CampusMap: React.FC<CampusMapProps> = ({
       return;
     }
 
-    const metersToStepEnd = distanceMetersBetween(
-      userLocation,
-      currentStep.endLocation,
-    );
+    const metersToStepEnd = distanceMetersBetween(userLocation, currentStep.endLocation);
 
     const stepMode = (currentStep.travelMode || "walking").toLowerCase();
     const threshold = arrivalThresholdByMode[stepMode] || 45;
 
-    if (
-      metersToStepEnd <= threshold &&
-      navigationStepIndex < routeData.steps.length - 1
-    ) {
-      setNavigationStepIndex((previousIndex) =>
-        Math.min(previousIndex + 1, routeData.steps.length - 1),
-      );
+    if (metersToStepEnd <= threshold && navigationStepIndex < routeData.steps.length - 1) {
+      setNavigationStepIndex(previousIndex => Math.min(previousIndex + 1, routeData.steps.length - 1));
     }
-  }, [
-    showDirections,
-    isNavigationActive,
-    routeData,
-    navigationStepIndex,
-    travelMode,
-    userLocation,
-  ]);
+  }, [showDirections, isNavigationActive, routeData, navigationStepIndex, travelMode, userLocation]);
 
   useEffect(() => {
-    if (
-      !isNavigationActive ||
-      !shouldUseLiveUserStart ||
-      !userLocation ||
-      !mapRef.current
-    ) {
+    if (!isNavigationActive || !shouldUseLiveUserStart || !userLocation || !mapRef.current) {
       return;
     }
 
@@ -874,13 +778,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
         duration: 550,
       },
     );
-  }, [
-    showDirections,
-    isNavigationActive,
-    shouldUseLiveUserStart,
-    userLocation?.latitude,
-    userLocation?.longitude,
-  ]);
+  }, [showDirections, isNavigationActive, shouldUseLiveUserStart, userLocation?.latitude, userLocation?.longitude]);
+
   const zoomToBuilding = useCallback((coords: LatLng) => {
     if (!mapRef.current) return;
 
@@ -890,39 +789,112 @@ const CampusMap: React.FC<CampusMapProps> = ({
           latitude: coords.latitude,
           longitude: coords.longitude,
         },
-        zoom: 17.5, // adjust if you want closer/further
+        zoom: 17.5,
         pitch: 0,
         heading: 0,
       },
-      { duration: 700 }, // smooth slide animation
+      { duration: 700 },
     );
   }, []);
-  const [userLocationBuildingId, setUserLocationBuildingId] = useState<
-    string | null
-  >(null);
+
   useEffect(() => {
     if (!userLocation) {
       if (userLocationBuildingId !== null) setUserLocationBuildingId(null);
       return;
     }
     const findBuildingId = (geojson: typeof SGW | typeof LOY) => {
-      const feature = geojson.features.find((item) => {
+      const feature = geojson.features.find(item => {
         const currentFeature = item as GeoJsonFeature;
         if (currentFeature.geometry.type !== "Polygon") {
           return false;
         }
-        const polygonCoords = polygonFromGeoJSON(
-          currentFeature.geometry.coordinates[0],
-        );
+        const polygonCoords = polygonFromGeoJSON(currentFeature.geometry.coordinates[0]);
         return isPointInPolygon(userLocation, polygonCoords);
       });
       return (feature?.properties as { id?: string } | undefined)?.id ?? null;
     };
-    const currentId = findBuildingId(SGW) || findBuildingId(LOY);
-    if (currentId !== userLocationBuildingId) {
-      setUserLocationBuildingId(currentId);
+    const rawCurrentId = findBuildingId(SGW) || findBuildingId(LOY);
+
+    if (rawCurrentId === confirmedBuildingIdRef.current) {
+      if (geofenceTimeoutRef.current) {
+        clearTimeout(geofenceTimeoutRef.current);
+        geofenceTimeoutRef.current = null;
+      }
+      return;
     }
+
+    if (!geofenceTimeoutRef.current) {
+      geofenceTimeoutRef.current = setTimeout(() => {
+        console.log(`[Geofence] Confirmed transition to: ${rawCurrentId || "Outside"}`);
+        confirmedBuildingIdRef.current = rawCurrentId;
+        setUserLocationBuildingId(rawCurrentId);
+        geofenceTimeoutRef.current = null;
+      }, 3000);
+    }
+
+    return () => {
+      if (geofenceTimeoutRef.current) {
+        clearTimeout(geofenceTimeoutRef.current);
+      }
+    };
   }, [userLocation]);
+
+  const destinationCenter = useMemo(() => {
+    if (!destinationBuildingId) return null;
+    const findCenter = (geojson: typeof SGW | typeof LOY) => {
+      const feature = geojson.features.find(f => (f as GeoJsonFeature).properties.id === destinationBuildingId) as
+        | GeoJsonFeature
+        | undefined;
+      return feature && feature.geometry.type === "Polygon" ? calculatePolygonCenter(feature.geometry.coordinates[0]) : null;
+    };
+    return findCenter(SGW) || findCenter(LOY);
+  }, [destinationBuildingId]);
+
+  // auto-trigger entry/exit based on User Location & Navigation State
+  useEffect(() => {
+    if (!isNavigationActive) {
+      return;
+    }
+
+    let targetBuildingId = userLocationBuildingId;
+
+    // proximity fallback
+    if (!targetBuildingId && destinationBuildingId && destinationCenter && userLocation) {
+      const dist = distanceMetersBetween(userLocation, destinationCenter);
+      if (dist <= 65) {
+        targetBuildingId = destinationBuildingId;
+      }
+    }
+
+    if (targetBuildingId && INDOOR_DATA[targetBuildingId]) {
+      if (indoorBuildingId !== targetBuildingId && manuallyExitedBuildingId !== targetBuildingId) {
+        setIndoorBuildingId(targetBuildingId);
+      }
+    } else if (!targetBuildingId) {
+      if (manuallyExitedBuildingId !== null) {
+        setManuallyExitedBuildingId(null);
+      }
+
+      if (indoorBuildingId && indoorBuildingId !== destinationBuildingId) {
+        setIndoorBuildingId(null);
+      }
+    }
+  }, [
+    userLocation,
+    userLocationBuildingId,
+    isNavigationActive,
+    indoorBuildingId,
+    manuallyExitedBuildingId,
+    destinationBuildingId,
+    destinationCenter,
+  ]);
+
+  const handleIndoorExit = useCallback(() => {
+    if (indoorBuildingId) {
+      setManuallyExitedBuildingId(indoorBuildingId);
+    }
+    setIndoorBuildingId(null);
+  }, [indoorBuildingId]);
 
   // memoize the polygon lists so they don't re-calculate on every render
   const { sgwPolygons, loyPolygons } = useMemo(() => {
@@ -931,15 +903,12 @@ const CampusMap: React.FC<CampusMapProps> = ({
         .filter((f: GeoJsonFeature) => f.geometry.type === "Polygon")
         .map((feature: GeoJsonFeature, index: number) => {
           const { id: buildingId } = feature.properties;
-          const coordinates = polygonFromGeoJSON(
-            feature.geometry.coordinates[0],
-          );
+          const coordinates = polygonFromGeoJSON(feature.geometry.coordinates[0]);
 
           const isSelected =
             selectedBuilding.visible && selectedBuilding.name === buildingId;
           const isDestination = destinationBuildingId === buildingId;
-          const dimOthers =
-            selectedBuilding.visible && !!selectedBuilding.name && !isSelected;
+          const dimOthers = selectedBuilding.visible && !!selectedBuilding.name && !isSelected;
           const markerKey = `${campus}-${buildingId}`;
           return (
             <BuildingGroup
@@ -964,18 +933,10 @@ const CampusMap: React.FC<CampusMapProps> = ({
       sgwPolygons: generatePolygons(SGW, "SGW"),
       loyPolygons: generatePolygons(LOY, "LOY"),
     };
-  }, [
-    destinationBuildingId,
-    handleBuildingPress,
-    selectedBuilding.name,
-    selectedBuilding.visible,
-    trackDestMarker,
-  ]);
+  }, [destinationBuildingId, handleBuildingPress, selectedBuilding.name, selectedBuilding.visible, trackDestMarker]);
 
   const mapID = useMemo(() => {
-    return colorScheme === "dark"
-      ? "eb0ccd6d2f7a95e23f1ec398"
-      : "eb0ccd6d2f7a95e117328051";
+    return colorScheme === "dark" ? "eb0ccd6d2f7a95e23f1ec398" : "eb0ccd6d2f7a95e117328051";
   }, [colorScheme]);
 
   const isIOS = Platform.OS === "ios";
@@ -1014,28 +975,22 @@ const CampusMap: React.FC<CampusMapProps> = ({
         loadingEnabled
         rotateEnabled={false}
         accessibilityElementsHidden={isSheetVisibleForAccessibility}
-        importantForAccessibility={
-          isSheetVisibleForAccessibility ? "no-hide-descendants" : "yes"
-        }
+        importantForAccessibility={isSheetVisibleForAccessibility ? "no-hide-descendants" : "yes"}
       >
         {/* ---------------- overlays ---------------- */}
         {sgwPolygons}
         {loyPolygons}
 
         {/* ---------------- labels ---------------- */}
-        {(Object.keys(CampusConfig) as (keyof typeof CampusConfig)[]).map(
-          (campus) => (
-            <CampusLabels
-              key={`label-${campus}`}
-              campus={campus}
-              data={CampusConfig[campus].labels}
-              longitudeDelta={mapRegion.longitudeDelta}
-              onLabelPress={(buildingId) =>
-                handleBuildingPress(buildingId, campus)
-              }
-            />
-          ),
-        )}
+        {(Object.keys(CampusConfig) as (keyof typeof CampusConfig)[]).map(campus => (
+          <CampusLabels
+            key={`label-${campus}`}
+            campus={campus}
+            data={CampusConfig[campus].labels}
+            longitudeDelta={mapRegion.longitudeDelta}
+            onLabelPress={buildingId => handleBuildingPress(buildingId, campus)}
+          />
+        ))}
 
         {userLocation && (
           <Marker
@@ -1066,23 +1021,19 @@ const CampusMap: React.FC<CampusMapProps> = ({
               }}
               collapsable={false}
             >
-              {Platform.OS === "android" && (
-                <Text style={{ width: 1, height: 1, opacity: 0 }}> </Text>
-              )}
+              {Platform.OS === "android" && <Text style={{ width: 1, height: 1, opacity: 0 }}> </Text>}
             </View>
           </Marker>
         )}
 
-        <RoutePolyline startLocation={routeStartLocation} />
+        {startBuildingId !== destinationBuildingId && <RoutePolyline startLocation={routeStartLocation} />}
 
-        {transitNavigationStops.map((stop) => (
+        {transitNavigationStops.map(stop => (
           <Marker
             key={stop.key}
             coordinate={stop.coordinate}
             onPress={() => {
-              setSelectedTransitStopKey((previousKey) =>
-                previousKey === stop.key ? null : stop.key,
-              );
+              setSelectedTransitStopKey(previousKey => (previousKey === stop.key ? null : stop.key));
             }}
             tracksViewChanges={false}
             zIndex={1002}
@@ -1098,8 +1049,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
                 justifyContent: "center",
                 backgroundColor: stop.pinColor,
                 borderWidth: 2,
-                borderColor:
-                  selectedTransitStopKey === stop.key ? "#FFFFFF" : "#F2F2F7",
+                borderColor: selectedTransitStopKey === stop.key ? "#FFFFFF" : "#F2F2F7",
               }}
             >
               <PlatformIcon
@@ -1113,7 +1063,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
         ))}
       </MapView>
 
-      {selectedTransitStop && (
+      {selectedTransitStop && !indoorBuildingId && (
         <View
           style={{
             position: "absolute",
@@ -1164,11 +1114,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
               accessibilityRole="button"
               accessibilityLabel="Close transit stop info"
             >
-              <MaterialIcons
-                name="close"
-                size={16}
-                color={colorScheme === "dark" ? "#F2F2F7" : "#1C1C1E"}
-              />
+              <MaterialIcons name="close" size={16} color={colorScheme === "dark" ? "#F2F2F7" : "#1C1C1E"} />
             </TouchableOpacity>
           </View>
           <Text
@@ -1185,7 +1131,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
         </View>
       )}
 
-      {isNavigationActive && routeData && (
+      {isNavigationActive && routeData && !indoorBuildingId && (
         <View
           style={{
             position: "absolute",
@@ -1214,11 +1160,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
           accessibilityLabel={`${modeLabelMap[travelMode]} navigation. ${routeData.duration}, ${routeData.distance}. ${activeInstruction?.instruction || "Continue on current route"}`}
         >
           {Platform.OS === "ios" && (
-            <BlurView
-              intensity={35}
-              tint={colorScheme === "dark" ? "dark" : "light"}
-              style={StyleSheet.absoluteFill}
-            />
+            <BlurView intensity={35} tint={colorScheme === "dark" ? "dark" : "light"} style={StyleSheet.absoluteFill} />
           )}
           <Text
             style={{
@@ -1228,8 +1170,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
             }}
             numberOfLines={1}
           >
-            {modeLabelMap[travelMode]} • {routeData.duration} •{" "}
-            {routeData.distance}
+            {modeLabelMap[travelMode]} • {routeData.duration} • {routeData.distance}
           </Text>
           <Text
             style={{
@@ -1252,15 +1193,13 @@ const CampusMap: React.FC<CampusMapProps> = ({
               }}
             >
               Next in{" "}
-              {typeof activeInstructionDistanceMeters === "number"
-                ? `${activeInstructionDistanceMeters} m`
-                : activeInstruction.distance}
+              {typeof activeInstructionDistanceMeters === "number" ? `${activeInstructionDistanceMeters} m` : activeInstruction.distance}
             </Text>
           )}
         </View>
       )}
 
-      {isNavigationActive && routeData && (
+      {isNavigationActive && routeData && !indoorBuildingId && (
         <View
           style={{
             position: "absolute",
@@ -1290,11 +1229,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
           accessible={false}
         >
           {Platform.OS === "ios" && (
-            <BlurView
-              intensity={35}
-              tint={colorScheme === "dark" ? "dark" : "light"}
-              style={StyleSheet.absoluteFill}
-            />
+            <BlurView intensity={35} tint={colorScheme === "dark" ? "dark" : "light"} style={StyleSheet.absoluteFill} />
           )}
           <View>
             <Text
@@ -1336,24 +1271,14 @@ const CampusMap: React.FC<CampusMapProps> = ({
               accessibilityHint="Ends active navigation and closes route guidance"
               testID="cancel-navigation-button"
             >
-              <PlatformIcon
-                materialName="close"
-                iosName="xmark"
-                size={18}
-                color="#FFFFFF"
-              />
+              <PlatformIcon materialName="close" iosName="xmark" size={18} color="#FFFFFF" />
             </TouchableOpacity>
           </View>
         </View>
       )}
 
       {/* ---------------- Building Search Modal ---------------- */}
-      <Modal
-        visible={buildingSearchVisible}
-        animationType="slide"
-        transparent
-        onRequestClose={() => setBuildingSearchVisible(false)}
-      >
+      <Modal visible={buildingSearchVisible} animationType="slide" transparent onRequestClose={() => setBuildingSearchVisible(false)}>
         <View
           style={{
             flex: 1,
@@ -1370,16 +1295,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
               padding: 16,
             }}
           >
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "600",
-                marginBottom: 8,
-                color: "#fff",
-              }}
-            >
-              Search Building
-            </Text>
+            <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8, color: "#fff" }}>Search Building</Text>
             <TextInput
               ref={buildingSearchInputRef}
               placeholder="Type building name..."
@@ -1390,11 +1306,11 @@ const CampusMap: React.FC<CampusMapProps> = ({
                 padding: 8,
                 color: colorScheme === "dark" ? "#FFFFFF" : "#000000",
               }}
-              onChangeText={(text) => setSearchQuery(text)}
+              onChangeText={text => setSearchQuery(text)}
             />
             <FlatList
               data={filteredBuildings}
-              keyExtractor={(item) => item.id}
+              keyExtractor={item => item.id}
               renderItem={({ item }) => (
                 <Pressable
                   onPress={() => {
@@ -1446,7 +1362,35 @@ const CampusMap: React.FC<CampusMapProps> = ({
           startRoomId={startRoom}
           destinationBuildingId={destinationBuildingId}
           destinationRoomId={destinationRoom}
-          onExit={() => setIndoorBuildingId(null)}
+          isNavigationActive={isNavigationActive}
+          onSetStartRoom={(roomLabel, targetBuildingId) => {
+            const bId = targetBuildingId || indoorBuildingId;
+            if (!bId) return;
+            const meta = SGWBuildingMetadata[bId] || LoyolaBuildingMetadata[bId];
+            const searchMeta = SGWBuildingSearchMetadata[bId] || LoyolaBuildingSearchMetadata[bId];
+            const coords = searchMeta?.coordinates || selectedBuilding.coords || mapCenter;
+            const bName = meta?.name || bId;
+            setStartPoint(bId, coords, bName, roomLabel);
+            setShowDirections(true);
+          }}
+          onSetDestinationRoom={(roomLabel, targetBuildingId) => {
+            const bId = targetBuildingId || indoorBuildingId;
+            if (!bId) return;
+            const meta = SGWBuildingMetadata[bId] || LoyolaBuildingMetadata[bId];
+            const searchMeta = SGWBuildingSearchMetadata[bId] || LoyolaBuildingSearchMetadata[bId];
+            const coords = searchMeta?.coordinates || selectedBuilding.coords || mapCenter;
+            const bName = meta?.name || bId;
+            setDestination(bId, coords, bName, roomLabel);
+            setShowDirections(true);
+          }}
+          onExit={handleIndoorExit}
+          onCancelNavigation={() => {
+            setIsNavigationActive(false);
+            setShowDirections(false);
+            clearRouteData();
+            clearDestination();
+          }}
+          onToggleOutdoorMap={handleToggleOutdoorMap}
         />
       )}
 
@@ -1469,11 +1413,13 @@ const CampusMap: React.FC<CampusMapProps> = ({
         ref={destinationPopupRef}
         visible={showDirections}
         onClose={handleCloseDestinationPopup}
+        showOpenIndoorButton={selectedBuilding.name in INDOOR_DATA}
+        onOpenIndoorPress={() => handleOpenIndoorMap(selectedBuilding.name)}
       />
 
       {showDirections && !isNavigationActive && (
         <View
-          onLayout={(event) => {
+          onLayout={event => {
             const { height } = event.nativeEvent.layout;
             setSearchPanelHeight(height);
           }}
@@ -1492,6 +1438,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
             destinationRoom={destinationRoom}
             setDestination={setDestination}
             userLocationBuildingId={userLocationBuildingId}
+            isIndoorView={!!indoorBuildingId}
           />
         </View>
       )}
@@ -1529,9 +1476,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
             borderRadius: 5,
           }}
         >
-          <Text style={{ color: "#B03060", fontSize: 12 }}>
-            {locationError}
-          </Text>
+          <Text style={{ color: "#B03060", fontSize: 12 }}>{locationError}</Text>
         </View>
       )}
     </View>

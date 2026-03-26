@@ -29,16 +29,23 @@ interface Props {
   isNavigation: boolean;
 }
 // helper for complexity
-const GlassBackground: React.FC<{ mode: "light" | "dark" }> = ({ mode }) => {
+const GlassBackground: React.FC<{ mode: "light" | "dark"; borderRadius: number }> = ({ mode, borderRadius }) => {
   if (Platform.OS !== "ios") return null;
   return (
-    <BlurView
-      intensity={35}
-      tint={mode === "dark" ? "dark" : "light"}
-      style={{ position: "absolute", width: "100%", height: "100%" }}
-    />
+    <View
+      style={{
+        position: "absolute",
+        width: "100%",
+        height: "100%",
+        borderRadius,
+        overflow: "hidden",
+      }}
+    >
+      <BlurView intensity={35} tint={mode === "dark" ? "dark" : "light"} style={{ flex: 1 }} />
+    </View>
   );
 };
+
 const RightControlsPanel: React.FC<Props> = ({
   userInfo,
   onSignOut,
@@ -56,8 +63,7 @@ const RightControlsPanel: React.FC<Props> = ({
   const insets = useSafeAreaInsets();
 
   // Don't show location button in certain conditions
-  const showLocationButton =
-    userLocation && !indoorBuildingId && !isInfoPopupExpanded;
+  const showLocationButton = userLocation && !indoorBuildingId && !isInfoPopupExpanded;
 
   // Calculate spacing between buttons
   const buttonSize = 50;
@@ -168,12 +174,7 @@ const RightControlsPanel: React.FC<Props> = ({
           </>
         )}
       </View>
-      <UserProfilePopup
-        visible={isProfileExpanded}
-        userInfo={userInfo}
-        onClose={() => setIsProfileExpanded(false)}
-        onSignOut={onSignOut}
-      />
+      <UserProfilePopup visible={isProfileExpanded} userInfo={userInfo} onClose={() => setIsProfileExpanded(false)} onSignOut={onSignOut} />
     </>
   );
 };
