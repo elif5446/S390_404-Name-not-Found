@@ -2,6 +2,14 @@ import { Node } from "../types/Navigation";
 import { Route } from "../types/Routes";
 import { Graph } from "./Graph";
 
+interface AlgorithmState {
+  openSet: Set<string>;
+  closedSet: Set<string>;
+  gScore: Map<string, number>;
+  fScore: Map<string, number>;
+  cameFrom: Map<string, string>;
+}
+
 //this class is the A* implementation for finding the shortest path.
 export class PathFinder {
   private readonly graph: Graph;
@@ -32,6 +40,14 @@ export class PathFinder {
     // cameFrom tracks which node we came from to reconstruct the path at the end
     const cameFrom = new Map<string, string>();
 
+    const state: AlgorithmState = {
+      openSet,
+      closedSet,
+      gScore,
+      fScore,
+      cameFrom,
+    };
+
     // initialize with start node
     gScore.set(startNodeId, 0);
     fScore.set(startNodeId, this.heuristic(startNode, endNode));
@@ -50,16 +66,7 @@ export class PathFinder {
       closedSet.add(currentId);
 
       // extracted logic
-      this.processNeighbors(
-        currentId,
-        endNode,
-        accessibleOnly,
-        openSet,
-        closedSet,
-        gScore,
-        fScore,
-        cameFrom,
-      );
+      this.processNeighbors(currentId, endNode, accessibleOnly, state);
     }
 
     throw new Error(`[PathFinder] No path found between ${startNodeId} and ${endNodeId}`);
@@ -70,12 +77,9 @@ export class PathFinder {
     currentId: string,
     endNode: Node,
     accessibleOnly: boolean,
-    openSet: Set<string>,
-    closedSet: Set<string>,
-    gScore: Map<string, number>,
-    fScore: Map<string, number>,
-    cameFrom: Map<string, string>,
+    state: AlgorithmState,
   ): void {
+    const { openSet, closedSet, gScore, fScore, cameFrom } = state;
     const neighbors = this.graph.getNeighbors(currentId);
 
     for (const neighbor of neighbors) {

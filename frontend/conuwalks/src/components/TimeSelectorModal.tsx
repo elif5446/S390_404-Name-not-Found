@@ -129,38 +129,41 @@ const WheelPicker = ({
         windowSize={3}
         maxToRenderPerBatch={10}
         contentContainerStyle={{ paddingVertical: ITEM_HEIGHT * 2 }}
-        renderItem={({ item, index: loopedIndex }) => (
-          <TouchableOpacity
-            activeOpacity={0.6}
-            style={styles.wheelItem}
-            testID={`${testIDPrefix}${item.value}`}
-            onPress={() => {
-              flatListRef.current?.scrollToOffset({
-                offset: loopedIndex * ITEM_HEIGHT,
-                animated: true,
-              });
-              if (item.value !== selectedValue) {
-                onValueChange(item.value);
-              }
-            }}
-          >
-            <Text
-              style={[
-                styles.wheelText,
-                {
-                  color:
-                    selectedValue === item.value
-                      ? "#B03060"
-                      : isDark
-                        ? "#AFAFAF"
-                        : "#8E8E93",
-                },
-              ]}
+        renderItem={({ item, index: loopedIndex }) => {
+          const itemColor =
+            selectedValue === item.value
+              ? "#B03060"
+              : isDark
+                ? "#AFAFAF"
+                : "#8E8E93";
+          return (
+            <TouchableOpacity
+              activeOpacity={0.6}
+              style={styles.wheelItem}
+              testID={`${testIDPrefix}${item.value}`}
+              onPress={() => {
+                flatListRef.current?.scrollToOffset({
+                  offset: loopedIndex * ITEM_HEIGHT,
+                  animated: true,
+                });
+                if (item.value !== selectedValue) {
+                  onValueChange(item.value);
+                }
+              }}
             >
-              {item.label}
-            </Text>
-          </TouchableOpacity>
-        )}
+              <Text
+                style={[
+                  styles.wheelText,
+                  {
+                    color: itemColor,
+                  },
+                ]}
+              >
+                {item.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        }}
       />
     </View>
   );
@@ -172,7 +175,7 @@ export default function TimeSelectorModal({
   onApply,
   initialMode,
   initialDate,
-}: Readonly < TimeSelectorModalProps>)  {
+}: Readonly<TimeSelectorModalProps>) {
   const isDark = (useColorScheme() || "light") === "dark";
   const [mode, setMode] = useState<"leave" | "arrive">(initialMode);
 

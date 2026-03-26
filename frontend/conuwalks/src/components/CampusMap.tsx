@@ -33,8 +33,14 @@ import { isPointInPolygon } from "@/src/utils/geo";
 import SGW from "@/src/data/campus/SGW.geojson";
 import LOY from "@/src/data/campus/LOY.geojson";
 import { INDOOR_DATA } from "@/src/data/indoorData";
-import { LoyolaBuildingMetadata, LoyolaBuildingSearchMetadata } from "@/src/data/metadata/LOY.BuildingMetadata";
-import { SGWBuildingMetadata, SGWBuildingSearchMetadata } from "@/src/data/metadata/SGW.BuildingMetaData";
+import {
+  LoyolaBuildingMetadata,
+  LoyolaBuildingSearchMetadata,
+} from "@/src/data/metadata/LOY.BuildingMetadata";
+import {
+  SGWBuildingMetadata,
+  SGWBuildingSearchMetadata,
+} from "@/src/data/metadata/SGW.BuildingMetaData";
 import IndoorMapOverlay from "./indoor/IndoorMapOverlay";
 import DirectionsSearchPanel from "./DirectionsSearchPanel";
 
@@ -110,10 +116,19 @@ const BuildingGroup = React.memo(
     markerRefSetter, // helper to set the ref from parent
   }: any) => {
     const centerCoordinates = calculatePolygonCenter(coordinates);
-    const campusTheme = BuildingTheme[campus as keyof typeof BuildingTheme] as Record<string, string>;
+    const campusTheme = BuildingTheme[
+      campus as keyof typeof BuildingTheme
+    ] as Record<string, string>;
 
     const themeColor = campusTheme[buildingId] || "#888888";
     const name = getBuildingDisplayName(buildingId, campus);
+    const fillColor = isSelected
+      ? themeColor + "F0"
+      : isDestination
+        ? themeColor + "C8"
+        : dimOthers
+          ? themeColor + "55"
+          : themeColor + "90";
 
     return (
       <React.Fragment>
@@ -121,18 +136,32 @@ const BuildingGroup = React.memo(
           coordinates={coordinates}
           accessibilityLabel={name}
           testID={`polygon-${name}`}
-          fillColor={isSelected ? themeColor + "F0" : isDestination ? themeColor + "C8" : dimOthers ? themeColor + "55" : themeColor + "90"}
+          fillColor={fillColor}
           strokeColor={"rgba(0,0,0,0.12)"}
           strokeWidth={1}
           tappable
-          onPress={() => handleBuildingPress(buildingId, campus, centerCoordinates)}
+          onPress={() =>
+            handleBuildingPress(buildingId, campus, centerCoordinates)
+          }
           zIndex={3}
         />
 
         {isSelected && (
           <>
-            <Polygon coordinates={coordinates} fillColor="transparent" strokeColor="#515351ff" strokeWidth={5} zIndex={5} />
-            <Polygon coordinates={coordinates} fillColor="transparent" strokeColor="#FFFFFF" strokeWidth={2} zIndex={6} />
+            <Polygon
+              coordinates={coordinates}
+              fillColor="transparent"
+              strokeColor="#515351ff"
+              strokeWidth={5}
+              zIndex={5}
+            />
+            <Polygon
+              coordinates={coordinates}
+              fillColor="transparent"
+              strokeColor="#FFFFFF"
+              strokeWidth={2}
+              zIndex={6}
+            />
           </>
         )}
 
@@ -166,7 +195,6 @@ const BuildingGroup = React.memo(
     );
   },
 );
-BuildingGroup.displayName = "BuildingGroup";
 
 const CampusMap: React.FC<CampusMapProps> = ({
   initialLocation = { latitude: 45.49599, longitude: -73.57854 },
@@ -181,7 +209,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
   const { location: userLocation, error: locationError, loading: locationLoading } = useUserLocation();
 
   const INITIAL_DELTA = 0.008;
-  const ICON_FREEZE_DELAY_MS = 250;
 
   // State to control building search popup
   const [buildingSearchVisible, setBuildingSearchVisible] = useState(false);
@@ -287,17 +314,15 @@ const CampusMap: React.FC<CampusMapProps> = ({
   // Filter buildings based on the search query
   const filteredBuildings = useMemo(() => {
     if (!searchQuery) return allBuildings;
-    return allBuildings.filter(b => b.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    return allBuildings.filter((b) =>
+      b.name.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
   }, [searchQuery, allBuildings]);
   // Handlers for building search
   const handleOpenBuildingSearch = () => {
     setBuildingSearchVisible(true);
     // optionally hide directions panel if open
     setShowDirections(false);
-  };
-
-  const handleCloseBuildingSearch = () => {
-    setBuildingSearchVisible(false);
   };
 
   // handle restoring the camera view when navigation ends
@@ -880,7 +905,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
           const { id: buildingId } = feature.properties;
           const coordinates = polygonFromGeoJSON(feature.geometry.coordinates[0]);
 
-          const isSelected = selectedBuilding.visible && selectedBuilding.name === buildingId;
+          const isSelected =
+            selectedBuilding.visible && selectedBuilding.name === buildingId;
           const isDestination = destinationBuildingId === buildingId;
           const dimOthers = selectedBuilding.visible && !!selectedBuilding.name && !isSelected;
           const markerKey = `${campus}-${buildingId}`;
@@ -912,6 +938,13 @@ const CampusMap: React.FC<CampusMapProps> = ({
   const mapID = useMemo(() => {
     return colorScheme === "dark" ? "eb0ccd6d2f7a95e23f1ec398" : "eb0ccd6d2f7a95e117328051";
   }, [colorScheme]);
+
+  const isIOS = Platform.OS === "ios";
+  const navPanelBgColor = isIOS
+    ? "transparent"
+    : colorScheme === "dark"
+      ? "#2C2C2E"
+      : "#FFFFFF";
 
   return (
     <View style={styles.container}>
@@ -1108,14 +1141,17 @@ const CampusMap: React.FC<CampusMapProps> = ({
             borderRadius: 16,
             paddingHorizontal: 12,
             paddingVertical: 10,
-            backgroundColor: Platform.OS === "ios" ? "transparent" : colorScheme === "dark" ? "#2C2C2E" : "#FFFFFF",
-            borderWidth: Platform.OS === "ios" ? 1 : 0,
-            borderColor: colorScheme === "dark" ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)",
+            backgroundColor: navPanelBgColor,
+            borderWidth: isIOS ? 1 : 0,
+            borderColor:
+              colorScheme === "dark"
+                ? "rgba(255,255,255,0.12)"
+                : "rgba(0,0,0,0.08)",
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: Platform.OS === "ios" ? 0.16 : 0.2,
+            shadowOpacity: isIOS ? 0.16 : 0.2,
             shadowRadius: 4,
-            elevation: Platform.OS === "ios" ? 0 : 4,
+            elevation: isIOS ? 0 : 4,
             zIndex: 10002,
             overflow: "hidden",
           }}
@@ -1173,14 +1209,17 @@ const CampusMap: React.FC<CampusMapProps> = ({
             borderRadius: 18,
             paddingHorizontal: 12,
             paddingVertical: 10,
-            backgroundColor: Platform.OS === "ios" ? "transparent" : colorScheme === "dark" ? "#2C2C2E" : "#FFFFFF",
-            borderWidth: Platform.OS === "ios" ? 1 : 0,
-            borderColor: colorScheme === "dark" ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)",
+            backgroundColor: navPanelBgColor,
+            borderWidth: isIOS ? 1 : 0,
+            borderColor:
+              colorScheme === "dark"
+                ? "rgba(255,255,255,0.12)"
+                : "rgba(0,0,0,0.08)",
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: Platform.OS === "ios" ? 0.16 : 0.2,
+            shadowOpacity: isIOS ? 0.16 : 0.2,
             shadowRadius: 4,
-            elevation: Platform.OS === "ios" ? 0 : 4,
+            elevation: isIOS ? 0 : 4,
             zIndex: 10002,
             flexDirection: "row",
             alignItems: "center",
