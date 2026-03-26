@@ -80,10 +80,22 @@ jest.mock("@/src/data/indoorData", () => ({
 
 jest.mock("@/src/data/metadata/SGW.BuildingMetaData", () => ({
   SGWBuildingMetadata: { H: { name: "Hall Building" } },
+  SGWBuildingSearchMetadata: {
+    H: {
+      name: "Hall Building",
+      coordinates: { latitude: 45.495, longitude: -73.578 },
+    },
+  },
 }));
 
 jest.mock("@/src/data/metadata/LOY.BuildingMetadata", () => ({
   LoyolaBuildingMetadata: { AD: { name: "Administration Building" } },
+  LoyolaBuildingSearchMetadata: {
+    AD: {
+      name: "Administration Building",
+      coordinates: { latitude: 45.458, longitude: -73.64 },
+    },
+  },
 }));
 
 jest.mock("@/src/styles/BuildingTheme", () => ({
@@ -448,7 +460,15 @@ describe("CampusMap", () => {
       expect(screen.getByTestId(TEST_IDS.administrationPolygon)).toBeTruthy();
     });
 
-    it("always renders RoutePolyline", () => {
+    it("renders RoutePolyline when start and destination differ", () => {
+      // Mock different start and destination IDs
+      (useDirections as jest.Mock).mockReturnValue(
+        makeDirections({
+          startBuildingId: "H",
+          destinationBuildingId: "MB",
+        }),
+      );
+
       render(<CampusMap />);
       expect(screen.getByTestId("route-polyline")).toBeTruthy();
     });
@@ -509,7 +529,17 @@ describe("CampusMap", () => {
 
   describe("RightControlsPanel", () => {
     it("renders when userInfo and onSignOut are provided", () => {
-      render(<CampusMap userInfo={{ name: "Alice" }} onSignOut={jest.fn()} />);
+      render(
+        <CampusMap
+          userInfo={{
+            id: "test-user-123",
+            name: "Alice",
+            email: "alice@concordia.ca",
+            photo: "https://example.com/avatar.jpg",
+          }}
+          onSignOut={jest.fn()}
+        />,
+      );
       expect(screen.getByTestId("right-controls-panel")).toBeTruthy();
     });
 
