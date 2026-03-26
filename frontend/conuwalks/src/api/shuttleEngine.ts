@@ -63,16 +63,12 @@ const parseDur = (d?: string) => {
   if (!d) return 0;
   const h = /(\d{1,5})\s{0,5}h/.exec(d);
   const m = /(\d{1,5})\s{0,5}min/.exec(d);
-  return (
-    (h ? Number.parseInt(h[1], 10) * 60 : 0) +
-    (m ? Number.parseInt(m[1], 10) : 0)
-  );
+  return (h ? Number.parseInt(h[1], 10) * 60 : 0) + (m ? Number.parseInt(m[1], 10) : 0);
 };
 
 const parseDist = (d?: string) => {
   if (!d) return 0;
-  if (d.includes("km"))
-    return Number.parseFloat(d.replaceAll(/[^\d.]/g, "")) * 1000;
+  if (d.includes("km")) return Number.parseFloat(d.replaceAll(/[^\d.]/g, "")) * 1000;
   return Number.parseFloat(d.replaceAll(/[^\d.]/g, ""));
 };
 
@@ -92,8 +88,10 @@ const getApplicableDeparture = (
 
   const scheduleType = day === 5 ? "friday" : "monday_thursday";
   const times: string[] = schedule[scheduleType][campus];
-  const targetTotalMinutes =
-    targetDate.getHours() * 60 + targetDate.getMinutes();
+
+  if (!times || !Array.isArray(times)) return null;
+
+  const targetTotalMinutes = targetDate.getHours() * 60 + targetDate.getMinutes();
 
   if (timeMode === "leave") {
     // find the first bus that departs >= target time
@@ -106,10 +104,7 @@ const getApplicableDeparture = (
     // find the latest bus that arrives <= target time
     for (let i = times.length - 1; i >= 0; i--) {
       const [h, m] = times[i].split(":").map(Number);
-      if (
-        h * 60 + m + SHUTTLE_DURATION_MINS + walkFromMins <=
-        targetTotalMinutes
-      ) {
+      if (h * 60 + m + SHUTTLE_DURATION_MINS + walkFromMins <= targetTotalMinutes) {
         return times[i];
       }
     }
@@ -128,10 +123,8 @@ export const getShuttleRouteIfApplicable = async (
   const destToSGW = distanceMetersBetween(destinationCoords, SGW_STOP);
   const destToLOY = distanceMetersBetween(destinationCoords, LOY_STOP);
 
-  const isSGWtoLOY =
-    distToSGW < MAX_WALKING_DISTANCE && destToLOY < MAX_WALKING_DISTANCE;
-  const isLOYtoSGW =
-    distToLOY < MAX_WALKING_DISTANCE && destToSGW < MAX_WALKING_DISTANCE;
+  const isSGWtoLOY = distToSGW < MAX_WALKING_DISTANCE && destToLOY < MAX_WALKING_DISTANCE;
+  const isLOYtoSGW = distToLOY < MAX_WALKING_DISTANCE && destToSGW < MAX_WALKING_DISTANCE;
 
   if (!isSGWtoLOY && !isLOYtoSGW) return null;
 
@@ -156,10 +149,7 @@ export const getShuttleRouteIfApplicable = async (
     }
   } catch (e) {
     console.log("skipping...", e);
-    walkToMins = Math.max(
-      1,
-      Math.round((isSGWtoLOY ? distToSGW : distToLOY) / 80),
-    );
+    walkToMins = Math.max(1, Math.round((isSGWtoLOY ? distToSGW : distToLOY) / 80));
   }
 
   try {
@@ -171,22 +161,12 @@ export const getShuttleRouteIfApplicable = async (
     }
   } catch (e) {
     console.log("skipping...", e);
-    walkFromMins = Math.max(
-      1,
-      Math.round((isSGWtoLOY ? destToLOY : destToSGW) / 80),
-    );
+    walkFromMins = Math.max(1, Math.round((isSGWtoLOY ? destToLOY : destToSGW) / 80));
   }
 
   // determine shuttle schedule factoring in walk times
   const schedule = await getLocalShuttleSchedule();
-  const timeStr = getApplicableDeparture(
-    departingCampus,
-    targetTime,
-    schedule,
-    timeMode,
-    walkToMins,
-    walkFromMins,
-  );
+  const timeStr = getApplicableDeparture(departingCampus, targetTime, schedule, timeMode, walkToMins, walkFromMins);
   if (!timeStr) return null;
 
   const [depH, depM] = timeStr.split(":").map(Number);
@@ -205,18 +185,12 @@ export const getShuttleRouteIfApplicable = async (
     tripStart = new Date(departureDate.getTime() - walkToMins * 60000);
   }
 
-  const totalDurationMins = Math.round(
-    (tripEnd.getTime() - tripStart.getTime()) / 60000,
-  );
+  const totalDurationMins = Math.round((tripEnd.getTime() - tripStart.getTime()) / 60000);
   const totalDistance =
-    (walkToDist || (isSGWtoLOY ? distToSGW : distToLOY)) +
-    7200 +
-    (walkFromDist || (isSGWtoLOY ? destToLOY : destToSGW));
+    (walkToDist || (isSGWtoLOY ? distToSGW : distToLOY)) + 7200 + (walkFromDist || (isSGWtoLOY ? destToLOY : destToSGW));
 
-  const formatDur = (m: number) =>
-    m >= 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`;
-  const formatDist = (m: number) =>
-    m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${Math.round(m)} m`;
+  const formatDur = (m: number) => (m >= 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`);
+  const formatDist = (m: number) => (m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${Math.round(m)} m`);
 
   const etaString =
     timeMode === "leave"
@@ -236,7 +210,7 @@ export const getShuttleRouteIfApplicable = async (
       instruction: `Walk to ${departingCampus === "SGW" ? "SGW Hall Building" : "Loyola Campus"} Shuttle Stop`,
       distance: formatDist(isSGWtoLOY ? distToSGW : distToLOY),
       duration: `${walkToMins} min`,
-      travelMode: "WALK",
+      travelMode: "walking",
       startLocation: startCoords,
       endLocation: OriginStop,
       polylinePoints: [startCoords, OriginStop],
@@ -245,15 +219,13 @@ export const getShuttleRouteIfApplicable = async (
   }
 
   // step b: shuttle trip
-  const shuttlePolyline = isSGWtoLOY
-    ? [...SHUTTLE_STREET_PATH]
-    : [...SHUTTLE_STREET_PATH].reverse();
+  const shuttlePolyline = isSGWtoLOY ? [...SHUTTLE_STREET_PATH] : [...SHUTTLE_STREET_PATH].reverse();
 
   fullSteps.push({
     instruction: `Take the Concordia Shuttle to ${isSGWtoLOY ? "Loyola Campus" : "SGW Hall Building"} (Departs at ${timeStr})`,
     distance: "7.2 km",
     duration: "30 min",
-    travelMode: "TRANSIT",
+    travelMode: "transit",
     transitVehicleType: "Shuttle",
     transitLineShortName: "C",
     transitLineName: "Concordia Student Shuttle",
@@ -272,7 +244,7 @@ export const getShuttleRouteIfApplicable = async (
       instruction: `Walk to destination`,
       distance: formatDist(isSGWtoLOY ? destToLOY : destToSGW),
       duration: `${walkFromMins} min`,
-      travelMode: "WALK",
+      travelMode: "walking",
       startLocation: DestStop,
       endLocation: destinationCoords,
       polylinePoints: [DestStop, destinationCoords],
@@ -286,6 +258,7 @@ export const getShuttleRouteIfApplicable = async (
     requestMode: "transit",
     distance: formatDist(totalDistance),
     duration: formatDur(totalDurationMins),
+    baseDurationSeconds: totalDurationMins * 60,
     eta: etaString,
     overviewPolyline: "",
     polylinePoints: fullPolyline,

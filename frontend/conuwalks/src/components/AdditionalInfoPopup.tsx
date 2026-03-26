@@ -34,7 +34,7 @@ interface AdditionalInfoPopupProps {
   buildingId: string;
   campus: "SGW" | "LOY";
   onClose: () => void;
-  onDirectionsTrigger?: () => void;
+  onDirectionsTrigger?: (specificRoom: any) => void;
   onOpenIndoorPress?: () => void;
   showOpenIndoorButton?: boolean;
   directionsEtaLabel?: string;
@@ -135,9 +135,11 @@ const {
     [snapTo, SNAP_OFFSET],
   );
 
-  const handleDirectionsPress = useCallback(() => {
+  const handleDirectionsPress = useCallback((room?: string | any) => {
+    const specificRoom = typeof room === "string" ? room : undefined;
+
     dismiss(undefined, () => {
-      onDirectionsTrigger?.();
+      onDirectionsTrigger?.(specificRoom);
     });
   }, [dismiss, onDirectionsTrigger]);
 

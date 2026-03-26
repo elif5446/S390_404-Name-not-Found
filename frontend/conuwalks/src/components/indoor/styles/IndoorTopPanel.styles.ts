@@ -3,9 +3,10 @@ import { StyleSheet } from "react-native";
 export const bottomPanelStyles = StyleSheet.create({
   container: {
     position: "absolute",
-    top: 125,
+    top: 115,
     left: 12,
     right: 12,
+    zIndex: 1000,
   },
 
   panel: {

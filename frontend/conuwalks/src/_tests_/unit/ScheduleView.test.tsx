@@ -8,8 +8,7 @@ import { useDirections } from "@/src/context/DirectionsContext";
 jest.mock("react-native-safe-area-context", () => {
   const React = require("react");
   return {
-    SafeAreaView: (props: any) =>
-      React.createElement("View", props, props.children),
+    SafeAreaView: (props: any) => React.createElement("View", props, props.children),
     useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
   };
 });
@@ -118,11 +117,7 @@ describe("ScheduleView", () => {
     fireEvent.press(navBtn);
 
     // Verify it was correctly parsed and mapped to the Hall Building mock
-    expect(mockSetDestination).toHaveBeenCalledWith(
-      "H",
-      expect.any(Object),
-      "Hall Building",
-    );
+    expect(mockSetDestination).toHaveBeenCalledWith("H", expect.any(Object), "Hall Building", undefined);
     expect(mockSetShowDirections).toHaveBeenCalledWith(true);
     expect(mockNavigate).toHaveBeenCalled();
   });

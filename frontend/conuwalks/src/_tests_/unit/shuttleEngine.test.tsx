@@ -89,23 +89,14 @@ describe("shuttleRouting.ts", () => {
     it("returns null on weekends (Sunday)", async () => {
       // sunday, march 1, 2026
       const sunday = new Date(2026, 2, 1, 10, 0);
-      const result = await getShuttleRouteIfApplicable(
-        START_SGW,
-        DEST_LOY,
-        sunday,
-      );
+      const result = await getShuttleRouteIfApplicable(START_SGW, DEST_LOY, sunday);
       expect(result).toBeNull();
     });
 
     it("returns null if no buses are left for the day", async () => {
       // monday, 11:00 pm (schedule only goes up to 10:30)
       const lateNight = new Date(2026, 2, 2, 23, 0);
-      const result = await getShuttleRouteIfApplicable(
-        START_SGW,
-        DEST_LOY,
-        lateNight,
-        "leave",
-      );
+      const result = await getShuttleRouteIfApplicable(START_SGW, DEST_LOY, lateNight, "leave");
       expect(result).toBeNull();
     });
   });
@@ -123,19 +114,14 @@ describe("shuttleRouting.ts", () => {
       // monday, 9:05 am. next bus from sgw should be 09:30 (accounting for 5 min walk)
       const mondayMorning = new Date(2026, 2, 2, 9, 5);
 
-      const result = await getShuttleRouteIfApplicable(
-        START_SGW,
-        DEST_LOY,
-        mondayMorning,
-        "leave",
-      );
+      const result = await getShuttleRouteIfApplicable(START_SGW, DEST_LOY, mondayMorning, "leave");
 
       expect(result).not.toBeNull();
       expect(result?.isShuttle).toBe(true);
 
       // walk to shuttle, shuttle, walk to dest
       expect(result?.steps.length).toBe(3);
-      expect(result?.steps[1].travelMode).toBe("TRANSIT");
+      expect(result?.steps[1].travelMode).toBe("transit");
       expect(result?.steps[1].transitVehicleType).toBe("Shuttle");
       expect(result?.steps[1].instruction).toContain("Departs at 09:30");
 
@@ -152,20 +138,13 @@ describe("shuttleRouting.ts", () => {
       // total travel ~36 mins. must catch a bus before 9:44. the 09:30 sgw bus works.
       const targetArrival = new Date(2026, 2, 2, 10, 20);
 
-      const result = await getShuttleRouteIfApplicable(
-        START_SGW,
-        DEST_LOY,
-        targetArrival,
-        "arrive",
-      );
+      const result = await getShuttleRouteIfApplicable(START_SGW, DEST_LOY, targetArrival, "arrive");
 
       expect(result).not.toBeNull();
 
       // verify fallback steps were created
-      expect(result?.steps[0].travelMode).toBe("WALK");
-      expect(result?.steps[0].instruction).toBe(
-        "Walk to SGW Hall Building Shuttle Stop",
-      );
+      expect(result?.steps[0].travelMode).toBe("walking");
+      expect(result?.steps[0].instruction).toBe("Walk to SGW Hall Building Shuttle Stop");
       expect(result?.steps[2].instruction).toBe("Walk to destination");
 
       // eta string for 'arrive' mode should format as 'leave by hh:mm'
