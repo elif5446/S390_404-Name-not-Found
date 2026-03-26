@@ -5,7 +5,7 @@ import {
   Platform,
   useColorScheme,
   ActivityIndicator,
-  ViewStyle
+  ViewStyle,
 } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { SymbolView } from "expo-symbols";
@@ -14,7 +14,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import UserProfilePopup from "./UserProfilePopup";
 import BuildingSearchButton from "../components/BuildingSearchButton";
 import { UserInfo } from "@/src/utils/tokenStorage";
-import { LatLng } from 'react-native-maps';
+import { LatLng } from "react-native-maps";
 
 interface Props {
   userInfo: UserInfo | null;
@@ -49,7 +49,7 @@ const RightControlsPanel: React.FC<Props> = ({
   isInfoPopupExpanded = false,
   handleOpenBuildingSearch,
   isDirections,
-  isNavigation
+  isNavigation,
 }) => {
   const mode = useColorScheme() || "light";
   const [isProfileExpanded, setIsProfileExpanded] = useState(false);
@@ -63,19 +63,38 @@ const RightControlsPanel: React.FC<Props> = ({
   const buttonSize = 50;
   const buttonSpacing = 12;
   const userIconSize = 50;
-  
+  const isIOS = Platform.OS === "ios";
+  const backgroundColor = isIOS
+    ? "transparent"
+    : mode === "dark"
+      ? "#2C2C2E"
+      : "#FFFFFF";
+
   const style: ViewStyle = {
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
-    backgroundColor: Platform.OS === "ios" ? "transparent" : mode === "dark" ? "#2C2C2E" : "#FFFFFF",
+    backgroundColor,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: Platform.OS === "ios" ? 0.18 : 0.22,
+    shadowOpacity: isIOS ? 0.18 : 0.22,
     shadowRadius: 4,
-    elevation: Platform.OS === "ios" ? 0 : 4,
-    marginBottom: buttonSpacing
-  }
+    elevation: isIOS ? 0 : 4,
+    marginBottom: buttonSpacing,
+  };
+
+  const locationIcon = locationLoading ? (
+    <ActivityIndicator size="small" color="#B03060" />
+  ) : isIOS ? (
+    <SymbolView
+      name="location.north.fill"
+      size={20}
+      weight="medium"
+      tintColor="#B03060"
+    />
+  ) : (
+    <MaterialIcons name="navigation" size={20} color="#B03060" />
+  );
 
   return (
     <>
@@ -91,57 +110,63 @@ const RightControlsPanel: React.FC<Props> = ({
         pointerEvents="box-none"
       >
         {/* User Profile Icon */}
-        {!isDirections && <>
-        {!isNavigation && <TouchableOpacity
-          onPress={() => setIsProfileExpanded(!isProfileExpanded)}
-          style={[style, {
-            width: userIconSize,
-            height: userIconSize,
-            borderRadius: userIconSize / 2
-          }]}
-          pointerEvents="auto"
-          accessible={true}
-          accessibilityLabel="Open user profile"
-          accessibilityRole="button"
-        >
-          <GlassBackground mode={mode}/>
-          <MaterialIcons name="person" size={24} color="#B03060" />
-        </TouchableOpacity>}
-
-        {/* Location Recenter Button */}
-        {showLocationButton && (
-          <TouchableOpacity
-            onPress={onLocationPress}
-            activeOpacity={0.85}
-            style={[style, {
-              position: "relative",
-              width: buttonSize,
-              height: buttonSize,
-              borderRadius: buttonSize / 2
-            }]}
-            pointerEvents="auto"
-            accessible={true}
-            accessibilityLabel="Recenter to your location"
-            accessibilityHint="Moves the map camera back to your current location"
-          >
-            <GlassBackground mode={mode}/>
-            {locationLoading ? (
-              <ActivityIndicator size="small" color="#B03060" />
-            ) : Platform.OS === "ios" ? (
-              <SymbolView
-                name="location.north.fill"
-                size={20}
-                weight="medium"
-                tintColor="#B03060"
-              />
-            ) : (
-              <MaterialIcons name="navigation" size={20} color="#B03060" />
+        {!isDirections && (
+          <>
+            {!isNavigation && (
+              <TouchableOpacity
+                onPress={() => setIsProfileExpanded(!isProfileExpanded)}
+                style={[
+                  style,
+                  {
+                    width: userIconSize,
+                    height: userIconSize,
+                    borderRadius: userIconSize / 2,
+                  },
+                ]}
+                pointerEvents="auto"
+                accessible={true}
+                accessibilityLabel="Open user profile"
+                accessibilityRole="button"
+              >
+                <GlassBackground mode={mode} />
+                <MaterialIcons name="person" size={24} color="#B03060" />
+              </TouchableOpacity>
             )}
-          </TouchableOpacity>
+
+            {/* Location Recenter Button */}
+            {showLocationButton && (
+              <TouchableOpacity
+                onPress={onLocationPress}
+                activeOpacity={0.85}
+                style={[
+                  style,
+                  {
+                    position: "relative",
+                    width: buttonSize,
+                    height: buttonSize,
+                    borderRadius: buttonSize / 2,
+                  },
+                ]}
+                pointerEvents="auto"
+                accessible={true}
+                accessibilityLabel="Recenter to your location"
+                accessibilityHint="Moves the map camera back to your current location"
+              >
+                <GlassBackground mode={mode} />
+                {locationIcon}
+              </TouchableOpacity>
+            )}
+            {/* Search Button */}
+            {!isNavigation && (
+              <BuildingSearchButton
+                onPress={handleOpenBuildingSearch}
+                buttonSize={buttonSize}
+                mode={mode}
+                buttonSpacing={buttonSpacing}
+              />
+            )}
+          </>
         )}
-        {/* Search Button */}
-        {!isNavigation && <BuildingSearchButton onPress={handleOpenBuildingSearch} buttonSize={buttonSize} mode={mode} buttonSpacing={buttonSpacing} />}
-        </>}
       </View>
       <UserProfilePopup
         visible={isProfileExpanded}

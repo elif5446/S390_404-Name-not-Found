@@ -317,140 +317,143 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ onNavigateToClass }) => {
         <FlatList
           data={groupedArray}
           keyExtractor={(item) => item.date}
-          renderItem={({ item: dateGroup }) => (
-            <View key={dateGroup.date} style={{ paddingHorizontal: 16 }}>
-              <Text
-                style={{
-                  marginTop: 24,
-                  marginBottom: 12,
-                  fontSize: 18,
-                  fontWeight: "800",
-                  color:
-                    dateGroup.date === "Today"
-                      ? "#B03060"
-                      : mode === "dark"
-                        ? "#fff"
-                        : "#333",
-                }}
-              >
-                {dateGroup.date}
-              </Text>
-
-              {dateGroup.events.map((event) => (
-                <View
-                  key={event.id}
+          renderItem={({ item: dateGroup }) => {
+            const dateHeadingColor =
+              dateGroup.date === "Today"
+                ? "#B03060"
+                : mode === "dark"
+                  ? "#fff"
+                  : "#333";
+            return (
+              <View key={dateGroup.date} style={{ paddingHorizontal: 16 }}>
+                <Text
                   style={{
-                    backgroundColor: widgetBg,
-                    borderLeftWidth: 6,
-                    borderLeftColor: "#B03060",
-                    borderRadius: 12,
-                    padding: 16,
+                    marginTop: 24,
                     marginBottom: 12,
-                    shadowColor: "#000",
-                    shadowOpacity: 0.1,
-                    shadowRadius: 4,
-                    elevation: 2,
+                    fontSize: 18,
+                    fontWeight: "800",
+                    color: dateHeadingColor,
                   }}
                 >
+                  {dateGroup.date}
+                </Text>
+
+                {dateGroup.events.map((event) => (
                   <View
+                    key={event.id}
                     style={{
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: 10,
+                      backgroundColor: widgetBg,
+                      borderLeftWidth: 6,
+                      borderLeftColor: "#B03060",
+                      borderRadius: 12,
+                      padding: 16,
+                      marginBottom: 12,
+                      shadowColor: "#000",
+                      shadowOpacity: 0.1,
+                      shadowRadius: 4,
+                      elevation: 2,
                     }}
                   >
-                    <Text
+                    <View
                       style={{
-                        fontSize: 20,
-                        fontWeight: "700",
-                        color: mode === "dark" ? "#fff" : "#111",
-                        flex: 1,
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: 10,
                       }}
-                      numberOfLines={2}
                     >
-                      {event.summary}
-                    </Text>
+                      <Text
+                        style={{
+                          fontSize: 20,
+                          fontWeight: "700",
+                          color: mode === "dark" ? "#fff" : "#111",
+                          flex: 1,
+                        }}
+                        numberOfLines={2}
+                      >
+                        {event.summary}
+                      </Text>
+
+                      {event.location && (
+                        <NavigationButton
+                          location={event.location}
+                          userLocation={userLocation}
+                          onNavigate={handleGoToClass}
+                        />
+                      )}
+                    </View>
+
+                    {event.formattedTime && (
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          marginBottom: 6,
+                        }}
+                      >
+                        <MaterialIcons
+                          name="access-time"
+                          size={20}
+                          color={secondaryTextColor}
+                          style={{ marginRight: 6 }}
+                        />
+                        <Text
+                          style={{
+                            fontSize: 17,
+                            color: secondaryTextColor,
+                            fontWeight: "500",
+                          }}
+                        >
+                          {event.formattedTime}
+                        </Text>
+                      </View>
+                    )}
 
                     {event.location && (
-                      <NavigationButton
-                        location={event.location}
-                        userLocation={userLocation}
-                        onNavigate={handleGoToClass}
-                      />
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          marginBottom: 4,
+                        }}
+                      >
+                        <MaterialIcons
+                          name="place"
+                          size={20}
+                          color={secondaryTextColor}
+                          style={{ marginRight: 6 }}
+                        />
+                        <Text
+                          style={{
+                            fontSize: 17,
+                            color: secondaryTextColor,
+                            fontWeight: "500",
+                          }}
+                          numberOfLines={1}
+                        >
+                          {event.location}
+                        </Text>
+                      </View>
+                    )}
+
+                    {event.description && (
+                      <Text
+                        style={{
+                          fontSize: 13,
+                          color: mode === "dark" ? "#999" : "#777",
+                          marginTop: 8,
+                          fontStyle: "italic",
+                        }}
+                        numberOfLines={2}
+                      >
+                        {event.description}
+                      </Text>
                     )}
                   </View>
-
-                  {event.formattedTime && (
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        marginBottom: 6,
-                      }}
-                    >
-                      <MaterialIcons
-                        name="access-time"
-                        size={20}
-                        color={secondaryTextColor}
-                        style={{ marginRight: 6 }}
-                      />
-                      <Text
-                        style={{
-                          fontSize: 17,
-                          color: secondaryTextColor,
-                          fontWeight: "500",
-                        }}
-                      >
-                        {event.formattedTime}
-                      </Text>
-                    </View>
-                  )}
-
-                  {event.location && (
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        marginBottom: 4,
-                      }}
-                    >
-                      <MaterialIcons
-                        name="place"
-                        size={20}
-                        color={secondaryTextColor}
-                        style={{ marginRight: 6 }}
-                      />
-                      <Text
-                        style={{
-                          fontSize: 17,
-                          color: secondaryTextColor,
-                          fontWeight: "500",
-                        }}
-                        numberOfLines={1}
-                      >
-                        {event.location}
-                      </Text>
-                    </View>
-                  )}
-
-                  {event.description && (
-                    <Text
-                      style={{
-                        fontSize: 13,
-                        color: mode === "dark" ? "#999" : "#777",
-                        marginTop: 8,
-                        fontStyle: "italic",
-                      }}
-                      numberOfLines={2}
-                    >
-                      {event.description}
-                    </Text>
-                  )}
-                </View>
-              ))}
-            </View>
-          )}
+                ))}
+              </View>
+            );
+          }}
           contentContainerStyle={{ paddingBottom: 60, paddingTop: 10 }}
         />
       )}
