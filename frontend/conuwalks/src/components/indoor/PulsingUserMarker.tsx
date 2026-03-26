@@ -21,6 +21,9 @@ const PulsingUserMarker = ({ x, y }: { x: number; y: number }) => {
 
   return (
     <View
+      accessible={true}
+      accessibilityLabel="Your current location"
+      accessibilityRole="image"
       style={{
         position: "absolute",
         left: x - 12,
@@ -52,7 +55,6 @@ const PulsingUserMarker = ({ x, y }: { x: number; y: number }) => {
         }}
       />
 
-      {/* Static Core */}
       <View
         style={{
           width: 24,
