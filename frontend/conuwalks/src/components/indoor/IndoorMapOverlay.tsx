@@ -142,129 +142,62 @@ function useHotspots(buildingData: BuildingIndoorConfig) {
   }, [buildingData.id, buildingData.floors, buildingData.defaultFloor]);
 }
 
-function useStartSync(
-  buildingData: BuildingIndoorConfig,
-  startBuildingId: string | null | undefined,
-  startRoomId: string | null | undefined,
-  hotspots: IndoorHotspot[],
-) {
-  const [startLocation, setStartLocation] = useState<IndoorDestination | null>(null);
-  const lastSyncedStartRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (!startBuildingId || startBuildingId !== buildingData.id || !startRoomId) {
-      setStartLocation(null);
-      lastSyncedStartRef.current = null;
-      return;
-    }
-
-    if (startRoomId === lastSyncedStartRef.current) return;
-
-    const cleanInput = startRoomId.toLowerCase().replace(/[^a-z0-9]/g, "");
-    let targetNode: IndoorDestination | undefined;
-
-    targetNode = hotspots.find(spot => {
-      const spotId = spot.id.toLowerCase().replace(/[^a-z0-9]/g, "");
-      const spotLabel = (spot.label || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-      return spotId === cleanInput || spotLabel === cleanInput || spotId.endsWith(cleanInput) || spotLabel.endsWith(cleanInput);
-    });
-
-    // if not in hotspots, search ALL nodes
-    if (!targetNode) {
-      const navConfig = navConfigRegistry[buildingData.id];
-      if (navConfig) {
-        for (const navFloor of navConfig.floors) {
-          const foundNode = navFloor.nodes.find(n => {
-            if (n.id === startRoomId) return true;
-            const nId = n.id.toLowerCase().replace(/[^a-z0-9]/g, "");
-            const nLabel = (n.label || "").toLowerCase().replace(/[^a-z0-9]/g, "");
-            return nId === cleanInput || nLabel === cleanInput || nId.endsWith(cleanInput) || nLabel.endsWith(cleanInput);
-          });
-
-          if (foundNode) {
-            const visualFloor = buildingData.floors.find(f => f.id === navFloor.floorId);
-            targetNode = {
-              id: foundNode.id,
-              x: foundNode.x,
-              y: foundNode.y,
-              floorLevel: visualFloor ? visualFloor.level : buildingData.defaultFloor,
-              label: foundNode.label ?? foundNode.id,
-            };
-            break;
-          }
-        }
-      }
-    }
-
-    // fallback for purely visual/explicit POIs
-    if (!targetNode) {
-      for (const floor of buildingData.floors) {
-        const pois = getPOIsForFloor(buildingData.id, floor.level);
-        const foundPoi = pois.find(p => p.id === startRoomId || p.room === startRoomId);
-        if (foundPoi) {
-          const fallbackWidth = (floor as any).width ?? 1024;
-          const fallbackHeight = (floor as any).height ?? 1024;
-          targetNode = {
-            id: foundPoi.id,
-            x: Math.round(foundPoi.mapPosition.x * fallbackWidth),
-            y: Math.round(foundPoi.mapPosition.y * fallbackHeight),
-            floorLevel: floor.level,
-            label: foundPoi.label,
-          };
-          break;
-        }
-      }
-    }
-
-    if (targetNode) {
-      setStartLocation(targetNode);
-      lastSyncedStartRef.current = startRoomId;
-    } else {
-      setStartLocation(null);
-    }
-  }, [startBuildingId, startRoomId, buildingData.id, buildingData.floors, buildingData.defaultFloor, hotspots]);
-
-  return { startLocation, setStartLocation };
+interface UseLocationSyncProps {
+  type: "start" | "destination";
+  buildingData: BuildingIndoorConfig;
+  buildingId?: string | null;
+  roomId?: string | null;
+  hotspots: IndoorHotspot[];
+  isNavigationActive?: boolean;
+  baseStartNode?: Node | null;
+  currentLevel?: number;
+  handleFloorChange?: (level: number) => void;
 }
-// Global Destination Sync
-function useDestinationSync(
-  buildingData: BuildingIndoorConfig,
-  destinationBuildingId: string | null | undefined,
-  destinationRoomId: string | null | undefined,
-  hotspots: IndoorHotspot[],
-  isNavigationActive: boolean | undefined,
-  baseStartNode: Node | null,
-  currentLevel: number,
-  handleFloorChange: (level: number) => void,
-) {
-  const [destination, setDestination] = useState<IndoorDestination | null>(null);
-  const lastSyncedDestRef = useRef<string | null>(null);
+
+function useLocationSync({
+  type,
+  buildingData,
+  buildingId,
+  roomId,
+  hotspots,
+  isNavigationActive,
+  baseStartNode,
+  currentLevel,
+  handleFloorChange,
+}: UseLocationSyncProps) {
+  const [location, setLocation] = useState<IndoorDestination | null>(null);
+  const lastSyncedRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!destinationBuildingId || destinationBuildingId !== buildingData.id || !destinationRoomId) {
-      setDestination(null);
-      lastSyncedDestRef.current = null;
+    if (!buildingId || buildingId !== buildingData.id || !roomId) {
+      setLocation(null);
+      lastSyncedRef.current = null;
       return;
     }
 
-    if (!baseStartNode || destinationRoomId === lastSyncedDestRef.current) return;
+    // Destination requires a base node before routing can sync
+    if (type === "destination" && !baseStartNode) return;
 
-    const cleanInput = destinationRoomId.toLowerCase().replace(/[^a-z0-9]/g, "");
+    // Prevent duplicate updates
+    if (roomId === lastSyncedRef.current) return;
+
+    const cleanInput = roomId.toLowerCase().replace(/[^a-z0-9]/g, "");
     let targetNode: IndoorDestination | undefined;
 
+    // Search Hotspots
     targetNode = hotspots.find(spot => {
       const spotId = spot.id.toLowerCase().replace(/[^a-z0-9]/g, "");
       const spotLabel = (spot.label || "").toLowerCase().replace(/[^a-z0-9]/g, "");
       return spotId === cleanInput || spotLabel === cleanInput || spotId.endsWith(cleanInput) || spotLabel.endsWith(cleanInput);
     });
 
-    // if not in hotspots, search ALL nodes
+    // Search ALL navigation nodes
     if (!targetNode) {
       const navConfig = navConfigRegistry[buildingData.id];
       if (navConfig) {
         for (const navFloor of navConfig.floors) {
           const foundNode = navFloor.nodes.find(n => {
-            if (n.id === destinationRoomId) return true; // Exact match priority
+            if (n.id === roomId) return true; // Exact match priority
             const nId = n.id.toLowerCase().replace(/[^a-z0-9]/g, "");
             const nLabel = (n.label || "").toLowerCase().replace(/[^a-z0-9]/g, "");
             return nId === cleanInput || nLabel === cleanInput || nId.endsWith(cleanInput) || nLabel.endsWith(cleanInput);
@@ -285,11 +218,11 @@ function useDestinationSync(
       }
     }
 
-    // fallback for purely visual/explicit POIs
+    // Search purely visual/explicit POIs
     if (!targetNode) {
       for (const floor of buildingData.floors) {
         const pois = getPOIsForFloor(buildingData.id, floor.level);
-        const foundPoi = pois.find(p => p.id === destinationRoomId || p.room === destinationRoomId);
+        const foundPoi = pois.find(p => p.id === roomId || p.room === roomId);
         if (foundPoi) {
           const fallbackWidth = (floor as any).width ?? 1024;
           const fallbackHeight = (floor as any).height ?? 1024;
@@ -306,30 +239,37 @@ function useDestinationSync(
     }
 
     if (targetNode) {
-      setDestination(targetNode);
-      lastSyncedDestRef.current = destinationRoomId;
-      const targetLevel = isNavigationActive ? buildingData.floors.find(f => f.id === baseStartNode.floorId)?.level : targetNode.floorLevel;
+      setLocation(targetNode);
+      lastSyncedRef.current = roomId;
+      // Handle specific destination auto-floor-switch behavior
+      if (type === "destination" && handleFloorChange && currentLevel !== undefined) {
+        const targetLevel =
+          isNavigationActive && baseStartNode
+            ? buildingData.floors.find(f => f.id === baseStartNode.floorId)?.level
+            : targetNode.floorLevel;
 
-      if (targetLevel !== undefined && currentLevel !== targetLevel) {
-        setTimeout(() => handleFloorChange(targetLevel), 100);
+        if (targetLevel !== undefined && currentLevel !== targetLevel) {
+          setTimeout(() => handleFloorChange(targetLevel), 100);
+        }
       }
     } else {
-      setDestination(null);
+      setLocation(null);
     }
   }, [
-    destinationBuildingId,
-    destinationRoomId,
+    type,
+    buildingId,
+    roomId,
     buildingData.id,
+    buildingData.floors,
+    buildingData.defaultFloor,
     hotspots,
     isNavigationActive,
     baseStartNode,
-    buildingData.floors,
     currentLevel,
     handleFloorChange,
-    buildingData.defaultFloor,
   ]);
 
-  return { destination, setDestination };
+  return { location, setLocation };
 }
 
 const IndoorMapOverlay: React.FC<Props> = ({
@@ -407,7 +347,6 @@ const IndoorMapOverlay: React.FC<Props> = ({
     [buildingData.id, currentLevel],
   );
 
-  const { startLocation, setStartLocation } = useStartSync(buildingData, startBuildingId, startRoomId, hotspots);
   const [activeCategories, setActiveCategories] = useState<Set<POICategory>>(() => new Set(categoriesForFloor));
 
   // Map Scaling Calculations
@@ -466,16 +405,25 @@ const IndoorMapOverlay: React.FC<Props> = ({
     [currentLevel, fadeAnim],
   );
 
-  const { destination, setDestination } = useDestinationSync(
+  const { location: startLocation, setLocation: setStartLocation } = useLocationSync({
+    type: "start",
     buildingData,
-    destinationBuildingId,
-    destinationRoomId,
+    buildingId: startBuildingId,
+    roomId: startRoomId,
+    hotspots,
+  });
+
+  const { location: destination, setLocation: setDestination } = useLocationSync({
+    type: "destination",
+    buildingData,
+    buildingId: destinationBuildingId,
+    roomId: destinationRoomId,
     hotspots,
     isNavigationActive,
     baseStartNode,
     currentLevel,
     handleFloorChange,
-  );
+  });
 
   // UI lifecycle
   useEffect(() => {
