@@ -247,64 +247,51 @@ function maybeEmitStraight(
   }
 }
 
-// Segment -> text─
+function getStartText(seg: StartSegment): string {
+  const { node, initialVec } = seg;
+
+  if (node.type === "hallway") {
+    return "Head into the corridor";
+  }
+
+  const cos = cosSim(initialVec, { dx: 0, dy: -1 });
+  const cross = crossSign({ dx: 0, dy: -1 }, initialVec);
+  const isTurning = cos < 0.75
+  const direction = cross > 0 ? "right" : "left"
+
+  if (node.type === "entrance") {
+    return "Enter the building and " + (isTurning ? `turn ${direction} into the corridor` : "continue straight");
+  }
+
+  if (["room", "bathroom", "food", "helpDesk"].includes(node.type ?? "")) {
+    return "Exit the room and " + (isTurning ? `turn ${direction}` : "continue straight") + " into the hallway";
+  }
+
+  return `Start at ${node.label ?? node.id} and head into the corridor`; 
+}
+
+// Segment -> text
 
 function segmentToText(seg: Segment): string {
   switch (seg.kind) {
-    case "start": {
-      const { node, initialVec } = seg;
-
-      if (node.type === "entrance") {
-        const cos = cosSim(initialVec, { dx: 0, dy: -1 });
-        const cross = crossSign({ dx: 0, dy: -1 }, initialVec);
-        if (cos < 0.75) {
-          return cross > 0 ? "Enter the building and turn right into the corridor" : "Enter the building and turn left into the corridor";
-        }
-        return "Enter the building and continue straight";
-      }
-
-      if (["room", "bathroom", "food", "helpDesk"].includes(node.type ?? "")) {
-        const cos = cosSim(initialVec, { dx: 0, dy: -1 });
-        const cross = crossSign({ dx: 0, dy: -1 }, initialVec);
-        if (cos < 0.75) {
-          return cross > 0 ? "Exit the room and turn right into the hallway" : "Exit the room and turn left into the hallway";
-        }
-        return "Exit the room and continue straight into the hallway";
-      }
-
-      if (node.type === "hallway") {
-        return "Head into the corridor";
-      }
-
-      return `Start at ${node.label ?? node.id} and head into the corridor`;
-    }
+    case "start": return getStartText(seg);
 
     case "straight": {
-      if (seg.onOpenFloor && seg.nextTransitKind) {
-        const target = seg.nextTransitKind === "elevator" ? "elevator" : seg.nextTransitKind === "escalator" ? "escalator" : "stairs";
-        return `Walk to the ${target}`;
-      }
-      if (seg.onOpenFloor) {
-        return "Walk across the open area";
-      }
-      return "Continue straight in the hallway";
+      if (!seg.onOpenFloor) return "Continue straight in the hallway";
+      return "Walk " + (seg.nextTransitKind ? `to the ${seg.nextTransitKind}` : "across the open area");
     }
 
-    case "turn":
-      return seg.direction === "left" ? "Turn left at the next hallway" : "Turn right at the next hallway";
+    case "turn": return `Turn ${seg.direction} at the next hallway`;
 
     case "transit": {
-      const verb =
-        seg.transitKind === "elevator" ? "Take the elevator" : seg.transitKind === "escalator" ? "Take the escalator" : "Take the stairs";
+      const verb = `Take the ${seg.transitKind}`;
       const dir = seg.toFloor > seg.fromFloor ? "up" : "down";
       return `${verb} ${dir} to Floor ${seg.toFloor}`;
     }
 
     case "arrive": {
       const dest = destinationLabel(seg.node);
-      if (seg.approachTurn === "left") return `Your destination is on the left — ${dest}`;
-      if (seg.approachTurn === "right") return `Your destination is on the right — ${dest}`;
-      return `You have arrived at ${dest}`;
+      return seg.approachTurn ? `Your destination is on the ${seg.approachTurn} — ${dest}` : `You have arrived at ${dest}`;
     }
   }
 }
