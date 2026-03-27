@@ -1,10 +1,8 @@
 import { LatLng } from "react-native-maps";
 import { DirectionStep, RouteData } from "@/src/context/DirectionsContext";
+import { parseSeconds, formatDurationFromSeconds, calculateEtaFromSeconds } from "@/src/utils/time";
 
-const GOOGLE_DIRECTIONS_API_KEY =
-  process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ??
-  process.env.GOOGLE_MAPS_API_KEY ??
-  "";
+const GOOGLE_DIRECTIONS_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ?? process.env.GOOGLE_MAPS_API_KEY ?? "";
 
 interface RoutesApiResponse {
   routes?: {
@@ -123,6 +121,18 @@ interface DirectionsApiResponse {
   }[];
 }
 
+type TravelMode = "walking" | "driving" | "transit" | "bicycling";
+
+const normalizeTravelMode = (mode?: string): TravelMode | undefined => {
+  if (!mode) return undefined;
+  const upper = mode.toUpperCase();
+  if (upper.includes("WALK")) return "walking";
+  if (upper.includes("DRIVE")) return "driving";
+  if (upper.includes("BICYCLE")) return "bicycling";
+  if (upper === "TRANSIT") return "transit";
+  return undefined;
+};
+
 /**
  * Decode Google's polyline encoding algorithm
  * @param polyline - Encoded polyline string
@@ -140,7 +150,7 @@ export const decodePolyline = (polyline: string): LatLng[] => {
     let byte;
 
     do {
-      byte = polyline.codePointAt(index++) - 63;
+      byte = (polyline.codePointAt(index++) ?? 0) - 63;
       result |= (byte & 0x1f) << shift;
       shift += 5;
     } while (byte >= 0x20);
@@ -152,7 +162,7 @@ export const decodePolyline = (polyline: string): LatLng[] => {
     shift = 0;
 
     do {
-      byte = polyline.codePointAt(index++) - 63;
+      byte = (polyline.codePointAt(index++) ?? 0) - 63;
       result |= (byte & 0x1f) << shift;
       shift += 5;
     } while (byte >= 0x20);
@@ -169,28 +179,6 @@ export const decodePolyline = (polyline: string): LatLng[] => {
   return points;
 };
 
-const parseSeconds = (durationValue: string | undefined): number => {
-  if (!durationValue) return 0;
-  const parsed = Number.parseFloat(durationValue.replace("s", ""));
-  return Number.isFinite(parsed) ? parsed : 0;
-};
-
-const formatDuration = (durationValue: string | undefined): string => {
-  const totalSeconds = parseSeconds(durationValue);
-  if (totalSeconds <= 0) {
-    return "0 min";
-  }
-
-  const totalMinutes = Math.max(1, Math.round(totalSeconds / 60));
-  if (totalMinutes < 60) {
-    return `${totalMinutes} min`;
-  }
-
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  return minutes > 0 ? `${hours} h ${minutes} min` : `${hours} h`;
-};
-
 const formatDistance = (meters: number | undefined): string => {
   if (!meters || meters <= 0) {
     return "0 m";
@@ -203,28 +191,6 @@ const formatDistance = (meters: number | undefined): string => {
   return `${(meters / 1000).toFixed(1)} km`;
 };
 
-const calculateEta = (
-  durationValue: string | undefined,
-  targetTime: Date | null,
-  timeMode: "leave" | "arrive",
-): string => {
-  // if the user specifies they want to arrive by a certain time, that time is their ETA
-  if (timeMode === "arrive" && targetTime) {
-    const hours = targetTime.getHours();
-    const minutes = targetTime.getMinutes().toString().padStart(2, "0");
-    return `${hours}:${minutes} ETA`;
-  }
-
-  // otherwise, calculate ETA starting from their chosen departure time or now
-  const startTime = targetTime ? targetTime.getTime() : Date.now();
-  const totalSeconds = parseSeconds(durationValue);
-  const etaDate = new Date(startTime + totalSeconds * 1000);
-
-  const hours = etaDate.getHours();
-  const minutes = etaDate.getMinutes().toString().padStart(2, "0");
-  return `${hours}:${minutes} ETA`;
-};
-
 const isRoutesBlockedError = (message: string): boolean => {
   const normalized = message.toLowerCase();
   return (
@@ -232,9 +198,7 @@ const isRoutesBlockedError = (message: string): boolean => {
     normalized.includes("routes.googleapis.com") ||
     normalized.includes("google.maps.routing.v2.routes.computeroutes") ||
     normalized.includes("routes api has not been used") ||
-    normalized.includes(
-      "method google.maps.routing.v2.routes.computeroutes are blocked",
-    )
+    normalized.includes("method google.maps.routing.v2.routes.computeroutes are blocked")
   );
 };
 
@@ -242,7 +206,6 @@ const stripHtml = (input: string | undefined): string => {
   if (!input) {
     return "Continue";
   }
-  // prevent ReDoS flags
   return input.replaceAll(/<[^>]{0,1000}>/g, "").trim() || "Continue";
 };
 
@@ -262,10 +225,8 @@ const toLatLng = (
     return undefined;
   }
 
-  const latitude =
-    "latitude" in value ? value.latitude : (value as { lat?: number }).lat;
-  const longitude =
-    "longitude" in value ? value.longitude : (value as { lng?: number }).lng;
+  const latitude = "latitude" in value ? value.latitude : (value as { lat?: number }).lat;
+  const longitude = "longitude" in value ? value.longitude : (value as { lng?: number }).lng;
 
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
     return undefined;
@@ -276,8 +237,6 @@ const toLatLng = (
     longitude: longitude as number,
   };
 };
-
-type TravelMode = "walking" | "driving" | "transit" | "bicycling";
 
 const fetchLegacyDirections = async (
   start: LatLng,
@@ -300,11 +259,9 @@ const fetchLegacyDirections = async (
     }
 
     const timeSeconds = Math.floor(safeTargetTime.getTime() / 1000);
-    if (timeMode === "arrive") {
-      if (mode === "transit") {
-        url += `&arrival_time=${timeSeconds}`;
-      }
-    } else {
+    if (timeMode === "arrive" && mode === "transit") {
+      url += `&arrival_time=${timeSeconds}`;
+    } else if (timeMode === "leave") {
       url += `&departure_time=${timeSeconds}`;
     }
   }
@@ -321,18 +278,13 @@ const fetchLegacyDirections = async (
   const data: DirectionsApiResponse = await response.json();
 
   if (!response.ok) {
-    throw new Error(
-      data.error_message ||
-        `Directions API request failed with status ${response.status}`,
-    );
+    throw new Error(data.error_message || `Directions API request failed with status ${response.status}`);
   }
 
   if (data.status !== "OK" || !data.routes?.length) {
     throw new Error(
       data.error_message ||
-        (data.status === "ZERO_RESULTS"
-          ? "No route found between these locations"
-          : `Directions API error: ${data.status}`),
+        (data.status === "ZERO_RESULTS" ? "No route found between these locations" : `Directions API error: ${data.status}`),
     );
   }
 
@@ -344,7 +296,7 @@ const fetchLegacyDirections = async (
         return null;
       }
 
-      const steps: DirectionStep[] = (leg.steps || []).map((step) => {
+      const steps: DirectionStep[] = (leg.steps || []).map(step => {
         const polylineStr = step.polyline?.points;
         let instr = stripHtml(step.html_instructions);
         const tMode = (step.travel_mode || "").toUpperCase();
@@ -354,9 +306,7 @@ const fetchLegacyDirections = async (
             const details = step.transit_details;
             const vehicle = details?.line?.vehicle?.name || "Transit";
             const line = details?.line?.short_name || "";
-            const headsign = details?.headsign
-              ? ` toward ${details.headsign}`
-              : "";
+            const headsign = details?.headsign ? ` toward ${details.headsign}` : "";
             instr = `Take ${vehicle} ${line}${headsign}`.trim();
           } else if (tMode === "WALK" || tMode === "WALKING") {
             instr = `Walk to next location`;
@@ -371,7 +321,7 @@ const fetchLegacyDirections = async (
           duration: step.duration?.text || "",
           startLocation: toLatLng(step.start_location),
           endLocation: toLatLng(step.end_location),
-          travelMode: step.travel_mode,
+          travelMode: normalizeTravelMode(step.travel_mode),
           transitLineName: step.transit_details?.line?.name,
           transitLineShortName: step.transit_details?.line?.short_name,
           transitVehicleType: step.transit_details?.line?.vehicle?.type,
@@ -382,13 +332,16 @@ const fetchLegacyDirections = async (
         };
       });
 
+      const outdoorSeconds = parseSeconds(`${leg.duration.value}s`);
+
       return {
         id: `legacy-route-${index}`,
         requestMode: mode,
         polylinePoints: [],
         distance: leg.distance.text,
-        duration: leg.duration.text,
-        eta: calculateEta(`${leg.duration.value}s`, safeTargetTime, timeMode),
+        baseDurationSeconds: outdoorSeconds,
+        duration: formatDurationFromSeconds(outdoorSeconds),
+        eta: calculateEtaFromSeconds(outdoorSeconds, safeTargetTime, timeMode),
         steps,
         overviewPolyline: polyline,
       };
@@ -418,18 +371,13 @@ export const getDirections = async (
   targetTime: Date | null = null,
   timeMode: "leave" | "arrive" = "leave",
 ): Promise<RouteData[]> => {
-  // Validate inputs
   if (!start) throw new Error("Start location is required");
   if (!destination) throw new Error("Destination location is required");
-  if (!GOOGLE_DIRECTIONS_API_KEY)
-    throw new Error("Google Maps API key is not configured");
+  if (!GOOGLE_DIRECTIONS_API_KEY) throw new Error("Google Maps API key is not configured");
 
   try {
     // Map modes to Routes API travel mode enum
-    const modeMap: Record<
-      TravelMode,
-      "WALK" | "DRIVE" | "TRANSIT" | "BICYCLE"
-    > = {
+    const modeMap: Record<TravelMode, "WALK" | "DRIVE" | "TRANSIT" | "BICYCLE"> = {
       walking: "WALK",
       driving: "DRIVE",
       transit: "TRANSIT",
@@ -502,10 +450,7 @@ export const getDirections = async (
     const data: RoutesApiResponse = await response.json();
 
     if (!response.ok) {
-      throw new Error(
-        data.error?.message ||
-          `Routes API request failed with status ${response.status}`,
-      );
+      throw new Error(data.error?.message || `Routes API request failed with status ${response.status}`);
     }
 
     if (!data.routes || data.routes.length === 0) {
@@ -524,7 +469,7 @@ export const getDirections = async (
           return null;
         }
 
-        const steps: DirectionStep[] = (leg.steps || []).map((step) => {
+        const steps: DirectionStep[] = (leg.steps || []).map(step => {
           const polylineStr = step.polyline?.encodedPolyline;
           let instr = stripHtml(step.navigationInstruction?.instructions);
           const tMode = (step.travelMode || "").toUpperCase();
@@ -532,12 +477,9 @@ export const getDirections = async (
           if (!instr || instr === "Continue") {
             if (tMode === "TRANSIT") {
               const details = step.transitDetails;
-              const vehicle =
-                details?.transitLine?.vehicle?.name?.text || "Transit";
+              const vehicle = details?.transitLine?.vehicle?.name?.text || "Transit";
               const line = details?.transitLine?.nameShort || "";
-              const headsign = details?.headsign
-                ? ` toward ${details.headsign}`
-                : "";
+              const headsign = details?.headsign ? ` toward ${details.headsign}` : "";
               instr = `Take ${vehicle} ${line}${headsign}`.trim();
             } else if (tMode === "WALK" || tMode === "WALKING") {
               instr = `Walk to next location`;
@@ -548,35 +490,30 @@ export const getDirections = async (
           return {
             instruction: instr,
             distance: formatDistance(step.distanceMeters),
-            duration: formatDuration(step.staticDuration),
+            duration: formatDurationFromSeconds(parseSeconds(step.staticDuration)),
             startLocation: toLatLng(step.startLocation?.latLng),
             endLocation: toLatLng(step.endLocation?.latLng),
-            travelMode: step.travelMode,
+            travelMode: normalizeTravelMode(step.travelMode),
             transitLineName: step.transitDetails?.transitLine?.name,
             transitLineShortName: step.transitDetails?.transitLine?.nameShort,
-            transitVehicleType:
-              step.transitDetails?.transitLine?.vehicle?.name?.text ||
-              step.transitDetails?.transitLine?.vehicle?.type,
+            transitVehicleType: step.transitDetails?.transitLine?.vehicle?.name?.text || step.transitDetails?.transitLine?.vehicle?.type,
             transitHeadsign: step.transitDetails?.headsign,
-            transitDepartureStop:
-              step.transitDetails?.stopDetails?.departureStop?.name,
-            transitArrivalStop:
-              step.transitDetails?.stopDetails?.arrivalStop?.name,
+            transitDepartureStop: step.transitDetails?.stopDetails?.departureStop?.name,
+            transitArrivalStop: step.transitDetails?.stopDetails?.arrivalStop?.name,
             polylinePoints: polylineStr ? decodePolyline(polylineStr) : [],
           };
         });
+
+        const outdoorSeconds = parseSeconds(route.duration ?? leg.duration ?? "0s") || 0;
 
         return {
           id: `route-${index}`,
           requestMode: mode,
           polylinePoints: [] as LatLng[],
           distance: formatDistance(route.distanceMeters ?? leg.distanceMeters),
-          duration: formatDuration(route.duration ?? leg.duration),
-          eta: calculateEta(
-            route.duration ?? leg.duration,
-            safeTargetTime,
-            timeMode,
-          ),
+          baseDurationSeconds: outdoorSeconds,
+          duration: formatDurationFromSeconds(outdoorSeconds),
+          eta: calculateEtaFromSeconds(outdoorSeconds, safeTargetTime, timeMode),
           steps,
           overviewPolyline,
         };
@@ -595,13 +532,7 @@ export const getDirections = async (
       }
 
       if (start && destination && isRoutesBlockedError(error.message)) {
-        return fetchLegacyDirections(
-          start,
-          destination,
-          mode,
-          targetTime,
-          timeMode,
-        );
+        return fetchLegacyDirections(start, destination, mode, targetTime, timeMode);
       }
 
       throw error;

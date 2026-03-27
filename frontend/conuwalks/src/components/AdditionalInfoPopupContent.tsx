@@ -18,7 +18,7 @@ interface AdditionalInfoPopupContentProps {
   buildingInfo: BuildingMetadata | null;
   directionsEtaLabel?: string;
   isCopying: boolean;
-  onDirectionsPress: () => void;
+  onDirectionsPress: (room?: string) => void;
   onCopyAddress: () => void;
   scrollViewRef: React.RefObject<ScrollView | null>;
   onScroll: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
