@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { Marker, Callout } from "react-native-maps";
-import { View, Text } from "react-native";
+import { View, Text, ScrollView } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { POIPlace } from "@/src/api/places";
 
@@ -83,28 +83,37 @@ const OutdoorPOIMarkers: React.FC<OutdoorPOIMarkersProps> = ({
 
     {/* 👇 THIS is the default popup when clicking */}
     <Callout>
-      <View style={{     minWidth: 100,       // 👈 expands horizontally
-    maxWidth: 200,       // optional cap
-    paddingHorizontal: 5,
-    paddingVertical: 5, }}>
+    <View
+    style={{
+      width: 200,          // 👈 REQUIRED: fixes horizontal expansion
+      padding: 8,
+    }}
+  >
         <Text style={{ fontWeight: "bold" }}>{poi.name}</Text>
-  <Text
-  style={{
-    color:
-      poi.isOpen === true
-        ? "green"
-        : poi.isOpen === false
-        ? "red"
-        : "gray",
-  }}
->
-  {poi.isOpen === true
-    ? "Open"
-    : poi.isOpen === false
-    ? "Closed"
-    : "Hours unknown"}
-</Text>
-      </View>
+        <Text style={{
+      color:
+        poi.isOpen === true ? "green" :
+        poi.isOpen === false ? "red" :
+        "gray",
+    }}>
+      {poi.isOpen === true ? "Open" :
+       poi.isOpen === false ? "Closed" :
+       "Hours unknown"}
+    </Text>
+    {poi.openHours && (
+  <View style={{ marginTop: 4 }}>
+    {poi.openHours.map((line, idx) => (
+      <Text
+        key={idx}
+        style={{ fontSize: 12, color: "#555", lineHeight: 16 }}
+      >
+        {line}
+      </Text>
+    ))}
+  </View>
+)}
+
+  </View>
     </Callout>
   </Marker>
 ))}
