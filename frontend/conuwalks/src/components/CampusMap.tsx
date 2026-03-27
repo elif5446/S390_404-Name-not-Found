@@ -257,6 +257,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
   const [navigationStepIndex, setNavigationStepIndex] = useState(0);
   const [selectedTransitStopKey, setSelectedTransitStopKey] = useState<string | null>(null);
   const [indoorBuildingId, setIndoorBuildingId] = useState<string | null>(null);
+  const [isManualIndoorOverride, setIsManualIndoorOverride] = useState(false);
   const [isInfoPopupExpanded, setIsInfoPopupExpanded] = useState(false);
   const additionalInfoPopupRef = useRef<AdditionalInfoPopupHandle>(null);
   const destinationPopupRef = useRef<DestinationPopupHandle>(null);
@@ -354,7 +355,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
   const handleOpenIndoorMap = useCallback((buildingId: string) => {
     if (!INDOOR_DATA[buildingId]) return;
-
+    setIsManualIndoorOverride(true);
     setSelectedTransitStopKey(null);
     setSelectedBuilding(prev => ({ ...prev, visible: false }));
     setIndoorBuildingId(buildingId);
@@ -446,6 +447,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
       }
 
       setIndoorBuildingId(null);
+      setIsManualIndoorOverride(false);
       setIsNavigationActive(false);
       setShowDirections(false);
       clearRouteData();
@@ -506,6 +508,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
     const foundId = findBuildingId(SGW, "SGW") || findBuildingId(LOY, "LOY");
 
     if (foundId && INDOOR_DATA[foundId]) {
+      setIsManualIndoorOverride(true);
       setIndoorBuildingId(foundId);
       setManuallyExitedBuildingId(null);
       setSelectedBuilding({
@@ -602,14 +605,19 @@ const CampusMap: React.FC<CampusMapProps> = ({
   const handleEndNavigation = useCallback(() => {
     setIsNavigationActive(false);
     setShowDirections(true);
+    setIsManualIndoorOverride(false);
   }, [setIsNavigationActive, setShowDirections]);
 
   const handleToggleOutdoorMap = useCallback(() => {
+    if (indoorBuildingId) {
+      setManuallyExitedBuildingId(indoorBuildingId);
+    }
     setIndoorBuildingId(null);
+    setIsManualIndoorOverride(false);
     if (destinationBuildingId && !isNavigationActive) {
       setShowDirections(true);
     }
-  }, [destinationBuildingId, isNavigationActive, setShowDirections]);
+  }, [destinationBuildingId, indoorBuildingId, isNavigationActive, setShowDirections]);
 
   const shouldUseLiveUserStart = startBuildingId === "USER" && !!userLocation;
 
@@ -837,7 +845,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
         clearTimeout(geofenceTimeoutRef.current);
       }
     };
-  }, [userLocation]);
+  }, [userLocation, userLocationBuildingId]);
 
   const destinationCenter = useMemo(() => {
     if (!destinationBuildingId) return null;
@@ -852,11 +860,15 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
   // auto-trigger entry/exit based on User Location & Navigation State
   useEffect(() => {
-    if (!isNavigationActive) {
+    if (!isNavigationActive || isManualIndoorOverride) {
       return;
     }
 
     let targetBuildingId = userLocationBuildingId;
+
+    if (!targetBuildingId && startBuildingId && startBuildingId !== "USER" && navigationStepIndex === 0) {
+      targetBuildingId = startBuildingId;
+    }
 
     // proximity fallback
     if (!targetBuildingId && destinationBuildingId && destinationCenter && userLocation) {
@@ -887,6 +899,9 @@ const CampusMap: React.FC<CampusMapProps> = ({
     manuallyExitedBuildingId,
     destinationBuildingId,
     destinationCenter,
+    isManualIndoorOverride,
+    startBuildingId,
+    navigationStepIndex,
   ]);
 
   const handleIndoorExit = useCallback(() => {
@@ -894,6 +909,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
       setManuallyExitedBuildingId(indoorBuildingId);
     }
     setIndoorBuildingId(null);
+    setIsManualIndoorOverride(false);
   }, [indoorBuildingId]);
 
   // memoize the polygon lists so they don't re-calculate on every render
@@ -1363,6 +1379,11 @@ const CampusMap: React.FC<CampusMapProps> = ({
           destinationBuildingId={destinationBuildingId}
           destinationRoomId={destinationRoom}
           isNavigationActive={isNavigationActive}
+          onStartNavigation={() => {
+            setIsNavigationActive(true);
+            setShowDirections(false);
+            setIsManualIndoorOverride(true);
+          }}
           onSetStartRoom={(roomLabel, targetBuildingId) => {
             const bId = targetBuildingId || indoorBuildingId;
             if (!bId) return;
@@ -1384,12 +1405,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
             setShowDirections(true);
           }}
           onExit={handleIndoorExit}
-          onCancelNavigation={() => {
-            setIsNavigationActive(false);
-            setShowDirections(false);
-            clearRouteData();
-            clearDestination();
-          }}
+          onCancelNavigation={handleEndNavigation}
           onToggleOutdoorMap={handleToggleOutdoorMap}
         />
       )}
@@ -1420,8 +1436,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
       {showDirections && !isNavigationActive && (
         <View
           onLayout={event => {
-            const { height } = event.nativeEvent.layout;
-            setSearchPanelHeight(height);
+            setSearchPanelHeight(event.nativeEvent.layout.height);
           }}
           style={{
             top: insets.top + 63,

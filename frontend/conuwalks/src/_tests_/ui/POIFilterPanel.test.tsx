@@ -3,10 +3,12 @@ import { fireEvent, render, screen } from "@testing-library/react-native";
 import POIFilterPanel from "@/src/components/indoor/POIFilterPanel";
 import { POI } from "@/src/types/poi";
 
+// Mock both icon libraries used in the refactored component
 jest.mock("@expo/vector-icons", () => {
   const { Text } = require("react-native");
   return {
     Ionicons: () => <Text>Icon</Text>,
+    MaterialCommunityIcons: () => <Text>MCIIcon</Text>,
   };
 });
 
@@ -32,7 +34,7 @@ const pois: POI[] = [
 ];
 
 describe("POIFilterPanel", () => {
-  it("shows POIs when the panel is expanded", () => {
+  it("shows POIs when the panel is rendered", () => {
     render(
       <POIFilterPanel
         pois={pois}
@@ -45,13 +47,13 @@ describe("POIFilterPanel", () => {
         onTargetModeChange={jest.fn()}
         onToggleCategory={jest.fn()}
         onSelectPOI={jest.fn()}
+        visible={true} // Must be true so the sheet is active
+        buildingId={"H"}
       />,
     );
 
-    fireEvent.press(
-      screen.getByLabelText("Expand or collapse points of interest panel"),
-    );
-
+    // The bottom sheet renders content immediately (hides via CSS translation)
+    // RTL finds them immediately.
     expect(screen.getByText("Computer Lab")).toBeTruthy();
     expect(screen.getByText("Girls Washroom")).toBeTruthy();
   });
@@ -71,14 +73,13 @@ describe("POIFilterPanel", () => {
         onTargetModeChange={jest.fn()}
         onToggleCategory={jest.fn()}
         onSelectPOI={onSelectPOI}
+        visible={true} // Must be true so the sheet is active
+        buildingId={"H"}
       />,
     );
 
-    fireEvent.press(
-      screen.getByLabelText("Expand or collapse points of interest panel"),
-    );
-
-    fireEvent.press(screen.getByLabelText("Navigate to Girls Washroom, Room 916"));
+    // The aria-label was updated to "Maps to" in the new layout
+    fireEvent.press(screen.getByLabelText("Maps to Girls Washroom, Room 916"));
     expect(onSelectPOI).toHaveBeenCalledWith(pois[1]);
 
     expect(screen.getByText("Source")).toBeTruthy();

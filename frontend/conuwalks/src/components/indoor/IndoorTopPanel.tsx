@@ -30,8 +30,8 @@ interface Props {
   activeField: "start" | "destination";
   onFocusField: (field: "start" | "destination") => void;
 
-  onDirectionsPress: () => void;
-  canShowDirections: boolean;
+  onStartNavigation: () => void;
+  canStartNavigation: boolean;
 
   categories: POICategory[];
   activeCategories: Set<POICategory>;
@@ -50,8 +50,8 @@ const IndoorTopPanel: React.FC<Props> = ({
   destinationLabel,
   activeField,
   onFocusField,
-  onDirectionsPress,
-  canShowDirections,
+  onStartNavigation,
+  canStartNavigation,
   categories,
   activeCategories,
   onToggleCategory,
@@ -204,13 +204,13 @@ const IndoorTopPanel: React.FC<Props> = ({
           </ScrollView>
 
           <TouchableOpacity
-            onPress={onDirectionsPress}
-            disabled={!canShowDirections}
+            onPress={onStartNavigation}
+            disabled={!canStartNavigation}
             style={{
               width: 32,
               height: 32,
               borderRadius: 16,
-              backgroundColor: canShowDirections ? "#C2185B" : "#D8D8D8",
+              backgroundColor: canStartNavigation ? "#C2185B" : "#D8D8D8",
               alignItems: "center",
               justifyContent: "center",
               shadowColor: "#000",
