@@ -142,6 +142,40 @@ interface ArriveSegment {
 
 type Segment = StartSegment | StraightSegment | TurnSegment | TransitSegment | ArriveSegment;
 
+function buildTransitNodeSegments(segs: Segment[], nodes: Node[], lastActionIdx: number, j: number, curr: Node, chosenKind: TransitKind): number {
+  maybeEmitStraight(segs, nodes, lastActionIdx, j, chosenKind);
+
+  const fromFloor = floorNum(curr.floorId);
+
+  for (; j < nodes.length; j++) {
+    const kk = getTransitKind(nodes[j]);
+    if (!kk) break;
+    if (kk !== "stairs" && chosenKind !== "elevator")
+      chosenKind = kk;
+  }
+
+  const n = j - (j < nodes.length ? 0 : 1);
+  const toFloor = floorNum(nodes[n].floorId);
+
+  if (toFloor !== fromFloor) {
+    segs.push({ kind: "transit", node: curr, transitKind: chosenKind, fromFloor, toFloor });
+  }
+  
+  return j
+}
+
+function buildFinalDestinationSegments(segs: Segment[], nodes: Node[], lastActionIdx: number, i: number, curr: Node) {
+  maybeEmitStraight(segs, nodes, lastActionIdx, i);
+  let lastTurn: TurnSegment | undefined;
+  for (let k = segs.length - 1; k >= 0; k--) {
+    if (segs[k].kind === "turn") {
+      lastTurn = segs[k] as TurnSegment;
+      break;
+    }
+  }
+  segs.push({ kind: "arrive", node: curr, approachTurn: lastTurn?.direction });
+}
+
 // Core: path -> segments
 
 export function buildSegments(nodes: Node[]): Segment[] {
@@ -164,28 +198,10 @@ export function buildSegments(nodes: Node[]): Segment[] {
     const isLast = i === nodes.length - 1;
 
     //  Case A: transit node─
-    if (getTransitKind(curr) !== null) {
-      maybeEmitStraight(segs, nodes, lastActionIdx, i, getTransitKind(curr));
-
-      let j = i;
-      let chosenKind: TransitKind = getTransitKind(curr)!;
-      const fromFloor = floorNum(curr.floorId);
-
-      while (j < nodes.length && getTransitKind(nodes[j]) !== null) {
-        const kk = getTransitKind(nodes[j])!;
-        if (kk === "elevator") chosenKind = "elevator";
-        else if (kk === "escalator" && chosenKind !== "elevator") chosenKind = "escalator";
-        j++;
-      }
-
-      const toFloor = j < nodes.length ? floorNum(nodes[j].floorId) : floorNum(nodes[j - 1].floorId);
-
-      if (toFloor !== fromFloor) {
-        segs.push({ kind: "transit", node: curr, transitKind: chosenKind, fromFloor, toFloor });
-      }
-
-      lastActionIdx = j;
-      i = j + 1;
+    const transitKind = getTransitKind(curr)
+    if (transitKind) {
+      lastActionIdx = buildTransitNodeSegments(segs, nodes, lastActionIdx, i, curr, transitKind)
+      i = lastActionIdx + 1;
       continue;
     }
 
@@ -197,22 +213,14 @@ export function buildSegments(nodes: Node[]): Segment[] {
 
     //Case C: final destination
     if (isLast) {
-      maybeEmitStraight(segs, nodes, lastActionIdx, i);
-      let lastTurn: TurnSegment | undefined;
-      for (let k = segs.length - 1; k >= 0; k--) {
-        if (segs[k].kind === "turn") {
-          lastTurn = segs[k] as TurnSegment;
-          break;
-        }
-      }
-      segs.push({ kind: "arrive", node: curr, approachTurn: lastTurn?.direction });
+      buildFinalDestinationSegments(segs, nodes, lastActionIdx, i, curr)
       break;
     }
 
     //Case D: turn detection
     const next = nodes[i + 1];
 
-    if (getTransitKind(next) !== null || next.floorId !== curr.floorId) {
+    if (getTransitKind(next) || next.floorId !== curr.floorId) {
       i++;
       continue;
     }
