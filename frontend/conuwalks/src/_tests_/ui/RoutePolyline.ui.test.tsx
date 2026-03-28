@@ -15,7 +15,7 @@ jest.mock("react-native-maps", () => {
 jest.mock("@/src/context/DirectionsContext", () => ({
   useDirections: jest.fn(),
 }));
-jest.mock("@/src/api/directions", () => ({
+jest.mock("@/src/components/outdoorDirections/directionsService", () => ({
   getDirections: jest.fn(),
   decodePolyline: jest.fn(),
 }));

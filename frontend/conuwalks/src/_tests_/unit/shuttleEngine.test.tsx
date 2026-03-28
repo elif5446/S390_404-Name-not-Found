@@ -1,7 +1,7 @@
 import { getShuttleRouteIfApplicable } from "../../api/shuttleEngine";
 import { distanceMetersBetween } from "@/src/utils/geometry";
 import { getLocalShuttleSchedule } from "../../api/shuttleSyncService";
-import { getDirections } from "../../api/directions";
+import { getDirections } from "../../components/outdoorDirections/directionsService";
 import { LatLng } from "react-native-maps";
 
 jest.mock("@/src/utils/geometry", () => ({
@@ -12,7 +12,7 @@ jest.mock("../../api/shuttleSyncService", () => ({
   getLocalShuttleSchedule: jest.fn(),
 }));
 
-jest.mock("../../api/directions", () => ({
+jest.mock("@/src/components/outdoorDirections/directionsService", () => ({
   getDirections: jest.fn(),
 }));
 
