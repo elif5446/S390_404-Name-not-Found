@@ -12,7 +12,7 @@ import { BlurView } from "expo-blur";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
 const PANEL_HEIGHT = 300;
-const SNAP_POINTS = [0, PANEL_HEIGHT]; // 0 = fully visible, PANEL_HEIGHT = hidden
+const SNAP_POINTS = [0, PANEL_HEIGHT];
 
 interface POIPanelProps {
   visible: boolean;
@@ -107,7 +107,7 @@ const POIPanel: React.FC<POIPanelProps> = ({ visible, onClose, onPOISelect }) =>
       pointerEvents={visible ? "auto" : "none"}
     >
       {Platform.OS === "ios" ? (
-        <BlurView intensity={40} tint="light" style={styles.blur}>
+        <BlurView intensity={100} tint="light" style={styles.blur}>
           {content}
         </BlurView>
       ) : (

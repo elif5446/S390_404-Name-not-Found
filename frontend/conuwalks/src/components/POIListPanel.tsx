@@ -14,6 +14,7 @@ import { BlurView } from "expo-blur";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { POIPlace } from "@/src/api/places";
 
+
 interface ExtendedPOI extends POIPlace {
   distance: number;
   distanceText: string;
@@ -30,12 +31,12 @@ interface POIListPanelProps {
   onUpdatePOIs?: (radius: number) => void;
 }
 
-const PANEL_HEIGHT = 450; // Slightly taller for better scrolling
+const PANEL_HEIGHT = 450;
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 const formatDistance = (meters: number): string => {
-  if (meters < 1000) return `${Math.round(meters)} m`; // under 1 km
-  return `${(meters / 1000).toFixed(2)} km`; // 2 decimal km
+  if (meters < 1000) return `${Math.round(meters)} m`; 
+  return `${(meters / 1000).toFixed(2)} km`; 
 };
 
 const getPOITypeFromName = (name: string): string => {
@@ -97,10 +98,10 @@ const POIListPanel: React.FC<POIListPanelProps> = ({
 }) => {
   const translateY = useRef(new Animated.Value(PANEL_HEIGHT)).current;
 // Add at the top of POIListPanel component
-const RADIUS_OPTIONS = [800, 2000, 5000, 10000]; // 0.8 km, 2km, 5km, 10km
+const RADIUS_OPTIONS = [1000, 100, 200, 500]; // 1km, 200m,500m, 100m
 const [radius, setRadius] = React.useState<number>(800);
 
- // --- NEW: Trigger POI fetch when radius changes ---
+ //  Trigger POI fetch when radius changes ---
  React.useEffect(() => {
   if (onUpdatePOIs) {
     onUpdatePOIs(radius); // fetch new POIs from parent
@@ -178,7 +179,7 @@ const [radius, setRadius] = React.useState<number>(800);
 
   if (sortedPois.length === 0) return null;
 
-  // ✅ SCROLLABLE LIST RENDER ITEM
+  // SCROLLABLE LIST RENDER ITEM
   const renderPOIItem = ({ item }: { item: ExtendedPOI }) => {
     const poiType = getPOITypeFromName(item.name);
     return (
@@ -230,7 +231,7 @@ const [radius, setRadius] = React.useState<number>(800);
     </TouchableOpacity>
   ))}
 </View>
-      {/* ✅ SCROLLABLE FLATLIST */}
+      {/* SCROLLABLE FLATLIST */}
       <FlatList
         data={sortedPois}
         renderItem={renderPOIItem}

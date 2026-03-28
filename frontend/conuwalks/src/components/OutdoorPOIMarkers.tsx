@@ -73,7 +73,7 @@ const OutdoorPOIMarkers: React.FC<OutdoorPOIMarkersProps> = ({
           key={poi.id}
           coordinate={{ latitude: poi.latitude, longitude: poi.longitude }}
           tracksViewChanges={false}
-          anchor={{ x: 0.5, y: 1 }} // 👈 keeps marker aligned nicely
+          anchor={{ x: 0.5, y: 1 }} 
         >
           {/* Marker Bubble */}
           <View
@@ -111,11 +111,10 @@ const OutdoorPOIMarkers: React.FC<OutdoorPOIMarkersProps> = ({
           </View>
 
           {/* Callout */}
-{/* 👇 THIS is the default popup when clicking */}
 <Callout>
   <View
     style={{
-      width: 200, // 👈 keeps your horizontal width same
+      width: 200, 
       padding: 8,
     }}
   >

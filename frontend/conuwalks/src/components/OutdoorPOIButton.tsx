@@ -1,6 +1,6 @@
 import React from "react";
 import { TouchableOpacity, Platform, StyleSheet } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context"; // 👈 Add this
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BlurView } from "expo-blur";
 import { MaterialIcons } from "@expo/vector-icons";
 
@@ -17,7 +17,7 @@ const OutdoorPOIButton: React.FC<OutdoorPOIButtonProps> = ({
     mode,
     buttonSpacing
 }) => {
-    const insets = useSafeAreaInsets(); // 👈 Get safe area insets
+    const insets = useSafeAreaInsets(); 
 
     return (
         <TouchableOpacity
@@ -35,7 +35,7 @@ const OutdoorPOIButton: React.FC<OutdoorPOIButtonProps> = ({
                         android: Math.max(insets.top, 16) + 8, // Less top margin on Android
                     }),
                 },
-                // 👈 Dynamic shadow/elevation
+                
                 Platform.select({
                     ios: {
                         shadowColor: "#000",
