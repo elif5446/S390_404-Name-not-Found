@@ -208,7 +208,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
   // Get user's location with permission handling
   const { location: userLocation, error: locationError, loading: locationLoading } = useUserLocation();
 
-  const INITIAL_DELTA = 0.008;
+  const INITIAL_DELTA = 0.004;
 
   // State to control building search popup
   const [buildingSearchVisible, setBuildingSearchVisible] = useState(false);
@@ -866,30 +866,36 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
     let targetBuildingId = userLocationBuildingId;
 
-    if (!targetBuildingId && startBuildingId && startBuildingId !== "USER" && navigationStepIndex === 0) {
+    if (
+      !targetBuildingId
+      && ![null, "USER"].includes(startBuildingId)
+      && navigationStepIndex === 0
+    ) {
       targetBuildingId = startBuildingId;
     }
 
     // proximity fallback
-    if (!targetBuildingId && destinationBuildingId && destinationCenter && userLocation) {
-      const dist = distanceMetersBetween(userLocation, destinationCenter);
-      if (dist <= 65) {
-        targetBuildingId = destinationBuildingId;
-      }
+    if (
+      !targetBuildingId
+      && destinationBuildingId
+      && destinationCenter
+      && userLocation
+      && 65 >= distanceMetersBetween(userLocation, destinationCenter)
+    ) {
+      targetBuildingId = destinationBuildingId;
     }
 
-    if (targetBuildingId && INDOOR_DATA[targetBuildingId]) {
-      if (indoorBuildingId !== targetBuildingId && manuallyExitedBuildingId !== targetBuildingId) {
-        setIndoorBuildingId(targetBuildingId);
-      }
-    } else if (!targetBuildingId) {
-      if (manuallyExitedBuildingId !== null) {
-        setManuallyExitedBuildingId(null);
-      }
-
-      if (indoorBuildingId && indoorBuildingId !== destinationBuildingId) {
+    if (!targetBuildingId) {
+      setManuallyExitedBuildingId(null);
+      if (indoorBuildingId !== destinationBuildingId) {
         setIndoorBuildingId(null);
       }
+    } else if (
+      targetBuildingId
+      && INDOOR_DATA[targetBuildingId]
+      && ![indoorBuildingId, manuallyExitedBuildingId].includes(targetBuildingId)
+    ) {
+      setIndoorBuildingId(targetBuildingId);
     }
   }, [
     userLocation,

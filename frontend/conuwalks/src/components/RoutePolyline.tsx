@@ -102,30 +102,29 @@ const injectShuttleRoute = async (
   timeMode: "leave" | "arrive",
 ) => {
   const shuttleRoute = await getShuttleRouteIfApplicable(effectiveStartLocation, destinationCoords, routingTime, timeMode);
-
   if (!shuttleRoute) return fetchedRoutes;
 
-  let showShuttle = true;
-  const bestPublicRoute = fetchedRoutes[0];
+  const durStr = fetchedRoutes[0]?.duration;
+  if (!durStr) {
+    fetchedRoutes.unshift(shuttleRoute);
+    return fetchedRoutes;
+  }
+  
+  const hMatch = /(\d{1,5})\s{0,5}h/.exec(durStr);
+  const mMatch = /(\d{1,5})\s{0,5}min/.exec(durStr);
+  const publicMins = Number.parseInt(hMatch?.[1] ?? "0") + Number.parseInt(mMatch?.[1] ?? "0");
 
-  if (bestPublicRoute?.duration) {
-    const durStr = bestPublicRoute.duration;
-    const hMatch = /(\d{1,5})\s{0,5}h/.exec(durStr);
-    const mMatch = /(\d{1,5})\s{0,5}min/.exec(durStr);
-    const publicMins = (hMatch ? parseInt(hMatch[1], 10) * 60 : 0) + (mMatch ? parseInt(mMatch[1], 10) : 0);
+  const shuttleDepMs = new Date(shuttleRoute.departureDate).getTime();
+  const targetTimeMs = routingTime.getTime();
 
-    const shuttleDepMs = new Date(shuttleRoute.departureDate).getTime();
-    const targetTimeMs = routingTime.getTime();
-
-    if (timeMode === "leave") {
-      if ((shuttleDepMs - targetTimeMs) / 60000 >= publicMins) showShuttle = false;
-    } else {
-      const publicDepMs = targetTimeMs - publicMins * 60000;
-      if ((publicDepMs - shuttleDepMs) / 60000 >= 45) showShuttle = false;
-    }
+  if (!(
+    timeMode === "leave"
+    && (shuttleDepMs - targetTimeMs) / 60000 >= publicMins
+    || (targetTimeMs - publicMins * 60000 - shuttleDepMs) / 60000 >= 45
+  )) {
+    fetchedRoutes.unshift(shuttleRoute);
   }
 
-  if (showShuttle) fetchedRoutes.unshift(shuttleRoute);
   return fetchedRoutes;
 };
 

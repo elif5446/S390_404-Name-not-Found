@@ -34,8 +34,9 @@ const CampusLabels: React.FC<Props> = ({
   return (
     <>
       {data.features.map((feature) => {
-        const { id, centroid } = feature.properties;
+        const { id, name, centroid } = feature.properties;
         if (!centroid) return null;
+        let label = fontSize > 25 && Platform.OS === "ios" ? name?.replaceAll(" ", `\n`) : id;
 
         return (
           <Marker
@@ -57,16 +58,14 @@ const CampusLabels: React.FC<Props> = ({
                   fontSize: fontSize,
                   fontWeight: "bold",
                   color: "#00000033",
+                  textAlign: "center"
                 }}
                 allowFontScaling={false}
                 importantForAccessibility="no"
                 accessible={false}
               >
-                {id}
+                {label}
               </Text>
-              {Platform.OS === "android" && (
-                <Text style={{ width: 1, height: 1, opacity: 0 }}> </Text>
-              )}
             </View>
           </Marker>
         );
