@@ -56,12 +56,12 @@ export interface POIPlace {
   // Main function: fetch POIs and enrich with open hours
   export const fetchPOIs = async (
     campus: "SGW" | "LOY",
-    poiType: string
+    poiType: string,
+    radius: number = 800 // default 800 m
   ): Promise<POIPlace[]> => {
     const { latitude, longitude } = CAMPUS_COORDS[campus];
     const includedTypes = POI_TYPE_MAP[poiType] || ["restaurant"];
-    const radius = 800;
-  
+    
     try {
       const response = await fetch(
         "https://places.googleapis.com/v1/places:searchNearby",
@@ -76,7 +76,7 @@ export interface POIPlace {
             includedTypes,
             maxResultCount: 20,
             locationRestriction: {
-              circle: { center: { latitude, longitude }, radius },
+              circle: { center: { latitude, longitude }, radius }, // <-- use parameter
             },
           }),
         }
@@ -88,7 +88,7 @@ export interface POIPlace {
         return [];
       }
   
-      // Fetch details for each POI, including open hours
+      // Fetch details for each POI
       return await Promise.all(
         data.places.map(async (p: any) => {
           const details = await fetchPOIDetails(p.id);

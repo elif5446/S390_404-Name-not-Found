@@ -1045,6 +1045,12 @@ const handleClearPOIs = useCallback(() => {
   setIsPOIListPanelVisible(false);
 }, []);
 
+
+const updatePOIs = async (radius: number) => {
+  if (!selectedPOIType) return;
+  const newPois = await fetchPOIs(currentCampus, selectedPOIType, radius);
+  setPois(newPois);
+};
   return (
     <View style={styles.container}>
       <MapView
@@ -1284,6 +1290,7 @@ const handleClearPOIs = useCallback(() => {
   onClose={() => setIsPOIListPanelVisible(false)}
   onPOIDirections={handlePOIDirections}
   onClearPOIs={handleClearPOIs}
+  onUpdatePOIs={updatePOIs}
 />
       {isNavigationActive && routeData && (
         <View

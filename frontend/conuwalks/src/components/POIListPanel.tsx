@@ -27,18 +27,17 @@ interface POIListPanelProps {
   onClose: () => void;
   onPOIDirections: (poi: POIPlace) => void;
   onClearPOIs: () => void;
+  onUpdatePOIs?: (radius: number) => void;
 }
 
 const PANEL_HEIGHT = 450; // Slightly taller for better scrolling
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 const formatDistance = (meters: number): string => {
-  if (meters < 100) return `${Math.round(meters)}m`;
-  const minutes = Math.round(meters / 80);
-  return `${minutes} min`;
+  if (meters < 1000) return `${Math.round(meters)} m`; // under 1 km
+  return `${(meters / 1000).toFixed(2)} km`; // 2 decimal km
 };
 
-// ✅ IMPROVED: Better POI type detection from POI_TYPE_MAP logic
 const getPOITypeFromName = (name: string): string => {
   const lowerName = name.toLowerCase();
   
@@ -94,9 +93,19 @@ const POIListPanel: React.FC<POIListPanelProps> = ({
   onClose,
   onPOIDirections,
   onClearPOIs,
+  onUpdatePOIs,
 }) => {
   const translateY = useRef(new Animated.Value(PANEL_HEIGHT)).current;
+// Add at the top of POIListPanel component
+const RADIUS_OPTIONS = [800, 2000, 5000, 10000]; // 0.8 km, 2km, 5km, 10km
+const [radius, setRadius] = React.useState<number>(800);
 
+ // --- NEW: Trigger POI fetch when radius changes ---
+ React.useEffect(() => {
+  if (onUpdatePOIs) {
+    onUpdatePOIs(radius); // fetch new POIs from parent
+  }
+}, [radius]);
   const sortedPois = React.useMemo((): ExtendedPOI[] => {
     if (!userLocation || pois.length === 0) {
       return pois.map((poi, index) => ({
@@ -202,7 +211,25 @@ const POIListPanel: React.FC<POIListPanelProps> = ({
           <MaterialIcons name="clear" size={24} color="#B03060" />
         </TouchableOpacity>
       </View>
-
+{/* Radius Toggle */}
+<View style={{ flexDirection: "row", justifyContent: "space-around", marginBottom: 12 }}>
+  {RADIUS_OPTIONS.map((r) => (
+    <TouchableOpacity
+      key={r}
+      onPress={() => setRadius(r)}
+      style={{
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        borderRadius: 12,
+        backgroundColor: radius === r ? "#B03060" : "#E6E6E9",
+      }}
+    >
+      <Text style={{ color: radius === r ? "#fff" : "#202020", fontWeight: "600" }}>
+        {r >= 1000 ? `${r / 1000} km` : `${r} m`}
+      </Text>
+    </TouchableOpacity>
+  ))}
+</View>
       {/* ✅ SCROLLABLE FLATLIST */}
       <FlatList
         data={sortedPois}
