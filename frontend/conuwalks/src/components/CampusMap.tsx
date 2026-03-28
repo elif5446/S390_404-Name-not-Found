@@ -650,6 +650,7 @@ const handleCloseBuildingSearch = () => {
   }, [setShowDirections]);
 
   const handleEndNavigation = useCallback(() => {
+    setActivePOIDestination(null);
     setIsNavigationActive(false);
     setShowDirections(true);
   }, [setIsNavigationActive, setShowDirections]);
@@ -761,6 +762,7 @@ const handleCloseBuildingSearch = () => {
       .filter((item) => item.stepIndex >= navigationStepIndex)
       .slice(0, 4);
   }, [isNavigationActive, travelMode, routeData?.steps, navigationStepIndex]);
+  const [activePOIDestination, setActivePOIDestination] = useState<string | null>(null);
 
   const selectedTransitStop =
     transitNavigationStops.find(
@@ -1019,8 +1021,10 @@ console.log("selectedPOIType:", selectedPOIType);
   
 // Add POI directions handler
 const handlePOIDirections = useCallback((poi: POIPlace) => {
+  console.log('Setting POI:', poi.name);  
   // Close POI list
   setIsPOIListPanelVisible(false);
+  setActivePOIDestination(poi.name);
   
   // Set as destination using your existing directions system
   setDestination(`POI-${poi.id}`, { latitude: poi.latitude, longitude: poi.longitude }, poi.name);
@@ -1589,6 +1593,7 @@ const handleClearPOIs = useCallback(() => {
             setStartPoint={setStartPoint}
             destinationBuildingId={destinationBuildingId}
             destinationRoom={destinationRoom}
+            destinationLabel={activePOIDestination} 
             setDestination={setDestination}
             userLocationBuildingId={userLocationBuildingId}
           />

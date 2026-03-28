@@ -1,9 +1,8 @@
 import React, { useMemo } from "react";
 import { Marker, Callout } from "react-native-maps";
-import { View, Text, ScrollView } from "react-native";
+import { View, Text, ScrollView, Platform } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { POIPlace } from "@/src/api/places";
-
 
 const POI_ICONS: Record<string, { icon: string; color: string }> = {
   Restaurants: { icon: "restaurant", color: "#E53935" },
@@ -14,12 +13,20 @@ const POI_ICONS: Record<string, { icon: string; color: string }> = {
   Bars: { icon: "local-bar", color: "#F57C00" },
 };
 
-function getDistanceFromLatLonInMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
+function getDistanceFromLatLonInMeters(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+) {
   const R = 6371000;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a = Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
@@ -44,79 +51,109 @@ const OutdoorPOIMarkers: React.FC<OutdoorPOIMarkersProps> = ({
   onPOIPress,
 }) => {
   const origin = CAMPUS_COORDS[campus];
-  const { icon, color } = POI_ICONS[poiType] || { icon: "place", color: "#B03060" };
+  const { icon, color } =
+    POI_ICONS[poiType] || { icon: "place", color: "#B03060" };
 
   const filtered = useMemo(() => {
     return pois.filter((p) => {
-      const d = getDistanceFromLatLonInMeters(origin.latitude, origin.longitude, p.latitude, p.longitude);
+      const d = getDistanceFromLatLonInMeters(
+        origin.latitude,
+        origin.longitude,
+        p.latitude,
+        p.longitude
+      );
       return d <= radiusMeters;
     });
   }, [pois, origin, radiusMeters]);
 
   return (
     <>
-{filtered.map((poi) => (
-  <Marker
-    key={poi.id}
-    coordinate={{ latitude: poi.latitude, longitude: poi.longitude }}
-  >
-    {/* Your bubble icon stays the same */}
-    <View style={{ alignItems: "center" }}>
-      <View style={{
-        backgroundColor: color,
-        borderRadius: 20,
-        padding: 6,
-        justifyContent: "center",
-        alignItems: "center",
-      }}>
-        <MaterialIcons name={icon as any} size={24} color="#fff" />
-      </View>
+      {filtered.map((poi) => (
+        <Marker
+          key={poi.id}
+          coordinate={{ latitude: poi.latitude, longitude: poi.longitude }}
+          tracksViewChanges={false}
+          anchor={{ x: 0.5, y: 1 }} // 👈 keeps marker aligned nicely
+        >
+          {/* Marker Bubble */}
+          <View
+            style={{
+              alignItems: "center",
+              overflow: Platform.OS === "android" ? "visible" : "hidden",
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: color,
+                borderRadius: 20,
+                padding: Platform.OS === "android" ? 8 : 6,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <MaterialIcons name={icon as any} size={24} color="#fff" />
+            </View>
 
-      <View style={{
-        width: 0, height: 0,
-        borderLeftWidth: 6, borderRightWidth: 6, borderTopWidth: 8,
-        borderLeftColor: "transparent", borderRightColor: "transparent",
-        borderTopColor: color,
-        marginTop: -1,
-      }} />
-    </View>
+            {/* Triangle tip */}
+            <View
+              style={{
+                width: 0,
+                height: 0,
+                borderLeftWidth: 6,
+                borderRightWidth: 6,
+                borderTopWidth: 8,
+                borderLeftColor: "transparent",
+                borderRightColor: "transparent",
+                borderTopColor: color,
+                marginTop: Platform.OS === "android" ? 0 : -1,
+              }}
+            />
+          </View>
 
-    {/* 👇 THIS is the default popup when clicking */}
-    <Callout>
-    <View
+          {/* Callout */}
+{/* 👇 THIS is the default popup when clicking */}
+<Callout>
+  <View
     style={{
-      width: 200,          // 👈 REQUIRED: fixes horizontal expansion
+      width: 200, // 👈 keeps your horizontal width same
       padding: 8,
     }}
   >
-        <Text style={{ fontWeight: "bold" }}>{poi.name}</Text>
-        <Text style={{
-      color:
-        poi.isOpen === true ? "green" :
-        poi.isOpen === false ? "red" :
-        "gray",
-    }}>
-      {poi.isOpen === true ? "Open" :
-       poi.isOpen === false ? "Closed" :
-       "Hours unknown"}
+    <Text style={{ fontWeight: "bold" }}>{poi.name}</Text>
+    <Text
+      style={{
+        color:
+          poi.isOpen === true
+            ? "green"
+            : poi.isOpen === false
+            ? "red"
+            : "gray",
+      }}
+    >
+      {poi.isOpen === true
+        ? "Open"
+        : poi.isOpen === false
+        ? "Closed"
+        : "Hours unknown"}
     </Text>
-    {poi.openHours && (
-  <View style={{ marginTop: 4 }}>
-    {poi.openHours.map((line, idx) => (
-      <Text
-        key={idx}
-        style={{ fontSize: 12, color: "#555", lineHeight: 16 }}
-      >
-        {line}
-      </Text>
-    ))}
-  </View>
-)}
 
+    {/* Keep stacked layout but limit vertical height */}
+    {poi.openHours && (
+      <ScrollView style={{ maxHeight: 80, marginTop: 4 }}>
+        {poi.openHours.map((line, idx) => (
+          <Text
+            key={idx}
+            style={{ fontSize: 12, color: "#555", lineHeight: 16 }}
+          >
+            {line}
+          </Text>
+        ))}
+      </ScrollView>
+    )}
   </View>
-    </Callout>
-  </Marker>
-))}
+</Callout>
+        </Marker>
+      ))}
     </>
   );
 };

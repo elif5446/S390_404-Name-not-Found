@@ -63,6 +63,7 @@ interface DirectionsSearchProps {
   ) => void;
   destinationBuildingId: string | null;
   destinationRoom: string | null;
+  destinationLabel?: string | null;
   setDestination: (
     buildingId: string,
     coords: LatLng,
@@ -79,6 +80,7 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
   setStartPoint,
   destinationBuildingId,
   destinationRoom,
+  destinationLabel, 
   setDestination,
   userLocationBuildingId,
   isIndoorView = false,
@@ -130,6 +132,23 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
 
   // sync local text state when global destination changes (e.g., from Indoor Map room select)
   useEffect(() => {
+      // 1. POI/custom label first
+      console.log('DEBUG:', { destinationLabel, destinationBuildingId });
+  
+  if (destinationLabel) {
+    console.log('Using POI name:', destinationLabel);
+
+    setDestinationText(destinationLabel);
+    setStableDestinationText(destinationLabel);
+    return;
+  }
+
+  // 2. POI fallback
+  if (destinationBuildingId?.startsWith("POI-")) {
+    setDestinationText("Outdoor POI");
+    setStableDestinationText("Outdoor POI");
+    return;
+  }
     const buildingName =
       SGWBuildingSearchMetadata[destinationBuildingId || ""]?.name ||
       LoyolaBuildingSearchMetadata[destinationBuildingId || ""]?.name ||
@@ -143,7 +162,7 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
       setDestinationText(CURRENT_LOCATION);
       setStableDestinationText(CURRENT_LOCATION);
     }
-  }, [destinationBuildingId, destinationRoom]);
+  }, [destinationLabel, destinationBuildingId, destinationRoom]);  // ✅ ADD destinationLabel
 
   // also sync the start text just in case it's changed externally
   useEffect(() => {

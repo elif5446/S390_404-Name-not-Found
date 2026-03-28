@@ -1,5 +1,6 @@
 import React from "react";
-import { TouchableOpacity, Platform } from "react-native";
+import { TouchableOpacity, Platform, StyleSheet } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context"; // 👈 Add this
 import { BlurView } from "expo-blur";
 import { MaterialIcons } from "@expo/vector-icons";
 
@@ -16,30 +17,38 @@ const OutdoorPOIButton: React.FC<OutdoorPOIButtonProps> = ({
     mode,
     buttonSpacing
 }) => {
+    const insets = useSafeAreaInsets(); // 👈 Get safe area insets
+
     return (
         <TouchableOpacity
             onPress={onPress}
-            style={{
-                position: "relative",
-                width: buttonSize,
-                height: buttonSize,
-                borderRadius: buttonSize / 2,
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                backgroundColor:
-                    Platform.OS === "ios"
-                        ? "transparent"
-                        : mode === "dark"
-                        ? "#2C2C2E"
-                        : "#FFFFFF",
-                shadowColor: "#000",
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: Platform.OS === "ios" ? 0.18 : 0.22,
-                shadowRadius: 4,
-                elevation: Platform.OS === "ios" ? 0 : 4,
-                marginBottom: buttonSpacing,
-            }}
+            style={[
+                styles.container,
+                {
+                    width: buttonSize,
+                    height: buttonSize,
+                    borderRadius: buttonSize / 2,
+                    marginBottom: buttonSpacing,
+                    // 👈 Platform-specific top adjustment
+                    marginTop: Platform.select({
+                        ios: insets.top + 12,
+                        android: Math.max(insets.top, 16) + 8, // Less top margin on Android
+                    }),
+                },
+                // 👈 Dynamic shadow/elevation
+                Platform.select({
+                    ios: {
+                        shadowColor: "#000",
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.18,
+                        shadowRadius: 4,
+                    },
+                    android: {
+                        elevation: 6,
+                        backgroundColor: mode === "dark" ? "#2C2C2E" : "#FFFFFF",
+                    },
+                }),
+            ]}
             accessible={true}
             accessibilityRole="button"
             accessibilityLabel="Open outdoor points of interest"
@@ -49,16 +58,21 @@ const OutdoorPOIButton: React.FC<OutdoorPOIButtonProps> = ({
                 <BlurView
                     intensity={35}
                     tint={mode === "dark" ? "dark" : "light"}
-                    style={{
-                        position: "absolute",
-                        width: "100%",
-                        height: "100%",
-                    }}
+                    style={StyleSheet.absoluteFill}
                 />
             )}
             <MaterialIcons name="favorite" size={24} color="#B03060" />
         </TouchableOpacity>
     );
 };
+
+const styles = StyleSheet.create({
+    container: {
+        position: "relative",
+        alignItems: "center",
+        justifyContent: "center",
+        overflow: "hidden",
+    },
+});
 
 export default OutdoorPOIButton;
