@@ -2,7 +2,7 @@ import React from "react";
 import { render, act } from "@testing-library/react-native";
 import RoutePolyline from "../../components/RoutePolyline";
 import { useDirections } from "@/src/context/DirectionsContext";
-import { getDirections, decodePolyline } from "@/src/components/outdoorDirections/directionsService";
+import { getDirections, decodePolyline } from "@/src/outdoorDirections/directionsService";
 import { getShuttleRouteIfApplicable } from "@/src/api/shuttleEngine";
 
 jest.mock("react-native-maps", () => {
@@ -13,7 +13,7 @@ jest.mock("react-native-maps", () => {
 jest.mock("@/src/context/DirectionsContext", () => ({
   useDirections: jest.fn(),
 }));
-jest.mock("@/src/components/outdoorDirections/directionsService", () => ({
+jest.mock("@/src/outdoorDirections/directionsService", () => ({
   getDirections: jest.fn(),
   decodePolyline: jest.fn((str) => [{ latitude: 1, longitude: 1 }]), // Dummy decode
 }));

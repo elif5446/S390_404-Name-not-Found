@@ -1,8 +1,8 @@
 import { LatLng } from "react-native-maps";
 import { DirectionStep, RouteData } from "@/src/context/DirectionsContext";
 import { parseSeconds, formatDurationFromSeconds, calculateEtaFromSeconds } from "@/src/utils/time";
-import { ITravelModeStrategy, RoutesApiTravelMode } from "../components/outdoorDirections/TravelModeStrategy";
-import { TravelMode } from "../components/outdoorDirections/TravelModeStrategy";
+import { ITravelModeStrategy, RoutesApiTravelMode } from "../outdoorDirections/TravelModeStrategy";
+import { TravelMode } from "../outdoorDirections/TravelModeStrategy";
 
 const GOOGLE_DIRECTIONS_API_KEY =
   process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ?? process.env.GOOGLE_MAPS_API_KEY ?? "";
