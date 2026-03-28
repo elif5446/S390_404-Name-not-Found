@@ -21,7 +21,7 @@ export const calculateIndoorPenaltySeconds = async (
         const route = await service.getRoute(start.id, end.id);
         return service.getRouteDurationSeconds(route, PIXEL_TO_METER_RATIO);
       } catch (e) {
-        console.warn("Failed to calculate destination indoor penalty", e);
+        console.warn("Failed to calculate indoor penalty", e);
       }
     }
     return 0
