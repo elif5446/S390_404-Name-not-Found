@@ -16,7 +16,6 @@ export type POICategory =
   | "SECOND_CUP"
   | "MICROWAVE"
   | "VINHS_CAFE"
-  | "STUDENT_UNION"
   | "STUDENT_UNION";
 
 export interface POI {

@@ -355,6 +355,100 @@ const fetchLegacyDirections = async (
   return routes;
 };
 
+// apply time selection to Routes API payload; requires ISO string
+function applyTimeSelection(targetTime: Date | null, timeMode: "leave" | "arrive", mode: TravelMode, body: any): Date | null {
+  let safeTargetTime = targetTime;
+  if (safeTargetTime) {
+    const now = Date.now();
+    if (safeTargetTime.getTime() < now) {
+      safeTargetTime = new Date(now + 10000);
+    }
+
+    const timeString = safeTargetTime.toISOString();
+    if (timeMode === "arrive" && mode === "transit") {
+      body.arrivalTime = timeString;
+    } else if (timeMode === "leave") {
+      body.departureTime = timeString;
+      if (mode === "driving") {
+        body.routingPreference = "TRAFFIC_AWARE";
+      }
+    }
+  }
+  return safeTargetTime
+}
+
+async function getRoutesAPIResponse(
+  start: LatLng,
+  destination: LatLng,
+  mode: TravelMode,
+  targetTime: Date | null = null,
+  timeMode: "leave" | "arrive" = "leave"
+): Promise<{ data: any, safeTargetTime: Date | null }> {
+  // Map modes to Routes API travel mode enum
+  const modeMap: Record<TravelMode, "WALK" | "DRIVE" | "TRANSIT" | "BICYCLE"> = {
+    walking: "WALK",
+    driving: "DRIVE",
+    transit: "TRANSIT",
+    bicycling: "BICYCLE",
+  };
+
+  const url = "https://routes.googleapis.com/directions/v2:computeRoutes";
+  const body: any = {
+    origin: {
+      location: {
+        latLng: {
+          latitude: start.latitude,
+          longitude: start.longitude,
+        },
+      },
+    },
+    destination: {
+      location: {
+        latLng: {
+          latitude: destination.latitude,
+          longitude: destination.longitude,
+        },
+      },
+    },
+    travelMode: modeMap[mode],
+    computeAlternativeRoutes: true,
+    polylineEncoding: "ENCODED_POLYLINE",
+    languageCode: "en-US",
+    units: "METRIC",
+  };
+
+  const safeTargetTime = applyTimeSelection(targetTime, timeMode, mode, body)
+
+  // Create abort controller with 15 second timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+  const response = await fetch(url, {
+    method: "POST",
+    signal: controller.signal,
+    headers: {
+      "Content-Type": "application/json",
+      "X-Goog-Api-Key": GOOGLE_DIRECTIONS_API_KEY,
+      "X-Goog-FieldMask":
+        "routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline,routes.legs.distanceMeters,routes.legs.duration,routes.legs.steps.travelMode,routes.legs.steps.distanceMeters,routes.legs.steps.staticDuration,routes.legs.steps.startLocation.latLng.latitude,routes.legs.steps.startLocation.latLng.longitude,routes.legs.steps.endLocation.latLng.latitude,routes.legs.steps.endLocation.latLng.longitude,routes.legs.steps.navigationInstruction.instructions,routes.legs.steps.transitDetails.headsign,routes.legs.steps.transitDetails.stopDetails.arrivalStop.name,routes.legs.steps.transitDetails.stopDetails.departureStop.name,routes.legs.steps.transitDetails.transitLine.name,routes.legs.steps.transitDetails.transitLine.nameShort,routes.legs.steps.transitDetails.transitLine.vehicle.type,routes.legs.steps.transitDetails.transitLine.vehicle.name.text,routes.legs.steps.polyline.encodedPolyline",
+    },
+    body: JSON.stringify(body),
+  });
+  clearTimeout(timeoutId);
+
+  const data: RoutesApiResponse = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.error?.message || `Routes API request failed with status ${response.status}`);
+  }
+
+  if (!data.routes || data.routes.length === 0) {
+    throw new Error("No route found between these locations");
+  }
+  
+  return { data, safeTargetTime };
+}
+
 /**
  * Fetch directions from Google Directions API
  * @param start - Starting location (lat, lng)
@@ -376,89 +470,10 @@ export const getDirections = async (
   if (!GOOGLE_DIRECTIONS_API_KEY) throw new Error("Google Maps API key is not configured");
 
   try {
-    // Map modes to Routes API travel mode enum
-    const modeMap: Record<TravelMode, "WALK" | "DRIVE" | "TRANSIT" | "BICYCLE"> = {
-      walking: "WALK",
-      driving: "DRIVE",
-      transit: "TRANSIT",
-      bicycling: "BICYCLE",
-    };
+    const { data, safeTargetTime } = await getRoutesAPIResponse(start, destination, mode, targetTime, timeMode);
 
-    const url = "https://routes.googleapis.com/directions/v2:computeRoutes";
-    const body: any = {
-      origin: {
-        location: {
-          latLng: {
-            latitude: start.latitude,
-            longitude: start.longitude,
-          },
-        },
-      },
-      destination: {
-        location: {
-          latLng: {
-            latitude: destination.latitude,
-            longitude: destination.longitude,
-          },
-        },
-      },
-      travelMode: modeMap[mode],
-      computeAlternativeRoutes: true,
-      polylineEncoding: "ENCODED_POLYLINE",
-      languageCode: "en-US",
-      units: "METRIC",
-    };
-
-    // apply time selection to Routes API payload; requires ISO string
-    let safeTargetTime = targetTime;
-    if (safeTargetTime) {
-      const now = Date.now();
-      if (safeTargetTime.getTime() < now) {
-        safeTargetTime = new Date(now + 10000);
-      }
-
-      const timeString = safeTargetTime.toISOString();
-      if (timeMode === "arrive") {
-        if (mode === "transit") {
-          body.arrivalTime = timeString;
-        }
-      } else {
-        body.departureTime = timeString;
-        if (mode === "driving") {
-          body.routingPreference = "TRAFFIC_AWARE";
-        }
-      }
-    }
-
-    // Create abort controller with 15 second timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-    const response = await fetch(url, {
-      method: "POST",
-      signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        "X-Goog-Api-Key": GOOGLE_DIRECTIONS_API_KEY,
-        "X-Goog-FieldMask":
-          "routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline,routes.legs.distanceMeters,routes.legs.duration,routes.legs.steps.travelMode,routes.legs.steps.distanceMeters,routes.legs.steps.staticDuration,routes.legs.steps.startLocation.latLng.latitude,routes.legs.steps.startLocation.latLng.longitude,routes.legs.steps.endLocation.latLng.latitude,routes.legs.steps.endLocation.latLng.longitude,routes.legs.steps.navigationInstruction.instructions,routes.legs.steps.transitDetails.headsign,routes.legs.steps.transitDetails.stopDetails.arrivalStop.name,routes.legs.steps.transitDetails.stopDetails.departureStop.name,routes.legs.steps.transitDetails.transitLine.name,routes.legs.steps.transitDetails.transitLine.nameShort,routes.legs.steps.transitDetails.transitLine.vehicle.type,routes.legs.steps.transitDetails.transitLine.vehicle.name.text,routes.legs.steps.polyline.encodedPolyline",
-      },
-      body: JSON.stringify(body),
-    });
-    clearTimeout(timeoutId);
-
-    const data: RoutesApiResponse = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.error?.message || `Routes API request failed with status ${response.status}`);
-    }
-
-    if (!data.routes || data.routes.length === 0) {
-      throw new Error("No route found between these locations");
-    }
-
-    const routes = data.routes
-      .map<RouteData | null>((route, index) => {
+    const routes = (data.routes as any[])
+      .map((route, index): RouteData | null => {
         const leg = route.legs?.[0];
         if (!leg) {
           return null;
@@ -469,7 +484,7 @@ export const getDirections = async (
           return null;
         }
 
-        const steps: DirectionStep[] = (leg.steps || []).map(step => {
+        const steps: DirectionStep[] = ((leg.steps || []) as any[]).map(step => {
           const polylineStr = step.polyline?.encodedPolyline;
           let instr = stripHtml(step.navigationInstruction?.instructions);
           const tMode = (step.travelMode || "").toUpperCase();
