@@ -130,11 +130,13 @@ export const useDestinationData = (
 
       setBaseModeSecondsCache(prev => {
         const next = { ...prev };
-        results.forEach(result => {
+        
+        for (const result of results) {
           if (result.status === "fulfilled" && result.value.baseSeconds !== null) {
             next[result.value.modeKey] = result.value.baseSeconds;
           }
-        });
+        }
+        
         return next;
       });
     };
