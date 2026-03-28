@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { DirectionStep, useDirections } from "@/src/context/DirectionsContext";
-import { getDirections } from "@/src/api/directions";
+import { getDirections } from "@/src/components/outdoorDirections/directionsService";
 import { calculateIndoorPenaltySeconds } from "@/src/indoors/services/indoorRoutingHelper";
 import { formatDurationFromSeconds } from "../utils/time";
+import { GoogleTravelMode } from "@/src/components/outdoorDirections/TravelModeStrategy";
 
-type TravelMode = "walking" | "driving" | "transit" | "bicycling";
 export const useDestinationData = (
   visible: boolean,
   overrideDestination?: { latitude: number; longitude: number },
@@ -113,7 +113,7 @@ export const useDestinationData = (
     if (!visible || !effectiveStart || !effectiveDestination) return;
 
     let isCancelled = false;
-    const allModes: TravelMode[] = ["walking", "transit", "bicycling", "driving"];
+    const allModes: GoogleTravelMode[] = ["walking", "transit", "bicycling", "driving"];
 
     const fetchModeDurations = async () => {
       const results = await Promise.allSettled(
@@ -148,7 +148,7 @@ export const useDestinationData = (
   }, [visible, effectiveStart, effectiveDestination, routeScopeKey]);
 
   const getModeDurationLabel = useCallback(
-    (modeKey: TravelMode): string => {
+    (modeKey: GoogleTravelMode): string => {
       const baseSeconds = baseModeSecondsCache[modeKey];
 
       if (baseSeconds != null) {
