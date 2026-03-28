@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/7</span>
+                <span class='fraction'>7/7</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">89.47% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/19</span>
+                <span class='fraction'>17/19</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/2</span>
+                <span class='fraction'>2/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/7</span>
+                <span class='fraction'>7/7</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -266,7 +266,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -279,25 +279,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">27x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">27x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -311,6 +297,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -327,7 +314,20 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">27x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -440,7 +440,7 @@ interface AdditionalInfoPopupContentProps {
   eventsLoading?: boolean;
 }
 &nbsp;
-const AdditionalInfoPopupContent: React.FC&lt;AdditionalInfoPopupContentProps&gt; = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >({</span></span>
+const AdditionalInfoPopupContent: React.FC&lt;AdditionalInfoPopupContentProps&gt; = ({
   mode,
   buildingInfo,
   directionsEtaLabel,
@@ -453,11 +453,11 @@ const AdditionalInfoPopupContent: React.FC&lt;AdditionalInfoPopupContentProps&gt
   nextEvent,
   eventsLoading,
 }) =&gt; {
-  const campusPink = <span class="cstat-no" title="statement not covered" >"#B03060";</span>
+  const campusPink = "#B03060";
 &nbsp;
-  const renderOpeningHours = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(h</span>ours: string | OpeningHours) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    if (typeof hours === "string") {</span>
-<span class="cstat-no" title="statement not covered" >      return (</span>
+  const renderOpeningHours = (hours: string | OpeningHours) =&gt; {
+    if (typeof hours === "string") {
+      return (
         &lt;View style={styles.section} accessible={true}&gt;
           &lt;Text
             style={[styles.sectionTitle, themedStyles.text(mode)]}
@@ -471,7 +471,7 @@ const AdditionalInfoPopupContent: React.FC&lt;AdditionalInfoPopupContentProps&gt
         &lt;/View&gt;
       );
     }
-<span class="cstat-no" title="statement not covered" >    return (</span>
+    return (
       &lt;View style={styles.section}&gt;
         &lt;Text
           style={[styles.sectionTitle, themedStyles.text(mode)]}
@@ -501,7 +501,7 @@ const AdditionalInfoPopupContent: React.FC&lt;AdditionalInfoPopupContentProps&gt
     );
   };
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  return (</span>
+  return (
     &lt;ScrollView
       ref={scrollViewRef}
       style={[styles.contentArea, { flex: 1 }]}
@@ -556,7 +556,7 @@ const AdditionalInfoPopupContent: React.FC&lt;AdditionalInfoPopupContentProps&gt
                     : "document.on.document"
                 }
                 size={24}
-                color={mode === "dark" ? "#FFFFFF" : "#333333"}
+                color={mode === "dark" ? <span class="branch-0 cbranch-no" title="branch not covered" >"#FFFFFF" </span>: "#333333"}
                 weight="regular"
               /&gt;
             &lt;/TouchableOpacity&gt;
@@ -592,7 +592,7 @@ export default memo(AdditionalInfoPopupContent);
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-03-27T23:30:56.788Z
+                at 2026-03-28T02:26:50.709Z
             </div>
         <script src="../prettify.js"></script>
         <script>

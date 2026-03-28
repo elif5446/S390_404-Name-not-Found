@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">50% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/30</span>
+                <span class='fraction'>15/30</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">25% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/16</span>
+                <span class='fraction'>4/16</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">57.14% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/7</span>
+                <span class='fraction'>4/7</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">60.86% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/23</span>
+                <span class='fraction'>14/23</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line medium'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -167,33 +167,33 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">17x</span>
+<span class="cline-any cline-yes">17x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">17x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -258,33 +258,33 @@ interface Props {
   onLabelPress: (buildingId: string) =&gt; void;
 }
 &nbsp;
-const CampusLabels: React.FC&lt;Props&gt; = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >({</span></span>
+const CampusLabels: React.FC&lt;Props&gt; = ({
   campus,
   data,
   longitudeDelta,
   onLabelPress,
 }) =&gt; {
-  const isVisible = <span class="cstat-no" title="statement not covered" >longitudeDelta &lt;= 0.0075;</span>
-  const fontSize = <span class="cstat-no" title="statement not covered" >getLabelFontSize(longitudeDelta);</span>
-  const [trackChanges, setTrackChanges] = <span class="cstat-no" title="statement not covered" >useState(true);</span>
+  const isVisible = longitudeDelta &lt;= 0.0075;
+  const fontSize = getLabelFontSize(longitudeDelta);
+  const [trackChanges, setTrackChanges] = useState(true);
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  useEffect(<span class="fstat-no" title="function not covered" >()</span> =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    if (!isVisible) <span class="cstat-no" title="statement not covered" >return;</span></span>
+  useEffect(() =&gt; {
+    <span class="missing-if-branch" title="if path not taken" >I</span>if (!isVisible) <span class="cstat-no" title="statement not covered" >return;</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >    setTrackChanges(true);</span>
-    const timeout = <span class="cstat-no" title="statement not covered" >setTimeout(<span class="fstat-no" title="function not covered" >()</span> =&gt; <span class="cstat-no" title="statement not covered" >setTrackChanges(false),</span> 150);</span>
-<span class="cstat-no" title="statement not covered" >    return <span class="fstat-no" title="function not covered" >()</span> =&gt; <span class="cstat-no" title="statement not covered" >clearTimeout(timeout);</span></span>
+    setTrackChanges(true);
+    const timeout = setTimeout(<span class="fstat-no" title="function not covered" >()</span> =&gt; <span class="cstat-no" title="statement not covered" >setTrackChanges(false),</span> 150);
+    return () =&gt; clearTimeout(timeout);
   }, [fontSize, isVisible]);
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  if (!isVisible) <span class="cstat-no" title="statement not covered" >return null;</span></span>
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (!isVisible) <span class="cstat-no" title="statement not covered" >return null;</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  return (</span>
+  return (
     &lt;&gt;
-      {data.features.map(<span class="fstat-no" title="function not covered" >(f</span>eature) =&gt; {
-        const { id, centroid } = <span class="cstat-no" title="statement not covered" >feature.properties;</span>
-<span class="cstat-no" title="statement not covered" >        if (!centroid) <span class="cstat-no" title="statement not covered" >return null;</span></span>
+      {data.features.map((feature) =&gt; {
+        const { id, centroid } = feature.properties;
+        <span class="missing-if-branch" title="if path not taken" >I</span>if (!centroid) <span class="cstat-no" title="statement not covered" >return null;</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >        return (</span>
+        return (
           &lt;Marker
             key={`${campus}-${id}-label`}
             coordinate={centroid}
@@ -312,7 +312,7 @@ const CampusLabels: React.FC&lt;Props&gt; = <span class="cstat-no" title="statem
                 {id}
               &lt;/Text&gt;
               {Platform.OS === "android" &amp;&amp; (
-                &lt;Text style={{ width: 1, height: 1, opacity: 0 }}&gt; &lt;/Text&gt;
+<span class="branch-1 cbranch-no" title="branch not covered" >                &lt;Text style={{ width: 1, height: 1, opacity: 0 }}&gt; &lt;/Text&gt;</span>
               )}
             &lt;/View&gt;
           &lt;/Marker&gt;
@@ -343,7 +343,7 @@ export default memo(CampusLabels, <span class="fstat-no" title="function not cov
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-03-27T23:30:56.788Z
+                at 2026-03-28T02:26:50.709Z
             </div>
         <script src="../prettify.js"></script>
         <script>

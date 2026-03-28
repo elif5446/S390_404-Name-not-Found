@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/12</span>
+                <span class='fraction'>12/12</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">89.47% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/19</span>
+                <span class='fraction'>17/19</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/3</span>
+                <span class='fraction'>3/3</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/12</span>
+                <span class='fraction'>12/12</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -222,21 +222,21 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -249,10 +249,10 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">22x</span>
+<span class="cline-any cline-yes">22x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">22x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -315,7 +315,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">4x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -355,21 +355,21 @@ interface AdditionalInfoPopupHeaderProps {
 }
 &nbsp;
 // helper logic
-const renderAccessibilityIcon = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(i</span>con: AccessibilityIconDef, mode: "light" | "dark") =&gt; {</span>
-  const iconColor = <span class="cstat-no" title="statement not covered" >themedStyles.subtext(mode).color;</span>
+const renderAccessibilityIcon = (icon: AccessibilityIconDef, mode: "light" | "dark") =&gt; {
+  const iconColor = themedStyles.subtext(mode).color;
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  if (icon.key === "metro") {</span>
-<span class="cstat-no" title="statement not covered" >    return &lt;MetroIcon width={25} height={25} color={iconColor} /&gt;;</span>
+  if (icon.key === "metro") {
+    return &lt;MetroIcon width={25} height={25} color={iconColor} /&gt;;
   }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  if (Platform.OS === "ios") {</span>
-<span class="cstat-no" title="statement not covered" >    return &lt;SymbolView name={icon.sf} size={25} weight="heavy" tintColor={iconColor} /&gt;;</span>
+  if (Platform.OS === "ios") {
+    return &lt;SymbolView name={icon.sf} size={25} weight="heavy" tintColor={iconColor} /&gt;;
   }
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  return &lt;PlatformIcon materialName={icon.material} iosName={icon.sf} size={25} color={iconColor} weight="heavy" /&gt;;</span>
+  return &lt;PlatformIcon materialName={icon.material} iosName={icon.sf} size={25} color={iconColor} weight="heavy" /&gt;;
 };
 &nbsp;
-const AdditionalInfoPopupHeader: React.FC&lt;AdditionalInfoPopupHeaderProps&gt; = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >({</span></span>
+const AdditionalInfoPopupHeader: React.FC&lt;AdditionalInfoPopupHeaderProps&gt; = ({
   mode,
   buildingId,
   buildingInfo,
@@ -382,10 +382,10 @@ const AdditionalInfoPopupHeader: React.FC&lt;AdditionalInfoPopupHeaderProps&gt; 
   onToggleHeight,
   onDragHandleAccessibilityAction,
 }) =&gt; {
-  const campusPink = <span class="cstat-no" title="statement not covered" >"#B03060";</span>
-  const isDark = <span class="cstat-no" title="statement not covered" >mode === "dark";</span>
+  const campusPink = "#B03060";
+  const isDark = mode === "dark";
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  return (</span>
+  return (
     &lt;&gt;
       &lt;BottomSheetDragHandle isDark={isDark} onToggleHeight={onToggleHeight} onAccessibilityAction={onDragHandleAccessibilityAction} /&gt;
 &nbsp;
@@ -436,19 +436,19 @@ const AdditionalInfoPopupHeader: React.FC&lt;AdditionalInfoPopupHeaderProps&gt; 
               onPress={onDirectionsPress}
               style={styles.directionsButton}
               accessibilityRole="button"
-              accessibilityLabel={`Directions, ${directionsEtaLabel || "--"}`}
+              accessibilityLabel={`Directions, ${directionsEtaLabel || <span class="branch-1 cbranch-no" title="branch not covered" >"--"}</span>`}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             &gt;
               &lt;View style={styles.directionsArrowCircle}&gt;
                 &lt;MaterialIcons name="subdirectory-arrow-right" size={12} color={campusPink} /&gt;
               &lt;/View&gt;
-              &lt;Text style={styles.directionsEtaText}&gt;{directionsEtaLabel || "--"}&lt;/Text&gt;
+              &lt;Text style={styles.directionsEtaText}&gt;{directionsEtaLabel || <span class="branch-1 cbranch-no" title="branch not covered" >"--"}</span>&lt;/Text&gt;
             &lt;/TouchableOpacity&gt;
 &nbsp;
             {accessibilityIcons.length &gt; 0 &amp;&amp; (
               &lt;View style={[styles.accessibilityIconsContainer, styles.rightAccessibilityRow]}&gt;
-                {accessibilityIcons.map(<span class="fstat-no" title="function not covered" >ic</span>on =&gt; (
-<span class="cstat-no" title="statement not covered" >                  &lt;View key={icon.key} accessible={true} accessibilityLabel={icon.label}&gt;</span>
+                {accessibilityIcons.map(icon =&gt; (
+                  &lt;View key={icon.key} accessible={true} accessibilityLabel={icon.label}&gt;
                     {renderAccessibilityIcon(icon, mode)}
                   &lt;/View&gt;
                 ))}
@@ -469,7 +469,7 @@ export default memo(AdditionalInfoPopupHeader);
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-03-27T23:30:56.788Z
+                at 2026-03-28T02:26:50.709Z
             </div>
         <script src="../prettify.js"></script>
         <script>

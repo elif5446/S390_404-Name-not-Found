@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/4</span>
+                <span class='fraction'>4/4</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/3</span>
+                <span class='fraction'>3/3</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/4</span>
+                <span class='fraction'>4/4</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -200,7 +200,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -254,7 +254,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -283,7 +283,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -312,7 +312,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { BuildingIndoorConfig } from "@/src/indoors/types/FloorPlans";
@@ -326,7 +326,7 @@ import MBS2_SVG from "@/assets/floor/MB-S2.svg";
 import VL1_SVG from "@/assets/floor/VL-1.svg";
 import VL2_SVG from "@/assets/floor/VL-2.svg";
 &nbsp;
-export const INDOOR_DATA: Record&lt;string, BuildingIndoorConfig&gt; = <span class="cstat-no" title="statement not covered" >{</span>
+export const INDOOR_DATA: Record&lt;string, BuildingIndoorConfig&gt; = {
   H: {
     id: "H",
     name: "Hall Building",
@@ -380,7 +380,7 @@ export const INDOOR_DATA: Record&lt;string, BuildingIndoorConfig&gt; = <span cla
           southWest: { latitude: 45.49682, longitude: -73.57954 },
         },
       },
-    ].sort(<span class="fstat-no" title="function not covered" >(a</span>, b) =&gt; <span class="cstat-no" title="statement not covered" >a.level - b.level)</span>,
+    ].sort((a, b) =&gt; a.level - b.level),
   },
   MB: {
     id: "MB",
@@ -409,7 +409,7 @@ export const INDOOR_DATA: Record&lt;string, BuildingIndoorConfig&gt; = <span cla
           southWest: { latitude: 45.495133, longitude: -73.579162 },
         },
       },
-    ].sort(<span class="fstat-no" title="function not covered" >(a</span>, b) =&gt; <span class="cstat-no" title="statement not covered" >a.level - b.level)</span>,
+    ].sort((a, b) =&gt; a.level - b.level),
   },
   VL: {
     id: "VL",
@@ -438,7 +438,7 @@ export const INDOOR_DATA: Record&lt;string, BuildingIndoorConfig&gt; = <span cla
           southWest: { latitude: 45.458727, longitude: -73.638939 },
         },
       },
-    ].sort(<span class="fstat-no" title="function not covered" >(a</span>, b) =&gt; <span class="cstat-no" title="statement not covered" >a.level - b.level)</span>,
+    ].sort((a, b) =&gt; a.level - b.level),
   },
 };
 &nbsp;</pre></td></tr></table></pre>
@@ -448,7 +448,7 @@ export const INDOOR_DATA: Record&lt;string, BuildingIndoorConfig&gt; = <span cla
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-03-27T23:30:56.788Z
+                at 2026-03-28T02:26:50.709Z
             </div>
         <script src="../prettify.js"></script>
         <script>

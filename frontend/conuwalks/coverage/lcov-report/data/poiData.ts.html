@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">94.11% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/17</span>
+                <span class='fraction'>16/17</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/4</span>
+                <span class='fraction'>4/4</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">83.33% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/6</span>
+                <span class='fraction'>5/6</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/13</span>
+                <span class='fraction'>13/13</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -1511,21 +1511,21 @@
 <a name='L1446'></a><a href='#L1446'>1446</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">648x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">264x</span>
+<span class="cline-any cline-yes">264x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">258x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -2920,11 +2920,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -2948,29 +2948,29 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { POI, POICategory } from "@/src/types/poi";
 import { hallBuildingNavConfig } from "@/src/indoors/data/HallBuilding";
 &nbsp;
-const NODE_COORD_MAX = <span class="cstat-no" title="statement not covered" >1024;</span>
+const NODE_COORD_MAX = 1024;
 &nbsp;
-const hallNodesById = <span class="cstat-no" title="statement not covered" >new Map(hallBuildingNavConfig.floors.flatMap(<span class="fstat-no" title="function not covered" >fl</span>oor =&gt; <span class="cstat-no" title="statement not covered" >floor.nodes.map(<span class="fstat-no" title="function not covered" >no</span>de =&gt; <span class="cstat-no" title="statement not covered" >[node.id, node] as const)</span>)</span>);</span>
+const hallNodesById = new Map(hallBuildingNavConfig.floors.flatMap(floor =&gt; floor.nodes.map(node =&gt; [node.id, node] as const)));
 &nbsp;
-const mapPositionFromNode = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(n</span>odeId: string, fallback: POI["mapPosition"]): POI["mapPosition"] =&gt; {</span>
-  const node = <span class="cstat-no" title="statement not covered" >hallNodesById.get(nodeId);</span>
-<span class="cstat-no" title="statement not covered" >  if (!node) <span class="cstat-no" title="statement not covered" >return fallback;</span></span>
+const mapPositionFromNode = (nodeId: string, fallback: POI["mapPosition"]): POI["mapPosition"] =&gt; {
+  const node = hallNodesById.get(nodeId);
+  if (!node) return fallback;
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  return {</span>
+  return {
     x: Number((node.x / NODE_COORD_MAX).toFixed(3)),
     y: Number((node.y / NODE_COORD_MAX).toFixed(3)),
   };
 };
 &nbsp;
-const POI_DATA: Record&lt;string, POI[]&gt; = <span class="cstat-no" title="statement not covered" >{</span>
+const POI_DATA: Record&lt;string, POI[]&gt; = {
   // VL Building – Floor 2
   "VL-2": [
     // Bathrooms
@@ -4364,12 +4364,12 @@ const POI_DATA: Record&lt;string, POI[]&gt; = <span class="cstat-no" title="stat
  * @param buildingId  "H"
  * @param floor       numeric floor level
  */
-export function <span class="fstat-no" title="function not covered" >getPOIsForFloor(</span>buildingId: string, floor: number): POI[] {
-<span class="cstat-no" title="statement not covered" >  return POI_DATA[`${buildingId}-${floor}`] ?? [];</span>
+export function getPOIsForFloor(buildingId: string, floor: number): POI[] {
+  return POI_DATA[`${buildingId}-${floor}`] ?? [];
 }
 &nbsp;
 //category labels used in filter chips.
-export const CATEGORY_LABELS: Record&lt;POICategory, string&gt; = <span class="cstat-no" title="statement not covered" >{</span>
+export const CATEGORY_LABELS: Record&lt;POICategory, string&gt; = {
   WC_F: "WC F",
   WC_M: "WC M",
   WC_A: "WC A",
@@ -4392,11 +4392,11 @@ export const CATEGORY_LABELS: Record&lt;POICategory, string&gt; = <span class="c
 &nbsp;
 // Returns the unique categories present for a given building + floor.
 &nbsp;
-export function <span class="fstat-no" title="function not covered" >getCategoriesForFloor(</span>buildingId: string, floor: number): POICategory[] {
-  const pois = <span class="cstat-no" title="statement not covered" >getPOIsForFloor(buildingId, floor);</span>
-  const seen = <span class="cstat-no" title="statement not covered" >new Set&lt;POICategory&gt;();</span>
-<span class="cstat-no" title="statement not covered" >  pois.forEach(<span class="fstat-no" title="function not covered" >p </span>=&gt; <span class="cstat-no" title="statement not covered" >seen.add(p.category))</span>;</span>
-<span class="cstat-no" title="statement not covered" >  return Array.from(seen);</span>
+export function getCategoriesForFloor(buildingId: string, floor: number): POICategory[] {
+  const pois = getPOIsForFloor(buildingId, floor);
+  const seen = new Set&lt;POICategory&gt;();
+  pois.forEach(<span class="fstat-no" title="function not covered" >p </span>=&gt; <span class="cstat-no" title="statement not covered" >seen.add(p.category))</span>;
+  return Array.from(seen);
 }
 &nbsp;</pre></td></tr></table></pre>
 
@@ -4405,7 +4405,7 @@ export function <span class="fstat-no" title="function not covered" >getCategori
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-03-27T23:30:56.788Z
+                at 2026-03-28T02:26:50.709Z
             </div>
         <script src="../prettify.js"></script>
         <script>

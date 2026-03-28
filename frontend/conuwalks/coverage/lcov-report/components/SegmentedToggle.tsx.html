@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">85.71% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/7</span>
+                <span class='fraction'>6/7</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">68.18% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/22</span>
+                <span class='fraction'>15/22</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/2</span>
+                <span class='fraction'>2/2</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/6</span>
+                <span class='fraction'>6/6</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -178,11 +178,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">21x</span>
+<span class="cline-any cline-yes">21x</span>
+<span class="cline-any cline-yes">21x</span>
+<span class="cline-any cline-yes">21x</span>
+<span class="cline-any cline-yes">21x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -202,7 +202,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -270,18 +270,18 @@ import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useDirections } from "@/src/context/DirectionsContext";
 &nbsp;
-function <span class="fstat-no" title="function not covered" >SegmentedToggle(</span>{
+function SegmentedToggle({
   campus,
   setCampus,
 }: Readonly&lt;{
   campus: "SGW" | "Loyola";
   setCampus: (campus: "SGW" | "Loyola") =&gt; void;
 }&gt;) {
-  const mode = <span class="cstat-no" title="statement not covered" >useColorScheme() || "light";</span>
-  const insets = <span class="cstat-no" title="statement not covered" >useSafeAreaInsets();</span>
-  const { isNavigationActive } = <span class="cstat-no" title="statement not covered" >useDirections();</span>
-<span class="cstat-no" title="statement not covered" >  if (isNavigationActive) <span class="cstat-no" title="statement not covered" >return null;</span></span>
-<span class="cstat-no" title="statement not covered" >  return (</span>
+  const mode = useColorScheme() || <span class="branch-1 cbranch-no" title="branch not covered" >"light";</span>
+  const insets = useSafeAreaInsets();
+  const { isNavigationActive } = useDirections();
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (isNavigationActive) <span class="cstat-no" title="statement not covered" >return null;</span>
+  return (
     &lt;View style={[styles.overlay, { paddingTop: insets.top + 10 }]}&gt;
       {(Platform.OS === "ios" &amp;&amp; (
         &lt;View style={styles.shadowiOS}&gt;
@@ -300,8 +300,8 @@ function <span class="fstat-no" title="function not covered" >SegmentedToggle(</
             &lt;SegmentedControl
               values={["Sir George Williams", "Loyola"]}
               selectedIndex={campus === "SGW" ? 0 : 1}
-              onChange={<span class="fstat-no" title="function not covered" >(e</span>vent) =&gt; {
-<span class="cstat-no" title="statement not covered" >                setCampus(</span>
+              onChange={(event) =&gt; {
+                setCampus(
                   event.nativeEvent.selectedSegmentIndex === 0
                     ? "SGW"
                     : "Loyola",
@@ -311,10 +311,10 @@ function <span class="fstat-no" title="function not covered" >SegmentedToggle(</
               appearance={mode}
               backgroundColor="transparent"
               activeFontStyle={{
-                color: mode === "light" ? "white" : "black",
+                color: mode === "light" ? "white" : <span class="branch-1 cbranch-no" title="branch not covered" >"black",</span>
                 fontWeight: "600",
               }}
-              fontStyle={{ color: mode === "light" ? "black" : "white" }}
+              fontStyle={{ color: mode === "light" ? "black" : <span class="branch-1 cbranch-no" title="branch not covered" >"white" </span>}}
               style={styles.segmentedIos}
             /&gt;
           &lt;/BlurView&gt;
@@ -324,7 +324,7 @@ function <span class="fstat-no" title="function not covered" >SegmentedToggle(</
           &lt;View
             style={[
               styles.shadowAndroid,
-              { backgroundColor: mode === "dark" ? "#1C1B1F" : "#FFFFFF" },
+              { backgroundColor: mode === "dark" ? <span class="branch-0 cbranch-no" title="branch not covered" >"#1C1B1F" </span>: "#FFFFFF" },
             ]}
           &gt;
             &lt;SegmentedButtons
@@ -347,8 +347,8 @@ function <span class="fstat-no" title="function not covered" >SegmentedToggle(</
               theme={{
                 colors: {
                   secondaryContainer: "#B03060",
-                  onSecondaryContainer: mode === "dark" ? "#1C1B1F" : "#FFFFFF",
-                  onSurface: mode === "dark" ? "#FFFFFF" : "#1C1B1F",
+                  onSecondaryContainer: mode === "dark" ? <span class="branch-0 cbranch-no" title="branch not covered" >"#1C1B1F" </span>: "#FFFFFF",
+                  onSurface: mode === "dark" ? <span class="branch-0 cbranch-no" title="branch not covered" >"#FFFFFF" </span>: "#1C1B1F",
                 },
               }}
               style={styles.segmentedAndroid}
@@ -367,7 +367,7 @@ export default SegmentedToggle;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-03-27T23:30:56.788Z
+                at 2026-03-28T02:26:50.709Z
             </div>
         <script src="../prettify.js"></script>
         <script>

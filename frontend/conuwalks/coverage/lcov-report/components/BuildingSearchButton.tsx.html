@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/6</span>
+                <span class='fraction'>6/6</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">50% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/12</span>
+                <span class='fraction'>6/12</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/1</span>
+                <span class='fraction'>1/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/6</span>
+                <span class='fraction'>6/6</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -143,22 +143,22 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">14x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
+<span class="cline-any cline-yes">14x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">14x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -211,22 +211,22 @@ interface BuildingSearchButtonProps {
   buttonSpacing: number;
 }
 &nbsp;
-const BuildingSearchButton: React.FC&lt;BuildingSearchButtonProps&gt; = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >({</span></span>
+const BuildingSearchButton: React.FC&lt;BuildingSearchButtonProps&gt; = ({
   onPress,
   buttonSize,
   mode,
   buttonSpacing,
 }) =&gt; {
-  const isIOS = <span class="cstat-no" title="statement not covered" >Platform.OS === "ios";</span>
-  const backgroundColor = <span class="cstat-no" title="statement not covered" >isIOS</span>
+  const isIOS = Platform.OS === "ios";
+  const backgroundColor = isIOS
     ? "transparent"
-    : mode === "dark"
+    : <span class="branch-1 cbranch-no" title="branch not covered" >mode === "dark"</span>
       ? "#2C2C2E"
       : "#FFFFFF";
-  const shadowOpacity = <span class="cstat-no" title="statement not covered" >isIOS ? 0.18 : 0.22;</span>
-  const elevation = <span class="cstat-no" title="statement not covered" >isIOS ? 0 : 4;</span>
+  const shadowOpacity = isIOS ? 0.18 : <span class="branch-1 cbranch-no" title="branch not covered" >0.22;</span>
+  const elevation = isIOS ? 0 : <span class="branch-1 cbranch-no" title="branch not covered" >4;</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >  return (</span>
+  return (
     &lt;TouchableOpacity
       onPress={onPress}
       style={{
@@ -253,7 +253,7 @@ const BuildingSearchButton: React.FC&lt;BuildingSearchButtonProps&gt; = <span cl
       {isIOS &amp;&amp; (
         &lt;BlurView
           intensity={35}
-          tint={mode === "dark" ? "dark" : "light"}
+          tint={mode === "dark" ? <span class="branch-0 cbranch-no" title="branch not covered" >"dark" </span>: "light"}
           style={{
             position: "absolute",
             width: "100%",
@@ -274,7 +274,7 @@ export default BuildingSearchButton;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-03-27T23:30:56.788Z
+                at 2026-03-28T02:26:50.709Z
             </div>
         <script src="../prettify.js"></script>
         <script>
