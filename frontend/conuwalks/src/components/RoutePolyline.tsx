@@ -218,7 +218,6 @@ const outdoorRequestKey =
 
     if (!shouldShowRoute || !effectiveStartLocation || !destinationCoords) {
       if (!effectiveStartLocation || !destinationCoords) setRoutes([]);
-      // console.log("RoutePolyline: Missing start or destination, skipping");
       return;
     }
 
@@ -434,7 +433,7 @@ const outdoorRequestKey =
   const walkDash = isIOS ? [1, 6] : [1, 8];
 
   const transferNodes = useMemo(() => {
-    if (travelMode !== "transit" || !routeData || !routeData.steps) return [];
+    if (travelMode !== "transit" || !routeData?.steps) return [];
 
     const nodes = [];
     for (let i = 0; i < routeData.steps.length - 1; i++) {
