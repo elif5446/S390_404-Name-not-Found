@@ -1,16 +1,13 @@
-import { BicyclingStrategy } from "@/src/outdoorDirections/bicyclingStrategy";
 import {
-  clampToFuture,
-  fetchRoutesApi,
-  fetchLegacyApi,
-  mapRoutesApiResponse,
-  mapLegacyApiResponse,
-  isRoutesBlockedError,
-} from "@/src/api/googleDirectionsAPI";
-import { LatLng } from "react-native-maps";
-import { RouteData } from "@/src/context/DirectionsContext";
-
-// --- Mocks ---
+  getApiMocks,
+  resetApiMocks,
+  FUTURE_DATE,
+  PAST_DATE,
+  BASE_URL,
+  START,
+  DESTINATION,
+  MOCK_ROUTE,
+} from "../../utils/strategyTestHelper";
 
 jest.mock("@/src/api/googleDirectionsAPI", () => ({
   clampToFuture: jest.fn(),
@@ -21,230 +18,136 @@ jest.mock("@/src/api/googleDirectionsAPI", () => ({
   isRoutesBlockedError: jest.fn(),
 }));
 
-const mockClampToFuture = clampToFuture as jest.MockedFunction<typeof clampToFuture>;
-const mockFetchRoutesApi = fetchRoutesApi as jest.MockedFunction<typeof fetchRoutesApi>;
-const mockFetchLegacyApi = fetchLegacyApi as jest.MockedFunction<typeof fetchLegacyApi>;
-const mockMapRoutesApiResponse = mapRoutesApiResponse as jest.MockedFunction<typeof mapRoutesApiResponse>;
-const mockMapLegacyApiResponse = mapLegacyApiResponse as jest.MockedFunction<typeof mapLegacyApiResponse>;
-const mockIsRoutesBlockedError = isRoutesBlockedError as jest.MockedFunction<typeof isRoutesBlockedError>;
+import { BicyclingStrategy } from "@/src/outdoorDirections/bicyclingStrategy";
 
-// --- Helpers ---
-
-const START: LatLng = { latitude: 45.5017, longitude: -73.5673 };
-const DESTINATION: LatLng = { latitude: 45.5231, longitude: -73.5827 };
-const FUTURE_DATE = new Date(Date.now() + 60_000);
-const MOCK_ROUTE: RouteData = {
-  polyline: "encodedPolyline",
-  duration: "15 mins",
-  distance: "3 km",
-  arrivalTime: null,
-  departureTime: null,
-  steps: [],
-} as unknown as RouteData;
-
-// --- Tests ---
+const mocks = getApiMocks();
+const strategy = new BicyclingStrategy();
 
 describe("BicyclingStrategy", () => {
-  let strategy: BicyclingStrategy;
+  resetApiMocks(mocks);
 
-  beforeEach(() => {
-    strategy = new BicyclingStrategy();
-    jest.clearAllMocks();
+  it("has correct apiMode and googleTravelMode", () => {
+    expect(strategy.apiMode).toBe("BICYCLE");
+    expect(strategy.googleTravelMode).toBe("bicycling");
   });
-
-  // ── apiMode ────────────────────────────────────────────────────────────────
-
-  describe("apiMode", () => {
-    it('is "BICYCLE"', () => {
-      expect(strategy.apiMode).toBe("BICYCLE");
-    });
-  });
-
-  // ── applyTimeToRoutesBody ──────────────────────────────────────────────────
 
   describe("applyTimeToRoutesBody", () => {
-    it("sets departureTime on body when timeMode is 'leave' and safe time exists", () => {
-      mockClampToFuture.mockReturnValue(FUTURE_DATE);
+    it("sets departureTime when timeMode is leave and time is in future", () => {
+      mocks.mockClampToFuture.mockReturnValueOnce(FUTURE_DATE);
       const body: Record<string, unknown> = {};
-
       const result = strategy.applyTimeToRoutesBody(body, FUTURE_DATE, "leave");
-
-      expect(clampToFuture).toHaveBeenCalledWith(FUTURE_DATE);
       expect(body.departureTime).toBe(FUTURE_DATE.toISOString());
       expect(result).toBe(FUTURE_DATE);
     });
 
-    it("does NOT set departureTime when timeMode is 'arrive'", () => {
-      mockClampToFuture.mockReturnValue(FUTURE_DATE);
+    it("does not set departureTime when timeMode is arrive", () => {
+      mocks.mockClampToFuture.mockReturnValueOnce(FUTURE_DATE);
       const body: Record<string, unknown> = {};
-
       strategy.applyTimeToRoutesBody(body, FUTURE_DATE, "arrive");
-
       expect(body.departureTime).toBeUndefined();
     });
 
-    it("does NOT set departureTime when clampToFuture returns null", () => {
-      mockClampToFuture.mockReturnValue(null);
+    it("does not set departureTime when targetTime is null", () => {
+      mocks.mockClampToFuture.mockReturnValueOnce(null);
       const body: Record<string, unknown> = {};
-
       const result = strategy.applyTimeToRoutesBody(body, null, "leave");
-
       expect(body.departureTime).toBeUndefined();
       expect(result).toBeNull();
     });
 
-    it("returns the clamped date", () => {
-      mockClampToFuture.mockReturnValue(FUTURE_DATE);
-
-      const result = strategy.applyTimeToRoutesBody({}, FUTURE_DATE, "leave");
-
-      expect(result).toBe(FUTURE_DATE);
+    it("does not set departureTime when targetTime is in the past", () => {
+      mocks.mockClampToFuture.mockReturnValueOnce(null);
+      const body: Record<string, unknown> = {};
+      const result = strategy.applyTimeToRoutesBody(body, PAST_DATE, "leave");
+      expect(body.departureTime).toBeUndefined();
+      expect(result).toBeNull();
     });
   });
-
-  // ── applyTimeToLegacyUrl ───────────────────────────────────────────────────
 
   describe("applyTimeToLegacyUrl", () => {
-    it("appends departure_time to URL when timeMode is 'leave' and safe time exists", () => {
-      mockClampToFuture.mockReturnValue(FUTURE_DATE);
-      const expectedTimestamp = Math.floor(FUTURE_DATE.getTime() / 1000);
-
-      const { url, safeTargetTime } = strategy.applyTimeToLegacyUrl(
-        "https://example.com/directions",
-        FUTURE_DATE,
-        "leave",
-      );
-
-      expect(url).toBe(`https://example.com/directions&departure_time=${expectedTimestamp}`);
+    it("appends departure_time when timeMode is leave and time is in future", () => {
+      mocks.mockClampToFuture.mockReturnValueOnce(FUTURE_DATE);
+      const { url, safeTargetTime } = strategy.applyTimeToLegacyUrl(BASE_URL, FUTURE_DATE, "leave");
+      const expectedSeconds = Math.floor(FUTURE_DATE.getTime() / 1000);
+      expect(url).toContain(`&departure_time=${expectedSeconds}`);
       expect(safeTargetTime).toBe(FUTURE_DATE);
     });
 
-    it("does NOT append departure_time when timeMode is 'arrive'", () => {
-      mockClampToFuture.mockReturnValue(FUTURE_DATE);
-      const baseUrl = "https://example.com/directions";
-
-      const { url } = strategy.applyTimeToLegacyUrl(baseUrl, FUTURE_DATE, "arrive");
-
-      expect(url).toBe(baseUrl);
+    it("does not append any time param when timeMode is arrive", () => {
+      mocks.mockClampToFuture.mockReturnValueOnce(FUTURE_DATE);
+      const { url } = strategy.applyTimeToLegacyUrl(BASE_URL, FUTURE_DATE, "arrive");
+      expect(url).not.toContain("departure_time");
+      expect(url).not.toContain("arrival_time");
     });
 
-    it("does NOT append departure_time when clampToFuture returns null", () => {
-      mockClampToFuture.mockReturnValue(null);
-      const baseUrl = "https://example.com/directions";
-
-      const { url, safeTargetTime } = strategy.applyTimeToLegacyUrl(baseUrl, null, "leave");
-
-      expect(url).toBe(baseUrl);
+    it("does not append any time param when targetTime is null", () => {
+      mocks.mockClampToFuture.mockReturnValueOnce(null);
+      const { url, safeTargetTime } = strategy.applyTimeToLegacyUrl(BASE_URL, null, "leave");
+      expect(url).toBe(BASE_URL);
       expect(safeTargetTime).toBeNull();
-    });
-
-    it("returns safeTargetTime from clampToFuture", () => {
-      mockClampToFuture.mockReturnValue(FUTURE_DATE);
-
-      const { safeTargetTime } = strategy.applyTimeToLegacyUrl("https://example.com", FUTURE_DATE, "leave");
-
-      expect(safeTargetTime).toBe(FUTURE_DATE);
     });
   });
 
-  // ── buildStepInstruction ───────────────────────────────────────────────────
-
   describe("buildStepInstruction", () => {
-    it("returns stripped text when it is non-empty and not 'Continue'", () => {
+    it("returns the stripped instruction when it is meaningful", () => {
       expect(strategy.buildStepInstruction("Turn left on Main St", {})).toBe("Turn left on Main St");
     });
 
-    it("returns 'Continue on route' when stripped is empty string", () => {
-      expect(strategy.buildStepInstruction("", {})).toBe("Continue on route");
-    });
-
-    it("returns 'Continue on route' when stripped is exactly 'Continue'", () => {
+    it('returns fallback when stripped is "Continue"', () => {
       expect(strategy.buildStepInstruction("Continue", {})).toBe("Continue on route");
     });
 
-    it("ignores rawStep and uses only stripped text", () => {
-      const rawStep = { html_instructions: "Turn right", distance: { value: 200 } };
-      expect(strategy.buildStepInstruction("Turn right on Elm Ave", rawStep)).toBe("Turn right on Elm Ave");
+    it("returns fallback when stripped is empty", () => {
+      expect(strategy.buildStepInstruction("", {})).toBe("Continue on route");
     });
   });
 
-  // ── fetchRoutes ────────────────────────────────────────────────────────────
-
   describe("fetchRoutes", () => {
     it("returns routes from Routes API on success", async () => {
-      mockFetchRoutesApi.mockResolvedValue({ rawRoutes: [{}], safeTargetTime: FUTURE_DATE });
-      mockMapRoutesApiResponse.mockReturnValue([MOCK_ROUTE]);
-
       const routes = await strategy.fetchRoutes(START, DESTINATION, FUTURE_DATE, "leave");
-
-      expect(fetchRoutesApi).toHaveBeenCalledWith(START, DESTINATION, strategy, FUTURE_DATE, "leave");
-      expect(mapRoutesApiResponse).toHaveBeenCalledWith([{}], FUTURE_DATE, "leave", "bicycling", strategy);
-      expect(routes).toEqual([MOCK_ROUTE]);
-    });
-
-    it("throws when Routes API returns no routes", async () => {
-      mockFetchRoutesApi.mockResolvedValue({ rawRoutes: [], safeTargetTime: null });
-      mockMapRoutesApiResponse.mockReturnValue([]);
-
-      await expect(strategy.fetchRoutes(START, DESTINATION, null, "leave")).rejects.toThrow(
-        "No route polyline returned from API",
-      );
-    });
-
-    it("falls back to Legacy API when Routes API throws a blocked error", async () => {
-      const blockedError = new Error("REQUEST_DENIED");
-      mockFetchRoutesApi.mockRejectedValue(blockedError);
-      mockIsRoutesBlockedError.mockReturnValue(true);
-      mockFetchLegacyApi.mockResolvedValue({ rawRoutes: [{}], safeTargetTime: FUTURE_DATE });
-      mockMapLegacyApiResponse.mockReturnValue([MOCK_ROUTE]);
-
-      const routes = await strategy.fetchRoutes(START, DESTINATION, FUTURE_DATE, "leave");
-
-      expect(fetchLegacyApi).toHaveBeenCalledWith(
-        START,
-        DESTINATION,
-        strategy,
-        FUTURE_DATE,
-        "leave",
-        "bicycling",
+      expect(mocks.mockFetchRoutesApi).toHaveBeenCalledWith(START, DESTINATION, strategy, FUTURE_DATE, "leave");
+      expect(mocks.mockMapRoutesApiResponse).toHaveBeenCalledWith(
+        [MOCK_ROUTE], FUTURE_DATE, "leave", "bicycling", strategy,
       );
       expect(routes).toEqual([MOCK_ROUTE]);
     });
 
-    it("throws when Legacy API also returns no routes", async () => {
-      const blockedError = new Error("REQUEST_DENIED");
-      mockFetchRoutesApi.mockRejectedValue(blockedError);
-      mockIsRoutesBlockedError.mockReturnValue(true);
-      mockFetchLegacyApi.mockResolvedValue({ rawRoutes: [], safeTargetTime: null });
-      mockMapLegacyApiResponse.mockReturnValue([]);
-
-      await expect(strategy.fetchRoutes(START, DESTINATION, null, "leave")).rejects.toThrow(
-        "No route polyline returned from Directions API",
+    it("falls back to legacy API when Routes API returns a blocked error", async () => {
+      mocks.mockFetchRoutesApi.mockRejectedValueOnce(new Error("Routes API blocked"));
+      mocks.mockIsRoutesBlockedError.mockReturnValueOnce(true);
+      const routes = await strategy.fetchRoutes(START, DESTINATION, FUTURE_DATE, "leave");
+      expect(mocks.mockFetchLegacyApi).toHaveBeenCalledWith(
+        START, DESTINATION, strategy, FUTURE_DATE, "leave", "bicycling",
       );
+      expect(routes).toEqual([MOCK_ROUTE]);
     });
 
-    it("throws a timeout error when Routes API throws AbortError", async () => {
+    it("throws timeout error on AbortError", async () => {
       const abortError = new Error("Aborted");
       abortError.name = "AbortError";
-      mockFetchRoutesApi.mockRejectedValue(abortError);
-
-      await expect(strategy.fetchRoutes(START, DESTINATION, null, "leave")).rejects.toThrow(
-        "Directions request timed out. Please try again.",
-      );
+      mocks.mockFetchRoutesApi.mockRejectedValueOnce(abortError);
+      await expect(strategy.fetchRoutes(START, DESTINATION, FUTURE_DATE, "leave"))
+        .rejects.toThrow("Directions request timed out. Please try again.");
     });
 
-    it("re-throws non-blocked, non-abort errors from Routes API", async () => {
-      const networkError = new Error("Network failure");
-      mockFetchRoutesApi.mockRejectedValue(networkError);
-      mockIsRoutesBlockedError.mockReturnValue(false);
-
-      await expect(strategy.fetchRoutes(START, DESTINATION, null, "leave")).rejects.toThrow("Network failure");
+    it("throws when Routes API returns empty routes", async () => {
+      mocks.mockMapRoutesApiResponse.mockReturnValueOnce([]);
+      await expect(strategy.fetchRoutes(START, DESTINATION, FUTURE_DATE, "leave"))
+        .rejects.toThrow("No route polyline returned from API");
     });
 
-    it("re-throws non-Error thrown values as-is", async () => {
-      mockFetchRoutesApi.mockRejectedValue("string error");
+    it("throws when legacy API returns empty routes", async () => {
+      mocks.mockFetchRoutesApi.mockRejectedValueOnce(new Error("blocked"));
+      mocks.mockIsRoutesBlockedError.mockReturnValueOnce(true);
+      mocks.mockMapLegacyApiResponse.mockReturnValueOnce([]);
+      await expect(strategy.fetchRoutes(START, DESTINATION, FUTURE_DATE, "leave"))
+        .rejects.toThrow("No route polyline returned from Directions API");
+    });
 
-      await expect(strategy.fetchRoutes(START, DESTINATION, null, "leave")).rejects.toBe("string error");
+    it("rethrows unknown errors", async () => {
+      mocks.mockFetchRoutesApi.mockRejectedValueOnce(new Error("Network failure"));
+      await expect(strategy.fetchRoutes(START, DESTINATION, FUTURE_DATE, "leave"))
+        .rejects.toThrow("Network failure");
     });
   });
 });

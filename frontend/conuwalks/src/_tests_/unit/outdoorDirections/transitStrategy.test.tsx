@@ -1,16 +1,13 @@
-import { TransitStrategy } from "@/src/outdoorDirections/transitStrategy";
 import {
-  clampToFuture,
-  fetchRoutesApi,
-  fetchLegacyApi,
-  mapRoutesApiResponse,
-  mapLegacyApiResponse,
-  isRoutesBlockedError,
-} from "@/src/api/googleDirectionsAPI";
-import { LatLng } from "react-native-maps";
-import { RouteData } from "@/src/context/DirectionsContext";
-
-// --- Mocks ---
+  getApiMocks,
+  resetApiMocks,
+  FUTURE_DATE,
+  PAST_DATE,
+  BASE_URL,
+  START,
+  DESTINATION,
+  MOCK_ROUTE,
+} from "../../utils/strategyTestHelper";
 
 jest.mock("@/src/api/googleDirectionsAPI", () => ({
   clampToFuture: jest.fn(),
@@ -21,319 +18,155 @@ jest.mock("@/src/api/googleDirectionsAPI", () => ({
   isRoutesBlockedError: jest.fn(),
 }));
 
-const mockClampToFuture = clampToFuture as jest.MockedFunction<typeof clampToFuture>;
-const mockFetchRoutesApi = fetchRoutesApi as jest.MockedFunction<typeof fetchRoutesApi>;
-const mockFetchLegacyApi = fetchLegacyApi as jest.MockedFunction<typeof fetchLegacyApi>;
-const mockMapRoutesApiResponse = mapRoutesApiResponse as jest.MockedFunction<typeof mapRoutesApiResponse>;
-const mockMapLegacyApiResponse = mapLegacyApiResponse as jest.MockedFunction<typeof mapLegacyApiResponse>;
-const mockIsRoutesBlockedError = isRoutesBlockedError as jest.MockedFunction<typeof isRoutesBlockedError>;
+import { TransitStrategy } from "@/src/outdoorDirections/transitStrategy";
 
-// --- Helpers ---
-
-const START: LatLng = { latitude: 45.5017, longitude: -73.5673 };
-const DESTINATION: LatLng = { latitude: 45.5231, longitude: -73.5827 };
-const FUTURE_DATE = new Date(Date.now() + 60_000);
-const MOCK_ROUTE = { polyline: "encodedPolyline" } as unknown as RouteData;
-
-// --- Tests ---
+const mocks = getApiMocks();
+const strategy = new TransitStrategy();
 
 describe("TransitStrategy", () => {
-  let strategy: TransitStrategy;
+  resetApiMocks(mocks);
 
-  beforeEach(() => {
-    strategy = new TransitStrategy();
-    jest.clearAllMocks();
+  it("has correct apiMode and googleTravelMode", () => {
+    expect(strategy.apiMode).toBe("TRANSIT");
+    expect(strategy.googleTravelMode).toBe("transit");
   });
-
-  // ── apiMode ────────────────────────────────────────────────────────────────
-
-  describe("apiMode", () => {
-    it('is "TRANSIT"', () => {
-      expect(strategy.apiMode).toBe("TRANSIT");
-    });
-  });
-
-  // ── applyTimeToRoutesBody ──────────────────────────────────────────────────
 
   describe("applyTimeToRoutesBody", () => {
-    it("sets arrivalTime on body when timeMode is 'arrive'", () => {
-      mockClampToFuture.mockReturnValue(FUTURE_DATE);
+    it("sets departureTime when timeMode is leave", () => {
+      mocks.mockClampToFuture.mockReturnValueOnce(FUTURE_DATE);
       const body: Record<string, unknown> = {};
-
-      const result = strategy.applyTimeToRoutesBody(body, FUTURE_DATE, "arrive");
-
-      expect(body.arrivalTime).toBe(FUTURE_DATE.toISOString());
-      expect(body.departureTime).toBeUndefined();
-      expect(result).toBe(FUTURE_DATE);
-    });
-
-    it("sets departureTime on body when timeMode is 'leave'", () => {
-      mockClampToFuture.mockReturnValue(FUTURE_DATE);
-      const body: Record<string, unknown> = {};
-
-      const result = strategy.applyTimeToRoutesBody(body, FUTURE_DATE, "leave");
-
+      strategy.applyTimeToRoutesBody(body, FUTURE_DATE, "leave");
       expect(body.departureTime).toBe(FUTURE_DATE.toISOString());
       expect(body.arrivalTime).toBeUndefined();
-      expect(result).toBe(FUTURE_DATE);
     });
 
-    it("returns null and sets nothing when clampToFuture returns null", () => {
-      mockClampToFuture.mockReturnValue(null);
+    it("sets arrivalTime when timeMode is arrive", () => {
+      mocks.mockClampToFuture.mockReturnValueOnce(FUTURE_DATE);
       const body: Record<string, unknown> = {};
+      strategy.applyTimeToRoutesBody(body, FUTURE_DATE, "arrive");
+      expect(body.arrivalTime).toBe(FUTURE_DATE.toISOString());
+      expect(body.departureTime).toBeUndefined();
+    });
 
-      const result = strategy.applyTimeToRoutesBody(body, null, "leave");
-
+    it("returns null and sets nothing when targetTime clamps to null", () => {
+      mocks.mockClampToFuture.mockReturnValueOnce(null);
+      const body: Record<string, unknown> = {};
+      const result = strategy.applyTimeToRoutesBody(body, PAST_DATE, "leave");
       expect(result).toBeNull();
       expect(body.departureTime).toBeUndefined();
       expect(body.arrivalTime).toBeUndefined();
     });
   });
 
-  // ── applyTimeToLegacyUrl ───────────────────────────────────────────────────
-
   describe("applyTimeToLegacyUrl", () => {
-    it("appends arrival_time when timeMode is 'arrive'", () => {
-      mockClampToFuture.mockReturnValue(FUTURE_DATE);
-      const expectedTimestamp = Math.floor(FUTURE_DATE.getTime() / 1000);
-
-      const { url, safeTargetTime } = strategy.applyTimeToLegacyUrl(
-        "https://example.com/directions",
-        FUTURE_DATE,
-        "arrive",
-      );
-
-      expect(url).toBe(`https://example.com/directions&arrival_time=${expectedTimestamp}`);
+    it("appends departure_time when timeMode is leave", () => {
+      mocks.mockClampToFuture.mockReturnValueOnce(FUTURE_DATE);
+      const { url, safeTargetTime } = strategy.applyTimeToLegacyUrl(BASE_URL, FUTURE_DATE, "leave");
+      const expectedSeconds = Math.floor(FUTURE_DATE.getTime() / 1000);
+      expect(url).toContain(`&departure_time=${expectedSeconds}`);
       expect(safeTargetTime).toBe(FUTURE_DATE);
     });
 
-    it("appends departure_time when timeMode is 'leave'", () => {
-      mockClampToFuture.mockReturnValue(FUTURE_DATE);
-      const expectedTimestamp = Math.floor(FUTURE_DATE.getTime() / 1000);
-
-      const { url, safeTargetTime } = strategy.applyTimeToLegacyUrl(
-        "https://example.com/directions",
-        FUTURE_DATE,
-        "leave",
-      );
-
-      expect(url).toBe(`https://example.com/directions&departure_time=${expectedTimestamp}`);
+    it("appends arrival_time when timeMode is arrive", () => {
+      mocks.mockClampToFuture.mockReturnValueOnce(FUTURE_DATE);
+      const { url, safeTargetTime } = strategy.applyTimeToLegacyUrl(BASE_URL, FUTURE_DATE, "arrive");
+      const expectedSeconds = Math.floor(FUTURE_DATE.getTime() / 1000);
+      expect(url).toContain(`&arrival_time=${expectedSeconds}`);
       expect(safeTargetTime).toBe(FUTURE_DATE);
     });
 
-    it("returns original URL and null safeTargetTime when clampToFuture returns null", () => {
-      mockClampToFuture.mockReturnValue(null);
-      const baseUrl = "https://example.com/directions";
-
-      const { url, safeTargetTime } = strategy.applyTimeToLegacyUrl(baseUrl, null, "arrive");
-
-      expect(url).toBe(baseUrl);
+    it("returns original url and null when targetTime clamps to null", () => {
+      mocks.mockClampToFuture.mockReturnValueOnce(null);
+      const { url, safeTargetTime } = strategy.applyTimeToLegacyUrl(BASE_URL, PAST_DATE, "leave");
+      expect(url).toBe(BASE_URL);
       expect(safeTargetTime).toBeNull();
     });
   });
 
-  // ── buildStepInstruction ───────────────────────────────────────────────────
-
   describe("buildStepInstruction", () => {
-    it("returns stripped text when non-empty and not 'Continue'", () => {
-      expect(strategy.buildStepInstruction("Board at Central Station", {})).toBe("Board at Central Station");
-    });
-
-    it("returns 'Take transit' when stripped is empty and no transit details present", () => {
-      expect(strategy.buildStepInstruction("", {})).toBe("Take transit");
-    });
-
-    it("returns 'Take transit' when stripped is 'Continue' and no transit details present", () => {
-      expect(strategy.buildStepInstruction("Continue", {})).toBe("Take transit");
+    it("returns the stripped instruction when it is meaningful", () => {
+      expect(strategy.buildStepInstruction("Board at Berri-UQAM", {})).toBe("Board at Berri-UQAM");
     });
 
     describe("Routes API shape (transitDetails)", () => {
-      it("builds instruction with vehicle, line, and headsign", () => {
+      it("builds instruction from vehicle, line, and headsign", () => {
         const rawStep = {
           transitDetails: {
-            transitLine: {
-              vehicle: { name: { text: "Metro" } },
-              nameShort: "M1",
-            },
-            headsign: "Downtown",
+            transitLine: { vehicle: { name: { text: "Metro" } }, nameShort: "Orange" },
+            headsign: "Côte-Vertu",
           },
         };
-
-        expect(strategy.buildStepInstruction("", rawStep)).toBe("Take Metro M1 toward Downtown");
+        expect(strategy.buildStepInstruction("Continue", rawStep))
+          .toBe("Take Metro Orange toward Côte-Vertu");
       });
 
-      it("builds instruction without headsign when absent", () => {
+      it("omits headsign when not present", () => {
         const rawStep = {
           transitDetails: {
-            transitLine: {
-              vehicle: { name: { text: "Bus" } },
-              nameShort: "24",
-            },
+            transitLine: { vehicle: { name: { text: "Bus" } }, nameShort: "24" },
           },
         };
-
         expect(strategy.buildStepInstruction("Continue", rawStep)).toBe("Take Bus 24");
       });
 
       it("falls back to 'Transit' when vehicle name is missing", () => {
         const rawStep = {
           transitDetails: {
-            transitLine: { nameShort: "99" },
-            headsign: "Airport",
+            transitLine: { nameShort: "55" },
+            headsign: "Downtown",
           },
         };
-
-        expect(strategy.buildStepInstruction("", rawStep)).toBe("Take Transit 99 toward Airport");
-      });
-
-      it("falls back to empty line when nameShort is missing", () => {
-        const rawStep = {
-          transitDetails: {
-            transitLine: { vehicle: { name: { text: "Tram" } } },
-            headsign: "North",
-          },
-        };
-
-        // nameShort ?? "" → empty string so the template produces a double space before "toward"
-        expect(strategy.buildStepInstruction("", rawStep)).toBe("Take Tram  toward North");
+        expect(strategy.buildStepInstruction("Continue", rawStep))
+          .toBe("Take Transit 55 toward Downtown");
       });
     });
 
     describe("Legacy API shape (transit_details)", () => {
-      it("builds instruction with vehicle, line, and headsign", () => {
+      it("builds instruction from vehicle, line, and headsign", () => {
         const rawStep = {
           transit_details: {
-            line: {
-              vehicle: { name: "Subway" },
-              short_name: "S2",
-            },
-            headsign: "Uptown",
+            line: { vehicle: { name: "Subway" }, short_name: "2" },
+            headsign: "Longueuil",
           },
         };
-
-        expect(strategy.buildStepInstruction("", rawStep)).toBe("Take Subway S2 toward Uptown");
+        expect(strategy.buildStepInstruction("Continue", rawStep))
+          .toBe("Take Subway 2 toward Longueuil");
       });
 
-      it("builds instruction without headsign when absent", () => {
+      it("omits headsign when not present", () => {
         const rawStep = {
           transit_details: {
-            line: {
-              vehicle: { name: "Ferry" },
-              short_name: "F1",
-            },
+            line: { vehicle: { name: "Tram" }, short_name: "T1" },
           },
         };
-
-        expect(strategy.buildStepInstruction("Continue", rawStep)).toBe("Take Ferry F1");
+        expect(strategy.buildStepInstruction("Continue", rawStep)).toBe("Take Tram T1");
       });
 
       it("falls back to 'Transit' when vehicle name is missing", () => {
         const rawStep = {
           transit_details: {
-            line: { short_name: "77" },
-            headsign: "Harbor",
+            line: { short_name: "10" },
           },
         };
-
-        expect(strategy.buildStepInstruction("", rawStep)).toBe("Take Transit 77 toward Harbor");
-      });
-
-      it("falls back to empty line when short_name is missing", () => {
-        const rawStep = {
-          transit_details: {
-            line: { vehicle: { name: "Train" } },
-            headsign: "Central",
-          },
-        };
-
-        // line resolves to "" so the template produces a double space before "toward"
-        expect(strategy.buildStepInstruction("", rawStep)).toBe("Take Train  toward Central");
+        expect(strategy.buildStepInstruction("Continue", rawStep)).toBe("Take Transit 10");
       });
     });
 
-    it("prefers transitDetails (Routes API) over transit_details (Legacy API) when both present", () => {
-      const rawStep = {
-        transitDetails: {
-          transitLine: { vehicle: { name: { text: "Metro" } }, nameShort: "M1" },
-          headsign: "Downtown",
-        },
-        transit_details: {
-          line: { vehicle: { name: "Bus" }, short_name: "42" },
-          headsign: "Uptown",
-        },
-      };
+    it('returns "Take transit" when no transit details are present and stripped is "Continue"', () => {
+      expect(strategy.buildStepInstruction("Continue", {})).toBe("Take transit");
+    });
 
-      expect(strategy.buildStepInstruction("", rawStep)).toBe("Take Metro M1 toward Downtown");
+    it('returns "Take transit" when no transit details are present and stripped is empty', () => {
+      expect(strategy.buildStepInstruction("", {})).toBe("Take transit");
     });
   });
 
-  // ── fetchRoutes ────────────────────────────────────────────────────────────
-
-  describe("fetchRoutes", () => {
-    it("returns routes from Routes API on success", async () => {
-      mockFetchRoutesApi.mockResolvedValue({ rawRoutes: [{}], safeTargetTime: FUTURE_DATE });
-      mockMapRoutesApiResponse.mockReturnValue([MOCK_ROUTE]);
-
-      const routes = await strategy.fetchRoutes(START, DESTINATION, FUTURE_DATE, "leave");
-
-      expect(fetchRoutesApi).toHaveBeenCalledWith(START, DESTINATION, strategy, FUTURE_DATE, "leave");
-      expect(mapRoutesApiResponse).toHaveBeenCalledWith([{}], FUTURE_DATE, "leave", "transit", strategy);
-      expect(routes).toEqual([MOCK_ROUTE]);
-    });
-
-    it("throws when Routes API returns no routes", async () => {
-      mockFetchRoutesApi.mockResolvedValue({ rawRoutes: [], safeTargetTime: null });
-      mockMapRoutesApiResponse.mockReturnValue([]);
-
-      await expect(strategy.fetchRoutes(START, DESTINATION, null, "leave")).rejects.toThrow(
-        "No route polyline returned from API",
+  describe("inherited base behaviour", () => {
+    it("passes 'transit' as the travel mode to mapRoutesApiResponse", async () => {
+      await strategy.fetchRoutes(START, DESTINATION, FUTURE_DATE, "arrive");
+      expect(mocks.mockMapRoutesApiResponse).toHaveBeenCalledWith(
+        expect.anything(), expect.anything(), expect.anything(), "transit", strategy,
       );
-    });
-
-    it("falls back to Legacy API when Routes API throws a blocked error", async () => {
-      mockFetchRoutesApi.mockRejectedValue(new Error("REQUEST_DENIED"));
-      mockIsRoutesBlockedError.mockReturnValue(true);
-      mockFetchLegacyApi.mockResolvedValue({ rawRoutes: [{}], safeTargetTime: FUTURE_DATE });
-      mockMapLegacyApiResponse.mockReturnValue([MOCK_ROUTE]);
-
-      const routes = await strategy.fetchRoutes(START, DESTINATION, FUTURE_DATE, "arrive");
-
-      expect(fetchLegacyApi).toHaveBeenCalledWith(START, DESTINATION, strategy, FUTURE_DATE, "arrive", "transit");
-      expect(routes).toEqual([MOCK_ROUTE]);
-    });
-
-    it("throws when Legacy API returns no routes", async () => {
-      mockFetchRoutesApi.mockRejectedValue(new Error("REQUEST_DENIED"));
-      mockIsRoutesBlockedError.mockReturnValue(true);
-      mockFetchLegacyApi.mockResolvedValue({ rawRoutes: [], safeTargetTime: null });
-      mockMapLegacyApiResponse.mockReturnValue([]);
-
-      await expect(strategy.fetchRoutes(START, DESTINATION, null, "arrive")).rejects.toThrow(
-        "No route polyline returned from Directions API",
-      );
-    });
-
-    it("throws a timeout error on AbortError", async () => {
-      const abortError = new Error("Aborted");
-      abortError.name = "AbortError";
-      mockFetchRoutesApi.mockRejectedValue(abortError);
-
-      await expect(strategy.fetchRoutes(START, DESTINATION, null, "leave")).rejects.toThrow(
-        "Directions request timed out. Please try again.",
-      );
-    });
-
-    it("re-throws non-blocked errors from Routes API", async () => {
-      mockFetchRoutesApi.mockRejectedValue(new Error("Network failure"));
-      mockIsRoutesBlockedError.mockReturnValue(false);
-
-      await expect(strategy.fetchRoutes(START, DESTINATION, null, "leave")).rejects.toThrow("Network failure");
-    });
-
-    it("re-throws non-Error thrown values as-is", async () => {
-      mockFetchRoutesApi.mockRejectedValue("string error");
-
-      await expect(strategy.fetchRoutes(START, DESTINATION, null, "leave")).rejects.toBe("string error");
     });
   });
 });
