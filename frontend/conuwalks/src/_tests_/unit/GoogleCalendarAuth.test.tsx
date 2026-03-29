@@ -6,7 +6,7 @@ import {
   screen,
 } from "@testing-library/react-native";
 import * as Google from "expo-auth-session/providers/google";
-import GoogleCalendarAuth from "../../screens/GoogleCalendarAuth";
+import GoogleCalendarAuth from "../../components/GoogleCalendarAuth";
 
 jest.mock("expo-web-browser", () => ({
   maybeCompleteAuthSession: jest.fn(),
