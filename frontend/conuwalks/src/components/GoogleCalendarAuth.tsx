@@ -70,7 +70,7 @@ export default function GoogleCalendarAuth({
       await flow.execute();
     } catch (error) {
       
-      if (isMounted.current) setStatus("ready");
+      if (isMounted.current) setStatus("error");
     }
   };
 
