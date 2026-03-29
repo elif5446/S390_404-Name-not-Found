@@ -3,7 +3,7 @@ const SGW =  {
   "features": [
     {
       "type": "Feature",
-      "properties": { "id": "H" },
+      "properties": { "id": "H", "name": "Hall" },
       "geometry": {
         "type": "Polygon",
         "coordinates": [[
@@ -20,7 +20,7 @@ const SGW =  {
     },
     {
       "type": "Feature",
-      "properties": { "id": "LB" },
+      "properties": { "id": "LB", "name": "McConnell (Webster Library)" },
       "geometry": {
         "type": "Polygon",
         "coordinates":[[
@@ -40,7 +40,7 @@ const SGW =  {
     },
     {
       "type": "Feature",
-      "properties": { "id": "LS" },
+      "properties": { "id": "LS", "name": "Learning Square" },
       "geometry": {
         "type": "Polygon",
         "coordinates": [[
@@ -57,7 +57,7 @@ const SGW =  {
     },
     {
       "type": "Feature",
-      "properties": { "id": "EV"},
+      "properties": { "id": "EV", "name": "Engineering and Visual Arts" },
       "geometry": {
         "type": "Polygon",
     "coordinates":[[
@@ -74,7 +74,7 @@ const SGW =  {
     },
     {
       "type": "Feature",
-      "properties": { "id": "MB" },
+      "properties": { "id": "MB", "name": "Molson" },
       "geometry": {
         "type": "Polygon",
         "coordinates":[
@@ -93,7 +93,7 @@ const SGW =  {
     },
     {
       "type": "Feature",
-      "properties": { "id": "FB"},
+      "properties": { "id": "FB", "name": "Faubourg Tower" },
       "geometry": {
         "type": "Polygon",
         "coordinates":[[
@@ -107,7 +107,7 @@ const SGW =  {
     },
     {
       "type": "Feature",
-      "properties": { "id": "FG"},
+      "properties": { "id": "FG", "name": "Faubourg Ste-Caherine" },
       "geometry": {
         "type": "Polygon",
         "coordinates":[[
@@ -125,7 +125,7 @@ const SGW =  {
     },
     {
       "type": "Feature",
-      "properties": { "id": "CL"},
+      "properties": { "id": "CL", "name": "CL Annex" },
       "geometry": {
         "type": "Polygon",
        "coordinates":[[
@@ -140,7 +140,7 @@ const SGW =  {
     },
     {
       "type": "Feature",
-      "properties": { "id": "GM"},
+      "properties": { "id": "GM", "name": "Guy-De Maisonneuve" },
       "geometry": {
         "type": "Polygon",
  "coordinates": [[
@@ -155,7 +155,7 @@ const SGW =  {
     },
     {
       "type": "Feature",
-      "properties": { "id": "ER"},
+      "properties": { "id": "ER", "name": "ER Building" },
       "geometry": {
         "type": "Polygon",
         "coordinates":[[

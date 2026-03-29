@@ -3,7 +3,7 @@ import { useGoogleCalendar } from "../../hooks/useGoogleCalendar";
 import { getTokens, isTokenValid } from "../../utils/tokenStorage";
 import { GoogleCalendarApi } from "../../api/calendarApi";
 
-// Mock dependencies
+
 jest.mock("../../utils/tokenStorage", () => ({
   getTokens: jest.fn(),
   isTokenValid: jest.fn(),
@@ -22,7 +22,7 @@ const mockListCalendars = jest.fn();
 const mockCreateEvent = jest.fn();
 const mockDeleteEvent = jest.fn();
 
-// Mock GoogleCalendarApi instance
+
 (GoogleCalendarApi as jest.Mock).mockImplementation(() => ({
   getUpcomingEvents: mockGetUpcomingEvents,
   listCalendars: mockListCalendars,
@@ -40,6 +40,7 @@ beforeEach(() => {
   mockGetTokens.mockResolvedValue(mockTokens);
   mockIsTokenValid.mockReturnValue(true);
 });
+
 
 describe("Initial State", () => {
   it("has correct initial state", () => {
@@ -75,7 +76,6 @@ describe("Initial State", () => {
     });
   });
 });
-
 
 describe("fetchUpcomingEvents", () => {
   it("fetches upcoming events successfully", async () => {
@@ -332,6 +332,7 @@ describe("deleteEvent", () => {
     expect(mockDeleteEvent).toHaveBeenCalledWith("primary", "event-1");
   });
 });
+
 
 describe("State Management", () => {
   it("clears error before each fetch", async () => {

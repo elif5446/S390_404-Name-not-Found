@@ -23,7 +23,7 @@ export interface DirectionStep {
   polylinePoints?: LatLng[];
 }
 
-type TravelMode = "walking" | "driving" | "transit" | "bicycling";
+type TravelMode = "walking" | "driving" | "transit" | "bicycling" | "shuttle";
 
 export interface RouteData {
   id: string;
