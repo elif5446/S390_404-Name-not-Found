@@ -112,7 +112,7 @@ const injectShuttleRoute = async (
   
   const hMatch = /(\d{1,5})\s{0,5}h/.exec(durStr);
   const mMatch = /(\d{1,5})\s{0,5}min/.exec(durStr);
-  const publicMins = Number.parseInt(hMatch?.[1] ?? "0") + Number.parseInt(mMatch?.[1] ?? "0");
+  const publicMins = Number.parseInt(hMatch?.[1] ?? "0")*60 + Number.parseInt(mMatch?.[1] ?? "0");
 
   const shuttleDepMs = new Date(shuttleRoute.departureDate).getTime();
   const targetTimeMs = routingTime.getTime();
