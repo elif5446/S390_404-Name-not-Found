@@ -1,8 +1,8 @@
 import { AuthFlow, Tokens, UserInfo } from "./AuthFlow";
 
 export class GoogleCalendarAuthFlow extends AuthFlow {
-  private promptAsync: () => Promise<any>;
-  private successCallback: () => void;
+  private readonly promptAsync: () => Promise<any>;
+  private readonly successCallback: () => void;
 
   constructor(promptAsync: () => Promise<any>, onSuccess: () => void) {
     super();

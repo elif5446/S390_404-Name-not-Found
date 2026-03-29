@@ -61,38 +61,18 @@ export default function GoogleCalendarAuth({
     }
   }, [response]);
 
- const runAuthFlow = async (prompt: () => Promise<any>) => {
-  setStatus("loading");
-  try {
-    const flow = new GoogleCalendarAuthFlow(prompt, () => {
-      if (isMounted.current) onAuthSuccess?.();
-    });
-    await flow.execute();
-  } catch (error: any) {
-    if (!isMounted.current) return;
-
-    const isCancelled =
-      error?.type === "cancel" ||
-      error?.message?.toLowerCase().includes("cancel") ||
-      error?.message?.toLowerCase().includes("dismissed");
-
-    const isNetworkError =
-      error?.message?.toLowerCase().includes("network") ||
-      error?.message?.toLowerCase().includes("fetch");
-
-    if (isCancelled) {
-      // User cancelled — silently return to sign-in screen
-      setStatus("ready");
-    } else if (isNetworkError) {
-      // Network issue — show error state so UI can display a message
-      setStatus("error");
-    } else {
-      // Unexpected auth failure
-      console.error("[GoogleCalendarAuth] Auth flow failed:", error);
-      setStatus("error");
+  const runAuthFlow = async (prompt: () => Promise<any>) => {
+    setStatus("loading");
+    try {
+      const flow = new GoogleCalendarAuthFlow(prompt, () => {
+        if (isMounted.current) onAuthSuccess?.();
+      });
+      await flow.execute();
+    } catch (error) {
+      // Auth was cancelled or failed — show sign-in screen
+      if (isMounted.current) setStatus("ready");
     }
-  }
-};
+  };
 
   const signIn = () => runAuthFlow(promptAsync);
 
