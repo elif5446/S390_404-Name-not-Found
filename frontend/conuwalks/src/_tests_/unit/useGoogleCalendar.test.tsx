@@ -41,8 +41,6 @@ beforeEach(() => {
   mockIsTokenValid.mockReturnValue(true);
 });
 
-// 1. INITIAL STATE
-
 describe("Initial State", () => {
   it("has correct initial state", () => {
     const { result } = renderHook(() => useGoogleCalendar());
@@ -78,7 +76,6 @@ describe("Initial State", () => {
   });
 });
 
-// 2. FETCH UPCOMING EVENTS
 
 describe("fetchUpcomingEvents", () => {
   it("fetches upcoming events successfully", async () => {
@@ -175,7 +172,6 @@ describe("fetchUpcomingEvents", () => {
   });
 });
 
-// 3. FETCH CALENDARS
 
 describe("fetchCalendars", () => {
   it("fetches calendars successfully", async () => {
@@ -222,7 +218,6 @@ describe("fetchCalendars", () => {
   });
 });
 
-// 4. CREATE EVENT
 
 describe("createEvent", () => {
   it("creates an event successfully", async () => {
@@ -282,7 +277,6 @@ describe("createEvent", () => {
   });
 });
 
-// 5. DELETE EVENT
 
 describe("deleteEvent", () => {
   it("deletes an event successfully", async () => {
@@ -338,8 +332,6 @@ describe("deleteEvent", () => {
     expect(mockDeleteEvent).toHaveBeenCalledWith("primary", "event-1");
   });
 });
-
-// 6. STATE MANAGEMENT
 
 describe("State Management", () => {
   it("clears error before each fetch", async () => {

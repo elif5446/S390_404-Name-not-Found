@@ -13,7 +13,7 @@ describe("useBottomSheet Hook", () => {
   const originalOS = Platform.OS;
   let mockSpring: jest.SpyInstance;
   let mockTiming: jest.SpyInstance;
-  let capturedPanConfig: any = null;  // add this
+  let capturedPanConfig: any = null; 
 
   beforeEach(() => {
   jest.clearAllMocks();
@@ -247,24 +247,6 @@ describe("useBottomSheet Hook", () => {
   });
 
   describe("handlePanResponder gesture logic", () => {
-    // ─── Diagnostic: log what translateYRef.current actually is ──────────────
-    // The pan responder's onPanResponderRelease reads translateYRef.current
-    // (a ref internal to the hook — not directly accessible from tests).
-    // We infer its value from what animation gets triggered after release.
-    //
-    // Mount with visible=true → useEffect spring to SNAP_OFFSET fires
-    // synchronously via mock → translateYRef.current = SNAP_OFFSET (500).
-    //
-    // minimize() guard: bails if translateYRef.current >= MINIMIZED_OFFSET - 5.
-    // After mount at SNAP_OFFSET (500), 500 >= 755 is false → guard passes.
-    // But targetAnimY.current must also != MINIMIZED_OFFSET.
-    //
-    // After any snapTo(n) call, targetAnimY.current is set to n then cleared
-    // to null inside the mock callback. So it is null before release.
-    //
-    // Strategy: use snapTo() to position translateYRef, then clear mocks,
-    // then call release and assert on the new mock calls only.
-    // ─────────────────────────────────────────────────────────────────────────
 
     function triggerRelease(result: any, gestureState: object) {
   act(() => {
@@ -282,17 +264,11 @@ describe("useBottomSheet Hook", () => {
         useBottomSheet({ visible: true, onDismiss: jest.fn() }),
       );
 
-      // After mount, the visible=true effect fires spring → mock callback →
-      // translateYRef = SNAP_OFFSET. Confirm by calling minimize() which has
-      // a guard: bails if translateYRef >= MINIMIZED_OFFSET - 5 (755).
-      // If translateYRef = 500, guard fails → timing fires.
-      // If translateYRef = 1000, guard passes (1000 >= 755) → timing does NOT fire.
       mockTiming.mockClear();
       act(() => { result.current.minimize(); });
       const afterMountCalls = mockTiming.mock.calls.length;
       console.log("minimize() calls after mount (1=SNAP_OFFSET, 0=screenHeight):", afterMountCalls);
 
-      // Now snapTo(0) and confirm translateYRef = 0 by checking snapTo(SNAP_OFFSET+100)
       act(() => { result.current.snapTo(0); });
       mockSpring.mockClear();
       // handleToggleHeight: if currentY <= 10, snapTo(SNAP_OFFSET)
@@ -300,8 +276,8 @@ describe("useBottomSheet Hook", () => {
       const snapToValue = mockSpring.mock.calls[0]?.[1]?.toValue;
       console.log("After snapTo(0), handleToggleHeight snapped to:", snapToValue, "(expected SNAP_OFFSET=500)");
 
-      expect(afterMountCalls).toBeGreaterThan(0); // translateYRef was at SNAP_OFFSET after mount
-      expect(snapToValue).toBe(result.current.SNAP_OFFSET); // translateYRef = 0 after snapTo(0)
+      expect(afterMountCalls).toBeGreaterThan(0); 
+      expect(snapToValue).toBe(result.current.SNAP_OFFSET); 
     });
 
     it("dismisses on fast downward swipe (velocity > 1.2) when near bottom", () => {
@@ -309,8 +285,7 @@ describe("useBottomSheet Hook", () => {
       const { result } = renderHook(() =>
         useBottomSheet({ visible: true, onDismiss }),
       );
-      // translateYRef = SNAP_OFFSET (500) after mount.
-      // Need >= MINIMIZED_OFFSET - 40 = 720 to hit dismiss branch.
+     
       act(() => result.current.snapTo(result.current.MINIMIZED_OFFSET + 50));
       mockTiming.mockClear();
 
@@ -326,7 +301,7 @@ describe("useBottomSheet Hook", () => {
   const { result } = renderHook(() =>
     useBottomSheet({ visible: true, onDismiss: jest.fn() }),
   );
-  // Explicitly re-seat translateYRef at SNAP_OFFSET to flush any stale targetAnimY
+ 
   act(() => result.current.snapTo(result.current.SNAP_OFFSET));
   mockTiming.mockClear();
 
@@ -343,10 +318,9 @@ describe("useBottomSheet Hook", () => {
   const { result } = renderHook(() =>
     useBottomSheet({ visible: true, onDismiss: jest.fn() }),
   );
-  // snapTo(0) then snapTo(200) to land below SNAP_OFFSET-40 without triggering
-  // the upward-swipe branch
+  
   act(() => result.current.snapTo(0));
-  act(() => result.current.snapTo(200)); // translateYRef=200 < 460 (SNAP_OFFSET-40) ✓
+  act(() => result.current.snapTo(200)); 
   mockSpring.mockClear();
 
   triggerRelease(result, { vy: 1.5, dy: 10 });
@@ -361,7 +335,7 @@ describe("useBottomSheet Hook", () => {
       const { result } = renderHook(() =>
         useBottomSheet({ visible: true, onDismiss: jest.fn() }),
       );
-      // Need translateYRef > SNAP_OFFSET+40 (540).
+     
       act(() => result.current.snapTo(result.current.SNAP_OFFSET + 100));
       mockSpring.mockClear();
 
@@ -377,7 +351,7 @@ it("snaps to 0 on fast upward swipe when at or above snap point", () => {
   const { result } = renderHook(() =>
     useBottomSheet({ visible: true, onDismiss: jest.fn() }),
   );
-  // Re-seat at SNAP_OFFSET explicitly so translateYRef is clean
+
   act(() => result.current.snapTo(result.current.SNAP_OFFSET));
   mockSpring.mockClear();
 
@@ -394,7 +368,7 @@ it("snaps to 0 on fast upward swipe when at or above snap point", () => {
       const { result } = renderHook(() =>
         useBottomSheet({ visible: true, onDismiss }),
       );
-      // Need translateYRef > MINIMIZED_OFFSET+40 (800).
+     
       act(() => result.current.snapTo(result.current.MINIMIZED_OFFSET + 100));
       mockTiming.mockClear();
 
@@ -410,7 +384,7 @@ it("snaps to 0 on fast upward swipe when at or above snap point", () => {
       const { result } = renderHook(() =>
         useBottomSheet({ visible: true, onDismiss: jest.fn() }),
       );
-      // 700 > midpoint (500+760)/2=630 and 700 <= MINIMIZED_OFFSET+40=800 → minimize.
+      
       act(() => result.current.snapTo(700));
       mockTiming.mockClear();
 

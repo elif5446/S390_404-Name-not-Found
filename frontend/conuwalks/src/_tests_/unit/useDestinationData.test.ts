@@ -31,7 +31,6 @@ const mockGetDirections = getDirections as jest.MockedFunction<typeof getDirecti
 const mockCalculateIndoorPenaltySeconds = calculateIndoorPenaltySeconds as jest.MockedFunction<typeof calculateIndoorPenaltySeconds>;
 const mockFormatDurationFromSeconds = formatDurationFromSeconds as jest.MockedFunction<typeof formatDurationFromSeconds>;
 
-// --- Fixtures ---
 
 const defaultStart = { latitude: 45.495, longitude: -73.578 };
 const defaultDestination = { latitude: 45.497, longitude: -73.579 };
@@ -63,8 +62,6 @@ function setupDirections(overrides = {}) {
   mockUseDirections.mockReturnValue({ ...baseDirections, ...overrides } as any);
 }
 
-// --- Tests ---
-
 describe("useDestinationData", () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -74,9 +71,7 @@ describe("useDestinationData", () => {
     mockFormatDurationFromSeconds.mockImplementation((s) => `${Math.round(s / 60)} min`);
   });
 
-  // ---------------------------------------------------------------------------
-  // Initialisation
-  // ---------------------------------------------------------------------------
+
   describe("initialisation", () => {
     it("returns navigationRouteId as null initially", () => {
       const { result } = renderHook(() => useDestinationData(true));
@@ -95,9 +90,7 @@ describe("useDestinationData", () => {
     });
   });
 
-  // ---------------------------------------------------------------------------
-  // Indoor penalty
-  // ---------------------------------------------------------------------------
+
   describe("indoor penalty fetching", () => {
     it("calls calculateIndoorPenaltySeconds with the correct room/building args", async () => {
       setupDirections({
@@ -145,9 +138,7 @@ it("defaults indoor penalty to 0 when calculateIndoorPenaltySeconds rejects", as
 });
   });
 
-  // ---------------------------------------------------------------------------
-  // getModeDurationLabel
-  // ---------------------------------------------------------------------------
+
   describe("getModeDurationLabel()", () => {
     it("returns '--' when no cache entry and no active route match", () => {
       const { result } = renderHook(() => useDestinationData(true));
@@ -172,10 +163,10 @@ it("defaults indoor penalty to 0 when calculateIndoorPenaltySeconds rejects", as
       setupDirections({
         routeData: makeRoute({ requestMode: "transit", duration: "12 mins", baseDurationSeconds: undefined }),
       });
-      // Don't populate cache — getDirections returns nothing
+   
       mockGetDirections.mockResolvedValue([]);
 
-      const { result } = renderHook(() => useDestinationData(false)); // visible=false so fetch skipped
+      const { result } = renderHook(() => useDestinationData(false)); 
 
       await waitFor(() => {
         expect(result.current.getModeDurationLabel("transit")).toBe("12 min");
@@ -197,9 +188,6 @@ it("defaults indoor penalty to 0 when calculateIndoorPenaltySeconds rejects", as
     });
   });
 
-  // ---------------------------------------------------------------------------
-  // getTransitBadgeLabel
-  // ---------------------------------------------------------------------------
   describe("getTransitBadgeLabel()", () => {
     const step = (type: string) => ({ transitVehicleType: type } as any);
 
@@ -234,9 +222,7 @@ it("defaults indoor penalty to 0 when calculateIndoorPenaltySeconds rejects", as
     });
   });
 
-  // ---------------------------------------------------------------------------
-  // getRouteTransitSummary
-  // ---------------------------------------------------------------------------
+
   describe("getRouteTransitSummary()", () => {
     it("returns null when there are no transit steps", () => {
       const { result } = renderHook(() => useDestinationData(true));
@@ -286,9 +272,6 @@ it("defaults indoor penalty to 0 when calculateIndoorPenaltySeconds rejects", as
     });
   });
 
-  // ---------------------------------------------------------------------------
-  // transitSteps
-  // ---------------------------------------------------------------------------
   describe("transitSteps", () => {
     it("returns empty array when route has no steps", () => {
       const { result } = renderHook(() => useDestinationData(true));
@@ -326,9 +309,7 @@ it("defaults indoor penalty to 0 when calculateIndoorPenaltySeconds rejects", as
     });
   });
 
-  // ---------------------------------------------------------------------------
-  // overrideStart / overrideDestination
-  // ---------------------------------------------------------------------------
+
   describe("coordinate overrides", () => {
     it("uses overrideDestination instead of context destination when provided", async () => {
       const override = { latitude: 10, longitude: 20 };
@@ -361,9 +342,6 @@ it("defaults indoor penalty to 0 when calculateIndoorPenaltySeconds rejects", as
     });
   });
 
-  // ---------------------------------------------------------------------------
-  // visible flag
-  // ---------------------------------------------------------------------------
   describe("visible flag", () => {
     it("does not fetch mode durations when visible is false", async () => {
       renderHook(() => useDestinationData(false));
@@ -383,9 +361,6 @@ it("defaults indoor penalty to 0 when calculateIndoorPenaltySeconds rejects", as
     });
   });
 
-  // ---------------------------------------------------------------------------
-  // Cache reset on route scope change
-  // ---------------------------------------------------------------------------
   describe("cache reset", () => {
     it("resets navigationRouteId when routeScopeKey changes", async () => {
       const { result, rerender } = renderHook(
