@@ -16,6 +16,6 @@ export interface BuildingMetadata {
 export interface AccessibilityIconDef {
   key: string;
   sf: SFSymbol;
-  material: "elevator" | "accessible" | "subway";
+  material: "elevator" | "accessible-forward" | "subway";
   label: string;
 }

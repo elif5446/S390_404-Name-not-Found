@@ -1,9 +1,9 @@
 name: Nightly sync dev -> main (v0.x.0)
 
 on:
-  schedule:
+  # schedule:
     # 07:00 UTC is ~ 02:00 Montreal (EST)
-    - cron: "0 7 * * *"
+    # - cron: "0 7 * * *"
   workflow_dispatch:
 
 permissions:

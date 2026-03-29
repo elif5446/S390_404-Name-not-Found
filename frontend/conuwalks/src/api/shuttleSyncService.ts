@@ -152,10 +152,7 @@ const parseHTMLToJSON = (html: string): ShuttleSchedule => {
     const monThuHTML = fridaySplit[0];
     const fridayHTML = fridaySplit.length > 1 ? fridaySplit[1] : "";
 
-    const extractTimes = (
-      blockHTML: string,
-      target: { SGW: string[]; LOY: string[] },
-    ) => {
+    const extractTimes = (blockHTML: string, target: { SGW: string[]; LOY: string[] }) => {
       const rows = blockHTML.split(/<tr[^>]*>/i);
       // start at index 1 because index 0 contains everything before the first <tr>
       for (let i = 1; i < rows.length; i++) {
@@ -209,10 +206,7 @@ export const syncShuttleScheduleInBackground = async () => {
 
     // only update cache if we successfully parsed data
     if (newSchedule.monday_thursday.LOY.length > 0) {
-      await AsyncStorage.setItem(
-        SCHEDULE_CACHE_KEY,
-        JSON.stringify(newSchedule),
-      );
+      await AsyncStorage.setItem(SCHEDULE_CACHE_KEY, JSON.stringify(newSchedule));
       console.log("Shuttle schedule synced and cached.");
     }
   } catch (error) {

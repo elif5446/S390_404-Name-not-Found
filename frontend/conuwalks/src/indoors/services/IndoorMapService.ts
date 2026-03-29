@@ -1,9 +1,10 @@
-import { BuildingNavConfig, Node } from "../types/Navigation";
 import { Route, UserLocation } from "../types/Routes";
 import { Graph } from "./Graph";
 import { PathFinder } from "./PathFinder";
 import { getWheelchairAccessibilityPreference } from "@/src/utils/tokenStorage";
 import { IndoorLocationTracker } from "./IndoorLocationTracker";
+import { generateRouteSteps, RouteStep } from "@/src/indoors/services/RouteInstructionService";
+import { BuildingNavConfig, Node, NodeType } from "../types/Navigation";
 
 export class IndoorMapService {
   private graph: Graph;
@@ -22,11 +23,16 @@ export class IndoorMapService {
     this.pathFinder = new PathFinder(this.graph);
     this.locationTracker.setGraph(this.graph);
 
-    //load the floors
+    // load ALL nodes across ALL floors
+    // This ensures no edges fail because a target node hasn't been parsed yet
     for (const floor of config.floors) {
       for (const node of floor.nodes) {
         this.graph.addNode(node);
       }
+    }
+
+    // add standard intra-floor edges
+    for (const floor of config.floors) {
       for (const edge of floor.edges) {
         this.graph.addEdge(edge);
       }
@@ -40,8 +46,7 @@ export class IndoorMapService {
       for (const edge of config.interFloorEdges) {
         const nodeA = this.graph.getNode(edge.nodeAId);
         const nodeB = this.graph.getNode(edge.nodeBId);
-        const isEscalator =
-          nodeA?.type === "escalator" || nodeB?.type === "escalator";
+        const isEscalator = nodeA?.type === "escalator" || nodeB?.type === "escalator";
         this.graph.addEdge(edge, isEscalator);
       }
     }
@@ -50,7 +55,7 @@ export class IndoorMapService {
       try {
         this.locationTracker.setDefaultLocation(config.defaultStartNodeId);
       } catch (e) {
-        console.warn(`Failed to set default location: ${e}`);
+        console.warn(`[IndoorMapService] Failed to set default location: ${e}`);
       }
     }
   }
@@ -59,19 +64,9 @@ export class IndoorMapService {
     return this.graph;
   }
 
-  //you can find a route by giving a start and end node
-  async getRoute(
-    startNodeId: string,
-    endNodeId: string,
-    accessibleOnly: boolean | null = null,
-  ): Promise<Route> {
-    const wheelchairOnly =
-      accessibleOnly ?? (await getWheelchairAccessibilityPreference());
-    return this.pathFinder.findShortestPath(
-      startNodeId,
-      endNodeId,
-      wheelchairOnly,
-    );
+  async getRoute(startNodeId: string, endNodeId: string, accessibleOnly: boolean | null = null): Promise<Route | null> {
+    const wheelchairOnly = accessibleOnly ?? (await getWheelchairAccessibilityPreference());
+    return this.pathFinder.findShortestPath(startNodeId, endNodeId, wheelchairOnly);
   }
 
   setUserLocation(nodeId: string): void {
@@ -87,19 +82,13 @@ export class IndoorMapService {
   }
 
   //find shortest route by giving only an end node (will use the default location or preset location as starting node)
-  getRouteFromCurrentLocation(
-    endNodeId: string,
-    accessibleOnly: boolean = false,
-  ): Route {
+  getRouteFromCurrentLocation(endNodeId: string, accessibleOnly: boolean = false): Route | null {
     const userLoc = this.getUserLocation();
     if (!userLoc) {
-      throw new Error("IndoorMapService: user location not set");
+      console.warn("[IndoorMapService] User location not set. Cannot calculate route.");
+      return null;
     }
-    return this.pathFinder.findShortestPath(
-      userLoc.nodeId,
-      endNodeId,
-      accessibleOnly,
-    );
+    return this.pathFinder.findShortestPath(userLoc.nodeId, endNodeId, accessibleOnly);
   }
 
   //this will get the default start node for the building that is being loaded
@@ -118,7 +107,7 @@ export class IndoorMapService {
     if (targetNode) return targetNode;
 
     // fallback: search all nodes for an ID that ends with the target number
-    targetNode = allNodes.find((n) => {
+    targetNode = allNodes.find(n => {
       const cleanId = n.id.replaceAll(/[^a-zA-Z0-9]/g, "").toUpperCase();
       return cleanId.endsWith(cleanRoom);
     });
@@ -128,26 +117,33 @@ export class IndoorMapService {
 
   // finds the nearest room/poi node given cartesian x/y coordinates
   getNearestRoomNode(floorId: string, x: number, y: number): Node | null {
-    const nodesOnFloor = this.graph
-      .getAllNodes()
-      .filter(
-        (n) => n.floorId === floorId && (n.type === "room" || n.type === "poi"),
-      );
+    const validTypes: NodeType[] = [
+      "room",
+      "poi",
+      "bathroom",
+      "food",
+      "helpDesk",
+      "elevator",
+      "escalator",
+      "stairs",
+      "entrance",
+      "hallway",
+    ];
+
+    const nodesOnFloor = this.graph.getAllNodes().filter(n => n.floorId === floorId && validTypes.includes(n.type));
 
     let nearestNode: Node | null = null;
     let minDistance = Infinity;
 
     for (const node of nodesOnFloor) {
-      const distance = Math.sqrt(
-        Math.pow(node.x - x, 2) + Math.pow(node.y - y, 2),
-      );
+      const distance = Math.sqrt(Math.pow(node.x - x, 2) + Math.pow(node.y - y, 2));
       if (distance < minDistance) {
         minDistance = distance;
         nearestNode = node;
       }
     }
 
-    return minDistance < 100 ? nearestNode : null;
+    return minDistance < 150 ? nearestNode : null;
   }
 
   getEntranceNode(): Node | null {
@@ -160,10 +156,7 @@ export class IndoorMapService {
    * @param route The generated indoor Route object
    * @param pixelToMeterRatio The scale of SVG/Map. (e.g., if 10 pixels = 1 meter, pass 0.1)
    */
-  public getRouteDurationSeconds(
-    route: Route | null,
-    pixelToMeterRatio: number = 1,
-  ): number {
+  public getRouteDurationSeconds(route: Route | null, pixelToMeterRatio: number = 1): number {
     if (!route?.totalDistance) return 0;
 
     const distanceInMeters = route.totalDistance * pixelToMeterRatio;
@@ -186,5 +179,10 @@ export class IndoorMapService {
       }
     }
     return changes;
+  }
+  getRouteInstructions(route: Route): { steps: RouteStep[] } {
+    return {
+      steps: generateRouteSteps(route.nodes),
+    };
   }
 }

@@ -24,6 +24,8 @@ import DestinationContent from "./DestinationPopupContent";
 interface DestinationPopupProps {
   visible: boolean;
   onClose: () => void;
+  showOpenIndoorButton?: boolean;
+  onOpenIndoorPress?: () => void;
 }
 
 export interface DestinationPopupHandle {
@@ -34,9 +36,10 @@ export interface DestinationPopupHandle {
 const DestinationPopup = forwardRef<
   DestinationPopupHandle,
   DestinationPopupProps
->(({ visible, onClose }, ref) => {
-  const isDark = (useColorScheme() || "light") === "dark";
-
+>(({ visible, onClose, showOpenIndoorButton, onOpenIndoorPress }, ref) => {
+  const mode = useColorScheme() || "light";
+  const isDark = mode === "dark";
+  
   const {
     routes,
     selectedRouteIndex,
@@ -165,19 +168,21 @@ const DestinationPopup = forwardRef<
           {Platform.OS === "ios" && (
             <BlurView
               intensity={100}
-              tint={isDark ? "dark" : "light"}
+              tint={mode}
               style={StyleSheet.absoluteFill}
             />
           )}
 
           <View {...handlePanResponder.panHandlers}>
             <DestinationHeader
-              isDark={isDark}
+              mode={mode}
               travelMode={travelMode as any}
               setTravelMode={handleTravelModeSelect}
               getModeDurationLabel={getModeDurationLabel}
               onDismiss={handleHeaderDismiss}
               onToggleHeight={handleToggleHeight}
+              showOpenIndoorButton={showOpenIndoorButton}
+              onOpenIndoorPress={onOpenIndoorPress}
             />
           </View>
 

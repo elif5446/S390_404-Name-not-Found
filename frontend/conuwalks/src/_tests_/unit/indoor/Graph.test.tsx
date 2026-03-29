@@ -111,7 +111,7 @@ describe("Graph", () => {
       expect(edge!.weight).toBeCloseTo(5, 5);
     });
 
-    it("should create a bidirectional edge (A→B and B→A)", () => {
+    it("should create a bidirectional edge by default (A→B and B→A)", () => {
       graph.addEdge(makeEdge("A", "B"));
       expect(graph.getEdge("A", "B")).toBeDefined();
       expect(graph.getEdge("B", "A")).toBeDefined();
@@ -123,6 +123,17 @@ describe("Graph", () => {
         graph.getEdge("B", "A")!.weight,
         5,
       );
+    });
+    it("should create a one-way edge when oneWay is true (A→B only)", () => {
+      graph.addEdge(makeEdge("A", "B"), true);
+      expect(graph.getEdge("A", "B")).toBeDefined();
+      expect(graph.getEdge("B", "A")).toBeUndefined();
+    });
+
+    it("should create a bidirectional edge when oneWay is false", () => {
+      graph.addEdge(makeEdge("A", "B"), false);
+      expect(graph.getEdge("A", "B")).toBeDefined();
+      expect(graph.getEdge("B", "A")).toBeDefined();
     });
   });
 

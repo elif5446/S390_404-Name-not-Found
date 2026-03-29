@@ -2,18 +2,12 @@ import CampusLabels from "@/src/components/campusLabels";
 import RoutePolyline from "@/src/components/RoutePolyline";
 import { CampusConfig } from "@/src/data/campus/campusConfig";
 import { UserInfo } from "@/src/utils/tokenStorage";
-import React, {
-  useState,
-  useRef,
-  useMemo,
-  useCallback,
-  useEffect,
-} from "react";
+import React, { useState, useRef, useMemo, useCallback, useEffect } from "react";
 import {
-  Modal, 
+  Modal,
   TextInput,
-  FlatList, 
-  Pressable, 
+  FlatList,
+  Pressable,
   StyleSheet,
   View,
   Text,
@@ -22,48 +16,39 @@ import {
   TouchableOpacity,
   useColorScheme,
 } from "react-native";
-import MapView, {
-  LatLng,
-  Region,
-  Marker,
-  PROVIDER_GOOGLE,
-  Polygon,
-  LongPressEvent,
-} from "react-native-maps";
+import MapView, { LatLng, Region, Marker, PROVIDER_GOOGLE, Polygon, LongPressEvent } from "react-native-maps";
 
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { SymbolView, SFSymbol } from "expo-symbols";
 import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import AdditionalInfoPopup, {
-  AdditionalInfoPopupHandle,
-} from "./AdditionalInfoPopup";
+import AdditionalInfoPopup, { AdditionalInfoPopupHandle } from "./AdditionalInfoPopup";
 import DestinationPopup, { DestinationPopupHandle } from "./DestinationPopup";
 import RightControlsPanel from "./RightControlsPanel";
 
 import { useUserLocation } from "@/src/hooks/useUserLocation";
 import { useDirections } from "@/src/context/DirectionsContext";
-import {
-  calculatePolygonCenter,
-  distanceMetersBetween,
-} from "@/src/utils/geometry";
+import { calculatePolygonCenter, distanceMetersBetween } from "@/src/utils/geometry";
 import { isPointInPolygon } from "@/src/utils/geo";
 import SGW from "@/src/data/campus/SGW.geojson";
 import LOY from "@/src/data/campus/LOY.geojson";
 import { INDOOR_DATA } from "@/src/data/indoorData";
-import { LoyolaBuildingMetadata, LoyolaBuildingSearchMetadata } from "@/src/data/metadata/LOY.BuildingMetadata";
-import { SGWBuildingMetadata, SGWBuildingSearchMetadata } from "@/src/data/metadata/SGW.BuildingMetaData";
+import {
+  LoyolaBuildingMetadata,
+  LoyolaBuildingSearchMetadata,
+} from "@/src/data/metadata/LOY.BuildingMetadata";
+import {
+  SGWBuildingMetadata,
+  SGWBuildingSearchMetadata,
+} from "@/src/data/metadata/SGW.BuildingMetaData";
 import IndoorMapOverlay from "./indoor/IndoorMapOverlay";
 import DirectionsSearchPanel from "./DirectionsSearchPanel";
 
 import BuildingTheme from "@/src/styles/BuildingTheme";
-import styles from "@/src/styles/campusMap"; 
-
-
+import styles from "@/src/styles/campusMap";
 
 // Convert GeoJSON coordinates to LatLng
-const polygonFromGeoJSON = (coordinates: number[][]): LatLng[] =>
-  coordinates.map(([longitude, latitude]) => ({ latitude, longitude }));
+const polygonFromGeoJSON = (coordinates: number[][]): LatLng[] => coordinates.map(([longitude, latitude]) => ({ latitude, longitude }));
 
 interface CampusMapProps {
   initialLocation?: {
@@ -104,124 +89,112 @@ interface GeoJsonFeature {
   };
 }
 
-const getBuildingDisplayName = (
-  buildingId: string,
-  campus: "SGW" | "LOY",
-) => {
-  const metadata =
-    campus === "LOY"
-      ? LoyolaBuildingMetadata[buildingId]
-      : SGWBuildingMetadata[buildingId];
+const getBuildingDisplayName = (buildingId: string, campus: "SGW" | "LOY") => {
+  const metadata = campus === "LOY" ? LoyolaBuildingMetadata[buildingId] : SGWBuildingMetadata[buildingId];
 
   return metadata?.name || buildingId;
 };
 
-const PlatformIcon = ({
-  materialName,
-  iosName,
-  size,
-  color,
-}: PlatformIconProps) => {
+const PlatformIcon = ({ materialName, iosName, size, color }: PlatformIconProps) => {
   if (Platform.OS === "ios") {
-    return (
-      <SymbolView
-        name={iosName}
-        size={size}
-        weight="medium"
-        tintColor={color}
-      />
-    );
+    return <SymbolView name={iosName} size={size} weight="medium" tintColor={color} />;
   }
   return <MaterialIcons name={materialName} size={size} color={color} />;
 };
 
 // helper complexity
-const BuildingGroup = React.memo(({
-  buildingId,
-  campus,
-  coordinates,
-  isSelected,
-  isDestination,
-  dimOthers,
-  handleBuildingPress,
-  trackDestMarker, // passed from parent
-  markerRefSetter // helper to set the ref from parent
-}: any) => {
-  const centerCoordinates = calculatePolygonCenter(coordinates);
-  const campusTheme = BuildingTheme[campus as keyof typeof BuildingTheme] as Record<
-    string,
-    string
-  >;
+const BuildingGroup = React.memo(
+  ({
+    buildingId,
+    campus,
+    coordinates,
+    isSelected,
+    isDestination,
+    dimOthers,
+    handleBuildingPress,
+    trackDestMarker, // passed from parent
+    markerRefSetter, // helper to set the ref from parent
+  }: any) => {
+    const centerCoordinates = calculatePolygonCenter(coordinates);
+    const campusTheme = BuildingTheme[
+      campus as keyof typeof BuildingTheme
+    ] as Record<string, string>;
 
-  const themeColor = campusTheme[buildingId] || "#888888";
-  const name = getBuildingDisplayName(buildingId, campus);
+    const themeColor = campusTheme[buildingId] || "#888888";
+    const name = getBuildingDisplayName(buildingId, campus);
+    const fillColor = isSelected
+      ? themeColor + "F0"
+      : isDestination
+        ? themeColor + "C8"
+        : dimOthers
+          ? themeColor + "55"
+          : themeColor + "B0";
 
-  return (
-    <React.Fragment>
-      <Polygon
-        coordinates={coordinates}
-        accessibilityLabel={name}
-        testID={`polygon-${name}`}
-        fillColor={
-          isSelected ? themeColor + "F0" :
-          isDestination ? themeColor + "C8" :
-          dimOthers ? themeColor + "55" : themeColor + "90"
-        }
-        strokeColor={"rgba(0,0,0,0.12)"}
-        strokeWidth={1}
-        tappable
-        onPress={() => handleBuildingPress(buildingId, campus, centerCoordinates)}
-        zIndex={3}
-      />
+    return (
+      <React.Fragment>
+        <Polygon
+          coordinates={coordinates}
+          accessibilityLabel={name}
+          testID={`polygon-${name}`}
+          fillColor={fillColor}
+          strokeColor={"rgba(0,0,0,0.12)"}
+          strokeWidth={1}
+          tappable
+          onPress={() =>
+            handleBuildingPress(buildingId, campus, centerCoordinates)
+          }
+          zIndex={3}
+        />
 
-      {isSelected && (
-        <>
-          <Polygon
-            coordinates={coordinates}
-            fillColor="transparent"
-            strokeColor="#515351ff"
-            strokeWidth={5}
-            zIndex={5}
-          />
-          <Polygon
-            coordinates={coordinates}
-            fillColor="transparent"
-            strokeColor="#FFFFFF"
-            strokeWidth={2}
-            zIndex={6}
-          />
-        </>
-      )}
+        {isSelected && (
+          <>
+            <Polygon
+              coordinates={coordinates}
+              fillColor="transparent"
+              strokeColor="#515351ff"
+              strokeWidth={5}
+              zIndex={5}
+            />
+            <Polygon
+              coordinates={coordinates}
+              fillColor="transparent"
+              strokeColor="#FFFFFF"
+              strokeWidth={2}
+              zIndex={6}
+            />
+          </>
+        )}
 
-      {isDestination && !isSelected && (
+        {isDestination && !isSelected && (
+          <Marker
+            coordinate={centerCoordinates}
+            anchor={{ x: 0.5, y: 0.5 }}
+            zIndex={1000}
+            tracksViewChanges={trackDestMarker}
+            flat
+            accessibilityLabel={`${name} destination`}
+            testID={`marker-${name}-destination`}
+          >
+            <MaterialIcons name="place" size={26} color="#B03060" />
+          </Marker>
+        )}
+
         <Marker
+          ref={markerRefSetter} // Use the passed setter
           coordinate={centerCoordinates}
-          anchor={{ x: 0.5, y: 0.5 }}
-          zIndex={1000}
-          tracksViewChanges={trackDestMarker}
-          flat
-          accessibilityLabel={`${name} destination`}
-          testID={`marker-${name}-destination`}
+          onPress={() => handleBuildingPress(buildingId, campus, centerCoordinates)}
+          zIndex={200}
+          tracksViewChanges={false}
+          title={name}
+          accessibilityLabel={name}
+          testID={`marker-${name}`}
         >
-          <MaterialIcons name="place" size={26} color="#B03060" />
+          <View style={{ width: 44, height: 44, opacity: 0.01 }} />
         </Marker>
-      )}
-
-      <Marker
-        ref={markerRefSetter} // Use the passed setter
-        coordinate={centerCoordinates}
-        onPress={() => handleBuildingPress(buildingId, campus, centerCoordinates)}
-        zIndex={200}
-        tracksViewChanges={false}
-        title={name}
-        accessibilityLabel={name}
-        testID={`marker-${name}`}
-      >
-        <View style={{ width: 44, height: 44, opacity: 0.01 }} />
-      </Marker>
-    </React.Fragment>
-  );
-});
+      </React.Fragment>
+    );
+  },
+);
 
 const CampusMap: React.FC<CampusMapProps> = ({
   initialLocation = { latitude: 45.49599, longitude: -73.57854 },
@@ -233,18 +206,13 @@ const CampusMap: React.FC<CampusMapProps> = ({
   const colorScheme = useColorScheme() || "light";
 
   // Get user's location with permission handling
-  const {
-    location: userLocation,
-    error: locationError,
-    loading: locationLoading,
-  } = useUserLocation();
+  const { location: userLocation, error: locationError, loading: locationLoading } = useUserLocation();
 
-  const INITIAL_DELTA = 0.008;
-  const ICON_FREEZE_DELAY_MS = 250;
+  const INITIAL_DELTA = 0.004;
 
   // State to control building search popup
-const [buildingSearchVisible, setBuildingSearchVisible] = useState(false);
-const buildingSearchInputRef = useRef<TextInput>(null);
+  const [buildingSearchVisible, setBuildingSearchVisible] = useState(false);
+  const buildingSearchInputRef = useRef<TextInput>(null);
   // Get directions context for destination setting
   const {
     destinationBuildingId,
@@ -287,20 +255,19 @@ const buildingSearchInputRef = useRef<TextInput>(null);
     visible: false,
   });
   const [navigationStepIndex, setNavigationStepIndex] = useState(0);
-  const [selectedTransitStopKey, setSelectedTransitStopKey] = useState<
-    string | null
-  >(null);
+  const [selectedTransitStopKey, setSelectedTransitStopKey] = useState<string | null>(null);
   const [indoorBuildingId, setIndoorBuildingId] = useState<string | null>(null);
+  const [isManualIndoorOverride, setIsManualIndoorOverride] = useState(false);
   const [isInfoPopupExpanded, setIsInfoPopupExpanded] = useState(false);
   const additionalInfoPopupRef = useRef<AdditionalInfoPopupHandle>(null);
   const destinationPopupRef = useRef<DestinationPopupHandle>(null);
   const preNavigationRegionRef = useRef<Region | null>(null);
   const [trackLocationMarker, setTrackLocationMarker] = useState(true);
   const [trackDestMarker, setTrackDestMarker] = useState(true);
+  const [userLocationBuildingId, setUserLocationBuildingId] = useState<string | null>(null);
 
-  const trackMarkerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
+  const trackMarkerTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // unmount cleanup logic for dest marker
   useEffect(() => {
     return () => {
@@ -316,52 +283,50 @@ const buildingSearchInputRef = useRef<TextInput>(null);
     }
   }, [destinationBuildingId]);
 
+  const geofenceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const confirmedBuildingIdRef = useRef<string | null>(null);
+  const [manuallyExitedBuildingId, setManuallyExitedBuildingId] = useState<string | null>(null);
+
+  // handle restoring the camera view when navigation ends
   const [searchQuery, setSearchQuery] = useState("");
 
-// Combine all buildings from SGW and LOY
-const allBuildings = useMemo(() => {
-  const sgw = Object
-    .entries(SGWBuildingSearchMetadata)
-    .filter(([id, _]) => id in SGWBuildingMetadata)
-    .map(([id, meta]) => ({
-      // Use the ID that matches the GeoJSON 'id' property
-      id: id,
-      name: meta.name,
-      campus: "SGW",
-      coordinates: meta.coordinates
-    }));
-  const loy = Object
-    .entries(LoyolaBuildingSearchMetadata)
-    .filter(([id, _]) => id in LoyolaBuildingMetadata)
-    .map(([id, meta]) => ({
-      id,
-      name: meta.name,
-      campus: "LOY",
-      coordinates: meta.coordinates
-    }));
-  return [...sgw, ...loy];
-}, []);
+  // Combine all buildings from SGW and LOY
+  const allBuildings = useMemo(() => {
+    const sgw = Object.entries(SGWBuildingSearchMetadata)
+      .filter(([id, _]) => id in SGWBuildingMetadata)
+      .map(([id, meta]) => ({
+        // Use the ID that matches the GeoJSON 'id' property
+        id: id,
+        name: meta.name,
+        campus: "SGW",
+        coordinates: meta.coordinates,
+      }));
+    const loy = Object.entries(LoyolaBuildingSearchMetadata)
+      .filter(([id, _]) => id in LoyolaBuildingMetadata)
+      .map(([id, meta]) => ({
+        id,
+        name: meta.name,
+        campus: "LOY",
+        coordinates: meta.coordinates,
+      }));
+    return [...sgw, ...loy];
+  }, []);
 
-// Filter buildings based on the search query
-const filteredBuildings = useMemo(() => {
-  if (!searchQuery) return allBuildings;
-  return allBuildings.filter((b) =>
-    b.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-}, [searchQuery, allBuildings]);
+  // Filter buildings based on the search query
+  const filteredBuildings = useMemo(() => {
+    if (!searchQuery) return allBuildings;
+    return allBuildings.filter((b) =>
+      b.name.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
+  }, [searchQuery, allBuildings]);
   // Handlers for building search
-const handleOpenBuildingSearch = () => {
-  setBuildingSearchVisible(true);
-  // optionally hide directions panel if open
-  setShowDirections(false);
-};
+  const handleOpenBuildingSearch = () => {
+    setBuildingSearchVisible(true);
+    // optionally hide directions panel if open
+    setShowDirections(false);
+  };
 
-const handleCloseBuildingSearch = () => {
-  setBuildingSearchVisible(false);
-};
-
-
-// handle restoring the camera view when navigation ends
+  // handle restoring the camera view when navigation ends
   useEffect(() => {
     if (isNavigationActive) {
       if (!preNavigationRegionRef.current) {
@@ -388,29 +353,17 @@ const handleCloseBuildingSearch = () => {
     [onInfoPopupExpansionChange],
   );
 
-  const handleOpenIndoorMap = useCallback(
-    (buildingId: string) => {
-      if (!INDOOR_DATA[buildingId]) return;
-
-      setSelectedTransitStopKey(null);
-      setShowDirections(false);
-      setIsNavigationActive(false);
-      clearRouteData();
-      setSelectedBuilding((prev) => ({ ...prev, visible: false }));
-      setIndoorBuildingId(buildingId);
-    },
-    [setShowDirections, setIsNavigationActive, clearRouteData],
-  );
-
-  // Calculate circle radius based on zoom level (longitudeDelta)
-  // Larger longitudeDelta = zoomed out = bigger circle
-  //   const circleRadius = Math.max(2.5, mapRegion.longitudeDelta * 2000);
+  const handleOpenIndoorMap = useCallback((buildingId: string) => {
+    if (!INDOOR_DATA[buildingId]) return;
+    setIsManualIndoorOverride(true);
+    setSelectedTransitStopKey(null);
+    setSelectedBuilding(prev => ({ ...prev, visible: false }));
+    setIndoorBuildingId(buildingId);
+  }, []);
 
   // Create a ref to the MapView so we can control it
   const mapRef = useRef<MapView>(null);
-  const buildingMarkerRefs = useRef<
-    Record<string, { showCallout?: () => void } | null>
-  >({});
+  const buildingMarkerRefs = useRef<Record<string, { showCallout?: () => void } | null>>({});
   const lastCameraUpdateAtRef = useRef(0);
   const ignoreNextMapPressRef = useRef(false);
   const lastBuildingPressAtRef = useRef(0);
@@ -458,7 +411,7 @@ const handleCloseBuildingSearch = () => {
         destinationPopupRef.current?.dismiss();
         setTimeout(() => {
           clearDestination();
-          setSelectedBuilding((prev) => ({ ...prev, visible: false }));
+          setSelectedBuilding(prev => ({ ...prev, visible: false }));
         }, 250);
       }
     }
@@ -482,9 +435,9 @@ const handleCloseBuildingSearch = () => {
       let coordinates = coords;
       if (!coordinates) {
         const sourceGeo = campus === "LOY" ? LOY : SGW;
-        const feature = sourceGeo.features.find(
-          (item) => (item as GeoJsonFeature).properties.id === buildingId,
-        ) as GeoJsonFeature | undefined;
+        const feature = sourceGeo.features.find(item => (item as GeoJsonFeature).properties.id === buildingId) as
+          | GeoJsonFeature
+          | undefined;
         // optional chaining for more concise check
         if (feature?.geometry.type === "Polygon") {
           coordinates = calculatePolygonCenter(feature.geometry.coordinates[0]);
@@ -494,6 +447,7 @@ const handleCloseBuildingSearch = () => {
       }
 
       setIndoorBuildingId(null);
+      setIsManualIndoorOverride(false);
       setIsNavigationActive(false);
       setShowDirections(false);
       clearRouteData();
@@ -511,10 +465,7 @@ const handleCloseBuildingSearch = () => {
         buildingMarkerRefs.current[markerKey]?.showCallout?.();
       });
 
-      const buildingMetadata =
-        campus === "LOY"
-          ? LoyolaBuildingMetadata[buildingId]
-          : SGWBuildingMetadata[buildingId];
+      const buildingMetadata = campus === "LOY" ? LoyolaBuildingMetadata[buildingId] : SGWBuildingMetadata[buildingId];
 
       if (buildingMetadata && coordinates) {
         setDestination(buildingId, coordinates, buildingMetadata.name);
@@ -522,36 +473,50 @@ const handleCloseBuildingSearch = () => {
     },
     [setIsNavigationActive, setShowDirections, clearRouteData, setDestination],
   );
-  
+
   const handleClosePopup = useCallback(() => {
     setIsInfoPopupExpanded(false);
-    setSelectedBuilding((prev) => ({ ...prev, visible: false }));
+    setSelectedBuilding(prev => ({ ...prev, visible: false }));
   }, []);
 
   const handleMapLongPress = useCallback((e: LongPressEvent) => {
     const coordinate = e.nativeEvent.coordinate;
 
-    const findBuildingId = (geojson: typeof SGW | typeof LOY) => {
-      const feature = geojson.features.find((item) => {
+    let foundCampus: "SGW" | "LOY" = "SGW";
+    let foundCenter: LatLng | null = null;
+
+    const findBuildingId = (geojson: typeof SGW | typeof LOY, campusStr: "SGW" | "LOY") => {
+      const feature = geojson.features.find(item => {
         const currentFeature = item as GeoJsonFeature;
         if (currentFeature.geometry.type !== "Polygon") {
           return false;
         }
 
-        const polygonCoords = polygonFromGeoJSON(
-          currentFeature.geometry.coordinates[0],
-        );
+        const polygonCoords = polygonFromGeoJSON(currentFeature.geometry.coordinates[0]);
         return isPointInPolygon(coordinate, polygonCoords);
       });
 
-      return (feature?.properties as { id?: string } | undefined)?.id ?? null;
+      if (feature) {
+        foundCampus = campusStr;
+        const polygonCoords = polygonFromGeoJSON((feature as GeoJsonFeature).geometry.coordinates[0]);
+        foundCenter = calculatePolygonCenter(polygonCoords);
+        return (feature.properties as { id?: string } | undefined)?.id ?? null;
+      }
+      return null;
     };
 
-    const foundId = findBuildingId(SGW) || findBuildingId(LOY);
+    const foundId = findBuildingId(SGW, "SGW") || findBuildingId(LOY, "LOY");
 
     if (foundId && INDOOR_DATA[foundId]) {
+      setIsManualIndoorOverride(true);
       setIndoorBuildingId(foundId);
-      setSelectedBuilding((prev) => ({ ...prev, visible: false }));
+      setManuallyExitedBuildingId(null);
+      setSelectedBuilding({
+        name: foundId,
+        campus: foundCampus,
+        coords: foundCenter || coordinate,
+        visible: false,
+      });
     }
   }, []);
 
@@ -583,61 +548,55 @@ const handleCloseBuildingSearch = () => {
 
     const walkingMetersPerSecond = 1.35;
     const meters = distanceMetersBetween(userLocation, selectedBuilding.coords);
-    const minutes = Math.max(
-      1,
-      Math.round(meters / walkingMetersPerSecond / 60),
-    );
+    const minutes = Math.max(1, Math.round(meters / walkingMetersPerSecond / 60));
 
     if (minutes >= 60) {
       const hours = Math.floor(minutes / 60);
       const remainingMinutes = minutes % 60;
-      return remainingMinutes > 0
-        ? `${hours} h ${remainingMinutes} min`
-        : `${hours} h`;
+      return remainingMinutes > 0 ? `${hours} h ${remainingMinutes} min` : `${hours} h`;
     }
 
     return `${minutes} min`;
   }, [userLocation, selectedBuilding.coords]);
 
   const handleOpenDirectionsPopup = useCallback(() => {
-    setSelectedBuilding((prev) => ({ ...prev, visible: false }));
+    setSelectedBuilding(prev => ({ ...prev, visible: false }));
     setShowDirections(true);
   }, [setShowDirections]);
 
-  const handleSetAsDestination = useCallback(() => {
-    if (!selectedBuilding.name || !selectedBuilding.coords) return;
+  const handleSetAsDestination = useCallback(
+    (room?: string) => {
+      if (!selectedBuilding.name || !selectedBuilding.coords) return;
 
-    const buildingMetadata =
-      selectedBuilding.campus === "LOY"
-        ? LoyolaBuildingMetadata[selectedBuilding.name]
-        : SGWBuildingMetadata[selectedBuilding.name];
+      const buildingMetadata =
+        selectedBuilding.campus === "LOY" ? LoyolaBuildingMetadata[selectedBuilding.name] : SGWBuildingMetadata[selectedBuilding.name];
 
-    if (!buildingMetadata) {
-      return;
-    }
+      if (!buildingMetadata) {
+        return;
+      }
 
-    setDestination(
-      selectedBuilding.name,
-      selectedBuilding.coords,
-      buildingMetadata.name,
-    );
-  }, [selectedBuilding, setDestination]);
+      const finalRoom = room || destinationRoom;
 
-  const handleDirectionsTrigger = useCallback(() => {
-    setSelectedBuilding((prev) => ({ ...prev, visible: false }));
-    handleSetAsDestination();
+      setDestination(selectedBuilding.name, selectedBuilding.coords, buildingMetadata.name, finalRoom);
+    },
+    [selectedBuilding, setDestination, destinationRoom],
+  );
 
-    if (userLocation) {
-      setStartPoint("USER", userLocation, "Your Location");
-    }
+  const handleDirectionsTrigger = useCallback(
+    (room?: string) => {
+      setSelectedBuilding(prev => ({ ...prev, visible: false }));
+      handleSetAsDestination(room);
 
-    handleOpenDirectionsPopup();
-  }, [
-    handleSetAsDestination,
-    userLocation,
-    setStartPoint,
-    handleOpenDirectionsPopup,
-  ]);
+      if (userLocationBuildingId && startRoom) {
+        setStartPoint(userLocationBuildingId, userLocation || initialLocation, userLocationBuildingId, startRoom);
+      } else if (userLocation) {
+        setStartPoint("USER", userLocation, "Your Location");
+      }
+
+      handleOpenDirectionsPopup();
+    },
+    [handleSetAsDestination, userLocationBuildingId, startRoom, userLocation, handleOpenDirectionsPopup, setStartPoint, initialLocation],
+  );
 
   const handleCloseDestinationPopup = useCallback(() => {
     setShowDirections(false);
@@ -646,23 +605,28 @@ const handleCloseBuildingSearch = () => {
   const handleEndNavigation = useCallback(() => {
     setIsNavigationActive(false);
     setShowDirections(true);
+    setIsManualIndoorOverride(false);
   }, [setIsNavigationActive, setShowDirections]);
+
+  const handleToggleOutdoorMap = useCallback(() => {
+    if (indoorBuildingId) {
+      setManuallyExitedBuildingId(indoorBuildingId);
+    }
+    setIndoorBuildingId(null);
+    setIsManualIndoorOverride(false);
+    if (destinationBuildingId && !isNavigationActive) {
+      setShowDirections(true);
+    }
+  }, [destinationBuildingId, indoorBuildingId, isNavigationActive, setShowDirections]);
 
   const shouldUseLiveUserStart = startBuildingId === "USER" && !!userLocation;
 
-  const routeStartLocation = shouldUseLiveUserStart
-    ? userLocation
-    : startCoords || userLocation || initialLocation;
+  const routeStartLocation = shouldUseLiveUserStart ? userLocation : startCoords || userLocation || initialLocation;
 
-  const activeInstruction =
-    routeData?.steps?.[navigationStepIndex] || routeData?.steps?.[0];
+  const activeInstruction = routeData?.steps?.[navigationStepIndex] || routeData?.steps?.[0];
 
   const activeInstructionDistanceMeters =
-    userLocation && activeInstruction?.endLocation
-      ? Math.round(
-          distanceMetersBetween(userLocation, activeInstruction.endLocation),
-        )
-      : null;
+    userLocation && activeInstruction?.endLocation ? Math.round(distanceMetersBetween(userLocation, activeInstruction.endLocation)) : null;
 
   const [searchPanelHeight, setSearchPanelHeight] = useState(0);
   useEffect(() => {
@@ -671,13 +635,9 @@ const handleCloseBuildingSearch = () => {
     }
   }, [showDirections, isNavigationActive]);
 
-  const isSheetVisibleForAccessibility =
-    (selectedBuilding.visible && !showDirections) || showDirections;
+  const isSheetVisibleForAccessibility = (selectedBuilding.visible && !showDirections) || showDirections;
 
-  const modeLabelMap: Record<
-    "walking" | "driving" | "transit" | "bicycling",
-    string
-  > = {
+  const modeLabelMap: Record<"walking" | "driving" | "transit" | "bicycling", string> = {
     walking: "Walking",
     driving: "Driving",
     transit: "Transit",
@@ -692,19 +652,13 @@ const handleCloseBuildingSearch = () => {
 
     return routeData.steps
       .flatMap((step, index) => {
-        const hasTransitMeta =
-          !!step.transitLineName ||
-          !!step.transitLineShortName ||
-          !!step.transitVehicleType;
+        const hasTransitMeta = !!step.transitLineName || !!step.transitLineShortName || !!step.transitVehicleType;
         if (!hasTransitMeta) {
           return [] as TransitStopMarker[];
         }
 
-        const lineLabel =
-          step.transitLineShortName || step.transitLineName || "Transit";
-        const normalizedVehicle = (
-          step.transitVehicleType || "Transit"
-        ).toLowerCase();
+        const lineLabel = step.transitLineShortName || step.transitLineName || "Transit";
+        const normalizedVehicle = (step.transitVehicleType || "Transit").toLowerCase();
 
         // defining logic independently
         const getVehicleLabel = (vehicle: string) => {
@@ -721,8 +675,7 @@ const handleCloseBuildingSearch = () => {
           return "Transit";
         };
         const vehicleLabel = getVehicleLabel(normalizedVehicle);
-        const markerIcon: "directions-bus" | "subway" =
-          vehicleLabel === "Metro" ? "subway" : "directions-bus";
+        const markerIcon: "directions-bus" | "subway" = vehicleLabel === "Metro" ? "subway" : "directions-bus";
 
         const boardPoint = step.startLocation
           ? {
@@ -748,26 +701,17 @@ const handleCloseBuildingSearch = () => {
             }
           : null;
 
-        return [boardPoint, exitPoint].filter(
-          (item): item is TransitStopMarker => Boolean(item),
-        );
+        return [boardPoint, exitPoint].filter((item): item is TransitStopMarker => Boolean(item));
       })
-      .filter((item) => item.stepIndex >= navigationStepIndex)
+      .filter(item => item.stepIndex >= navigationStepIndex)
       .slice(0, 4);
   }, [isNavigationActive, travelMode, routeData?.steps, navigationStepIndex]);
 
-  const selectedTransitStop =
-    transitNavigationStops.find(
-      (stop) => stop.key === selectedTransitStopKey,
-    ) || null;
+  const selectedTransitStop = transitNavigationStops.find(stop => stop.key === selectedTransitStopKey) || null;
 
   useEffect(() => {
     if (showDirections) {
-      setSelectedBuilding((previousState) =>
-        previousState.visible
-          ? { ...previousState, visible: false }
-          : previousState,
-      );
+      setSelectedBuilding(previousState => (previousState.visible ? { ...previousState, visible: false } : previousState));
     }
   }, [showDirections]);
 
@@ -777,12 +721,7 @@ const handleCloseBuildingSearch = () => {
       return;
     }
 
-    if (
-      selectedTransitStopKey &&
-      !transitNavigationStops.some(
-        (stop) => stop.key === selectedTransitStopKey,
-      )
-    ) {
+    if (selectedTransitStopKey && !transitNavigationStops.some(stop => stop.key === selectedTransitStopKey)) {
       setSelectedTransitStopKey(null);
     }
   }, [isNavigationActive, selectedTransitStopKey, transitNavigationStops]);
@@ -796,13 +735,7 @@ const handleCloseBuildingSearch = () => {
   }, [showDirections, isNavigationActive, routeData?.id]);
 
   useEffect(() => {
-    if (
-      !(showDirections || isNavigationActive) ||
-      !routeData ||
-      !userLocation ||
-      !routeData.steps ||
-      routeData.steps.length === 0
-    ) {
+    if (!(showDirections || isNavigationActive) || !routeData || !userLocation || !routeData.steps || routeData.steps.length === 0) {
       return;
     }
 
@@ -819,38 +752,18 @@ const handleCloseBuildingSearch = () => {
       return;
     }
 
-    const metersToStepEnd = distanceMetersBetween(
-      userLocation,
-      currentStep.endLocation,
-    );
+    const metersToStepEnd = distanceMetersBetween(userLocation, currentStep.endLocation);
 
     const stepMode = (currentStep.travelMode || "walking").toLowerCase();
     const threshold = arrivalThresholdByMode[stepMode] || 45;
 
-    if (
-      metersToStepEnd <= threshold &&
-      navigationStepIndex < routeData.steps.length - 1
-    ) {
-      setNavigationStepIndex((previousIndex) =>
-        Math.min(previousIndex + 1, routeData.steps.length - 1),
-      );
+    if (metersToStepEnd <= threshold && navigationStepIndex < routeData.steps.length - 1) {
+      setNavigationStepIndex(previousIndex => Math.min(previousIndex + 1, routeData.steps.length - 1));
     }
-  }, [
-    showDirections,
-    isNavigationActive,
-    routeData,
-    navigationStepIndex,
-    travelMode,
-    userLocation,
-  ]);
+  }, [showDirections, isNavigationActive, routeData, navigationStepIndex, travelMode, userLocation]);
 
   useEffect(() => {
-    if (
-      !isNavigationActive ||
-      !shouldUseLiveUserStart ||
-      !userLocation ||
-      !mapRef.current
-    ) {
+    if (!isNavigationActive || !shouldUseLiveUserStart || !userLocation || !mapRef.current) {
       return;
     }
 
@@ -873,55 +786,137 @@ const handleCloseBuildingSearch = () => {
         duration: 550,
       },
     );
-  }, [
-    showDirections,
-    isNavigationActive,
-    shouldUseLiveUserStart,
-    userLocation?.latitude,
-    userLocation?.longitude,
-  ]);
+  }, [showDirections, isNavigationActive, shouldUseLiveUserStart, userLocation?.latitude, userLocation?.longitude]);
+
   const zoomToBuilding = useCallback((coords: LatLng) => {
     if (!mapRef.current) return;
-  
+
     mapRef.current.animateCamera(
       {
         center: {
           latitude: coords.latitude,
           longitude: coords.longitude,
         },
-        zoom: 17.5,   // adjust if you want closer/further
+        zoom: 17.5,
         pitch: 0,
         heading: 0,
       },
-      { duration: 700 } // smooth slide animation
+      { duration: 700 },
     );
   }, []);
-  const [userLocationBuildingId, setUserLocationBuildingId] = useState<
-    string | null
-  >(null);
+
   useEffect(() => {
     if (!userLocation) {
       if (userLocationBuildingId !== null) setUserLocationBuildingId(null);
       return;
     }
     const findBuildingId = (geojson: typeof SGW | typeof LOY) => {
-      const feature = geojson.features.find((item) => {
+      const feature = geojson.features.find(item => {
         const currentFeature = item as GeoJsonFeature;
         if (currentFeature.geometry.type !== "Polygon") {
           return false;
         }
-        const polygonCoords = polygonFromGeoJSON(
-          currentFeature.geometry.coordinates[0],
-        );
+        const polygonCoords = polygonFromGeoJSON(currentFeature.geometry.coordinates[0]);
         return isPointInPolygon(userLocation, polygonCoords);
       });
       return (feature?.properties as { id?: string } | undefined)?.id ?? null;
     };
-    const currentId = findBuildingId(SGW) || findBuildingId(LOY);
-    if (currentId !== userLocationBuildingId) {
-      setUserLocationBuildingId(currentId);
+    const rawCurrentId = findBuildingId(SGW) || findBuildingId(LOY);
+
+    if (rawCurrentId === confirmedBuildingIdRef.current) {
+      if (geofenceTimeoutRef.current) {
+        clearTimeout(geofenceTimeoutRef.current);
+        geofenceTimeoutRef.current = null;
+      }
+      return;
     }
-  }, [userLocation]);
+
+    if (!geofenceTimeoutRef.current) {
+      geofenceTimeoutRef.current = setTimeout(() => {
+        console.log(`[Geofence] Confirmed transition to: ${rawCurrentId || "Outside"}`);
+        confirmedBuildingIdRef.current = rawCurrentId;
+        setUserLocationBuildingId(rawCurrentId);
+        geofenceTimeoutRef.current = null;
+      }, 3000);
+    }
+
+    return () => {
+      if (geofenceTimeoutRef.current) {
+        clearTimeout(geofenceTimeoutRef.current);
+      }
+    };
+  }, [userLocation, userLocationBuildingId]);
+
+  const destinationCenter = useMemo(() => {
+    if (!destinationBuildingId) return null;
+    const findCenter = (geojson: typeof SGW | typeof LOY) => {
+      const feature = geojson.features.find(f => (f as GeoJsonFeature).properties.id === destinationBuildingId) as
+        | GeoJsonFeature
+        | undefined;
+      return feature && feature.geometry.type === "Polygon" ? calculatePolygonCenter(feature.geometry.coordinates[0]) : null;
+    };
+    return findCenter(SGW) || findCenter(LOY);
+  }, [destinationBuildingId]);
+
+  // auto-trigger entry/exit based on User Location & Navigation State
+  useEffect(() => {
+    if (!isNavigationActive || isManualIndoorOverride) {
+      return;
+    }
+
+    let targetBuildingId = userLocationBuildingId;
+
+    if (
+      !targetBuildingId
+      && ![null, "USER"].includes(startBuildingId)
+      && navigationStepIndex === 0
+    ) {
+      targetBuildingId = startBuildingId;
+    }
+
+    // proximity fallback
+    if (
+      !targetBuildingId
+      && destinationBuildingId
+      && destinationCenter
+      && userLocation
+      && 65 >= distanceMetersBetween(userLocation, destinationCenter)
+    ) {
+      targetBuildingId = destinationBuildingId;
+    }
+
+    if (!targetBuildingId) {
+      setManuallyExitedBuildingId(null);
+      if (indoorBuildingId !== destinationBuildingId) {
+        setIndoorBuildingId(null);
+      }
+    } else if (
+      targetBuildingId
+      && INDOOR_DATA[targetBuildingId]
+      && ![indoorBuildingId, manuallyExitedBuildingId].includes(targetBuildingId)
+    ) {
+      setIndoorBuildingId(targetBuildingId);
+    }
+  }, [
+    userLocation,
+    userLocationBuildingId,
+    isNavigationActive,
+    indoorBuildingId,
+    manuallyExitedBuildingId,
+    destinationBuildingId,
+    destinationCenter,
+    isManualIndoorOverride,
+    startBuildingId,
+    navigationStepIndex,
+  ]);
+
+  const handleIndoorExit = useCallback(() => {
+    if (indoorBuildingId) {
+      setManuallyExitedBuildingId(indoorBuildingId);
+    }
+    setIndoorBuildingId(null);
+    setIsManualIndoorOverride(false);
+  }, [indoorBuildingId]);
 
   // memoize the polygon lists so they don't re-calculate on every render
   const { sgwPolygons, loyPolygons } = useMemo(() => {
@@ -930,30 +925,29 @@ const handleCloseBuildingSearch = () => {
         .filter((f: GeoJsonFeature) => f.geometry.type === "Polygon")
         .map((feature: GeoJsonFeature, index: number) => {
           const { id: buildingId } = feature.properties;
-          const coordinates = polygonFromGeoJSON(
-            feature.geometry.coordinates[0],
-          );
+          const coordinates = polygonFromGeoJSON(feature.geometry.coordinates[0]);
 
-          const isSelected = selectedBuilding.visible && selectedBuilding.name === buildingId;
+          const isSelected =
+            selectedBuilding.visible && selectedBuilding.name === buildingId;
           const isDestination = destinationBuildingId === buildingId;
-          const dimOthers = (selectedBuilding.visible && !!selectedBuilding.name) && !isSelected;
+          const dimOthers = selectedBuilding.visible && !!selectedBuilding.name && !isSelected;
           const markerKey = `${campus}-${buildingId}`;
-                  return (
-                    <BuildingGroup
-                        key={markerKey}
-                        buildingId={buildingId}
-                        campus={campus}
-                        coordinates={coordinates}
-                        isSelected={isSelected}
-                        isDestination={isDestination}
-                        dimOthers={dimOthers}
-                        handleBuildingPress={handleBuildingPress}
-                        trackDestMarker={trackDestMarker}
-                        markerRefSetter={(markerRef: any) => {
-                          buildingMarkerRefs.current[markerKey] = markerRef;
-                        }}
-                      />
-                  );
+          return (
+            <BuildingGroup
+              key={markerKey}
+              buildingId={buildingId}
+              campus={campus}
+              coordinates={coordinates}
+              isSelected={isSelected}
+              isDestination={isDestination}
+              dimOthers={dimOthers}
+              handleBuildingPress={handleBuildingPress}
+              trackDestMarker={trackDestMarker}
+              markerRefSetter={(markerRef: any) => {
+                buildingMarkerRefs.current[markerKey] = markerRef;
+              }}
+            />
+          );
         });
     };
 
@@ -961,19 +955,18 @@ const handleCloseBuildingSearch = () => {
       sgwPolygons: generatePolygons(SGW, "SGW"),
       loyPolygons: generatePolygons(LOY, "LOY"),
     };
-  }, [
-    destinationBuildingId,
-    handleBuildingPress,
-    selectedBuilding.name,
-    selectedBuilding.visible,
-    trackDestMarker,
-  ]);
+  }, [destinationBuildingId, handleBuildingPress, selectedBuilding.name, selectedBuilding.visible, trackDestMarker]);
 
   const mapID = useMemo(() => {
-    return colorScheme === "dark"
-      ? "eb0ccd6d2f7a95e23f1ec398"
-      : "eb0ccd6d2f7a95e117328051";
+    return colorScheme === "dark" ? "eb0ccd6d2f7a95e23f1ec398" : "eb0ccd6d2f7a95e117328051";
   }, [colorScheme]);
+
+  const isIOS = Platform.OS === "ios";
+  const navPanelBgColor = isIOS
+    ? "transparent"
+    : colorScheme === "dark"
+      ? "#2C2C2E"
+      : "#FFFFFF";
 
   return (
     <View style={styles.container}>
@@ -1004,28 +997,22 @@ const handleCloseBuildingSearch = () => {
         loadingEnabled
         rotateEnabled={false}
         accessibilityElementsHidden={isSheetVisibleForAccessibility}
-        importantForAccessibility={
-          isSheetVisibleForAccessibility ? "no-hide-descendants" : "yes"
-        }
+        importantForAccessibility={isSheetVisibleForAccessibility ? "no-hide-descendants" : "yes"}
       >
         {/* ---------------- overlays ---------------- */}
         {sgwPolygons}
         {loyPolygons}
 
         {/* ---------------- labels ---------------- */}
-        {(Object.keys(CampusConfig) as (keyof typeof CampusConfig)[]).map(
-          (campus) => (
-            <CampusLabels
-              key={`label-${campus}`}
-              campus={campus}
-              data={CampusConfig[campus].labels}
-              longitudeDelta={mapRegion.longitudeDelta}
-              onLabelPress={(buildingId) =>
-                handleBuildingPress(buildingId, campus)
-              }
-            />
-          ),
-        )}
+        {(Object.keys(CampusConfig) as (keyof typeof CampusConfig)[]).map(campus => (
+          <CampusLabels
+            key={`label-${campus}`}
+            campus={campus}
+            data={CampusConfig[campus].labels}
+            longitudeDelta={mapRegion.longitudeDelta}
+            onLabelPress={buildingId => handleBuildingPress(buildingId, campus)}
+          />
+        ))}
 
         {userLocation && (
           <Marker
@@ -1056,23 +1043,19 @@ const handleCloseBuildingSearch = () => {
               }}
               collapsable={false}
             >
-              {Platform.OS === "android" && (
-                <Text style={{ width: 1, height: 1, opacity: 0 }}> </Text>
-              )}
+              {Platform.OS === "android" && <Text style={{ width: 1, height: 1, opacity: 0 }}> </Text>}
             </View>
           </Marker>
         )}
 
-        <RoutePolyline startLocation={routeStartLocation} />
+        {startBuildingId !== destinationBuildingId && <RoutePolyline startLocation={routeStartLocation} />}
 
-        {transitNavigationStops.map((stop) => (
+        {transitNavigationStops.map(stop => (
           <Marker
             key={stop.key}
             coordinate={stop.coordinate}
             onPress={() => {
-              setSelectedTransitStopKey((previousKey) =>
-                previousKey === stop.key ? null : stop.key,
-              );
+              setSelectedTransitStopKey(previousKey => (previousKey === stop.key ? null : stop.key));
             }}
             tracksViewChanges={false}
             zIndex={1002}
@@ -1088,8 +1071,7 @@ const handleCloseBuildingSearch = () => {
                 justifyContent: "center",
                 backgroundColor: stop.pinColor,
                 borderWidth: 2,
-                borderColor:
-                  selectedTransitStopKey === stop.key ? "#FFFFFF" : "#F2F2F7",
+                borderColor: selectedTransitStopKey === stop.key ? "#FFFFFF" : "#F2F2F7",
               }}
             >
               <PlatformIcon
@@ -1103,7 +1085,7 @@ const handleCloseBuildingSearch = () => {
         ))}
       </MapView>
 
-      {selectedTransitStop && (
+      {selectedTransitStop && !indoorBuildingId && (
         <View
           style={{
             position: "absolute",
@@ -1154,11 +1136,7 @@ const handleCloseBuildingSearch = () => {
               accessibilityRole="button"
               accessibilityLabel="Close transit stop info"
             >
-              <MaterialIcons
-                name="close"
-                size={16}
-                color={colorScheme === "dark" ? "#F2F2F7" : "#1C1C1E"}
-              />
+              <MaterialIcons name="close" size={16} color={colorScheme === "dark" ? "#F2F2F7" : "#1C1C1E"} />
             </TouchableOpacity>
           </View>
           <Text
@@ -1175,7 +1153,7 @@ const handleCloseBuildingSearch = () => {
         </View>
       )}
 
-      {isNavigationActive && routeData && (
+      {isNavigationActive && routeData && !indoorBuildingId && (
         <View
           style={{
             position: "absolute",
@@ -1185,22 +1163,17 @@ const handleCloseBuildingSearch = () => {
             borderRadius: 16,
             paddingHorizontal: 12,
             paddingVertical: 10,
-            backgroundColor:
-              Platform.OS === "ios"
-                ? "transparent"
-                : colorScheme === "dark"
-                  ? "#2C2C2E"
-                  : "#FFFFFF",
-            borderWidth: Platform.OS === "ios" ? 1 : 0,
+            backgroundColor: navPanelBgColor,
+            borderWidth: isIOS ? 1 : 0,
             borderColor:
               colorScheme === "dark"
                 ? "rgba(255,255,255,0.12)"
                 : "rgba(0,0,0,0.08)",
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: Platform.OS === "ios" ? 0.16 : 0.2,
+            shadowOpacity: isIOS ? 0.16 : 0.2,
             shadowRadius: 4,
-            elevation: Platform.OS === "ios" ? 0 : 4,
+            elevation: isIOS ? 0 : 4,
             zIndex: 10002,
             overflow: "hidden",
           }}
@@ -1209,11 +1182,7 @@ const handleCloseBuildingSearch = () => {
           accessibilityLabel={`${modeLabelMap[travelMode]} navigation. ${routeData.duration}, ${routeData.distance}. ${activeInstruction?.instruction || "Continue on current route"}`}
         >
           {Platform.OS === "ios" && (
-            <BlurView
-              intensity={35}
-              tint={colorScheme === "dark" ? "dark" : "light"}
-              style={StyleSheet.absoluteFill}
-            />
+            <BlurView intensity={35} tint={colorScheme === "dark" ? "dark" : "light"} style={StyleSheet.absoluteFill} />
           )}
           <Text
             style={{
@@ -1223,8 +1192,7 @@ const handleCloseBuildingSearch = () => {
             }}
             numberOfLines={1}
           >
-            {modeLabelMap[travelMode]} • {routeData.duration} •{" "}
-            {routeData.distance}
+            {modeLabelMap[travelMode]} • {routeData.duration} • {routeData.distance}
           </Text>
           <Text
             style={{
@@ -1247,15 +1215,13 @@ const handleCloseBuildingSearch = () => {
               }}
             >
               Next in{" "}
-              {typeof activeInstructionDistanceMeters === "number"
-                ? `${activeInstructionDistanceMeters} m`
-                : activeInstruction.distance}
+              {typeof activeInstructionDistanceMeters === "number" ? `${activeInstructionDistanceMeters} m` : activeInstruction.distance}
             </Text>
           )}
         </View>
       )}
 
-      {isNavigationActive && routeData && (
+      {isNavigationActive && routeData && !indoorBuildingId && (
         <View
           style={{
             position: "absolute",
@@ -1265,22 +1231,17 @@ const handleCloseBuildingSearch = () => {
             borderRadius: 18,
             paddingHorizontal: 12,
             paddingVertical: 10,
-            backgroundColor:
-              Platform.OS === "ios"
-                ? "transparent"
-                : colorScheme === "dark"
-                  ? "#2C2C2E"
-                  : "#FFFFFF",
-            borderWidth: Platform.OS === "ios" ? 1 : 0,
+            backgroundColor: navPanelBgColor,
+            borderWidth: isIOS ? 1 : 0,
             borderColor:
               colorScheme === "dark"
                 ? "rgba(255,255,255,0.12)"
                 : "rgba(0,0,0,0.08)",
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: Platform.OS === "ios" ? 0.16 : 0.2,
+            shadowOpacity: isIOS ? 0.16 : 0.2,
             shadowRadius: 4,
-            elevation: Platform.OS === "ios" ? 0 : 4,
+            elevation: isIOS ? 0 : 4,
             zIndex: 10002,
             flexDirection: "row",
             alignItems: "center",
@@ -1290,11 +1251,7 @@ const handleCloseBuildingSearch = () => {
           accessible={false}
         >
           {Platform.OS === "ios" && (
-            <BlurView
-              intensity={35}
-              tint={colorScheme === "dark" ? "dark" : "light"}
-              style={StyleSheet.absoluteFill}
-            />
+            <BlurView intensity={35} tint={colorScheme === "dark" ? "dark" : "light"} style={StyleSheet.absoluteFill} />
           )}
           <View>
             <Text
@@ -1336,102 +1293,90 @@ const handleCloseBuildingSearch = () => {
               accessibilityHint="Ends active navigation and closes route guidance"
               testID="cancel-navigation-button"
             >
-              <PlatformIcon
-                materialName="close"
-                iosName="xmark"
-                size={18}
-                color="#FFFFFF"
-              />
+              <PlatformIcon materialName="close" iosName="xmark" size={18} color="#FFFFFF" />
             </TouchableOpacity>
-          </View>        
+          </View>
         </View>
       )}
 
-{/* ---------------- Building Search Modal ---------------- */}
-<Modal
-  visible={buildingSearchVisible}
-  animationType="slide"
-  transparent
-  onRequestClose={() => setBuildingSearchVisible(false)}
->
-  <View
-    style={{
-      flex: 1,
-      backgroundColor: "rgba(0,0,0,0.3)",
-      justifyContent: "flex-start",
-      paddingHorizontal: 20,
-      paddingVertical: 50
-    }}
-  >
-    <View
-      style={{
-        backgroundColor: colorScheme === "dark" ? "#1C1C1E" : "#FFFFFF",
-        borderRadius: 16,
-        padding: 16
-      }}
-    >
-      <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8, color: "#fff" }}>
-        Search Building
-      </Text>
-      <TextInput
-        ref={buildingSearchInputRef}
-        placeholder="Type building name..."
-        style={{
-          borderWidth: 1,
-          borderColor: "#ccc",
-          borderRadius: 8,
-          padding: 8,
-          color: colorScheme === "dark" ? "#FFFFFF" : "#000000",
-        }}
-        onChangeText={(text) => setSearchQuery(text)}
-      />
-    <FlatList
-  data={filteredBuildings}
-  keyExtractor={(item) => item.id}
-  renderItem={({ item }) => (
-    <Pressable
-      onPress={() => {
-        setBuildingSearchVisible(false);
+      {/* ---------------- Building Search Modal ---------------- */}
+      <Modal visible={buildingSearchVisible} animationType="slide" transparent onRequestClose={() => setBuildingSearchVisible(false)}>
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.3)",
+            justifyContent: "flex-start",
+            paddingHorizontal: 20,
+            paddingVertical: 50,
+          }}
+        >
+          <View
+            style={{
+              backgroundColor: colorScheme === "dark" ? "#1C1C1E" : "#FFFFFF",
+              borderRadius: 16,
+              padding: 16,
+            }}
+          >
+            <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 8, color: "#fff" }}>Search Building</Text>
+            <TextInput
+              ref={buildingSearchInputRef}
+              placeholder="Type building name..."
+              style={{
+                borderWidth: 1,
+                borderColor: "#ccc",
+                borderRadius: 8,
+                padding: 8,
+                color: colorScheme === "dark" ? "#FFFFFF" : "#000000",
+              }}
+              onChangeText={text => setSearchQuery(text)}
+            />
+            <FlatList
+              data={filteredBuildings}
+              keyExtractor={item => item.id}
+              renderItem={({ item }) => (
+                <Pressable
+                  onPress={() => {
+                    setBuildingSearchVisible(false);
 
-        // Cast item.campus to the literal type
-        const campusKey = item.campus as "SGW" | "LOY";
-          // Zoom the map to the building
-  if (item.coordinates) {
-    zoomToBuilding(item.coordinates);
-  }
-        // Call the same handler as when tapping a building
-        handleBuildingPress(item.id, campusKey, item.coordinates);
+                    // Cast item.campus to the literal type
+                    const campusKey = item.campus as "SGW" | "LOY";
+                    // Zoom the map to the building
+                    if (item.coordinates) {
+                      zoomToBuilding(item.coordinates);
+                    }
+                    // Call the same handler as when tapping a building
+                    handleBuildingPress(item.id, campusKey, item.coordinates);
 
-        setSearchQuery("");
-      }}
-      style={{ paddingVertical: 10 }}
-    >
-      <Text
-        style={{
-          fontSize: 14,
-          color: colorScheme === "dark" ? "#FFFFFF" : "#000000",
-        }}
-      >
-        {item.name}
-      </Text>
-    </Pressable>
-  )}
-/>
-      <TouchableOpacity
-        onPress={() => {
-          // Close the search modal
-          setBuildingSearchVisible(false);
+                    setSearchQuery("");
+                  }}
+                  style={{ paddingVertical: 10 }}
+                >
+                  <Text
+                    style={{
+                      fontSize: 14,
+                      color: colorScheme === "dark" ? "#FFFFFF" : "#000000",
+                    }}
+                  >
+                    {item.name}
+                  </Text>
+                </Pressable>
+              )}
+            />
+            <TouchableOpacity
+              onPress={() => {
+                // Close the search modal
+                setBuildingSearchVisible(false);
 
-          // Trigger the building selection
-         // handleSelectBuildingFromSearch(building.id, building.campus);
-        }}
-        style={{ marginTop: 12, alignSelf: "flex-end" }}
-      >
-        <Text style={{ color: "#B03060", fontWeight: "600" }}>Close</Text>
-      </TouchableOpacity>
-    </View>
-  </View>
-</Modal>
+                // Trigger the building selection
+                // handleSelectBuildingFromSearch(building.id, building.campus);
+              }}
+              style={{ marginTop: 12, alignSelf: "flex-end" }}
+            >
+              <Text style={{ color: "#B03060", fontWeight: "600" }}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
       {indoorBuildingId && INDOOR_DATA[indoorBuildingId] && (
         <IndoorMapOverlay
           buildingData={INDOOR_DATA[indoorBuildingId]}
@@ -1439,7 +1384,35 @@ const handleCloseBuildingSearch = () => {
           startRoomId={startRoom}
           destinationBuildingId={destinationBuildingId}
           destinationRoomId={destinationRoom}
-          onExit={() => setIndoorBuildingId(null)}
+          isNavigationActive={isNavigationActive}
+          onStartNavigation={() => {
+            setIsNavigationActive(true);
+            setShowDirections(false);
+            setIsManualIndoorOverride(true);
+          }}
+          onSetStartRoom={(roomLabel, targetBuildingId) => {
+            const bId = targetBuildingId || indoorBuildingId;
+            if (!bId) return;
+            const meta = SGWBuildingMetadata[bId] || LoyolaBuildingMetadata[bId];
+            const searchMeta = SGWBuildingSearchMetadata[bId] || LoyolaBuildingSearchMetadata[bId];
+            const coords = searchMeta?.coordinates || selectedBuilding.coords || mapCenter;
+            const bName = meta?.name || bId;
+            setStartPoint(bId, coords, bName, roomLabel);
+            setShowDirections(true);
+          }}
+          onSetDestinationRoom={(roomLabel, targetBuildingId) => {
+            const bId = targetBuildingId || indoorBuildingId;
+            if (!bId) return;
+            const meta = SGWBuildingMetadata[bId] || LoyolaBuildingMetadata[bId];
+            const searchMeta = SGWBuildingSearchMetadata[bId] || LoyolaBuildingSearchMetadata[bId];
+            const coords = searchMeta?.coordinates || selectedBuilding.coords || mapCenter;
+            const bName = meta?.name || bId;
+            setDestination(bId, coords, bName, roomLabel);
+            setShowDirections(true);
+          }}
+          onExit={handleIndoorExit}
+          onCancelNavigation={handleEndNavigation}
+          onToggleOutdoorMap={handleToggleOutdoorMap}
         />
       )}
 
@@ -1462,13 +1435,14 @@ const handleCloseBuildingSearch = () => {
         ref={destinationPopupRef}
         visible={showDirections}
         onClose={handleCloseDestinationPopup}
+        showOpenIndoorButton={selectedBuilding.name in INDOOR_DATA}
+        onOpenIndoorPress={() => handleOpenIndoorMap(selectedBuilding.name)}
       />
 
       {showDirections && !isNavigationActive && (
         <View
-          onLayout={(event) => {
-            const { height } = event.nativeEvent.layout;
-            setSearchPanelHeight(height);
+          onLayout={event => {
+            setSearchPanelHeight(event.nativeEvent.layout.height);
           }}
           style={{
             top: insets.top + 63,
@@ -1485,6 +1459,7 @@ const handleCloseBuildingSearch = () => {
             destinationRoom={destinationRoom}
             setDestination={setDestination}
             userLocationBuildingId={userLocationBuildingId}
+            isIndoorView={!!indoorBuildingId}
           />
         </View>
       )}
@@ -1522,9 +1497,7 @@ const handleCloseBuildingSearch = () => {
             borderRadius: 5,
           }}
         >
-          <Text style={{ color: "#B03060", fontSize: 12 }}>
-            {locationError}
-          </Text>
+          <Text style={{ color: "#B03060", fontSize: 12 }}>{locationError}</Text>
         </View>
       )}
     </View>

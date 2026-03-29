@@ -27,8 +27,8 @@ const googleCalendarAuthStyles = StyleSheet.create({
   text: {
     fontSize: 16, 
     paddingBottom:3
-},
-nestedText: {
+  },
+  nestedText: {
     fontSize: 16, 
     paddingBottom:3,
     paddingLeft:20
@@ -40,6 +40,12 @@ nestedText: {
   loadingText: {
     marginTop: 10,
     color: "#666",
+  },
+  errorText: {
+    color: "#B03060CC",
+    fontSize: 14,
+    marginBottom: 12,
+    textAlign: "center",
   },
 });
 export {googleCalendarAuthStyles as styles};
