@@ -21,6 +21,7 @@ export default function GoogleCalendarAuth({
   onAuthSuccess,
 }: Readonly<{ onAuthSuccess?: () => void }>) {
   const [status, setStatus] = useState<AuthStatus>("checking");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const isMounted = useRef(true);
 
   const iOSId = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || "";
@@ -44,13 +45,11 @@ export default function GoogleCalendarAuth({
     redirectUri,
   });
 
-  
   useEffect(() => {
     isMounted.current = true;
     runAuthFlow(promptAsync);
     return () => { isMounted.current = false; };
   }, []);
-
 
   useEffect(() => {
     if (!response) return;
@@ -63,14 +62,17 @@ export default function GoogleCalendarAuth({
 
   const runAuthFlow = async (prompt: () => Promise<any>) => {
     setStatus("loading");
+    setErrorMessage(null);
     try {
       const flow = new GoogleCalendarAuthFlow(prompt, () => {
         if (isMounted.current) onAuthSuccess?.();
       });
       await flow.execute();
     } catch (error) {
-      
-      if (isMounted.current) setStatus("error");
+      if (isMounted.current) {
+        setStatus("error");
+        setErrorMessage(error instanceof Error ? error.message : "Authentication failed. Please try again.");
+      }
     }
   };
 
@@ -91,6 +93,10 @@ export default function GoogleCalendarAuth({
     <View style={styles.container}>
       <Image source={require("@/assets/images/icon.png")} style={styles.logo} />
       <Text style={styles.title}>CONUWALKS</Text>
+
+      {status === "error" && (
+        <Text style={styles.errorText}>{errorMessage}</Text>
+      )}
 
       <View
         style={{
