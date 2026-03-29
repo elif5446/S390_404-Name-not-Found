@@ -128,7 +128,7 @@ const BuildingGroup = React.memo(
         ? themeColor + "C8"
         : dimOthers
           ? themeColor + "55"
-          : themeColor + "90";
+          : themeColor + "B0";
 
     return (
       <React.Fragment>
