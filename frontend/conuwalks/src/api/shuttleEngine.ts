@@ -2,7 +2,7 @@ import { LatLng } from "react-native-maps";
 import { RouteData, DirectionStep } from "@/src/context/DirectionsContext";
 import { distanceMetersBetween } from "@/src/utils/geometry";
 import { getLocalShuttleSchedule, ShuttleSchedule } from "./shuttleSyncService";
-import { getDirections } from "./directions";
+import { getDirections } from "@/src/outdoorDirections/directionsService";
 
 const SGW_STOP: LatLng = { latitude: 45.457795, longitude: -73.6389265 };
 const LOY_STOP: LatLng = { latitude: 45.4970723, longitude: -73.578448 };

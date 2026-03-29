@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useCallback, useMemo, useState } from "react"
 import { Platform, View } from "react-native";
 import { LatLng, Polyline, Marker } from "react-native-maps";
 import { useDirections, DirectionStep, RouteData } from "@/src/context/DirectionsContext";
-import { getDirections, decodePolyline } from "@/src/api/directions";
+import { getDirections, decodePolyline } from "@/src/outdoorDirections/directionsService";
 import { getShuttleRouteIfApplicable } from "@/src/api/shuttleEngine";
 import { calculateIndoorPenaltySeconds } from "@/src/indoors/services/indoorRoutingHelper";
 import { calculateEtaFromSeconds, formatDurationFromSeconds } from "../utils/time";

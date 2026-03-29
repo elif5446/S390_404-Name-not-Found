@@ -60,8 +60,7 @@ describe("DirectionsContext", () => {
       const mockCoords = { latitude: 45.1, longitude: -73.1 };
 
       act(() => {
-        result.current.setDestination("MB", mockCoords, "JMSB");
-        result.current.setDestinationRoom("MB-1.210");
+        result.current.setDestination("MB", mockCoords, "JMSB", "MB-1.210");
       });
 
       expect(result.current.destinationBuildingId).toBe("MB");
@@ -99,6 +98,7 @@ describe("DirectionsContext", () => {
       id: "1",
       distance: "1km",
       duration: "10m",
+      baseDurationSeconds: 600,
       eta: "12:00",
       overviewPolyline: "",
       polylinePoints: [],
@@ -110,6 +110,7 @@ describe("DirectionsContext", () => {
       id: "2",
       distance: "2km",
       duration: "20m",
+      baseDurationSeconds: 1200,
       eta: "12:10",
       overviewPolyline: "",
       polylinePoints: [],
@@ -120,13 +121,17 @@ describe("DirectionsContext", () => {
     it("updates routes and bounds selectedRouteIndex", () => {
       const { result } = renderHook(() => useDirections(), { wrapper });
 
+      // Set the out-of-bounds index first, then supply routes in a separate act
+      // so the functional setState inside setRoutes sees the updated index (5).
       act(() => {
-        // set an index out of bounds first
         result.current.setSelectedRouteIndex(5);
+      });
+
+      act(() => {
         result.current.setRoutes([mockRoute1, mockRoute2]);
       });
 
-      // the hook logic should clamp the selectedrouteindex to 1 (the last valid index)
+      // setRoutes clamps the index to routes.length - 1 (i.e. 1)
       expect(result.current.routes.length).toBe(2);
       expect(result.current.selectedRouteIndex).toBe(1);
     });
@@ -136,10 +141,13 @@ describe("DirectionsContext", () => {
 
       act(() => {
         result.current.setRoutes([mockRoute1, mockRoute2]);
+      });
+
+      act(() => {
         result.current.setSelectedRouteIndex(1);
       });
 
-      // because of the useeffect in the context, routedata should match mockroute2
+      // Because of the useEffect in the context, routeData should match mockRoute2
       expect(result.current.routeData).toEqual(mockRoute2);
     });
 
@@ -200,7 +208,7 @@ describe("DirectionsContext", () => {
     it("resetDirections wipes all state back to defaults", () => {
       const { result } = renderHook(() => useDirections(), { wrapper });
 
-      // dirties the state
+      // Dirty the state
       act(() => {
         result.current.setStartPoint(
           "H",
@@ -218,12 +226,12 @@ describe("DirectionsContext", () => {
         result.current.setError("Error");
       });
 
-      // reset
+      // Reset
       act(() => {
         result.current.resetDirections();
       });
 
-      // verify clean slate
+      // Verify clean slate
       expect(result.current.startBuildingId).toBeNull();
       expect(result.current.destinationBuildingId).toBeNull();
       expect(result.current.travelMode).toBe("walking");
