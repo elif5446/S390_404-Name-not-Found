@@ -48,7 +48,9 @@ export default function GoogleCalendarAuth({
   useEffect(() => {
     isMounted.current = true;
     runAuthFlow(promptAsync);
-    return () => { isMounted.current = false; };
+    return () => {
+      isMounted.current = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -65,13 +67,21 @@ export default function GoogleCalendarAuth({
     setErrorMessage(null);
     try {
       const flow = new GoogleCalendarAuthFlow(prompt, () => {
-        if (isMounted.current) onAuthSuccess?.();
+        if (isMounted.current) {
+          onAuthSuccess?.();
+          // ✅ Return to ready state after successful auth so the UI is stable
+          setStatus("ready");
+        }
       });
       await flow.execute();
     } catch (error) {
       if (isMounted.current) {
         setStatus("error");
-        setErrorMessage(error instanceof Error ? error.message : "Authentication failed. Please try again.");
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : "Authentication failed. Please try again."
+        );
       }
     }
   };
@@ -83,7 +93,9 @@ export default function GoogleCalendarAuth({
       <View style={styles.centerContainer}>
         <ActivityIndicator size="large" color="#4285F4" />
         <Text style={styles.loadingText}>
-          {status === "checking" ? "Checking login status..." : "Logging you in..."}
+          {status === "checking"
+            ? "Checking login status..."
+            : "Logging you in..."}
         </Text>
       </View>
     );
@@ -112,14 +124,26 @@ export default function GoogleCalendarAuth({
         />
       </View>
 
-      <Text style={{ fontSize: 16, paddingTop: 16, paddingBottom: 6, fontWeight: "bold" }}>
+      <Text
+        style={{
+          fontSize: 16,
+          paddingTop: 16,
+          paddingBottom: 6,
+          fontWeight: "bold",
+        }}
+      >
         Steps to use Conuwalks:
       </Text>
       <View>
-        <Text style={styles.text}>1. Connect your Google account to the app.</Text>
-        <Text style={styles.text}>2. Enter your classes on your Google Calendar as events.</Text>
+        <Text style={styles.text}>
+          1. Connect your Google account to the app.
+        </Text>
+        <Text style={styles.text}>
+          2. Enter your classes on your Google Calendar as events.
+        </Text>
         <Text style={styles.nestedText}>
-          2.1 Manually: Enter courses and their location (Building code - Room number) as events.
+          2.1 Manually: Enter courses and their location (Building code - Room
+          number) as events.
         </Text>
         <Text style={styles.nestedText}>
           2.2. Automatically: Export your class schedule using this{" "}
@@ -135,7 +159,9 @@ export default function GoogleCalendarAuth({
           </Text>
           .
         </Text>
-        <Text style={styles.text}>3. Once you login, you can see directions to each class!</Text>
+        <Text style={styles.text}>
+          3. Once you login, you can see directions to each class!
+        </Text>
       </View>
     </View>
   );
