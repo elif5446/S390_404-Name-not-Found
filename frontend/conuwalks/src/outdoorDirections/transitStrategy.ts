@@ -1,18 +1,11 @@
-import { LatLng } from "react-native-maps";
-import { RouteData } from "@/src/context/DirectionsContext";
-import { ITravelModeStrategy } from "./TravelModeStrategy";
-import {
-  clampToFuture,
-  fetchRoutesApi,
-  fetchLegacyApi,
-  mapRoutesApiResponse,
-  mapLegacyApiResponse,
-  isRoutesBlockedError,
-} from "@/src/api/googleDirectionsAPI";
+import { ConcreteGoogleStrategy } from "./concreteGoogleStrategy";
+import { clampToFuture } from "@/src/api/googleDirectionsAPI";
 
-export class TransitStrategy implements ITravelModeStrategy {
+export class TransitStrategy extends ConcreteGoogleStrategy {
   readonly apiMode = "TRANSIT" as const;
+  readonly googleTravelMode = "transit" as const;
 
+  // Transit is the only mode that supports arrivalTime
   applyTimeToRoutesBody(
     body: Record<string, unknown>,
     targetTime: Date | null,
@@ -21,7 +14,6 @@ export class TransitStrategy implements ITravelModeStrategy {
     const safe = clampToFuture(targetTime);
     if (!safe) return null;
 
-    // Transit is the only mode that supports arrivalTime
     if (timeMode === "arrive") {
       body.arrivalTime = safe.toISOString();
     } else {
@@ -30,6 +22,7 @@ export class TransitStrategy implements ITravelModeStrategy {
     return safe;
   }
 
+  // Transit is the only mode that supports arrival_time in the legacy API
   applyTimeToLegacyUrl(
     url: string,
     targetTime: Date | null,
@@ -39,11 +32,10 @@ export class TransitStrategy implements ITravelModeStrategy {
     if (!safe) return { url, safeTargetTime: null };
 
     const timeSeconds = Math.floor(safe.getTime() / 1000);
-    if (timeMode === "arrive") {
-      url += `&arrival_time=${timeSeconds}`;
-    } else {
-      url += `&departure_time=${timeSeconds}`;
-    }
+    url += timeMode === "arrive"
+      ? `&arrival_time=${timeSeconds}`
+      : `&departure_time=${timeSeconds}`;
+
     return { url, safeTargetTime: safe };
   }
 
@@ -69,30 +61,5 @@ export class TransitStrategy implements ITravelModeStrategy {
     }
 
     return "Take transit";
-  }
-
-  async fetchRoutes(
-    start: LatLng,
-    destination: LatLng,
-    targetTime: Date | null,
-    timeMode: "leave" | "arrive",
-  ): Promise<RouteData[]> {
-    try {
-      const { rawRoutes, safeTargetTime } = await fetchRoutesApi(start, destination, this, targetTime, timeMode);
-      const routes = mapRoutesApiResponse(rawRoutes, safeTargetTime, timeMode, "transit", this);
-      if (!routes.length) throw new Error("No route polyline returned from API");
-      return routes;
-    } catch (error) {
-      if (error instanceof Error) {
-        if (error.name === "AbortError") throw new Error("Directions request timed out. Please try again.");
-        if (isRoutesBlockedError(error.message)) {
-          const { rawRoutes, safeTargetTime } = await fetchLegacyApi(start, destination, this, targetTime, timeMode, "transit");
-          const routes = mapLegacyApiResponse(rawRoutes, safeTargetTime, timeMode, "transit", this);
-          if (!routes.length) throw new Error("No route polyline returned from Directions API");
-          return routes;
-        }
-      }
-      throw error;
-    }
   }
 }

@@ -2,6 +2,7 @@ import { LatLng } from "react-native-maps";
 import { RouteData } from "@/src/context/DirectionsContext";
 
 export type TravelMode = "walking" | "driving" | "transit" | "bicycling"| "shuttle";
+//if adding more strategies from google maps they need to be updated in both types
 export type GoogleTravelMode = "walking" | "driving" | "transit" | "bicycling";
 export type RoutesApiTravelMode = "WALK" | "DRIVE" | "TRANSIT" | "BICYCLE";
 
