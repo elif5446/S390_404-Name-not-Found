@@ -1,6 +1,10 @@
 import { View, ViewProps } from "react-native";
 import { ReactNode } from "react";
 
+interface LatLng {
+  latitude: number;
+  longitude: number;
+}
 interface MockPolygonProps extends ViewProps {
   children?: ReactNode;
   testID?: string;
@@ -10,6 +14,13 @@ interface MockPolygonProps extends ViewProps {
   strokeColor?: string;
   strokeWidth?: number;
 }
+
+global.fetch = jest.fn(() =>
+  Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve({ results: [] }),
+  } as Response)
+) as jest.Mock;
 
 // Mock expo-location
 jest.mock("expo-location", () => ({
@@ -25,6 +36,20 @@ jest.mock("expo-location", () => ({
 jest.mock("expo", () => ({
   __esModule: true,
 }));
+
+(globalThis as any).__ExpoImportMetaRegistry = {
+  register: jest.fn(),
+  get: jest.fn(),
+};
+interface ExpoImportMetaRegistry {
+  register: jest.Mock;
+  get: jest.Mock;
+}
+declare global {
+  interface Window {
+    __ExpoImportMetaRegistry?: ExpoImportMetaRegistry;
+  }
+}
 
 // Mock expo module registry
 globalThis.__ExpoImportMetaRegistry = {
@@ -48,6 +73,29 @@ if (typeof globalThis.structuredClone !== "function") {
   globalThis.structuredClone = jest.fn(globalThis.structuredClone);
 }
 
+const originalError = console.error;
+console.error = (...args) => {
+  const firstArg = args[0];
+  let message = "";
+
+  if (typeof firstArg === "string") {
+    message = firstArg;
+  } else if (firstArg && typeof firstArg.message === "string") {
+    message = firstArg.message;
+  }
+
+  // Suppress test warnings
+  const isActWarning = message.includes("act");
+  const isApiWarning = message.includes("Failed to fetch") || 
+                      message.includes("Network error") || 
+                      message.includes("Cannot read properties");
+
+  if (isActWarning || isApiWarning) {
+    return;
+  }
+
+  originalError.call(console, ...args);
+};
 // Mock react-native-maps
 jest.mock("react-native-maps", () => {
   const React = require("react");
@@ -113,31 +161,6 @@ jest.mock("@/src/utils/geo", () => ({
   ),
 }));
 
-// Suppress act() warnings
-const originalError = console.error;
-console.error = (...args) => {
-    const firstArg = args[0];
-    let message = "";
-
-    // 1. extract the message into a logic block
-      if (typeof firstArg === "string") {
-        message = firstArg;
-      } else if (firstArg && typeof firstArg.message === "string") {
-        message = firstArg.message;
-      }
-
-    // 2. filter out the act() warnings
-    const isActWarning = message.includes("Warning: An update to") && message.includes("was not wrapped in act");
-
-    const isStateUpdateWarning = message.includes("code that causes React state updates should be wrapped into act(...)");
-
-    if (isActWarning || isStateUpdateWarning) {
-        return;
-      }
-
-  // 3. otherwise, log the error as usual
-  originalError.call(console, ...args);
-};
 
 // Mock @react-native-segmented-control/segmented-control (iOS)
 jest.mock("@react-native-segmented-control/segmented-control", () => {

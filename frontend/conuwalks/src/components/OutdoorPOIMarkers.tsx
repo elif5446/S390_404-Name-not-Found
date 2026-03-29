@@ -67,12 +67,13 @@ const OutdoorPOIMarkers: React.FC<OutdoorPOIMarkersProps> = ({
   }, [pois, origin, radiusMeters]);
 
   return (
-    <>
+      <View testID={`poi-${poiType.toLowerCase().replace(/\s+/g, "-")}`}>
       {filtered.map((poi) => (
         <Marker
           key={poi.id}
           coordinate={{ latitude: poi.latitude, longitude: poi.longitude }}
           tracksViewChanges={false}
+          testID={`marker-${poi.id}`}
           anchor={{ x: 0.5, y: 1 }} 
         >
           {/* Marker Bubble */}
@@ -153,7 +154,7 @@ const OutdoorPOIMarkers: React.FC<OutdoorPOIMarkersProps> = ({
 </Callout>
         </Marker>
       ))}
-    </>
+    </View>
   );
 };
 
