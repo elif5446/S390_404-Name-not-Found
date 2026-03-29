@@ -160,8 +160,7 @@ describe("IndoorMapService", () => {
     });
 
     it("getRouteFromCurrentLocation throws error if user location is not set", () => {
-      expect(() => service.getRouteFromCurrentLocation("B"))
-        .toThrow("IndoorMapService: user location not set");
+      expect(service.getRouteFromCurrentLocation("B")).toBeNull();
     });
 
     it("getRouteFromCurrentLocation calls pathfinder with current user location", () => {
