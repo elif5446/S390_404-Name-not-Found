@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
-import POIPanel from '../../components/POIPanel'; // Adjust path as needed
+import POIPanel from '../../components/POIPanel'; 
 
 // Mock dependencies
 jest.mock('expo-blur', () => ({
@@ -50,22 +50,19 @@ describe('POIPanel', () => {
     expect(mockOnClose).toHaveBeenCalledTimes(1);
   });
 
-  // ✅ FIXED: Create SEPARATE mock for this test
   it('does not crash when onPOISelect is not provided', () => {
-    const closeMock = jest.fn(); // Fresh mock just for this test
+    const closeMock = jest.fn(); // mock just for this test
     
     const { getByText } = render(
       <POIPanel 
         visible={true} 
         onClose={closeMock}
-        // ✅ NO onPOISelect passed - tests optional chaining
       />
     );
     
     fireEvent.press(getByText('Restaurants'));
     
     expect(closeMock).toHaveBeenCalledTimes(1);
-    // Component uses onPOISelect?.(item) so no crash!
   });
 
   it('renders all POI types', () => {

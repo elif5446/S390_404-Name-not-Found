@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import POIListPanel from '../../components/POIListPanel'; // Adjust path
+import POIListPanel from '../../components/POIListPanel'; 
 import { POIPlace } from '@/src/api/places';
 
 jest.mock('expo-blur', () => ({

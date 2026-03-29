@@ -62,7 +62,7 @@ describe('OutdoorPOIMarkers', () => {
       openHours: [],
     };
 
-    const { queryByTestId } = render( // ✅ Destructure here
+    const { queryByTestId } = render( 
       <OutdoorPOIMarkers
         campus="SGW"
         poiType="Restaurants"
@@ -106,7 +106,7 @@ describe('OutdoorPOIMarkers', () => {
       openHours: [],
     };
 
-    const { queryByTestId } = render( // ✅ Destructure here
+    const { queryByTestId } = render( 
       <OutdoorPOIMarkers
         campus="SGW"
         poiType="Banks"
