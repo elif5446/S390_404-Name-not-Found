@@ -3,24 +3,26 @@ import { render, screen, fireEvent } from "@testing-library/react-native";
 import ScheduleView from "../../components/ScheduleView";
 import { useGoogleCalendar } from "@/src/hooks/useGoogleCalendar";
 import { useDirections } from "@/src/context/DirectionsContext";
+import { useUserLocation } from "@/src/hooks/useUserLocation";
+import {
+  calculatePolygonCenter,
+  distanceMetersBetween,
+} from "@/src/utils/geometry";
+import { parseLocation } from "@/src/hooks/useBuildingEvents";
 
 // Mock SafeAreaView to return a standard View for testing
 jest.mock("react-native-safe-area-context", () => {
   const React = require("react");
   return {
-    SafeAreaView: (props: any) => React.createElement("View", props, props.children),
+    SafeAreaView: (props: any) =>
+      React.createElement("View", props, props.children),
     useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
   };
 });
 
-// Mock internal hooks and assets
 jest.mock("@/src/hooks/useGoogleCalendar");
 jest.mock("@/src/context/DirectionsContext");
-jest.mock("@/src/hooks/useUserLocation", () => ({
-  useUserLocation: () => ({
-    location: { latitude: 45.497, longitude: -73.578 },
-  }),
-}));
+jest.mock("@/src/hooks/useUserLocation");
 jest.mock("@expo/vector-icons/MaterialIcons", () => "MaterialIcons");
 jest.mock("expo-symbols", () => ({ SymbolView: () => null }));
 
@@ -29,20 +31,24 @@ jest.mock("@/src/utils/geometry", () => ({
     latitude: 45.497,
     longitude: -73.578,
   })),
-  // 810 meters / 1.35 m/s / 60 seconds = exactly 10 minutes!
-  distanceMetersBetween: jest.fn(() => 810),
+  distanceMetersBetween: jest.fn(() => 810), // 10 min
 }));
 
 jest.mock("@/src/hooks/useBuildingEvents", () => ({
-  parseLocation: jest.fn(() => ({ buildingCode: "H", room: "820" })),
+  parseLocation: jest.fn(() => ({ buildingCode: "H", roomNumber: "820" })),
 }));
 
 jest.mock("@/src/data/metadata/SGW.BuildingMetaData", () => ({
-  SGWBuildingMetadata: { H: { name: "Hall Building" } },
+  SGWBuildingMetadata: {
+    H: { name: "Hall Building" },
+    EV: { name: "EV Building" },
+  },
 }));
 
 jest.mock("@/src/data/metadata/LOY.BuildingMetadata", () => ({
-  LoyolaBuildingMetadata: {},
+  LoyolaBuildingMetadata: {
+    CC: { name: "Centennial Building" },
+  },
 }));
 
 jest.mock("@/src/data/campus/SGW.geojson", () => ({
@@ -56,6 +62,23 @@ jest.mock("@/src/data/campus/SGW.geojson", () => ({
           [
             [-73.577, 45.496],
             [-73.576, 45.496],
+            [-73.576, 45.497],
+            [-73.577, 45.497],
+          ],
+        ],
+      },
+    },
+    {
+      type: "Feature",
+      properties: { id: "EV" },
+      geometry: {
+        type: "Polygon",
+        coordinates: [
+          [
+            [-73.579, 45.495],
+            [-73.578, 45.495],
+            [-73.578, 45.496],
+            [-73.579, 45.496],
           ],
         ],
       },
@@ -64,61 +87,446 @@ jest.mock("@/src/data/campus/SGW.geojson", () => ({
 }));
 
 jest.mock("@/src/data/campus/LOY.geojson", () => ({
-  features: [],
+  features: [
+    {
+      type: "Feature",
+      properties: { id: "CC" },
+      geometry: {
+        type: "Polygon",
+        coordinates: [
+          [
+            [-73.640, 45.458],
+            [-73.639, 45.458],
+            [-73.639, 45.459],
+            [-73.640, 45.459],
+          ],
+        ],
+      },
+    },
+  ],
 }));
-
-jest.mock("@expo/vector-icons/MaterialIcons", () => "MaterialIcons");
-jest.mock("expo-symbols", () => ({ SymbolView: () => null }));
 
 describe("ScheduleView", () => {
   const mockSetDestination = jest.fn();
   const mockSetShowDirections = jest.fn();
   const mockSetStartPoint = jest.fn();
+  const mockFetchUpcomingEvents = jest.fn();
   const mockNavigate = jest.fn();
 
-  const mockEvents = [
-    {
-      id: "1",
-      summary: "Software Engineering",
-      location: "H-820",
-      start: { dateTime: new Date().toISOString() },
-    },
-  ];
+  const now = new Date("2026-03-29T10:00:00.000Z");
+  const tomorrow = new Date("2026-03-30T14:00:00.000Z");
+  const future = new Date("2026-04-02T09:00:00.000Z");
 
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.useFakeTimers();
+    jest.setSystemTime(now);
 
     (useGoogleCalendar as jest.Mock).mockReturnValue({
-      events: mockEvents,
+      events: [],
       loading: false,
       error: null,
-      fetchUpcomingEvents: jest.fn(),
+      fetchUpcomingEvents: mockFetchUpcomingEvents,
     });
 
     (useDirections as jest.Mock).mockReturnValue({
-      startCoords: null, // Needed so the user location useEffect fires properly
+      startCoords: null,
       setStartPoint: mockSetStartPoint,
       setDestination: mockSetDestination,
       setShowDirections: mockSetShowDirections,
     });
+
+    (useUserLocation as jest.Mock).mockReturnValue({
+      location: { latitude: 45.497, longitude: -73.578 },
+    });
+
+    (calculatePolygonCenter as jest.Mock).mockReturnValue({
+      latitude: 45.497,
+      longitude: -73.578,
+    });
+
+    (distanceMetersBetween as jest.Mock).mockReturnValue(810);
+    (parseLocation as jest.Mock).mockReturnValue({
+      buildingCode: "H",
+      roomNumber: "820",
+    });
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it("renders loading state", () => {
+    (useGoogleCalendar as jest.Mock).mockReturnValue({
+      events: [],
+      loading: true,
+      error: null,
+      fetchUpcomingEvents: mockFetchUpcomingEvents,
+    });
+
+    render(<ScheduleView />);
+    expect(screen.UNSAFE_getByType(require("react-native").ActivityIndicator)).toBeTruthy();
+  });
+
+  it("renders empty state when there are no upcoming events", () => {
+    render(<ScheduleView />);
+    expect(screen.getByText("No Upcoming Events")).toBeTruthy();
+  });
+
+  it("calls fetchUpcomingEvents on mount", () => {
+    render(<ScheduleView />);
+    expect(mockFetchUpcomingEvents).toHaveBeenCalledWith(50);
+  });
+
+  it("sets the user as start point on mount when user location exists and startCoords is null", () => {
+    render(<ScheduleView />);
+    expect(mockSetStartPoint).toHaveBeenCalledWith(
+      "USER",
+      { latitude: 45.497, longitude: -73.578 },
+      "Your Location"
+    );
+  });
+
+  it("does not set the start point on mount when startCoords already exists", () => {
+    (useDirections as jest.Mock).mockReturnValue({
+      startCoords: { latitude: 45.5, longitude: -73.57 },
+      setStartPoint: mockSetStartPoint,
+      setDestination: mockSetDestination,
+      setShowDirections: mockSetShowDirections,
+    });
+
+    render(<ScheduleView />);
+    expect(mockSetStartPoint).not.toHaveBeenCalled();
   });
 
   it("renders class details from the calendar correctly", () => {
+    (useGoogleCalendar as jest.Mock).mockReturnValue({
+      events: [
+        {
+          id: "1",
+          summary: "Software Engineering",
+          location: "H-820",
+          start: { dateTime: now.toISOString() },
+          end: { dateTime: new Date("2026-03-29T11:15:00.000Z").toISOString() },
+        },
+      ],
+      loading: false,
+      error: null,
+      fetchUpcomingEvents: mockFetchUpcomingEvents,
+    });
+
     render(<ScheduleView />);
     expect(screen.getByText("Software Engineering")).toBeTruthy();
     expect(screen.getByText("H-820")).toBeTruthy();
+    expect(screen.getByText("Today")).toBeTruthy();
+  });
+
+  it("groups events under Today, Tomorrow, and a normal formatted date", () => {
+    (useGoogleCalendar as jest.Mock).mockReturnValue({
+      events: [
+        {
+          id: "1",
+          summary: "Today Class",
+          location: "H-820",
+          start: { dateTime: now.toISOString() },
+          end: { dateTime: new Date("2026-03-29T11:00:00.000Z").toISOString() },
+        },
+        {
+          id: "2",
+          summary: "Tomorrow Class",
+          location: "EV-1.605",
+          start: { dateTime: tomorrow.toISOString() },
+          end: { dateTime: new Date("2026-03-30T15:00:00.000Z").toISOString() },
+        },
+        {
+          id: "3",
+          summary: "Later Class",
+          location: "CC-101",
+          start: { dateTime: future.toISOString() },
+          end: { dateTime: new Date("2026-04-02T10:00:00.000Z").toISOString() },
+        },
+      ],
+      loading: false,
+      error: null,
+      fetchUpcomingEvents: mockFetchUpcomingEvents,
+    });
+
+    render(<ScheduleView />);
+
+    expect(screen.getByText("Today")).toBeTruthy();
+    expect(screen.getByText("Tomorrow")).toBeTruthy();
+    expect(screen.getByText("Thu, Apr 2")).toBeTruthy();
+  });
+
+  it("renders event description when present", () => {
+    (useGoogleCalendar as jest.Mock).mockReturnValue({
+      events: [
+        {
+          id: "1",
+          summary: "Software Engineering",
+          description: "Team sprint planning",
+          location: "H-820",
+          start: { dateTime: now.toISOString() },
+          end: { dateTime: new Date("2026-03-29T11:15:00.000Z").toISOString() },
+        },
+      ],
+      loading: false,
+      error: null,
+      fetchUpcomingEvents: mockFetchUpcomingEvents,
+    });
+
+    render(<ScheduleView />);
+    expect(screen.getByText("Team sprint planning")).toBeTruthy();
+  });
+
+  it("renders event with only a start dateTime and no end dateTime", () => {
+    (useGoogleCalendar as jest.Mock).mockReturnValue({
+      events: [
+        {
+          id: "1",
+          summary: "Quick Meeting",
+          location: "H-820",
+          start: { dateTime: now.toISOString() },
+          end: {},
+        },
+      ],
+      loading: false,
+      error: null,
+      fetchUpcomingEvents: mockFetchUpcomingEvents,
+    });
+
+    render(<ScheduleView />);
+    expect(screen.getByText("Quick Meeting")).toBeTruthy();
+  });
+
+  it("shows 'Dir' when user location is unavailable", () => {
+    (useUserLocation as jest.Mock).mockReturnValue({
+      location: null,
+    });
+
+    (useGoogleCalendar as jest.Mock).mockReturnValue({
+      events: [
+        {
+          id: "1",
+          summary: "Software Engineering",
+          location: "H-820",
+          start: { dateTime: now.toISOString() },
+          end: { dateTime: new Date("2026-03-29T11:15:00.000Z").toISOString() },
+        },
+      ],
+      loading: false,
+      error: null,
+      fetchUpcomingEvents: mockFetchUpcomingEvents,
+    });
+
+    render(<ScheduleView />);
+    expect(screen.getByText("Dir")).toBeTruthy();
+  });
+
+  it("shows hour-based ETA when travel time is 60 minutes or more", () => {
+    (distanceMetersBetween as jest.Mock).mockReturnValue(4860); // 60 min at 1.35 m/s
+
+    (useGoogleCalendar as jest.Mock).mockReturnValue({
+      events: [
+        {
+          id: "1",
+          summary: "Far Class",
+          location: "H-820",
+          start: { dateTime: now.toISOString() },
+          end: { dateTime: new Date("2026-03-29T11:15:00.000Z").toISOString() },
+        },
+      ],
+      loading: false,
+      error: null,
+      fetchUpcomingEvents: mockFetchUpcomingEvents,
+    });
+
+    render(<ScheduleView />);
+    expect(screen.getByText("1h")).toBeTruthy();
   });
 
   it("initiates navigation logic when the duration button is tapped", () => {
+    (useGoogleCalendar as jest.Mock).mockReturnValue({
+      events: [
+        {
+          id: "1",
+          summary: "Software Engineering",
+          location: "H-820",
+          start: { dateTime: now.toISOString() },
+          end: { dateTime: new Date("2026-03-29T11:15:00.000Z").toISOString() },
+        },
+      ],
+      loading: false,
+      error: null,
+      fetchUpcomingEvents: mockFetchUpcomingEvents,
+    });
+
     render(<ScheduleView onNavigateToClass={mockNavigate} />);
 
-    // Finds the button by the duration text calculated by the mocked distanceMetersBetween
     const navBtn = screen.getByText("10 min");
     fireEvent.press(navBtn);
 
-    // Verify it was correctly parsed and mapped to the Hall Building mock
-    expect(mockSetDestination).toHaveBeenCalledWith("H", expect.any(Object), "Hall Building", undefined);
+    expect(mockSetStartPoint).toHaveBeenCalledWith(
+      "USER",
+      { latitude: 45.497, longitude: -73.578 },
+      "Your Location"
+    );
+    expect(mockSetDestination).toHaveBeenCalledWith(
+      "H",
+      expect.any(Object),
+      "Hall Building",
+      "820"
+    );
     expect(mockSetShowDirections).toHaveBeenCalledWith(true);
     expect(mockNavigate).toHaveBeenCalled();
+  });
+
+  it("does nothing when navigation is attempted with no location", () => {
+    (useGoogleCalendar as jest.Mock).mockReturnValue({
+      events: [
+        {
+          id: "1",
+          summary: "No Location Class",
+          start: { dateTime: now.toISOString() },
+          end: { dateTime: new Date("2026-03-29T11:15:00.000Z").toISOString() },
+        },
+      ],
+      loading: false,
+      error: null,
+      fetchUpcomingEvents: mockFetchUpcomingEvents,
+    });
+
+    render(<ScheduleView onNavigateToClass={mockNavigate} />);
+
+    expect(screen.queryByText("10 min")).toBeNull();
+    expect(mockSetDestination).not.toHaveBeenCalled();
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it("does nothing when parseLocation returns no buildingCode", () => {
+    (parseLocation as jest.Mock).mockReturnValue({ roomNumber: "820" });
+
+    (useGoogleCalendar as jest.Mock).mockReturnValue({
+      events: [
+        {
+          id: "1",
+          summary: "Software Engineering",
+          location: "Unknown",
+          start: { dateTime: now.toISOString() },
+          end: { dateTime: new Date("2026-03-29T11:15:00.000Z").toISOString() },
+        },
+      ],
+      loading: false,
+      error: null,
+      fetchUpcomingEvents: mockFetchUpcomingEvents,
+    });
+
+    render(<ScheduleView />);
+
+    const navBtn = screen.getByText("Dir");
+    fireEvent.press(navBtn);
+
+    expect(mockSetDestination).not.toHaveBeenCalled();
+    expect(mockSetShowDirections).not.toHaveBeenCalled();
+  });
+
+  it("does nothing when building metadata is missing", () => {
+    (parseLocation as jest.Mock).mockReturnValue({
+      buildingCode: "X",
+      roomNumber: "999",
+    });
+
+    (useGoogleCalendar as jest.Mock).mockReturnValue({
+      events: [
+        {
+          id: "1",
+          summary: "Mystery Class",
+          location: "X-999",
+          start: { dateTime: now.toISOString() },
+          end: { dateTime: new Date("2026-03-29T11:15:00.000Z").toISOString() },
+        },
+      ],
+      loading: false,
+      error: null,
+      fetchUpcomingEvents: mockFetchUpcomingEvents,
+    });
+
+    render(<ScheduleView />);
+
+    const navBtn = screen.getByText("Dir");
+    fireEvent.press(navBtn);
+
+    expect(mockSetDestination).not.toHaveBeenCalled();
+    expect(mockSetShowDirections).not.toHaveBeenCalled();
+  });
+
+  it("falls back to average coordinates when polygon center is invalid", () => {
+    (calculatePolygonCenter as jest.Mock).mockReturnValue({
+      latitude: NaN,
+      longitude: NaN,
+    });
+
+    (useGoogleCalendar as jest.Mock).mockReturnValue({
+      events: [
+        {
+          id: "1",
+          summary: "Software Engineering",
+          location: "H-820",
+          start: { dateTime: now.toISOString() },
+          end: { dateTime: new Date("2026-03-29T11:15:00.000Z").toISOString() },
+        },
+      ],
+      loading: false,
+      error: null,
+      fetchUpcomingEvents: mockFetchUpcomingEvents,
+    });
+
+    render(<ScheduleView onNavigateToClass={mockNavigate} />);
+
+    fireEvent.press(screen.getByText("10 min"));
+
+    expect(mockSetDestination).toHaveBeenCalledWith(
+      "H",
+      expect.objectContaining({
+        latitude: expect.any(Number),
+        longitude: expect.any(Number),
+      }),
+      "Hall Building",
+      "820"
+    );
+  });
+
+  it("supports Loyola building navigation when building is not in SGW metadata", () => {
+    (parseLocation as jest.Mock).mockReturnValue({
+      buildingCode: "CC",
+      roomNumber: "101",
+    });
+
+    (useGoogleCalendar as jest.Mock).mockReturnValue({
+      events: [
+        {
+          id: "1",
+          summary: "Loyola Class",
+          location: "CC-101",
+          start: { dateTime: now.toISOString() },
+          end: { dateTime: new Date("2026-03-29T11:15:00.000Z").toISOString() },
+        },
+      ],
+      loading: false,
+      error: null,
+      fetchUpcomingEvents: mockFetchUpcomingEvents,
+    });
+
+    render(<ScheduleView onNavigateToClass={mockNavigate} />);
+
+    fireEvent.press(screen.getByText("10 min"));
+
+    expect(mockSetDestination).toHaveBeenCalledWith(
+      "CC",
+      expect.any(Object),
+      "Centennial Building",
+      "101"
+    );
+    expect(mockSetShowDirections).toHaveBeenCalledWith(true);
   });
 });
