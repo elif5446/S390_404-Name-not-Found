@@ -70,6 +70,7 @@ const RouteList = memo(
                   borderColor,
                 },
               ]}
+              testID={`route-card-${index}`}
             >
               <View style={{ flex: 1 }}>
                 {route.isShuttle && (

@@ -27,6 +27,7 @@ const IndoorMapHeader = React.memo(
               style={localStyles.backButton}
               accessibilityRole="button"
               accessibilityLabel="Go back"
+              testID="indoor-back-button"
             >
               <Ionicons name="arrow-back" size={24} color="#0d0d0dff" />
             </TouchableOpacity>

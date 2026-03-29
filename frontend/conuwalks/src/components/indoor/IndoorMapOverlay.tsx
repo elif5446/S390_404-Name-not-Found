@@ -1079,6 +1079,7 @@ const handleSelectSearchResult = useCallback(
             handleMapInteraction();
             return false;
           }}
+          testID="indoor-map-canvas"
         >
           <ReactNativeZoomableView
             ref={zoomRef}

@@ -1,0 +1,54 @@
+appId: com.conuwalks.app
+tags:
+  - feature
+  - navigation
+  - inter-building
+---
+- runFlow:
+    file: ../subflows/launch.yaml
+    env:
+      USERNAME: "${USERNAME}"
+      PASSWORD: "${PASSWORD}"
+
+- waitForAnimationToEnd
+
+- tapOn:
+    point: 45%, 30%
+- waitForAnimationToEnd
+- assertVisible: "Henry F. Hall Building"
+
+- tapOn:
+    id: "directions-button"
+- waitForAnimationToEnd
+
+- assertVisible: "Directions"
+- tapOn:
+    id: "route-source-input"
+
+- eraseText: 20
+- inputText: "John Molson Building S2.330"
+- pressKey: Enter
+
+- tapOn:
+    id: "indoor-map-btn"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "indoor-map-canvas"
+- assertVisible: "Henry F. Hall Building"
+
+- tapOn:
+    id: "indoor-back-button"
+- waitForAnimationToEnd
+
+- runFlow:
+    file: ../subflows/minimize-default-info-popup.yaml
+
+- longPressOn:
+    point: 45%, 63%
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "indoor-map-canvas"
+- assertVisible: "John Molson Building"
+- assertVisible: "Room 330"
