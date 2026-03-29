@@ -44,14 +44,14 @@ export default function GoogleCalendarAuth({
     redirectUri,
   });
 
-  // Run the template method on mount (checks existing session)
+  
   useEffect(() => {
     isMounted.current = true;
     runAuthFlow(promptAsync);
     return () => { isMounted.current = false; };
   }, []);
 
-  // Handle OAuth response from Google
+
   useEffect(() => {
     if (!response) return;
     if (response.type === "success") {
@@ -69,7 +69,7 @@ export default function GoogleCalendarAuth({
       });
       await flow.execute();
     } catch (error) {
-      // Auth was cancelled or failed — show sign-in screen
+      
       if (isMounted.current) setStatus("ready");
     }
   };

@@ -14,20 +14,24 @@ export interface UserInfo {
 }
 
 export abstract class AuthFlow {
-  // Template method — fixed skeleton, never override
+
   async execute(): Promise<void> {
-    const hasSession = await this.checkExistingSession();
-    if (hasSession) {
+    try {
+      const hasSession = await this.checkExistingSession();
+      if (hasSession) {
+        await this.onAuthSuccess();
+        return;
+      }
+      const tokens = await this.performAuth();
+      const user = await this.fetchUserInfo(tokens.accessToken);
+      await this.saveSession(tokens, user);
       await this.onAuthSuccess();
-      return;
+    } catch (error) {
+      await this.onAuthFailure(error);
+      throw error;
     }
-    const tokens = await this.performAuth();
-    const user = await this.fetchUserInfo(tokens.accessToken);
-    await this.saveSession(tokens, user);
-    await this.onAuthSuccess();
   }
 
-  // Default step — can override if needed
   protected async checkExistingSession(): Promise<boolean> {
     try {
       const tokens = await getTokens();
@@ -39,7 +43,7 @@ export abstract class AuthFlow {
     }
   }
 
-  // Default step — saves tokens + user info
+
   protected async saveSession(tokens: Tokens, user: UserInfo): Promise<void> {
     await saveTokens(tokens);
     await saveUserInfo({
@@ -50,7 +54,9 @@ export abstract class AuthFlow {
     });
   }
 
-  // Subclasses must implement these
+ 
+  protected async onAuthFailure(error: unknown): Promise<void> {}
+
   protected abstract performAuth(): Promise<Tokens>;
   protected abstract fetchUserInfo(accessToken: string): Promise<UserInfo>;
   protected abstract onAuthSuccess(): Promise<void>;

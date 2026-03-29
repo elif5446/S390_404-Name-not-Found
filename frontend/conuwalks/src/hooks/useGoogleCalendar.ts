@@ -23,7 +23,6 @@ export const useGoogleCalendar = () => {
     else checkAuthStatus();
   }, [isMock]);
 
-  // Follows the same check → validate → return pattern as AuthFlow.checkExistingSession
   const getApiInstance = async (): Promise<GoogleCalendarApi | null> => {
     if (isMock) return null;
     try {
