@@ -103,7 +103,7 @@ const DestinationHeader: React.FC<DestinationHeaderProps> = ({
                   accessibilityRole="button"
                   accessibilityLabel="Open indoor map"
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                  testID="indoor-map-btn"
+                  testID="indoor-map-button"
                 >
                   <Text style={[styles.openIndoorHeaderButtonText, themedStyles.openIndoorHeaderButtonText(mode)]}>Indoor Map↗</Text>
                 </TouchableOpacity>

@@ -593,12 +593,50 @@ const CampusMap: React.FC<CampusMapProps> = ({
     setShowDirections(false);
   }, [setShowDirections]);
 
-  const handleEndNavigation = useCallback(() => {
-    setActivePOIDestination(null);
-    setIsNavigationActive(false);
-    setShowDirections(true);
-    setIsManualIndoorOverride(false);
-  }, [setIsNavigationActive, setShowDirections]);
+  const destinationCenter = useMemo(() => {
+    if (!destinationBuildingId) return null;
+    const findCenter = (geojson: typeof SGW | typeof LOY) => {
+      const feature = geojson.features.find(f => (f as GeoJsonFeature).properties.id === destinationBuildingId) as
+        | GeoJsonFeature
+        | undefined;
+      return feature?.geometry.type === "Polygon" ? calculatePolygonCenter(feature.geometry.coordinates[0]) : null;
+    };
+    return findCenter(SGW) || findCenter(LOY);
+  }, [destinationBuildingId]);
+
+  const handleEndNavigation = useCallback(
+    (arrived: boolean = false) => {
+      setActivePOIDestination(null);
+      setIsNavigationActive(false);
+
+      if (arrived && indoorBuildingId) {
+        // User arrived inside a building.
+        // KEEP them inside by maintaining the manual override.
+        setIsManualIndoorOverride(true);
+
+        // Set their new "Start Point" to the room they just arrived at!
+        if (destinationBuildingId && destinationRoom) {
+          setStartPoint(destinationBuildingId, destinationCenter || userLocation || initialLocation, "Current Location", destinationRoom);
+        }
+        setShowDirections(false); // Clear the panel so they can look at the room
+      } else {
+        // User cancelled, or arrived outside. Behave normally.
+        setShowDirections(true);
+        setIsManualIndoorOverride(false);
+      }
+    },
+    [
+      setIsNavigationActive,
+      setShowDirections,
+      indoorBuildingId,
+      destinationBuildingId,
+      destinationRoom,
+      destinationCenter,
+      userLocation,
+      initialLocation,
+      setStartPoint,
+    ],
+  );
 
   const handleToggleOutdoorMap = useCallback(() => {
     if (indoorBuildingId) {
@@ -834,17 +872,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
     };
   }, [userLocation, userLocationBuildingId]);
 
-  const destinationCenter = useMemo(() => {
-    if (!destinationBuildingId) return null;
-    const findCenter = (geojson: typeof SGW | typeof LOY) => {
-      const feature = geojson.features.find(f => (f as GeoJsonFeature).properties.id === destinationBuildingId) as
-        | GeoJsonFeature
-        | undefined;
-      return feature?.geometry.type === "Polygon" ? calculatePolygonCenter(feature.geometry.coordinates[0]) : null;
-    };
-    return findCenter(SGW) || findCenter(LOY);
-  }, [destinationBuildingId]);
-
   // auto-trigger entry/exit based on User Location & Navigation State
   useEffect(() => {
     if (!isNavigationActive || isManualIndoorOverride) {
@@ -943,13 +970,10 @@ const CampusMap: React.FC<CampusMapProps> = ({
   const mapID = useMemo(() => {
     return colorScheme === "dark" ? "eb0ccd6d2f7a95e23f1ec398" : "eb0ccd6d2f7a95e117328051";
   }, [colorScheme]);
-  // State for selected POI type
-  const [selectedPOIType, setSelectedPOIType] = useState<string | null>(null);
 
-  // State for panel visibility
+  const [selectedPOIType, setSelectedPOIType] = useState<string | null>(null);
   const [isPOIPanelVisible, setPOIPanelVisible] = useState(false);
 
-  // Handler to toggle panel
   const handleTogglePOIPanel = useCallback(() => {
     setPOIPanelVisible(prev => !prev);
   }, []);
@@ -976,9 +1000,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
   }, [currentCampus, selectedPOIType]);
 
   const [isPOIListPanelVisible, setIsPOIListPanelVisible] = useState(false);
-
-  // Dans CampusMap.tsx, juste avant le return
-  console.log("selectedPOIType:", selectedPOIType);
 
   // Add POI directions handler
   const handlePOIDirections = useCallback(
@@ -1078,6 +1099,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
             accessibilityLabel="Current Location"
             importantForAccessibility="yes"
             anchor={{ x: 0.5, y: 0.5 }}
+            testID="user-location-marker"
           >
             <View
               onLayout={() => {
@@ -1085,6 +1107,8 @@ const CampusMap: React.FC<CampusMapProps> = ({
                   setTimeout(() => setTrackLocationMarker(false), 100);
                 }
               }}
+              testID="user-location-marker-view"
+              accessible={true}
               style={{
                 width: 30,
                 height: 30,
@@ -1231,7 +1255,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
         onPOISelect={type => {
           setSelectedPOIType(type);
           setPOIPanelVisible(false);
-          // Auto-open POI list when POIs load
           setTimeout(() => setIsPOIListPanelVisible(true), 800);
         }}
       />
@@ -1360,7 +1383,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
           <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
             <TouchableOpacity
-              onPress={handleEndNavigation}
+              onPress={() => handleEndNavigation(false)}
               style={{
                 width: 38,
                 height: 38,

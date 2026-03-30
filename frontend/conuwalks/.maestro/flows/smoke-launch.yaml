@@ -2,10 +2,14 @@ appId: com.conuwalks.app
 tags:
   - smoke
 ---
-- runFlow: 
+- runFlow:
     file: ../subflows/launch.yaml
     env:
-        USERNAME: "${USERNAME}"
-        PASSWORD: "${PASSWORD}"
+      USERNAME: "${USERNAME}"
+      PASSWORD: "${PASSWORD}"
+
+- runFlow:
+    file: ../subflows/clear-next-class-banner.yaml
+
 - assertVisible: "Sir George Williams"
 - assertVisible: "Loyola"

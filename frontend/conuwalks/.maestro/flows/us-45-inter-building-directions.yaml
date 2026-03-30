@@ -1,0 +1,120 @@
+appId: com.conuwalks.app
+tags:
+  - feature
+  - navigation
+  - inter-building
+---
+- runFlow:
+    file: ../subflows/launch.yaml
+    env:
+      USERNAME: "${USERNAME}"
+      PASSWORD: "${PASSWORD}"
+
+- runFlow:
+    file: ../subflows/clear-next-class-banner.yaml
+
+- setLocation:
+    latitude: 45.495633
+    longitude: -73.578902
+
+- tapOn:
+    id: "recenter-location-button"
+- waitForAnimationToEnd
+
+# MB
+- setLocation:
+    latitude: 45.495397
+    longitude: -73.579165
+
+- tapOn:
+    point: 50%, 18%
+- waitForAnimationToEnd
+- assertVisible: "Henry F. Hall Building"
+
+- tapOn:
+    id: "directions-button"
+- waitForAnimationToEnd
+- assertVisible: "Directions"
+
+- longPressOn:
+    id: "route-destination-input"
+- tapOn: "Select All"
+- eraseText: 1
+- inputText: "Henry F. Hall Building 937"
+- pressKey: Enter
+
+- longPressOn:
+    id: "route-source-input"
+- tapOn: "Select All"
+- eraseText: 1
+- inputText: "John Molson Building S2.330"
+- pressKey: Enter
+
+- runFlow:
+    file: ../subflows/open-indoor-map-popup.yaml
+
+- assertVisible: "Hall Building"
+
+- tapOn:
+    id: "indoor-back-button"
+
+# 12. Press start navigation
+- tapOn:
+    id: "navigate-button"
+- waitForAnimationToEnd
+
+- runFlow:
+    when:
+      notVisible:
+        id: "indoor-map-canvas"
+    commands:
+      - runFlow:
+          file: ../subflows/minimize-default-info-popup.yaml
+      - longPressOn:
+          point: 50%, 59%
+      - waitForAnimationToEnd
+
+- assertVisible:
+    id: "indoor-map-canvas"
+- assertVisible: "John Molson Building"
+- assertVisible:
+    id: "room-label-330"
+
+- repeat:
+    while:
+      notVisible: "Exit Building"
+    commands:
+      - tapOn:
+          id: "nav-next-button"
+- tapOn:
+    id: "nav-next-button"
+
+# 14 & 15. Change gps to be inside H; indoor map auto loads, nav directions shown
+# H
+- setLocation:
+    latitude: 45.497228
+    longitude: -73.578623
+
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "indoor-map-canvas"
+- extendedWaitUntil:
+    visible: "Hall Building"
+    timeout: 5000
+
+- assertVisible: "Hall Building"
+
+- repeat:
+    while:
+      notVisible: "Finish"
+    commands:
+      - tapOn:
+          id: "nav-next-button"
+- tapOn:
+    id: "nav-next-button"
+- assertVisible:
+    id: "indoor-map-canvas"
+
+- tapOn:
+    id: "indoor-back-button"

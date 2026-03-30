@@ -256,35 +256,14 @@ const CATEGORY_CONFIG: Record<POICategory, CategoryConfig> = {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function renderCategoryIcon(
-  iconLib: IconLib,
-  icon: string,
-  size: number,
-  color: string
-): React.ReactElement {
+function renderCategoryIcon(iconLib: IconLib, icon: string, size: number, color: string): React.ReactElement {
   if (iconLib === "custom") {
-    return (
-      <Text style={{ fontWeight: "bold", fontSize: size * 0.85, color }}>
-        IT
-      </Text>
-    );
+    return <Text style={{ fontWeight: "bold", fontSize: size * 0.85, color }}>IT</Text>;
   }
   if (iconLib === "mci") {
-    return (
-      <MaterialCommunityIcons
-        name={icon as keyof typeof MaterialCommunityIcons.glyphMap}
-        size={size}
-        color={color}
-      />
-    );
+    return <MaterialCommunityIcons name={icon as keyof typeof MaterialCommunityIcons.glyphMap} size={size} color={color} />;
   }
-  return (
-    <Ionicons
-      name={icon as keyof typeof Ionicons.glyphMap}
-      size={size}
-      color={color}
-    />
-  );
+  return <Ionicons name={icon as keyof typeof Ionicons.glyphMap} size={size} color={color} />;
 }
 
 const ROOM_LABEL_OFFSET_OVERRIDES: Record<string, IconOffset> = {
@@ -333,7 +312,7 @@ function resolveMarkerSize(poi: POI, defaultSize: number): number {
 
 function resolveSelectionColors(
   selectionType: "source" | "destination" | undefined,
-  cfg: CategoryConfig
+  cfg: CategoryConfig,
 ): { bg: string; iconColor: string } {
   if (selectionType === "destination") {
     return { bg: POI_PALETTE.pink, iconColor: POI_PALETTE.white };
@@ -344,12 +323,7 @@ function resolveSelectionColors(
   return { bg: cfg.bg, iconColor: cfg.iconColor };
 }
 
-const VERTICAL_TRANSPORT_CATEGORIES = new Set<POICategory>([
-  "STAIRS",
-  "ELEVATOR",
-  "ESCALATOR",
-  "HELP_DESK",
-]);
+const VERTICAL_TRANSPORT_CATEGORIES = new Set<POICategory>(["STAIRS", "ELEVATOR", "ESCALATOR", "HELP_DESK"]);
 
 const MARKER_Z_INDEX: Partial<Record<POICategory, number>> = {
   ELEVATOR: 40,
@@ -370,36 +344,21 @@ interface RoomLabelProps {
   onPress?: (poi: POI) => void;
 }
 
-const RoomLabel: React.FC<RoomLabelProps> = ({
-  poi,
-  anchorLeft,
-  anchorTop,
-  selectionType,
-  onPress,
-}) => {
+const RoomLabel: React.FC<RoomLabelProps> = ({ poi, anchorLeft, anchorTop, selectionType, onPress }) => {
   const isSelected = selectionType === "destination" || selectionType === "source";
   const isCompact = poi.room === "851.01";
   const isExtended = poi.room.includes(".");
   const showSubIcon = SUB_ROOM_ICON_ROOMS.has(poi.room);
 
   const offset = getRoomLabelOffset(poi.room);
-  const labelWidth = isCompact
-    ? Math.max(16, Math.round(poi.room.length * 4 + 1))
-    : Math.max(18, Math.round(poi.room.length * 4.5 + 4));
+  const labelWidth = isCompact ? Math.max(16, Math.round(poi.room.length * 4 + 1)) : Math.max(18, Math.round(poi.room.length * 4.5 + 4));
 
-  const bgColor = selectionType === "destination"
-    ? POI_PALETTE.pink
-    : selectionType === "source"
-      ? COLORS.blue
-      : "transparent";
+  const bgColor = selectionType === "destination" ? POI_PALETTE.pink : selectionType === "source" ? COLORS.blue : "transparent";
 
   const textColor = isSelected ? POI_PALETTE.white : POI_PALETTE.textDark;
   const subIconColor = isSelected ? POI_PALETTE.white : POI_PALETTE.iconDark;
-  const subIconBg = selectionType === "destination"
-    ? POI_PALETTE.pink
-    : selectionType === "source"
-      ? COLORS.blue
-      : "rgba(255,255,255,0.92)";
+  const subIconBg =
+    selectionType === "destination" ? POI_PALETTE.pink : selectionType === "source" ? COLORS.blue : "rgba(255,255,255,0.92)";
 
   const accessibilityLabel = `${poi.description} – Room ${poi.room}`;
 
@@ -494,14 +453,7 @@ const CafeLabel: React.FC<CafeLabelProps> = ({ poi }) => (
 // Main component
 // ---------------------------------------------------------------------------
 
-const POIBadge: React.FC<Props> = ({
-  poi,
-  left,
-  top,
-  selectionType,
-  onPress,
-  size = DEFAULT_BADGE_SIZE,
-}) => {
+const POIBadge: React.FC<Props> = ({ poi, left, top, selectionType, onPress, size = DEFAULT_BADGE_SIZE }) => {
   const cfg = CATEGORY_CONFIG[poi.category];
   const { bg, iconColor } = resolveSelectionColors(selectionType, cfg);
 
@@ -516,21 +468,11 @@ const POIBadge: React.FC<Props> = ({
 
   // Pure room labels (non-lab) get their own simpler rendering path
   if (isRoom && !isLab) {
-    return (
-      <RoomLabel
-        poi={poi}
-        anchorLeft={anchorLeft}
-        anchorTop={anchorTop}
-        selectionType={selectionType}
-        onPress={onPress}
-      />
-    );
+    return <RoomLabel poi={poi} anchorLeft={anchorLeft} anchorTop={anchorTop} selectionType={selectionType} onPress={onPress} />;
   }
 
   const markerSize = resolveMarkerSize(poi, size);
-  const markerIconSize = poi.category === "SECOND_CUP" || isCompactRoom
-    ? 8
-    : markerSize * 0.56;
+  const markerIconSize = poi.category === "SECOND_CUP" || isCompactRoom ? 8 : markerSize * 0.56;
   const radius = markerSize * 0.42;
 
   const hasManualLabOffset = isLab && Object.prototype.hasOwnProperty.call(ICON_POSITION_OVERRIDES, poi.room);
@@ -554,34 +496,17 @@ const POIBadge: React.FC<Props> = ({
         marginTop: iconBadgeShiftDown,
       };
 
-  const showCafeLabel =
-    (CAFE_LABEL_CATEGORIES.has(poi.category) && poi.showLabel) ||
-    poi.category === "VINHS_CAFE";
+  const showCafeLabel = (CAFE_LABEL_CATEGORIES.has(poi.category) && poi.showLabel) || poi.category === "VINHS_CAFE";
 
   const markerZIndex = MARKER_Z_INDEX[poi.category] ?? 10;
-  const hitSlop = isVerticalTransport
-    ? { top: 14, bottom: 14, left: 14, right: 14 }
-    : { top: 8, bottom: 8, left: 8, right: 8 };
+  const hitSlop = isVerticalTransport ? { top: 14, bottom: 14, left: 14, right: 14 } : { top: 8, bottom: 8, left: 8, right: 8 };
 
   return (
     <View
       style={{
         position: "absolute",
-        left:
-          anchorLeft -
-          markerSize / 2 +
-          markerShift.x +
-          transportShift.x +
-          labShift.x +
-          manualOffset.x,
-        top:
-          anchorTop -
-          markerSize / 2 -
-          3 +
-          markerShift.y +
-          transportShift.y +
-          labShift.y +
-          manualOffset.y,
+        left: anchorLeft - markerSize / 2 + markerShift.x + transportShift.x + labShift.x + manualOffset.x,
+        top: anchorTop - markerSize / 2 - 3 + markerShift.y + transportShift.y + labShift.y + manualOffset.y,
         alignItems: "center",
         zIndex: markerZIndex,
       }}
@@ -591,17 +516,11 @@ const POIBadge: React.FC<Props> = ({
         onPress={() => onPress?.(poi)}
         activeOpacity={0.75}
         hitSlop={hitSlop}
-        style={[
-          poiBadgeStyles.badge,
-          markerStyle,
-          isSelected && poiBadgeStyles.highlighted,
-        ]}
+        style={[poiBadgeStyles.badge, markerStyle, isSelected && poiBadgeStyles.highlighted]}
         accessibilityLabel={`${poi.description} – Room ${poi.room}`}
         accessibilityRole="button"
       >
-        {!hideMarker
-          ? renderCategoryIcon(cfg.iconLib, cfg.icon, markerIconSize, iconColor)
-          : null}
+        {!hideMarker ? renderCategoryIcon(cfg.iconLib, cfg.icon, markerIconSize, iconColor) : null}
       </TouchableOpacity>
 
       {showCafeLabel && <CafeLabel poi={poi} />}

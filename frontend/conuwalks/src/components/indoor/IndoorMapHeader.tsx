@@ -49,6 +49,7 @@ const IndoorMapHeader = React.memo(
                   accessibilityRole="button"
                   accessibilityState={{ selected: isActive }}
                   accessibilityLabel={`Switch to floor ${floor.label}`}
+                  testID={`floor-${floor.level}-button`}
                 >
                   <Text style={isActive ? styles.headerFloorToggleTextActive : styles.headerFloorToggleText}>{floor.label}</Text>
                 </TouchableOpacity>

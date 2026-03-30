@@ -101,6 +101,7 @@ const AdditionalInfoPopupHeader: React.FC<AdditionalInfoPopupHeaderProps> = ({
               accessible={true}
               accessibilityLabel="Close"
               accessibilityRole="button"
+              testID="close-popup-button"
             >
               {Platform.OS === "android" ? (
                 <MaterialIcons name="close" size={24} color={themedStyles.text(mode).color} />
@@ -117,7 +118,7 @@ const AdditionalInfoPopupHeader: React.FC<AdditionalInfoPopupHeaderProps> = ({
                 style={[styles.openIndoorHeaderButton, themedStyles.openIndoorHeaderButton(mode)]}
                 accessibilityRole="button"
                 accessibilityLabel="Open indoor map"
-                testID="indoor-map-btn"
+                testID="indoor-map-button"
               >
                 <PlatformIcon materialName="map" iosName="map" size={25} color="black" />
                 <Text style={[styles.openIndoorHeaderButtonText, themedStyles.openIndoorHeaderButtonText(mode)]}>Indoor</Text>

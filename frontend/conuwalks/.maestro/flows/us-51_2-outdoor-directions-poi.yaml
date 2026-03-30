@@ -1,0 +1,64 @@
+appId: com.conuwalks.app
+tags:
+  - feature
+  - directions
+  - outdoor-poi
+---
+- runFlow:
+    file: ../subflows/launch.yaml
+    env:
+      USERNAME: "${USERNAME}"
+      PASSWORD: "${PASSWORD}"
+
+- runFlow:
+    file: ../subflows/clear-next-class-banner.yaml
+
+- setLocation:
+    latitude: 45.495633
+    longitude: -73.578902
+- tapOn:
+    id: "recenter-location-button"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "outdoor-poi-button"
+
+- tapOn:
+    id: "outdoor-poi-button"
+- waitForAnimationToEnd
+- assertVisible: "Outdoor POIs"
+
+- assertVisible: "Coffee shops"
+- tapOn: "Coffee shops"
+- waitForAnimationToEnd
+
+- assertVisible: ".* Places Nearby"
+# CRITERIA: The user can select a distance filter (100m, 200m, 500m, 1km)
+- assertVisible: "100 m"
+- assertVisible: "200 m"
+- assertVisible: "500 m"
+- assertVisible: "1 km"
+
+# CRITERIA: When the distance filter is changed, results update accordingly.
+# click on 100m radius
+- tapOn: "100 m"
+- waitForAnimationToEnd
+- assertNotVisible: "Cafe Myriade"
+
+#click back 1km
+- tapOn: "1 km"
+- waitForAnimationToEnd
+- assertVisible: "Cafe Myriade"
+
+# CRITERIA: When user clicks on Marker/POI they see an info bubble with opening hours
+- tapOn: "Cafe Myriade"
+- waitForAnimationToEnd
+
+- assertVisible: "Directions"
+- assertVisible: "Current Location"
+- assertVisible: "Cafe Myriade"
+- assertVisible: ".* ETA"
+- assertVisible: ".* min"
+
+- runFlow:
+    file: ../subflows/close-popup.yaml

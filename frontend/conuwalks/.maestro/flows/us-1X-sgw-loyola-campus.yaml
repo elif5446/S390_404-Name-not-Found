@@ -3,49 +3,51 @@
 # then assert the Native UI Bottom Sheet appears
 appId: com.conuwalks.app
 ---
-- runFlow: 
+- runFlow:
     file: ../subflows/launch.yaml
     env:
-        USERNAME: "${USERNAME}"
-        PASSWORD: "${PASSWORD}"
+      USERNAME: "${USERNAME}"
+      PASSWORD: "${PASSWORD}"
+
+- runFlow:
+    file: ../subflows/clear-next-class-banner.yaml
 
 # Start at SGW
 - tapOn: "Sir George Williams"
 
+- setLocation:
+    latitude: 45.495633
+    longitude: -73.578902
 - tapOn:
-    point: 50%, 50%
+    id: "recenter-location-button"
+- waitForAnimationToEnd
 
 - tapOn:
-    point: 50%, 45%
+    point: 56%, 45%
 - assertVisible: "Guy-De Maisonneuve.*"
 - assertVisible: "GM"
 
-- tapOn:
-    id: "close-button" # needs testID="close-button"
-    optional: true     # Fallback: tap X coordinate if ID missing
-- tapOn:  # close the pop-up
-    point: 10%, 65%
-    optional: true
+- runFlow:
+    file: ../subflows/close-popup.yaml
 
 # Switch to Loyola
 - tapOn: "Loyola"
 - assertNotVisible: "Guy-De Maisonneuve.*"
 
-- doubleTapOn:
-    point: 50%, 50%
-
 - tapOn:
-    point: 45%, 50%
+    point: 40%, 54%
 - assertVisible: "Central Building"
 - assertVisible: "CC"
-- tapOn:
-    point: 10%, 10%
-- tapOn: "Sir George Williams"
 
-- doubleTapOn:
-    point: 50%, 50%
+- runFlow:
+    file: ../subflows/close-popup.yaml
+
+- tapOn: "Sir George Williams"
 
 - tapOn:
     point: 45%, 63%
 - assertVisible: "John Molson Building.*"
 - assertVisible: "MB"
+
+- runFlow:
+    file: ../subflows/close-popup.yaml
