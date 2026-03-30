@@ -16,12 +16,15 @@ jest.mock("../../components/ui/PlatformIcon", () => {
   return MockPlatformIcon;
 });
 
-// mock styles to prevent undefined object errors during rendering
 jest.mock("../../styles/DestinationPopup", () => ({
   styles: {
     routeList: {},
     centerInline: {},
     routeCard: {},
+    shuttleBadgeContainer: {},
+    shuttleBadgeIcon: {},
+    shuttleBadgeLetter: {},
+    shuttleBadgeText: {},
     durationText: {},
     etaText: {},
     routeTransitSummary: {},
@@ -128,7 +131,6 @@ describe("DestinationContent Component", () => {
     it("calls handleSelectRoute when a route card is pressed", () => {
       render(<DestinationContent {...defaultProps} />);
 
-      // pressing the text inside the touchableopacity bubbles up
       fireEvent.press(screen.getByText("20 min"));
 
       expect(mockHandleSelectRoute).toHaveBeenCalledWith(1);
@@ -137,7 +139,7 @@ describe("DestinationContent Component", () => {
     it("calls handleStartNavigation when the start button is pressed", () => {
       render(<DestinationContent {...defaultProps} />);
 
-      // the start button has a specific accessibility label mapping to index + 1
+      
       const startButton = screen.getByLabelText("Start navigation for route 2");
       fireEvent.press(startButton);
 
@@ -158,6 +160,51 @@ describe("DestinationContent Component", () => {
           nativeEvent: { contentOffset: { y: 250 } },
         }),
       );
+    });
+
+    it("renders the shuttle badge when a route has isShuttle set to true", () => {
+      const shuttleRoutes = [
+        {
+          id: "route-shuttle",
+          duration: "10 min",
+          eta: "10:10 AM",
+          distance: "0.8 km",
+          steps: [],
+          isShuttle: true,
+        },
+      ];
+      render(<DestinationContent {...defaultProps} routes={shuttleRoutes} />);
+
+      expect(screen.getByText("C")).toBeTruthy();
+      expect(screen.getByText("Concordia Shuttle")).toBeTruthy();
+    });
+
+    it("applies reduced opacity to the start button of the active navigation route", () => {
+      render(
+        <DestinationContent {...defaultProps} navigationRouteId="route-1" />,
+      );
+
+      const startButton = screen.getByLabelText("Start navigation for route 1");
+      expect(startButton).toBeTruthy();
+    });
+
+    it("renders correctly in dark mode", () => {
+      render(<DestinationContent {...defaultProps} isDark={true} />);
+
+      expect(screen.getByText("15 min")).toBeTruthy();
+      expect(screen.getByText("20 min")).toBeTruthy();
+    });
+
+    it("renders correctly when loading in dark mode", () => {
+      render(
+        <DestinationContent
+          {...defaultProps}
+          isDark={true}
+          loading={true}
+          routes={[]}
+        />,
+      );
+      expect(screen.getByText("Loading routes...")).toBeTruthy();
     });
   });
 
@@ -183,10 +230,8 @@ describe("DestinationContent Component", () => {
     it("renders route transit summary on the card when in transit mode", () => {
       render(<DestinationContent {...defaultProps} travelMode="transit" />);
 
-      // ensure the summary gets pulled and displayed
       expect(mockGetRouteTransitSummary).toHaveBeenCalled();
 
-      // since there are 2 routes in our mock, the summary should appear twice
       const summaries = screen.getAllByText("Metro 1");
       expect(summaries.length).toBe(2);
     });
@@ -202,11 +247,10 @@ describe("DestinationContent Component", () => {
 
       expect(screen.getByText("Transit details")).toBeTruthy();
 
-      // verifies step data maps correctly
-      expect(screen.getByText("1")).toBeTruthy(); // line short name
-      expect(screen.getByText("Metro")).toBeTruthy(); // badge label
-      expect(screen.getByText("Toward Honoré-Beaugrand")).toBeTruthy(); // headsign
-      expect(screen.getByText("Angrignon → Guy-Concordia")).toBeTruthy(); // stops
+      expect(screen.getByText("1")).toBeTruthy(); 
+      expect(screen.getByText("Metro")).toBeTruthy();
+      expect(screen.getByText("Toward Honoré-Beaugrand")).toBeTruthy();
+      expect(screen.getByText("Angrignon → Guy-Concordia")).toBeTruthy();
     });
 
     it("renders fallback text in Transit details section if no detailed steps exist", () => {
@@ -236,6 +280,130 @@ describe("DestinationContent Component", () => {
       );
 
       expect(screen.queryByText("Transit details")).toBeNull();
+    });
+
+    it("falls back to transitLineName when transitLineShortName is not provided", () => {
+      const stepsWithoutShortName: DirectionStep[] = [
+        {
+          instruction: "Take the Orange Line",
+          distance: "3 km",
+          duration: "8 min",
+          transitLineName: "Orange Line",
+          transitLineShortName: undefined,
+          transitDepartureStop: "Snowdon",
+          transitArrivalStop: "Bonaventure",
+          transitHeadsign: "Côte-Vertu",
+        },
+      ];
+
+      render(
+        <DestinationContent
+          {...defaultProps}
+          travelMode="transit"
+          transitSteps={stepsWithoutShortName}
+        />,
+      );
+
+      expect(screen.getByText("Orange Line")).toBeTruthy();
+    });
+
+    it("falls back to 'Transit' label when neither transitLineShortName nor transitLineName are provided", () => {
+      const stepsNoName: DirectionStep[] = [
+        {
+          instruction: "Board the bus",
+          distance: "1 km",
+          duration: "5 min",
+          transitLineName: undefined,
+          transitLineShortName: undefined,
+          transitDepartureStop: "Stop A",
+          transitArrivalStop: "Stop B",
+          transitHeadsign: undefined,
+        },
+      ];
+
+      render(
+        <DestinationContent
+          {...defaultProps}
+          travelMode="transit"
+          transitSteps={stepsNoName}
+        />,
+      );
+
+      expect(screen.getByText("Transit")).toBeTruthy();
+    });
+
+    it("uses instruction as stop label when departure or arrival stop is missing", () => {
+      const stepsWithoutStops: DirectionStep[] = [
+        {
+          instruction: "Walk to the platform",
+          distance: "0.2 km",
+          duration: "2 min",
+          transitLineName: "Blue Line",
+          transitLineShortName: "5",
+          transitDepartureStop: undefined,
+          transitArrivalStop: undefined,
+          transitHeadsign: "Saint-Michel",
+        },
+      ];
+
+      render(
+        <DestinationContent
+          {...defaultProps}
+          travelMode="transit"
+          transitSteps={stepsWithoutStops}
+        />,
+      );
+
+      expect(screen.getByText("Walk to the platform")).toBeTruthy();
+    });
+
+    it("does not render the headsign line when transitHeadsign is not provided", () => {
+      const stepsWithoutHeadsign: DirectionStep[] = [
+        {
+          instruction: "Take the Yellow Line",
+          distance: "2 km",
+          duration: "6 min",
+          transitLineName: "Yellow Line",
+          transitLineShortName: "4",
+          transitDepartureStop: "Berri-UQAM",
+          transitArrivalStop: "Longueuil",
+          transitHeadsign: undefined,
+        },
+      ];
+
+      render(
+        <DestinationContent
+          {...defaultProps}
+          travelMode="transit"
+          transitSteps={stepsWithoutHeadsign}
+        />,
+      );
+
+      expect(screen.queryByText(/Toward/)).toBeNull();
+  
+      expect(screen.getByText("Berri-UQAM → Longueuil")).toBeTruthy();
+    });
+
+    it("renders transit details correctly in dark mode", () => {
+      render(
+        <DestinationContent
+          {...defaultProps}
+          isDark={true}
+          travelMode="transit"
+          transitSteps={mockTransitSteps}
+        />,
+      );
+
+      expect(screen.getByText("Transit details")).toBeTruthy();
+      expect(screen.getByText("1")).toBeTruthy();
+    });
+
+    it("does not show transit summary when getRouteTransitSummary returns null", () => {
+      mockGetRouteTransitSummary.mockReturnValue(null);
+
+      render(<DestinationContent {...defaultProps} travelMode="transit" />);
+
+      expect(screen.queryByText("Metro 1")).toBeNull();
     });
   });
 });
