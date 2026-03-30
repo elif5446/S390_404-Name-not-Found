@@ -9,6 +9,7 @@ import {
   distanceMetersBetween,
 } from "@/src/utils/geometry";
 import { parseLocation } from "@/src/hooks/useBuildingEvents";
+import * as RN from "react-native";
 
 // Mock SafeAreaView to return a standard View for testing
 jest.mock("react-native-safe-area-context", () => {
@@ -95,10 +96,10 @@ jest.mock("@/src/data/campus/LOY.geojson", () => ({
         type: "Polygon",
         coordinates: [
           [
-            [-73.640, 45.458],
+            [-73.64, 45.458],
             [-73.639, 45.458],
             [-73.639, 45.459],
-            [-73.640, 45.459],
+            [-73.64, 45.459],
           ],
         ],
       },
@@ -121,6 +122,7 @@ describe("ScheduleView", () => {
     jest.clearAllMocks();
     jest.useFakeTimers();
     jest.setSystemTime(now);
+    jest.spyOn(RN, "useColorScheme").mockReturnValue("light");
 
     (useGoogleCalendar as jest.Mock).mockReturnValue({
       events: [],
@@ -153,6 +155,7 @@ describe("ScheduleView", () => {
   });
 
   afterEach(() => {
+    jest.restoreAllMocks();
     jest.useRealTimers();
   });
 
@@ -165,7 +168,9 @@ describe("ScheduleView", () => {
     });
 
     render(<ScheduleView />);
-    expect(screen.UNSAFE_getByType(require("react-native").ActivityIndicator)).toBeTruthy();
+    expect(
+      screen.UNSAFE_getByType(require("react-native").ActivityIndicator),
+    ).toBeTruthy();
   });
 
   it("renders empty state when there are no upcoming events", () => {
@@ -183,7 +188,7 @@ describe("ScheduleView", () => {
     expect(mockSetStartPoint).toHaveBeenCalledWith(
       "USER",
       { latitude: 45.497, longitude: -73.578 },
-      "Your Location"
+      "Your Location",
     );
   });
 
@@ -369,13 +374,13 @@ describe("ScheduleView", () => {
     expect(mockSetStartPoint).toHaveBeenCalledWith(
       "USER",
       { latitude: 45.497, longitude: -73.578 },
-      "Your Location"
+      "Your Location",
     );
     expect(mockSetDestination).toHaveBeenCalledWith(
       "H",
       expect.any(Object),
       "Hall Building",
-      "820"
+      "820",
     );
     expect(mockSetShowDirections).toHaveBeenCalledWith(true);
     expect(mockNavigate).toHaveBeenCalled();
@@ -492,7 +497,7 @@ describe("ScheduleView", () => {
         longitude: expect.any(Number),
       }),
       "Hall Building",
-      "820"
+      "820",
     );
   });
 
@@ -525,8 +530,188 @@ describe("ScheduleView", () => {
       "CC",
       expect.any(Object),
       "Centennial Building",
-      "101"
+      "101",
     );
     expect(mockSetShowDirections).toHaveBeenCalledWith(true);
+  });
+
+  it("renders dark mode styles correctly", () => {
+    jest.spyOn(RN, "useColorScheme").mockReturnValue("dark");
+
+    (useGoogleCalendar as jest.Mock).mockReturnValue({
+      events: [
+        {
+          id: "1",
+          summary: "Dark Mode Class",
+          description: "Bring laptop",
+          location: "H-820",
+          start: { dateTime: now.toISOString() },
+          end: { dateTime: new Date("2026-03-29T11:15:00.000Z").toISOString() },
+        },
+        {
+          id: "2",
+          summary: "Future Dark Class",
+          location: "EV-1.605",
+          start: { dateTime: future.toISOString() },
+          end: { dateTime: new Date("2026-04-02T10:00:00.000Z").toISOString() },
+        },
+      ],
+      loading: false,
+      error: null,
+      fetchUpcomingEvents: mockFetchUpcomingEvents,
+    });
+
+    const { getByText } = render(<ScheduleView />);
+
+    const title = getByText("Dark Mode Class");
+    const description = getByText("Bring laptop");
+    const futureHeading = getByText("Thu, Apr 2");
+
+    expect(title).toHaveStyle({ color: "#fff" });
+    expect(description).toHaveStyle({ color: "#999" });
+    expect(futureHeading).toHaveStyle({ color: "#fff" });
+
+  });
+
+  it("falls back to light mode when useColorScheme returns null", () => {
+    jest.spyOn(RN, "useColorScheme").mockReturnValue(null);
+
+    render(<ScheduleView />);
+
+    const text = screen.getByText("No Upcoming Events");
+    expect(text).toHaveStyle({ color: "#333" });
+  });
+
+  it("shows hour and minute ETA when travel time has remaining minutes", () => {
+    (distanceMetersBetween as jest.Mock).mockReturnValue(7290); // 90 min at 1.35 m/s
+
+    (useGoogleCalendar as jest.Mock).mockReturnValue({
+      events: [
+        {
+          id: "1",
+          summary: "Farther Class",
+          location: "H-820",
+          start: { dateTime: now.toISOString() },
+          end: { dateTime: new Date("2026-03-29T11:15:00.000Z").toISOString() },
+        },
+      ],
+      loading: false,
+      error: null,
+      fetchUpcomingEvents: mockFetchUpcomingEvents,
+    });
+
+    render(<ScheduleView />);
+    expect(screen.getByText("1h 30m")).toBeTruthy();
+  });
+
+  it("navigates even when userLocation is unavailable", () => {
+    (useUserLocation as jest.Mock).mockReturnValue({
+      location: null,
+    });
+
+    (useGoogleCalendar as jest.Mock).mockReturnValue({
+      events: [
+        {
+          id: "1",
+          summary: "No GPS Class",
+          location: "H-820",
+          start: { dateTime: now.toISOString() },
+          end: { dateTime: new Date("2026-03-29T11:15:00.000Z").toISOString() },
+        },
+      ],
+      loading: false,
+      error: null,
+      fetchUpcomingEvents: mockFetchUpcomingEvents,
+    });
+
+    render(<ScheduleView onNavigateToClass={mockNavigate} />);
+
+    fireEvent.press(screen.getByText("Dir"));
+
+    expect(mockSetStartPoint).not.toHaveBeenCalledWith(
+      "USER",
+      expect.anything(),
+      "Your Location",
+    );
+    expect(mockSetDestination).toHaveBeenCalledWith(
+      "H",
+      expect.any(Object),
+      "Hall Building",
+      "820",
+    );
+    expect(mockSetShowDirections).toHaveBeenCalledWith(true);
+    expect(mockNavigate).toHaveBeenCalled();
+  });
+
+it("handles all-day events that use date instead of dateTime", () => {
+  (useGoogleCalendar as jest.Mock).mockReturnValue({
+    events: [
+      {
+        id: "1",
+        summary: "All Day Conference",
+        location: "H-820",
+        start: { date: "2026-03-29" },
+        end: { date: "2026-03-30" },
+      },
+    ],
+    loading: false,
+    error: null,
+    fetchUpcomingEvents: mockFetchUpcomingEvents,
+  });
+
+  render(<ScheduleView />);
+
+  expect(screen.getByText("All Day Conference")).toBeTruthy();
+  expect(screen.queryByText(/AM|PM/)).toBeNull();
+});
+
+  it("handles events with missing start values gracefully", () => {
+    (useGoogleCalendar as jest.Mock).mockReturnValue({
+      events: [
+        {
+          id: "1",
+          summary: "Missing Start Event",
+          location: "H-820",
+          start: {},
+          end: {},
+        },
+      ],
+      loading: false,
+      error: null,
+      fetchUpcomingEvents: mockFetchUpcomingEvents,
+    });
+
+    render(<ScheduleView />);
+    expect(screen.getByText("Missing Start Event")).toBeTruthy();
+  });
+
+  it("groups multiple events under the same date heading", () => {
+    (useGoogleCalendar as jest.Mock).mockReturnValue({
+      events: [
+        {
+          id: "1",
+          summary: "Morning Class",
+          location: "H-820",
+          start: { dateTime: "2026-03-29T09:00:00.000Z" },
+          end: { dateTime: "2026-03-29T10:00:00.000Z" },
+        },
+        {
+          id: "2",
+          summary: "Afternoon Class",
+          location: "H-820",
+          start: { dateTime: "2026-03-29T13:00:00.000Z" },
+          end: { dateTime: "2026-03-29T14:00:00.000Z" },
+        },
+      ],
+      loading: false,
+      error: null,
+      fetchUpcomingEvents: mockFetchUpcomingEvents,
+    });
+
+    render(<ScheduleView />);
+
+    expect(screen.getByText("Today")).toBeTruthy();
+    expect(screen.getByText("Morning Class")).toBeTruthy();
+    expect(screen.getByText("Afternoon Class")).toBeTruthy();
   });
 });
