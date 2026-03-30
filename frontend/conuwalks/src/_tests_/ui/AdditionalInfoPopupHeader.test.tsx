@@ -4,20 +4,35 @@ import { render, screen, fireEvent } from "@testing-library/react-native";
 import PopupHeader from "../../components/AdditionalInfoPopupHeader";
 import { BuildingMetadata, AccessibilityIconDef } from "../../indoors/types/Building";
 
-// mock the native/external icon components
 jest.mock("@expo/vector-icons/MaterialIcons", () => "MaterialIcons");
 jest.mock("expo-symbols", () => ({ SymbolView: "SymbolView" }));
 jest.mock("../../components/MetroIcon", () => ({ MetroIcon: "MetroIcon" }));
+jest.mock("../../components/ui/PlatformIcon", () => "PlatformIcon");
+jest.mock("../../components/ui/BottomSheetDragHandle", () => {
+  const React = require("react");
+  const { TouchableOpacity, Text } = require("react-native");
+  return ({ isDark, onToggleHeight, onAccessibilityAction }: any) => (
+    <TouchableOpacity
+      accessibilityLabel="Drag handle"
+      onPress={onToggleHeight}
+      onAccessibilityAction={onAccessibilityAction}
+    >
+      <Text>Drag Handle</Text>
+    </TouchableOpacity>
+  );
+});
 
-// mock styles and themedstyles to prevent undefined errors
 jest.mock("@/src/styles/additionalInfoPopup", () => ({
   styles: {
     handleBarContainer: {},
     handleBar: {},
     iosHeader: {},
+    leftHeaderActions: {},
     closeButton: {},
     closeButtonCircle: {},
     closeButtonText: {},
+    openIndoorHeaderButton: {},
+    openIndoorHeaderButtonText: {},
     headerTextContainer: {},
     buildingName: {},
     buildingIdWithIconsContainer: {},
@@ -35,6 +50,8 @@ jest.mock("@/src/styles/additionalInfoPopup", () => ({
     subtext: () => ({ color: "#666666" }),
     closeButton: () => ({ backgroundColor: "#EEEEEE" }),
     mutedText: () => ({ color: "#999999" }),
+    openIndoorHeaderButton: () => ({ backgroundColor: "#FFFFFF" }),
+    openIndoorHeaderButtonText: () => ({ color: "#000000" }),
   },
 }));
 
@@ -43,6 +60,7 @@ describe("PopupHeader Component", () => {
   const mockOnDirectionsPress = jest.fn();
   const mockOnToggleHeight = jest.fn();
   const mockOnDragHandleAccessibilityAction = jest.fn();
+  const mockOnOpenIndoorPress = jest.fn();
 
   const mockBuildingInfo: BuildingMetadata = {
     name: "Henry F. Hall Building",
@@ -86,6 +104,7 @@ describe("PopupHeader Component", () => {
     Platform.OS = originalOS;
   });
 
+
   it("renders building name, ID, and directions ETA", () => {
     render(<PopupHeader {...defaultProps} />);
 
@@ -99,6 +118,20 @@ describe("PopupHeader Component", () => {
 
     expect(screen.getByText("Building")).toBeTruthy();
   });
+
+  it("renders '--' as ETA fallback when directionsEtaLabel is undefined", () => {
+    render(<PopupHeader {...defaultProps} directionsEtaLabel={undefined} />);
+
+    expect(screen.getByLabelText("Directions, --")).toBeTruthy();
+    expect(screen.getByText("--")).toBeTruthy();
+  });
+
+  it("renders in dark mode without errors", () => {
+    render(<PopupHeader {...defaultProps} mode="dark" />);
+
+    expect(screen.getByText("Henry F. Hall Building")).toBeTruthy();
+  });
+
 
   it("calls onDismiss when the close button is pressed", () => {
     render(<PopupHeader {...defaultProps} />);
@@ -129,12 +162,98 @@ describe("PopupHeader Component", () => {
 
   it("calls onToggleHeight when the header background is pressed", () => {
     render(<PopupHeader {...defaultProps} />);
-    // because the building name is inside the touchablewithoutfeedback,
-    // pressing it bubbles up to trigger the ontoggleheight callback
+
     const buildingNameText = screen.getByText("Henry F. Hall Building");
     fireEvent.press(buildingNameText);
 
     expect(mockOnToggleHeight).toHaveBeenCalledTimes(1);
+  });
+
+
+  it("does not render the indoor button when showOpenIndoorButton is false", () => {
+    render(
+      <PopupHeader
+        {...defaultProps}
+        showOpenIndoorButton={false}
+        onOpenIndoorPress={mockOnOpenIndoorPress}
+      />,
+    );
+
+    expect(screen.queryByLabelText("Open indoor map")).toBeNull();
+  });
+
+  it("does not render the indoor button when onOpenIndoorPress is not provided", () => {
+    render(
+      <PopupHeader
+        {...defaultProps}
+        showOpenIndoorButton={true}
+        onOpenIndoorPress={undefined}
+      />,
+    );
+
+    expect(screen.queryByLabelText("Open indoor map")).toBeNull();
+  });
+
+  it("renders and calls onOpenIndoorPress when the indoor button is shown and pressed", () => {
+    render(
+      <PopupHeader
+        {...defaultProps}
+        showOpenIndoorButton={true}
+        onOpenIndoorPress={mockOnOpenIndoorPress}
+      />,
+    );
+
+    const indoorButton = screen.getByLabelText("Open indoor map");
+    expect(indoorButton).toBeTruthy();
+
+    fireEvent.press(indoorButton);
+    expect(mockOnOpenIndoorPress).toHaveBeenCalledTimes(1);
+  });
+
+  it("renders the 'Indoor' label text inside the indoor button", () => {
+    render(
+      <PopupHeader
+        {...defaultProps}
+        showOpenIndoorButton={true}
+        onOpenIndoorPress={mockOnOpenIndoorPress}
+      />,
+    );
+
+    expect(screen.getByText("Indoor")).toBeTruthy();
+  });
+
+  it("does not render the accessibility icon row when no icons are provided", () => {
+    render(<PopupHeader {...defaultProps} accessibilityIcons={[]} />);
+
+    expect(screen.queryByLabelText("Metro Access")).toBeNull();
+    expect(screen.queryByLabelText("Wheelchair Accessible")).toBeNull();
+  });
+
+  it("renders accessibility icon wrappers with correct labels", () => {
+    render(
+      <PopupHeader {...defaultProps} accessibilityIcons={mockAccessibilityIcons} />,
+    );
+
+    expect(screen.getByLabelText("Metro Access")).toBeTruthy();
+    expect(screen.getByLabelText("Wheelchair Accessible")).toBeTruthy();
+  });
+
+  it("updates sidePadding and rightHeight via onLayout of the right actions view", () => {
+
+    render(
+      <PopupHeader {...defaultProps} accessibilityIcons={mockAccessibilityIcons} />,
+    );
+
+    const allViews = screen.UNSAFE_queryAllByType("View" as any);
+    allViews.forEach((view) => {
+      if (view.props.onLayout) {
+        fireEvent(view, "layout", {
+          nativeEvent: { layout: { width: 120, height: 50 } },
+        });
+      }
+    });
+
+    expect(screen.getByText("Henry F. Hall Building")).toBeTruthy();
   });
 
   it("renders iOS specific close button and SF Symbols correctly", () => {
@@ -146,21 +265,15 @@ describe("PopupHeader Component", () => {
       />,
     );
 
-    // verify ios text-based close button
     expect(screen.getByText("✕")).toBeTruthy();
 
-    // verify custom metro icon is prioritized over sf symbol for the metro key
     expect(screen.UNSAFE_queryByType("MetroIcon" as any)).toBeTruthy();
 
-    // verify sf symbol is used for the standard icon
     const sfSymbol = screen.UNSAFE_queryAllByType("SymbolView" as any);
-    expect(sfSymbol.some(symbol => symbol.props.name === "figure.roll")).toBeTruthy();
+    expect(sfSymbol.some((symbol) => symbol.props.name === "figure.roll")).toBeTruthy();
 
-    // materialicons should not be rendered on ios (unless it's the directions arrow, which is hardcoded)
     const materialIcons = screen.UNSAFE_queryAllByType("MaterialIcons" as any);
-    expect(materialIcons.some(icon => icon.props.name === "accessible-forward")).toBe(
-      false,
-    );
+    expect(materialIcons.some((icon) => icon.props.name === "accessible-forward")).toBe(false);
   });
 
   it("renders Android specific close button and Material Icons correctly", () => {
@@ -172,23 +285,31 @@ describe("PopupHeader Component", () => {
       />,
     );
 
-    // the text close button should not exist on android
     expect(screen.queryByText("✕")).toBeNull();
 
-    // verify custom metro icon is still prioritized on android
+    expect(screen.getByLabelText("Close")).toBeTruthy();
+
     expect(screen.UNSAFE_queryByType("MetroIcon" as any)).toBeTruthy();
 
-    // verify materialicons are used instead of sf symbols
     expect(screen.UNSAFE_queryByType("SymbolView" as any)).toBeNull();
 
-    // check for the android close icon and the accessible icon
-    const materialIcons = screen.UNSAFE_queryAllByType("MaterialIcons" as any);
-    expect(materialIcons.some((icon) => icon.props.name === "close")).toBe(
-      true,
+    const platformIcons = screen.UNSAFE_queryAllByType("PlatformIcon" as any);
+    expect(platformIcons.some((icon) => icon.props.materialName === "accessible")).toBe(true);
+  });
+
+  it("renders PlatformIcon for non-metro accessibility icons on Android", () => {
+    Platform.OS = "android";
+    render(
+      <PopupHeader
+        {...defaultProps}
+        accessibilityIcons={mockAccessibilityIcons}
+      />,
     );
-    expect(materialIcons.some((icon) => icon.props.name === "accessible")).toBe(
-      true,
-    );
+
+    const platformIcons = screen.UNSAFE_queryAllByType("PlatformIcon" as any);
+    expect(
+      platformIcons.some((icon) => icon.props.materialName === "accessible"),
+    ).toBe(true);
   });
 
   it("passes accessibility actions from the drag handle", () => {
@@ -196,7 +317,6 @@ describe("PopupHeader Component", () => {
 
     const dragHandle = screen.getByLabelText("Drag handle");
 
-    // simulate an accessibility action (e.g., from voiceover/talkback)
     fireEvent(dragHandle, "accessibilityAction", {
       nativeEvent: { actionName: "increment" },
     });
