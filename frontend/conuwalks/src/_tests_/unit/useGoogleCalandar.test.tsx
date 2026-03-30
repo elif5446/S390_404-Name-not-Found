@@ -1,4 +1,4 @@
-import { renderHook, waitFor, act } from "@testing-library/react";
+import { renderHook, waitFor, act } from "@testing-library/react-native";
 import { useGoogleCalendar } from "../../hooks/useGoogleCalendar";
 import { getTokens, isTokenValid } from "../../utils/tokenStorage";
 import { GoogleCalendarApi } from "../../api/calendarApi";
@@ -8,7 +8,7 @@ jest.mock("../../utils/tokenStorage", () => ({
   getTokens: jest.fn(),
   isTokenValid: jest.fn(),
   saveTokens: jest.fn(),
-  clearTokens: jest.fn()
+  clearTokens: jest.fn(),
 }));
 
 jest.mock("../../api/calendarApi", () => ({
@@ -100,10 +100,7 @@ describe("fetchUpcomingEvents", () => {
   });
 
   it("sets loading to true while fetching", async () => {
-    mockGetUpcomingEvents.mockImplementation(
-      () =>
-        new Promise((resolve) => setTimeout(() => resolve({ items: [] }), 100)),
-    );
+    mockGetUpcomingEvents.mockImplementation(() => new Promise(resolve => setTimeout(() => resolve({ items: [] }), 100)));
 
     const { result } = renderHook(() => useGoogleCalendar());
 

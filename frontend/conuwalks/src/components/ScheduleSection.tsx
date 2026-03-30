@@ -16,7 +16,7 @@ interface ScheduleSectionProps {
   nextEvent: BuildingEvent | null;
   campusPink: string;
   directionsEtaLabel?: string;
-  onDirectionsPress: () => void;
+  onDirectionsPress: (room?: string) => void;
   mode: "light" | "dark";
 }
 
@@ -29,9 +29,9 @@ const ScheduleSection: React.FC<ScheduleSectionProps> = ({
   onDirectionsPress,
   mode,
 }) => {
-  const renderDirectionButton = (eventName?: string) => (
+  const renderDirectionButton = (eventName?: string, roomNumber?: string) => (
     <TouchableOpacity
-      onPress={onDirectionsPress}
+      onPress={() => onDirectionsPress(roomNumber)}
       style={{
         flexDirection: "row",
         alignItems: "center",
@@ -144,7 +144,7 @@ const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       ]}
     >
       {renderSchedule(event, showDate)}
-      {renderDirectionButton(event.courseName)}
+      {renderDirectionButton(event.courseName, event.roomNumber)}
     </View>
   );
 

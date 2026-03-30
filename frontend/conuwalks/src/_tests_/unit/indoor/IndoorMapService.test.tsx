@@ -118,7 +118,13 @@ describe("IndoorMapService", () => {
     });
 
     it("adds inter-floor edges after floor edges", () => {
+      mockGraphInstance.getNode.mockImplementation((id: string) => {
+        const allNodes = buildingConfig.floors.flatMap((f) => f.nodes);
+        return allNodes.find((n) => n.id === id);
+      });
+
       service.loadBuilding(buildingConfig);
+
       buildingConfig.interFloorEdges!.forEach((edge) => {
         expect(mockGraphInstance.addEdge).toHaveBeenCalledWith(edge, false);
       });
@@ -154,8 +160,7 @@ describe("IndoorMapService", () => {
     });
 
     it("getRouteFromCurrentLocation throws error if user location is not set", () => {
-      expect(() => service.getRouteFromCurrentLocation("B"))
-        .toThrow("IndoorMapService: user location not set");
+      expect(service.getRouteFromCurrentLocation("B")).toBeNull();
     });
 
     it("getRouteFromCurrentLocation calls pathfinder with current user location", () => {

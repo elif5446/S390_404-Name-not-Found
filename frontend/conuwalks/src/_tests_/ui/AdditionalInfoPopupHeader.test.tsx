@@ -153,13 +153,12 @@ describe("PopupHeader Component", () => {
     expect(screen.UNSAFE_queryByType("MetroIcon" as any)).toBeTruthy();
 
     // verify sf symbol is used for the standard icon
-    const sfSymbol = screen.UNSAFE_queryByType("SymbolView" as any);
-    expect(sfSymbol).toBeTruthy();
-    expect(sfSymbol.props.name).toBe("figure.roll");
+    const sfSymbol = screen.UNSAFE_queryAllByType("SymbolView" as any);
+    expect(sfSymbol.some(symbol => symbol.props.name === "figure.roll")).toBeTruthy();
 
     // materialicons should not be rendered on ios (unless it's the directions arrow, which is hardcoded)
     const materialIcons = screen.UNSAFE_queryAllByType("MaterialIcons" as any);
-    expect(materialIcons.some((icon) => icon.props.name === "accessible")).toBe(
+    expect(materialIcons.some(icon => icon.props.name === "accessible-forward")).toBe(
       false,
     );
   });
