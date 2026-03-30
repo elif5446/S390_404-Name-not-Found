@@ -8,9 +8,12 @@ import {
   normalizeTravelMode,
   mapRoutesApiResponse,
   mapLegacyApiResponse,
+  fetchRoutesApi,
+  fetchLegacyApi,
 } from "@/src/api/googleDirectionsAPI";
 import { ITravelModeStrategy } from "@/src/outdoorDirections/TravelModeStrategy";
-
+const mockFetch = jest.fn();
+global.fetch = mockFetch as any;
 const stubStrategy = {
   apiMode: "DRIVE",
   applyTimeToRoutesBody: jest.fn((_body, targetTime) => targetTime),
@@ -22,8 +25,11 @@ const stubStrategy = {
   fetchRoutes: jest.fn(),
 } satisfies ITravelModeStrategy;
 
-
 describe("decodePolyline", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it("decodes a known encoded polyline to the correct coordinates", () => {
     // "_p~iF~ps|U_ulLnnqC_mqNvxq`@" is the classic Google example
     const result = decodePolyline("_p~iF~ps|U_ulLnnqC_mqNvxq`@");
@@ -184,7 +190,6 @@ describe("isRoutesBlockedError", () => {
   });
 });
 
-
 // normalizeTravelMode
 describe("normalizeTravelMode", () => {
   it("normalizes WALK variants", () => {
@@ -194,12 +199,10 @@ describe("normalizeTravelMode", () => {
 
   it("normalizes DRIVE variants", () => {
     expect(normalizeTravelMode("DRIVE")).toBe("driving");
-    expect(normalizeTravelMode("DRIVE")).toBe("driving"); // ← remove this line
   });
 
   it("normalizes BICYCLE variants", () => {
     expect(normalizeTravelMode("BICYCLE")).toBe("bicycling");
-    expect(normalizeTravelMode("BICYCLE")).toBe("bicycling"); // ← remove this line
   });
 
   it("normalizes TRANSIT", () => {
@@ -451,5 +454,317 @@ describe("mapLegacyApiResponse", () => {
     );
     expect(results).toHaveLength(2);
     expect(results[1].id).toBe("legacy-route-1");
+  });
+});
+
+describe("fetchRoutesApi", () => {
+  const start = { latitude: 45.5, longitude: -73.6 };
+  const destination = { latitude: 45.51, longitude: -73.61 };
+  const targetTime = new Date("2030-01-01T12:00:00.000Z");
+
+  it("builds the request body, calls fetch, and returns routes", async () => {
+    const rawRoutes = [{ id: "r1" }];
+    (stubStrategy.applyTimeToRoutesBody as jest.Mock).mockReturnValueOnce(
+      targetTime,
+    );
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: jest.fn().mockResolvedValue({ routes: rawRoutes }),
+    });
+
+    const result = await fetchRoutesApi(
+      start,
+      destination,
+      stubStrategy,
+      targetTime,
+      "leave",
+    );
+
+    expect(stubStrategy.applyTimeToRoutesBody).toHaveBeenCalledWith(
+      expect.objectContaining({
+        origin: {
+          location: { latLng: { latitude: 45.5, longitude: -73.6 } },
+        },
+        destination: {
+          location: { latLng: { latitude: 45.51, longitude: -73.61 } },
+        },
+        travelMode: "DRIVE",
+      }),
+      targetTime,
+      "leave",
+    );
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      "https://routes.googleapis.com/directions/v2:computeRoutes",
+      expect.objectContaining({
+        method: "POST",
+        body: expect.any(String),
+        headers: expect.objectContaining({
+          "Content-Type": "application/json",
+          "X-Goog-Api-Key": expect.any(String),
+          "X-Goog-FieldMask": expect.any(String),
+        }),
+      }),
+    );
+
+    expect(result).toEqual({
+      rawRoutes,
+      safeTargetTime: targetTime,
+    });
+  });
+
+  it("throws when the Routes API response is not ok", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+      json: jest.fn().mockResolvedValue({
+        error: { message: "Routes backend failure" },
+      }),
+    });
+
+    await expect(
+      fetchRoutesApi(start, destination, stubStrategy, targetTime, "leave"),
+    ).rejects.toThrow("Routes backend failure");
+  });
+
+  it("throws when the Routes API returns no routes", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: jest.fn().mockResolvedValue({ routes: [] }),
+    });
+
+    await expect(
+      fetchRoutesApi(start, destination, stubStrategy, targetTime, "leave"),
+    ).rejects.toThrow("No route found between these locations");
+  });
+});
+
+describe("fetchLegacyApi", () => {
+  const start = { latitude: 45.5, longitude: -73.6 };
+  const destination = { latitude: 45.51, longitude: -73.61 };
+  const targetTime = new Date("2030-01-01T12:00:00.000Z");
+
+  it("builds the legacy URL, calls fetch, and returns routes", async () => {
+    const rawRoutes = [{ id: "legacy-1" }];
+    (stubStrategy.applyTimeToLegacyUrl as jest.Mock).mockReturnValueOnce({
+      url: "https://example.com/fake-legacy-url",
+      safeTargetTime: targetTime,
+    });
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: jest.fn().mockResolvedValue({
+        status: "OK",
+        routes: rawRoutes,
+      }),
+    });
+
+    const result = await fetchLegacyApi(
+      start,
+      destination,
+      stubStrategy,
+      targetTime,
+      "leave",
+      "driving",
+    );
+
+    expect(stubStrategy.applyTimeToLegacyUrl).toHaveBeenCalledWith(
+      expect.stringContaining(
+        "https://maps.googleapis.com/maps/api/directions/json?",
+      ),
+      targetTime,
+      "leave",
+    );
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      "https://example.com/fake-legacy-url",
+      expect.objectContaining({
+        method: "GET",
+      }),
+    );
+
+    expect(result).toEqual({
+      rawRoutes,
+      safeTargetTime: targetTime,
+    });
+  });
+
+  it("throws when the legacy API response is not ok", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 403,
+      json: jest.fn().mockResolvedValue({
+        error_message: "Legacy API forbidden",
+      }),
+    });
+
+    await expect(
+      fetchLegacyApi(
+        start,
+        destination,
+        stubStrategy,
+        targetTime,
+        "leave",
+        "driving",
+      ),
+    ).rejects.toThrow("Legacy API forbidden");
+  });
+
+  it("throws zero-results message when legacy API returns ZERO_RESULTS", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: jest.fn().mockResolvedValue({
+        status: "ZERO_RESULTS",
+        routes: [],
+      }),
+    });
+
+    await expect(
+      fetchLegacyApi(
+        start,
+        destination,
+        stubStrategy,
+        targetTime,
+        "leave",
+        "driving",
+      ),
+    ).rejects.toThrow("No route found between these locations");
+  });
+
+  it("throws generic legacy status error for other bad statuses", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: jest.fn().mockResolvedValue({
+        status: "INVALID_REQUEST",
+        routes: [],
+      }),
+    });
+
+    await expect(
+      fetchLegacyApi(
+        start,
+        destination,
+        stubStrategy,
+        targetTime,
+        "leave",
+        "driving",
+      ),
+    ).rejects.toThrow("Directions API error: INVALID_REQUEST");
+  });
+});
+
+describe("mapRoutesApiResponse extra branch coverage", () => {
+  const makeRoute = (overrides: Record<string, unknown> = {}) => ({
+    distanceMeters: 1200,
+    duration: "300s",
+    polyline: { encodedPolyline: "_p~iF~ps|U" },
+    legs: [
+      {
+        distanceMeters: 800,
+        duration: "250s",
+        steps: [
+          {
+            distanceMeters: 100,
+            staticDuration: "30s",
+            travelMode: "WALK",
+            startLocation: { latLng: { latitude: 45.5, longitude: -73.6 } },
+            endLocation: { latLng: { latitude: 45.51, longitude: -73.61 } },
+            navigationInstruction: { instructions: "Walk" },
+          },
+        ],
+      },
+    ],
+    ...overrides,
+  });
+
+  it("uses an empty polylinePoints array when a step polyline is missing", () => {
+    const results = mapRoutesApiResponse(
+      [makeRoute()],
+      null,
+      "leave",
+      "walking",
+      stubStrategy,
+    );
+
+    expect(results[0].steps[0].polylinePoints).toEqual([]);
+  });
+
+  it("falls back to leg duration when route duration is missing", () => {
+    const route = makeRoute({ duration: undefined });
+
+    const results = mapRoutesApiResponse(
+      [route],
+      null,
+      "leave",
+      "walking",
+      stubStrategy,
+    );
+
+    expect(results[0].baseDurationSeconds).toBe(250);
+  });
+
+  it("falls back to leg distance when route distanceMeters is missing", () => {
+    const route = makeRoute({ distanceMeters: undefined });
+
+    const results = mapRoutesApiResponse(
+      [route],
+      null,
+      "leave",
+      "walking",
+      stubStrategy,
+    );
+
+    expect(results[0].distance).toBe("800 m");
+  });
+});
+
+describe("mapLegacyApiResponse extra branch coverage", () => {
+  const makeLegacyRoute = () => ({
+    overview_polyline: { points: "_p~iF~ps|U" },
+    legs: [
+      {
+        distance: { text: "1.2 km", value: 1200 },
+        duration: { text: "5 mins", value: 300 },
+        steps: [
+          {
+            distance: { value: 600 },
+            travel_mode: "WALKING",
+            start_location: { lat: 45.5, lng: -73.6 },
+            end_location: { lat: 45.51, lng: -73.61 },
+            html_instructions: "Walk forward",
+          },
+        ],
+      },
+    ],
+  });
+
+  it("uses empty string when legacy step duration text is missing", () => {
+    const results = mapLegacyApiResponse(
+      [makeLegacyRoute()],
+      null,
+      "leave",
+      "walking",
+      stubStrategy,
+    );
+
+    expect(results[0].steps[0].duration).toBe("");
+  });
+
+  it("uses an empty polylinePoints array when legacy step polyline is missing", () => {
+    const results = mapLegacyApiResponse(
+      [makeLegacyRoute()],
+      null,
+      "leave",
+      "walking",
+      stubStrategy,
+    );
+
+    expect(results[0].steps[0].polylinePoints).toEqual([]);
   });
 });
