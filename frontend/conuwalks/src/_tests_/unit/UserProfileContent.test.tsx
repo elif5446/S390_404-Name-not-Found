@@ -68,6 +68,34 @@ const mockedOpenNotificationSettings =
 const mockedOpenAppearanceSettings =
   openAppearanceSettings as jest.MockedFunction<typeof openAppearanceSettings>;
 
+const renderIOS = () => {
+  jest.resetModules();
+
+  jest.doMock("react-native", () => {
+    const RN = jest.requireActual("react-native");
+    return {
+      ...RN,
+      Platform: {
+        ...RN.Platform,
+        OS: "ios",
+      },
+    };
+  });
+
+  const React = require("react");
+  const { render } = require("@testing-library/react-native");
+  const UserProfileContent =
+    require("@/src/components/UserProfileContent").default;
+
+  return render(
+    <UserProfileContent
+      userInfo={{ email: "student@test.com", studentId: "40212345" }}
+      onSignOut={jest.fn()}
+      mode="light"
+    />,
+  );
+};
+
 describe("UserProfileContent", () => {
   const userInfo = {
     email: "student@test.com",
@@ -446,5 +474,34 @@ describe("UserProfileContent", () => {
         `Set any value from ${MIN_CLASS_REMINDER_LEAD_TIME_MINUTES} to ${MAX_CLASS_REMINDER_LEAD_TIME_MINUTES} minutes`,
       ),
     ).toBeTruthy();
+  });
+
+  it("renders iOS SymbolView icon", async () => {
+    const { UNSAFE_getByType } = renderIOS();
+
+    await waitFor(() => {
+      expect(UNSAFE_getByType("SymbolView")).toBeTruthy();
+    });
+  });
+
+  it("applies iOS padding to notification row", () => {
+    const { getByText } = renderIOS();
+
+    const text = getByText("System Notification Settings");
+    const touchable = text.parent?.parent;
+
+    expect(touchable?.props.style).toEqual(
+      expect.arrayContaining([expect.objectContaining({ paddingTop: 35 })]),
+    );
+  });
+
+  it("uses iOS section marginBottom", () => {
+    const { getByText } = renderIOS();
+
+    const section = getByText("Account").parent;
+
+    expect(section?.props.style).toEqual(
+      expect.objectContaining({ marginBottom: 25 }),
+    );
   });
 });
