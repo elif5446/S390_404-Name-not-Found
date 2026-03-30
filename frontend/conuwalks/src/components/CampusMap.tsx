@@ -999,6 +999,7 @@ const currentCampus: "SGW" | "LOY" = useMemo(() => {
 }, [mapRegion.latitude]);// State for restaurants fetched from Google API
 
 const [pois, setPois] = useState<POIPlace[]>([]);
+const [selectedRadius, setSelectedRadius] = useState(1000);
 
 useEffect(() => {
   if (!selectedPOIType) {
@@ -1049,6 +1050,7 @@ const handleClearPOIs = useCallback(() => {
 const updatePOIs = async (radius: number) => {
   if (!selectedPOIType) return;
   const newPois = await fetchPOIs(currentCampus, selectedPOIType, radius);
+  setSelectedRadius(radius);
   setPois(newPois);
 };
   return (
@@ -1183,6 +1185,7 @@ const updatePOIs = async (radius: number) => {
     poiType={selectedPOIType}
     pois={pois}
     onPOIPress={(poi) => console.log("Clicked:", poi.name)}
+    radiusMeters={selectedRadius}
   />
 )}
       </MapView>

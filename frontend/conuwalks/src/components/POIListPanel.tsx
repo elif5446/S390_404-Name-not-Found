@@ -99,7 +99,7 @@ const POIListPanel: React.FC<POIListPanelProps> = ({
   const translateY = useRef(new Animated.Value(PANEL_HEIGHT)).current;
 // Add at the top of POIListPanel component
 const RADIUS_OPTIONS = [1000, 100, 200, 500]; // 1km, 200m,500m, 100m
-const [radius, setRadius] = React.useState<number>(800);
+const [radius, setRadius] = React.useState<number>(1000);
 
  //  Trigger POI fetch when radius changes ---
  React.useEffect(() => {
@@ -177,8 +177,45 @@ const [radius, setRadius] = React.useState<number>(800);
     })
   ).current;
 
-  if (sortedPois.length === 0) return null;
-
+  // Add this helper component right before the main return statement
+const EmptyStateContent = ({ onClearPOIs }: { onClearPOIs: () => void }) => (
+  <View style={styles.inner}>
+    <View style={styles.header}>
+      <Text style={styles.title}>No places found nearby</Text>
+      <TouchableOpacity onPress={onClearPOIs} style={styles.clearButton}>
+        <MaterialIcons name="clear" size={24} color="#B03060" />
+      </TouchableOpacity>
+    </View>
+    
+    <View style={styles.emptyHint}>
+      <MaterialIcons name="search" size={48} color="#B0B0B0" />
+      <Text style={styles.emptyText}>
+        Try a larger radius or different category
+      </Text>
+      <Text style={styles.emptySubtext}>Current: {radius >= 1000 ? `${radius/1000}km` : `${radius}m`}</Text>
+    </View>
+  </View>
+);
+// NEW: Show empty state when NO POIs OR after sorting/filtering
+if (sortedPois.length === 0) {
+  return (
+    <Animated.View
+      {...panResponder.panHandlers}
+      style={[styles.container, { transform: [{ translateY }] }, { zIndex: 1000 }]}
+      pointerEvents={visible ? "auto" : "none"}
+    >
+      {Platform.OS === "ios" ? (
+        <BlurView intensity={40} tint="light" style={styles.blur}>
+          <EmptyStateContent onClearPOIs={onClearPOIs} />
+        </BlurView>
+      ) : (
+        <View style={[styles.blur, styles.androidFallback]}>
+          <EmptyStateContent onClearPOIs={onClearPOIs} />
+        </View>
+      )}
+    </Animated.View>
+  );
+}
   // SCROLLABLE LIST RENDER ITEM
   const renderPOIItem = ({ item }: { item: ExtendedPOI }) => {
     const poiType = getPOITypeFromName(item.name);
@@ -338,6 +375,25 @@ const styles = StyleSheet.create({
     color: "#6B6B6F",
     fontWeight: "500",
   },
+  emptyHint: {
+  flex: 1,
+  alignItems: "center",
+  justifyContent: "center",
+  paddingHorizontal: 40,
+},
+emptyText: {
+  fontSize: 18,
+  fontWeight: "500",
+  color: "#6B6B6F",
+  textAlign: "center",
+  marginTop: 16,
+  marginBottom: 8,
+},
+emptySubtext: {
+  fontSize: 14,
+  color: "#9B9B9B",
+  textAlign: "center",
+},
 });
 
 export default POIListPanel;

@@ -83,8 +83,8 @@ export const fetchPOIs = async (
     );
 
     const data = await response.json();
-    if (!data.places) {
-      console.error("Places API error:", JSON.stringify(data));
+    if (!data.places || data.places.length === 0) {
+      console.log(`No ${poiType} found within ${radius}m`);
       return [];
     }
 
