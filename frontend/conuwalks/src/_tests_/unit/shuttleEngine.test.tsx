@@ -229,7 +229,6 @@ describe("shuttleRouting.ts", () => {
   const DEST_SGW: LatLng = { latitude: 45.457, longitude: -73.638 };
 
   it("builds a LOY to SGW shuttle route and reverses the shuttle direction", async () => {
-
     mockDistanceMetersBetween.mockImplementation((coord1, coord2) => {
       // Start close to LOY stop, far from SGW stop
       if (coord1 === START_LOY && coord2.latitude > 45.49) return 200;
@@ -294,32 +293,32 @@ describe("shuttleRouting.ts", () => {
   });
 
   it("parses walking distances expressed in km", async () => {
-  mockDistanceMetersBetween.mockImplementation((coord1, coord2) => {
-    if (coord1 === START_SGW && coord2.latitude < 45.49) return 200;
-    if (coord1 === DEST_LOY && coord2.latitude > 45.49) return 200;
-    return 5000;
+    mockDistanceMetersBetween.mockImplementation((coord1, coord2) => {
+      if (coord1 === START_SGW && coord2.latitude < 45.49) return 200;
+      if (coord1 === DEST_LOY && coord2.latitude > 45.49) return 200;
+      return 5000;
+    });
+
+    mockGetDirections.mockResolvedValue([
+      {
+        duration: "5 min",
+        distance: "1.2 km",
+        steps: [{ instruction: "Walk straight", polylinePoints: [] }],
+        polylinePoints: [],
+      },
+    ]);
+
+    const mondayMorning = new Date(2026, 2, 2, 9, 5);
+    const result = await getShuttleRouteIfApplicable(
+      START_SGW,
+      DEST_LOY,
+      mondayMorning,
+      "leave",
+    );
+
+    expect(result).not.toBeNull();
+    expect(result?.distance).toBe("9.6 km");
   });
-
-  mockGetDirections.mockResolvedValue([
-    {
-      duration: "5 min",
-      distance: "1.2 km",
-      steps: [{ instruction: "Walk straight", polylinePoints: [] }],
-      polylinePoints: [],
-    },
-  ]);
-
-  const mondayMorning = new Date(2026, 2, 2, 9, 5);
-  const result = await getShuttleRouteIfApplicable(
-    START_SGW,
-    DEST_LOY,
-    mondayMorning,
-    "leave",
-  );
-
-  expect(result).not.toBeNull();
-  expect(result?.distance).toBe("9.6 km");
-});
 
   it("falls back to geometric walking distances when API walking distance/duration are missing", async () => {
     mockDistanceMetersBetween.mockImplementation((coord1, coord2) => {
@@ -350,5 +349,131 @@ describe("shuttleRouting.ts", () => {
 
     // total distance should use fallback geometry values: 300 + 7200 + 350 = 7850 m => 7.8 km
     expect(result?.distance).toBe("7.8 km");
+  });
+
+  it("parses walking duration with hours and minutes from API results", async () => {
+    mockDistanceMetersBetween.mockImplementation((coord1, coord2) => {
+      if (coord1 === START_SGW && coord2.latitude < 45.49) return 200;
+      if (coord1 === DEST_LOY && coord2.latitude > 45.49) return 200;
+      return 5000;
+    });
+
+    mockGetDirections.mockResolvedValue([
+      {
+        duration: "1 h 15 min",
+        distance: "400 m",
+        steps: [{ instruction: "Walk straight", polylinePoints: [] }],
+        polylinePoints: [],
+      },
+    ]);
+
+    const mondayMorning = new Date(2026, 2, 2, 9, 0);
+
+    const result = await getShuttleRouteIfApplicable(
+      START_SGW,
+      DEST_LOY,
+      mondayMorning,
+      "leave",
+    );
+
+    expect(result).not.toBeNull();
+
+    // 9:00 + 75 min walk => earliest shuttle is 10:30
+    expect(result?.steps[1].instruction).toContain("Departs at 10:30");
+  });
+
+  it("falls back to manual walk-to step when first walking directions call returns an empty array", async () => {
+    mockDistanceMetersBetween.mockImplementation((coord1, coord2) => {
+      if (coord1 === START_SGW && coord2.latitude < 45.49) return 240; // close to SGW
+      if (coord1 === DEST_LOY && coord2.latitude > 45.49) return 260; // close to LOY
+      return 5000;
+    });
+
+    mockGetDirections
+      .mockResolvedValueOnce([]) // w1 -> no route, no throw
+      .mockResolvedValueOnce([
+        {
+          duration: "5 min",
+          distance: "400 m",
+          steps: [
+            { instruction: "Walk from shuttle stop", polylinePoints: [] },
+          ],
+          polylinePoints: [],
+        },
+      ]); // w2
+
+    const mondayMorning = new Date(2026, 2, 2, 9, 0);
+
+    const result = await getShuttleRouteIfApplicable(
+      START_SGW,
+      DEST_LOY,
+      mondayMorning,
+      "leave",
+    );
+
+    expect(result).not.toBeNull();
+    expect(result?.steps[0].instruction).toBe(
+      "Walk to SGW Hall Building Shuttle Stop",
+    );
+    expect(result?.steps[1].travelMode).toBe("transit");
+  });
+
+  it("falls back to manual final walking step when second walking directions call returns an empty array", async () => {
+    mockDistanceMetersBetween.mockImplementation((coord1, coord2) => {
+      if (coord1 === START_SGW && coord2.latitude < 45.49) return 240;
+      if (coord1 === DEST_LOY && coord2.latitude > 45.49) return 260;
+      return 5000;
+    });
+
+    mockGetDirections
+      .mockResolvedValueOnce([
+        {
+          duration: "5 min",
+          distance: "400 m",
+          steps: [{ instruction: "Walk to shuttle stop", polylinePoints: [] }],
+          polylinePoints: [],
+        },
+      ]) // w1
+      .mockResolvedValueOnce([]); // w2 -> no route, no throw
+
+    const mondayMorning = new Date(2026, 2, 2, 9, 0);
+
+    const result = await getShuttleRouteIfApplicable(
+      START_SGW,
+      DEST_LOY,
+      mondayMorning,
+      "leave",
+    );
+
+    expect(result).not.toBeNull();
+    expect(result?.steps[2].instruction).toBe("Walk to destination");
+    expect(result?.steps[2].travelMode).toBe("walking");
+  });
+
+  it("handles null walking directions results without crashing", async () => {
+    mockDistanceMetersBetween.mockImplementation((coord1, coord2) => {
+      if (coord1 === START_SGW && coord2.latitude < 45.49) return 240;
+      if (coord1 === DEST_LOY && coord2.latitude > 45.49) return 260;
+      return 5000;
+    });
+
+    mockGetDirections
+      .mockResolvedValueOnce(null) // w1
+      .mockResolvedValueOnce(null); // w2
+
+    const mondayMorning = new Date(2026, 2, 2, 9, 0);
+
+    const result = await getShuttleRouteIfApplicable(
+      START_SGW,
+      DEST_LOY,
+      mondayMorning,
+      "leave",
+    );
+
+    expect(result).not.toBeNull();
+    expect(result?.steps[0].instruction).toBe(
+      "Walk to SGW Hall Building Shuttle Stop",
+    );
+    expect(result?.steps[2].instruction).toBe("Walk to destination");
   });
 });
