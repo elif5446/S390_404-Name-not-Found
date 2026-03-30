@@ -586,53 +586,55 @@ describe("RoutePolyline", () => {
     });
   });
 
-it("reuses cached outdoor request and reapplies indoor patch when dependencies change but outdoor key stays the same", async () => {
-  const routeData = {
-    id: "1",
-    overviewPolyline: "encoded_str",
-    polylinePoints: [{ latitude: 1, longitude: 1 }],
-    baseDurationSeconds: 600,
-    steps: [],
-    isShuttle: false,
-  };
+  it("reuses cached outdoor request and reapplies indoor patch when dependencies change but outdoor key stays the same", async () => {
+    const routeData = {
+      id: "1",
+      overviewPolyline: "encoded_str",
+      polylinePoints: [{ latitude: 1, longitude: 1 }],
+      baseDurationSeconds: 600,
+      steps: [],
+      isShuttle: false,
+    };
 
-  const altSetRoutes = jest.fn();
+    const altSetRoutes = jest.fn();
 
-  let currentDirectionsContext: any = {
-    ...baseDirectionsContext,
-    setRoutes: mockSetRoutes,
-    setRouteData: mockSetRouteData,
-    setLoading: mockSetLoading,
-    setError: mockSetError,
-  };
+    let currentDirectionsContext: any = {
+      ...baseDirectionsContext,
+      setRoutes: mockSetRoutes,
+      setRouteData: mockSetRouteData,
+      setLoading: mockSetLoading,
+      setError: mockSetError,
+    };
 
-  (useDirections as jest.Mock).mockImplementation(() => currentDirectionsContext);
+    (useDirections as jest.Mock).mockImplementation(
+      () => currentDirectionsContext,
+    );
 
-  (getDirections as jest.Mock).mockResolvedValue([routeData]);
-  (calculateIndoorPenaltySeconds as jest.Mock).mockResolvedValue(60);
+    (getDirections as jest.Mock).mockResolvedValue([routeData]);
+    (calculateIndoorPenaltySeconds as jest.Mock).mockResolvedValue(60);
 
-  const { rerender } = render(<RoutePolyline {...defaultProps} />);
-  await flushDebounce();
+    const { rerender } = render(<RoutePolyline {...defaultProps} />);
+    await flushDebounce();
 
-  await waitFor(() => {
-    expect(getDirections).toHaveBeenCalledTimes(1);
-    expect(calculateIndoorPenaltySeconds).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(getDirections).toHaveBeenCalledTimes(1);
+      expect(calculateIndoorPenaltySeconds).toHaveBeenCalledTimes(1);
+    });
+
+    currentDirectionsContext = {
+      ...currentDirectionsContext,
+      routeData,
+      setRoutes: altSetRoutes,
+    };
+
+    rerender(<RoutePolyline {...defaultProps} />);
+    await flushDebounce();
+
+    await waitFor(() => {
+      expect(getDirections).toHaveBeenCalledTimes(1);
+      expect(calculateIndoorPenaltySeconds).toHaveBeenCalledTimes(2);
+    });
   });
-
-  currentDirectionsContext = {
-    ...currentDirectionsContext,
-    routeData,
-    setRoutes: altSetRoutes,
-  };
-
-  rerender(<RoutePolyline {...defaultProps} />);
-  await flushDebounce();
-
-  await waitFor(() => {
-    expect(getDirections).toHaveBeenCalledTimes(1);
-    expect(calculateIndoorPenaltySeconds).toHaveBeenCalledTimes(2);
-  });
-});
 
   it("reapplies indoor patch when indoor request key changes", async () => {
     const routeData = {
@@ -994,7 +996,9 @@ it("reuses cached outdoor request and reapplies indoor patch when dependencies c
       setError: mockSetError,
     });
 
-    const { getByTestId, rerender } = render(<RoutePolyline {...defaultProps} />);
+    const { getByTestId, rerender } = render(
+      <RoutePolyline {...defaultProps} />,
+    );
     const marker = getByTestId("mock-marker");
 
     expect(marker.props.tracksViewChanges).toBe(true);
@@ -1010,24 +1014,225 @@ it("reuses cached outdoor request and reapplies indoor patch when dependencies c
   });
 
   it("uses android walking dash pattern when platform is android", () => {
-  const originalOS = Platform.OS;
+    const originalOS = Platform.OS;
 
-  try {
-    Object.defineProperty(Platform, "OS", {
-      configurable: true,
-      value: "android",
-    });
+    try {
+      Object.defineProperty(Platform, "OS", {
+        configurable: true,
+        value: "android",
+      });
 
+      (useDirections as jest.Mock).mockReturnValue({
+        ...baseDirectionsContext,
+        travelMode: "walking",
+        showDirections: true,
+        isNavigationActive: true,
+        routeData: {
+          id: "android-walk",
+          polylinePoints: [{ latitude: 1, longitude: 1 }],
+          steps: [],
+          isShuttle: false,
+        },
+        setRoutes: mockSetRoutes,
+        setRouteData: mockSetRouteData,
+        setLoading: mockSetLoading,
+        setError: mockSetError,
+      });
+
+      const { getByTestId } = render(<RoutePolyline {...defaultProps} />);
+      expect(getByTestId("mock-polyline").props.lineDashPattern).toEqual([
+        1, 8,
+      ]);
+    } finally {
+      Object.defineProperty(Platform, "OS", {
+        configurable: true,
+        value: originalOS,
+      });
+    }
+  });
+
+  it("covers transit step style branches for empty mode, walking, bus, and metro colors", () => {
+    const originalOS = Platform.OS;
+
+    try {
+      Object.defineProperty(Platform, "OS", {
+        configurable: true,
+        value: "android",
+      });
+
+      (useDirections as jest.Mock).mockReturnValue({
+        ...baseDirectionsContext,
+        travelMode: "transit",
+        showDirections: true,
+        isNavigationActive: true,
+        routeData: {
+          id: "style-coverage-route",
+          polylinePoints: [{ latitude: 0, longitude: 0 }],
+          isShuttle: false,
+          steps: [
+            {
+              // empty travelMode hits: const mode = (step.travelMode || "").toUpperCase()
+              polylinePoints: [{ latitude: 1, longitude: 1 }],
+              endLocation: { latitude: 1, longitude: 1 },
+            },
+            {
+              // walking on android hits width: isIOS ? 3 : 4
+              travelMode: "walking",
+              polylinePoints: [{ latitude: 2, longitude: 2 }],
+              endLocation: { latitude: 2, longitude: 2 },
+            },
+            {
+              // bus hits: const type...toLowerCase() and else if (type.includes("bus"))
+              travelMode: "transit",
+              transitVehicleType: "BUS",
+              polylinePoints: [{ latitude: 3, longitude: 3 }],
+              endLocation: { latitude: 3, longitude: 3 },
+            },
+            {
+              // orange branch
+              travelMode: "transit",
+              transitVehicleType: "SUBWAY",
+              transitLineShortName: "2",
+              transitLineName: "orange",
+              polylinePoints: [{ latitude: 4, longitude: 4 }],
+              endLocation: { latitude: 4, longitude: 4 },
+            },
+            {
+              // yellow branch
+              travelMode: "transit",
+              transitVehicleType: "SUBWAY",
+              transitLineShortName: "4",
+              transitLineName: "jaune",
+              polylinePoints: [{ latitude: 5, longitude: 5 }],
+              endLocation: { latitude: 5, longitude: 5 },
+            },
+            {
+              // blue branch
+              travelMode: "transit",
+              transitVehicleType: "SUBWAY",
+              transitLineShortName: "5",
+              transitLineName: "bleue",
+              polylinePoints: [{ latitude: 6, longitude: 6 }],
+              endLocation: { latitude: 6, longitude: 6 },
+            },
+          ],
+        },
+        setRoutes: mockSetRoutes,
+        setRouteData: mockSetRouteData,
+        setLoading: mockSetLoading,
+        setError: mockSetError,
+      });
+
+      const { getAllByTestId } = render(<RoutePolyline {...defaultProps} />);
+      const polylines = getAllByTestId("mock-polyline");
+
+      expect(polylines).toHaveLength(6);
+
+      // step 1: empty mode -> default black
+      expect(polylines[0].props.strokeColor).toBe("#000000");
+
+      // step 2: walking on android -> dashed + width 4
+      expect(polylines[1].props.strokeColor).toBe("#B03060");
+      expect(polylines[1].props.strokeWidth).toBe(4);
+      expect(polylines[1].props.lineDashPattern).toEqual([1, 8]);
+
+      // step 3: bus
+      expect(polylines[2].props.strokeColor).toBe("#A970FF");
+
+      // step 4: orange metro
+      expect(polylines[3].props.strokeColor).toBe("#F38031");
+
+      // step 5: yellow metro
+      expect(polylines[4].props.strokeColor).toBe("#F1C40F");
+
+      // step 6: blue metro
+      expect(polylines[5].props.strokeColor).toBe("#2980B9");
+    } finally {
+      Object.defineProperty(Platform, "OS", {
+        configurable: true,
+        value: originalOS,
+      });
+    }
+  });
+
+  it("returns early on marker layout after tracksViewChanges has already been frozen", async () => {
     (useDirections as jest.Mock).mockReturnValue({
       ...baseDirectionsContext,
-      travelMode: "walking",
+      travelMode: "transit",
       showDirections: true,
       isNavigationActive: true,
       routeData: {
-        id: "android-walk",
+        id: "marker-early-return",
         polylinePoints: [{ latitude: 1, longitude: 1 }],
-        steps: [],
         isShuttle: false,
+        steps: [
+          {
+            travelMode: "walking",
+            polylinePoints: [{ latitude: 1, longitude: 1 }],
+            endLocation: { latitude: 10, longitude: 10 },
+          },
+          {
+            travelMode: "transit",
+            transitVehicleType: "BUS",
+            polylinePoints: [{ latitude: 2, longitude: 2 }],
+            endLocation: { latitude: 20, longitude: 20 },
+          },
+        ],
+      },
+      setRoutes: mockSetRoutes,
+      setRouteData: mockSetRouteData,
+      setLoading: mockSetLoading,
+      setError: mockSetError,
+    });
+
+    const { getByTestId, rerender } = render(
+      <RoutePolyline {...defaultProps} />,
+    );
+    const marker = getByTestId("mock-marker");
+
+    await act(async () => {
+      marker.props.children.props.onLayout();
+      jest.advanceTimersByTime(250);
+    });
+
+    rerender(<RoutePolyline {...defaultProps} />);
+
+    const frozenMarker = getByTestId("mock-marker");
+    expect(frozenMarker.props.tracksViewChanges).toBe(false);
+
+    // this should hit: if (!trackChanges) return;
+    await act(async () => {
+      frozenMarker.props.children.props.onLayout();
+    });
+
+    expect(getByTestId("mock-marker").props.tracksViewChanges).toBe(false);
+  });
+
+  it("clears previous marker freeze timeout when onLayout fires twice before freeze", async () => {
+    const clearTimeoutSpy = jest.spyOn(global, "clearTimeout");
+
+    (useDirections as jest.Mock).mockReturnValue({
+      ...baseDirectionsContext,
+      travelMode: "transit",
+      showDirections: true,
+      isNavigationActive: true,
+      routeData: {
+        id: "marker-clear-timeout",
+        polylinePoints: [{ latitude: 1, longitude: 1 }],
+        isShuttle: false,
+        steps: [
+          {
+            travelMode: "walking",
+            polylinePoints: [{ latitude: 1, longitude: 1 }],
+            endLocation: { latitude: 10, longitude: 10 },
+          },
+          {
+            travelMode: "transit",
+            transitVehicleType: "BUS",
+            polylinePoints: [{ latitude: 2, longitude: 2 }],
+            endLocation: { latitude: 20, longitude: 20 },
+          },
+        ],
       },
       setRoutes: mockSetRoutes,
       setRouteData: mockSetRouteData,
@@ -1036,12 +1241,90 @@ it("reuses cached outdoor request and reapplies indoor patch when dependencies c
     });
 
     const { getByTestId } = render(<RoutePolyline {...defaultProps} />);
-    expect(getByTestId("mock-polyline").props.lineDashPattern).toEqual([1, 8]);
-  } finally {
-    Object.defineProperty(Platform, "OS", {
-      configurable: true,
-      value: originalOS,
+    const marker = getByTestId("mock-marker");
+
+    await act(async () => {
+      marker.props.children.props.onLayout();
+      marker.props.children.props.onLayout();
     });
-  }
-});
+
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+
+    clearTimeoutSpy.mockRestore();
+  });
+
+  it("injects shuttle route after parsing public duration when timing condition allows it", async () => {
+    const mockApiRoutes = [
+      {
+        id: "public-1",
+        duration: "1 h 20 min",
+        overviewPolyline: "xyz",
+        baseDurationSeconds: 4800,
+        isShuttle: false,
+        steps: [],
+      },
+    ];
+
+    const mockShuttle = {
+      id: "shuttle-1",
+      isShuttle: true,
+      departureDate: "2026-03-01T12:30:00Z",
+      polylinePoints: [{ latitude: 2, longitude: 2 }],
+      baseDurationSeconds: 300,
+      steps: [],
+    };
+
+    (getDirections as jest.Mock).mockResolvedValue(mockApiRoutes);
+    (getShuttleRouteIfApplicable as jest.Mock).mockResolvedValue(mockShuttle);
+
+    render(<RoutePolyline {...defaultProps} />);
+    await flushDebounce();
+
+    await waitFor(() => {
+      expect(mockSetRoutes).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({ id: "shuttle-1", isShuttle: true }),
+          expect.objectContaining({ id: "public-1" }),
+        ]),
+      );
+    });
+  });
+
+  it("returns early from indoor patch when cached route exists but base routes are empty", async () => {
+    let currentDirectionsContext: any = {
+      ...baseDirectionsContext,
+      showDirections: true,
+      isNavigationActive: false,
+      setRoutes: mockSetRoutes,
+      setRouteData: mockSetRouteData,
+      setLoading: mockSetLoading,
+      setError: mockSetError,
+    };
+
+    (useDirections as jest.Mock).mockImplementation(
+      () => currentDirectionsContext,
+    );
+
+    // First render: block fetch so no routes are stored
+    currentDirectionsContext = {
+      ...currentDirectionsContext,
+      showDirections: false,
+    };
+
+    const { rerender } = render(<RoutePolyline {...defaultProps} />);
+    await flushDebounce();
+
+    // Second render: same request key, but change a dependency to rerun fetchRoute
+    currentDirectionsContext = {
+      ...currentDirectionsContext,
+      showDirections: true,
+      setRoutes: jest.fn(),
+    };
+
+    rerender(<RoutePolyline {...defaultProps} />);
+    await flushDebounce();
+
+    // No successful routes were ever stored, so no indoor penalty should be applied
+    expect(calculateIndoorPenaltySeconds).not.toHaveBeenCalled();
+  });
 });
