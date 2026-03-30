@@ -57,22 +57,26 @@ describe("useBottomSheet Hook", () => {
     jest.clearAllMocks();
     capturedConfigs = [];
 
-    panCreateSpy = jest.spyOn(PanResponder, "create").mockImplementation((config) => {
-      capturedConfigs.push(config);
-      return { panHandlers: {} } as any;
-    });
+    panCreateSpy = jest
+      .spyOn(PanResponder, "create")
+      .mockImplementation((config) => {
+        capturedConfigs.push(config);
+        return { panHandlers: {} } as any;
+      });
 
     mockSpring = jest.spyOn(Animated, "spring").mockImplementation(
       () =>
         ({
-          start: (cb?: (arg: { finished: boolean }) => void) => cb?.({ finished: true }),
+          start: (cb?: (arg: { finished: boolean }) => void) =>
+            cb?.({ finished: true }),
         }) as any,
     );
 
     mockTiming = jest.spyOn(Animated, "timing").mockImplementation(
       () =>
         ({
-          start: (cb?: (arg: { finished: boolean }) => void) => cb?.({ finished: true }),
+          start: (cb?: (arg: { finished: boolean }) => void) =>
+            cb?.({ finished: true }),
         }) as any,
     );
 
@@ -596,7 +600,9 @@ describe("useBottomSheet Hook", () => {
         return getHandleConfig();
       })();
 
-      stopAnimationSpy.mockImplementationOnce((cb?: (value: number) => void) => cb?.(321));
+      stopAnimationSpy.mockImplementationOnce((cb?: (value: number) => void) =>
+        cb?.(321),
+      );
 
       act(() => {
         handleConfig.onPanResponderGrant?.();
@@ -618,13 +624,18 @@ describe("useBottomSheet Hook", () => {
 
       const handleConfig = getHandleConfig();
 
-      stopAnimationSpy.mockImplementationOnce((cb?: (value: number) => void) => cb?.(20));
+      stopAnimationSpy.mockImplementationOnce((cb?: (value: number) => void) =>
+        cb?.(20),
+      );
       onExpansionChange.mockClear();
       setValueSpy.mockClear();
 
       act(() => {
         handleConfig.onPanResponderGrant?.();
-        handleConfig.onPanResponderMove?.({} as any, { dy: -100, dx: 0 } as any);
+        handleConfig.onPanResponderMove?.(
+          {} as any,
+          { dy: -100, dx: 0 } as any,
+        );
       });
 
       expect(setValueSpy).toHaveBeenCalledWith(0);
@@ -650,7 +661,9 @@ describe("useBottomSheet Hook", () => {
 
       onExpansionChange.mockClear();
       setValueSpy.mockClear();
-      stopAnimationSpy.mockImplementationOnce((cb?: (value: number) => void) => cb?.(100));
+      stopAnimationSpy.mockImplementationOnce((cb?: (value: number) => void) =>
+        cb?.(100),
+      );
 
       act(() => {
         handleConfig.onPanResponderGrant?.();
@@ -1042,5 +1055,218 @@ describe("useBottomSheet Hook", () => {
       expect(result.current).toHaveProperty("handlePanResponder");
       expect(result.current).toHaveProperty("scrollAreaPanResponder");
     });
+  });
+
+  it("snapTo handles stale callback when targetAnimY no longer matches", () => {
+    const springStarts: Array<(arg: { finished: boolean }) => void> = [];
+
+    mockSpring.mockImplementation(
+      () =>
+        ({
+          start: (cb?: (arg: { finished: boolean }) => void) => {
+            if (cb) springStarts.push(cb);
+          },
+        }) as any,
+    );
+
+    const { result } = renderHook(() =>
+      useBottomSheet({ visible: false, onDismiss: jest.fn() }),
+    );
+
+    act(() => {
+      result.current.snapTo(100);
+      result.current.snapTo(200);
+    });
+
+    expect(springStarts).toHaveLength(2);
+
+    act(() => {
+      springStarts[0]({ finished: true });
+    });
+
+    act(() => {
+      springStarts[1]({ finished: true });
+    });
+
+    expect(mockSpring).toHaveBeenNthCalledWith(
+      1,
+      expect.any(Object),
+      expect.objectContaining({ toValue: 100 }),
+    );
+    expect(mockSpring).toHaveBeenNthCalledWith(
+      2,
+      expect.any(Object),
+      expect.objectContaining({ toValue: 200 }),
+    );
+  });
+
+  it("snapTo handles unfinished animation callback", () => {
+    let springCallback: ((arg: { finished: boolean }) => void) | undefined;
+
+    const onDone = jest.fn();
+    const onExpansionChange = jest.fn();
+
+    const { result } = renderHook(() =>
+      useBottomSheet({
+        visible: false,
+        onDismiss: jest.fn(),
+        onExpansionChange,
+      }),
+    );
+
+    mockSpring.mockImplementationOnce(
+      () =>
+        ({
+          start: (cb?: (arg: { finished: boolean }) => void) => {
+            springCallback = cb;
+          },
+        }) as any,
+    );
+
+    act(() => {
+      result.current.snapTo(123, onDone);
+    });
+
+    act(() => {
+      springCallback?.({ finished: false });
+    });
+
+    expect(onDone).not.toHaveBeenCalled();
+    expect(onExpansionChange).not.toHaveBeenCalled();
+  });
+
+  it("minimize handles stale callback when targetAnimY no longer matches height", () => {
+    const timingStarts: Array<(arg: { finished: boolean }) => void> = [];
+
+    mockTiming.mockImplementation(
+      () =>
+        ({
+          start: (cb?: (arg: { finished: boolean }) => void) => {
+            if (cb) timingStarts.push(cb);
+          },
+        }) as any,
+    );
+
+    const { result } = renderHook(() =>
+      useBottomSheet({ visible: true, onDismiss: jest.fn() }),
+    );
+
+    act(() => {
+      result.current.minimize(650);
+      result.current.minimize(700);
+    });
+
+    expect(timingStarts).toHaveLength(2);
+
+    act(() => {
+      timingStarts[0]({ finished: true });
+    });
+
+    act(() => {
+      timingStarts[1]({ finished: true });
+    });
+
+    expect(mockTiming).toHaveBeenNthCalledWith(
+      1,
+      expect.any(Object),
+      expect.objectContaining({ toValue: 650 }),
+    );
+    expect(mockTiming).toHaveBeenNthCalledWith(
+      2,
+      expect.any(Object),
+      expect.objectContaining({ toValue: 700 }),
+    );
+  });
+
+  it("minimize handles unfinished animation callback", () => {
+    let timingCallback: ((arg: { finished: boolean }) => void) | undefined;
+
+    mockTiming.mockImplementationOnce(
+      () =>
+        ({
+          start: (cb?: (arg: { finished: boolean }) => void) => {
+            timingCallback = cb;
+          },
+        }) as any,
+    );
+
+    const onDone = jest.fn();
+
+    const { result } = renderHook(() =>
+      useBottomSheet({ visible: true, onDismiss: jest.fn() }),
+    );
+
+    act(() => {
+      result.current.minimize(650, onDone);
+    });
+
+    act(() => {
+      timingCallback?.({ finished: false });
+    });
+
+    expect(onDone).not.toHaveBeenCalled();
+  });
+
+  it("dismiss handles stale callback when targetAnimY no longer matches screenHeight", () => {
+    const timingStarts: Array<(arg: { finished: boolean }) => void> = [];
+
+    mockTiming.mockImplementation(
+      () =>
+        ({
+          start: (cb?: (arg: { finished: boolean }) => void) => {
+            if (cb) timingStarts.push(cb);
+          },
+        }) as any,
+    );
+
+    const onDismiss = jest.fn();
+
+    const { result } = renderHook(() =>
+      useBottomSheet({ visible: true, onDismiss }),
+    );
+
+    act(() => {
+      result.current.dismiss("first");
+      result.current.minimize(700);
+    });
+
+    expect(timingStarts.length).toBeGreaterThanOrEqual(2);
+
+    act(() => {
+      timingStarts[0]({ finished: true });
+    });
+
+    expect(onDismiss).toHaveBeenCalledWith("first");
+  });
+
+  it("dismiss handles unfinished animation callback", () => {
+    let timingCallback: ((arg: { finished: boolean }) => void) | undefined;
+
+    mockTiming.mockImplementationOnce(
+      () =>
+        ({
+          start: (cb?: (arg: { finished: boolean }) => void) => {
+            timingCallback = cb;
+          },
+        }) as any,
+    );
+
+    const onDismiss = jest.fn();
+    const onDone = jest.fn();
+
+    const { result } = renderHook(() =>
+      useBottomSheet({ visible: true, onDismiss }),
+    );
+
+    act(() => {
+      result.current.dismiss("payload", onDone);
+    });
+
+    act(() => {
+      timingCallback?.({ finished: false });
+    });
+
+    expect(onDismiss).not.toHaveBeenCalled();
+    expect(onDone).not.toHaveBeenCalled();
   });
 });
