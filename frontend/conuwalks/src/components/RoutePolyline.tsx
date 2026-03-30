@@ -399,11 +399,19 @@ const outdoorRequestKey =
   ]);
 
   // recalculate when the indoor rooms change
-  useEffect(() => {
-    if (baseRoutesRef.current.length > 0) {
-      applyIndoorPatch(baseRoutesRef.current);
-    }
-  }, [indoorRequestKey, applyIndoorPatch]);
+  const prevIndoorRequestKeyRef = useRef<string | null>(null);
+
+// recalculate when the indoor rooms change
+useEffect(() => {
+  if (
+    baseRoutesRef.current.length > 0 &&
+    prevIndoorRequestKeyRef.current !== null &&
+    prevIndoorRequestKeyRef.current !== indoorRequestKey
+  ) {
+    applyIndoorPatch(baseRoutesRef.current);
+  }
+  prevIndoorRequestKeyRef.current = indoorRequestKey;
+}, [indoorRequestKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     blockedRequestKeyRef.current = null;
