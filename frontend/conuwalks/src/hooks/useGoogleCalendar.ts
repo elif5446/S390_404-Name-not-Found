@@ -14,20 +14,16 @@ export const useGoogleCalendar = () => {
 
   const isMock = checkIsMockEnv();
 
-  // Check authentication status on mount
   useEffect(() => {
     const checkAuthStatus = async () => {
       const tokens = await getTokens();
       setIsAuthenticated(!!tokens && isTokenValid(tokens));
     };
-
-    if (isMock) {
-      setIsAuthenticated(true);
-    } else {
-      checkAuthStatus();
-    }
+    if (isMock) setIsAuthenticated(true);
+    else checkAuthStatus();
   }, [isMock]);
 
+  // Follows the same check → validate → return pattern as AuthFlow.checkExistingSession
   const getApiInstance = async (): Promise<GoogleCalendarApi | null> => {
     if (isMock) return null;
     try {
@@ -38,28 +34,23 @@ export const useGoogleCalendar = () => {
         return null;
       }
       return new GoogleCalendarApi(tokens.accessToken);
-    } catch (error) {
-      console.error("Error retrieving API instance:", error);
+    } catch {
       setError("Authentication error occurred.");
       return null;
     }
   };
 
-  // Fetch upcoming events
-  const fetchUpcomingEvents = async (maxResults: number = 10) => {
+  const fetchUpcomingEvents = async (maxResults = 10) => {
     setLoading(true);
     setError(null);
-
     try {
       if (isMock) {
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        await new Promise((r) => setTimeout(r, 500));
         setEvents(MOCK_CALENDAR_EVENTS as CalendarEvent[]);
         return;
       }
-
       const api = await getApiInstance();
       if (!api) return;
-
       const data = await api.getUpcomingEvents(maxResults);
       setEvents(data.items || []);
     } catch (err) {
@@ -69,51 +60,38 @@ export const useGoogleCalendar = () => {
     }
   };
 
-  // Fetch all calendars
   const fetchCalendars = async () => {
     setLoading(true);
     setError(null);
-
     try {
       if (isMock) {
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        await new Promise((r) => setTimeout(r, 500));
         setCalendars([{ id: "primary", summary: "Mock Primary Calendar" }]);
         return;
       }
-
       const api = await getApiInstance();
       if (!api) return;
-
       const data = await api.listCalendars();
       setCalendars(data.items || []);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to fetch calendars",
-      );
+      setError(err instanceof Error ? err.message : "Failed to fetch calendars");
     } finally {
       setLoading(false);
     }
   };
 
-  // Create a new event
-  const createEvent = async (
-    event: Partial<CalendarEvent>,
-    calendarId: string = "primary",
-  ) => {
+  const createEvent = async (event: Partial<CalendarEvent>, calendarId = "primary") => {
     setLoading(true);
     setError(null);
-
     try {
       if (isMock) {
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        await new Promise((r) => setTimeout(r, 500));
         return { ...event, id: `mock-id-${Date.now()}` } as CalendarEvent;
       }
-
       const api = await getApiInstance();
       if (!api) return null;
-
       const newEvent = await api.createEvent(calendarId, event);
-      await fetchUpcomingEvents(); // Refresh events
+      await fetchUpcomingEvents();
       return newEvent;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create event");
@@ -123,25 +101,18 @@ export const useGoogleCalendar = () => {
     }
   };
 
-  // Delete an event
-  const deleteEvent = async (
-    eventId: string,
-    calendarId: string = "primary",
-  ) => {
+  const deleteEvent = async (eventId: string, calendarId = "primary") => {
     setLoading(true);
     setError(null);
-
     try {
       if (isMock) {
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        await new Promise((r) => setTimeout(r, 500));
         return true;
       }
-
       const api = await getApiInstance();
       if (!api) return false;
-
       await api.deleteEvent(calendarId, eventId);
-      await fetchUpcomingEvents(); // Refresh events
+      await fetchUpcomingEvents();
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete event");
@@ -160,6 +131,6 @@ export const useGoogleCalendar = () => {
     fetchUpcomingEvents,
     fetchCalendars,
     createEvent,
-    deleteEvent
+    deleteEvent,
   };
 };

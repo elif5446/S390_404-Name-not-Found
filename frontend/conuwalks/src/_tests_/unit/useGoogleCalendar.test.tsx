@@ -3,7 +3,7 @@ import { useGoogleCalendar } from "../../hooks/useGoogleCalendar";
 import { getTokens, isTokenValid } from "../../utils/tokenStorage";
 import { GoogleCalendarApi } from "../../api/calendarApi";
 
-// Mock dependencies
+
 jest.mock("../../utils/tokenStorage", () => ({
   getTokens: jest.fn(),
   isTokenValid: jest.fn(),
@@ -22,7 +22,7 @@ const mockListCalendars = jest.fn();
 const mockCreateEvent = jest.fn();
 const mockDeleteEvent = jest.fn();
 
-// Mock GoogleCalendarApi instance
+
 (GoogleCalendarApi as jest.Mock).mockImplementation(() => ({
   getUpcomingEvents: mockGetUpcomingEvents,
   listCalendars: mockListCalendars,
@@ -41,7 +41,6 @@ beforeEach(() => {
   mockIsTokenValid.mockReturnValue(true);
 });
 
-// 1. INITIAL STATE
 
 describe("Initial State", () => {
   it("has correct initial state", () => {
@@ -77,8 +76,6 @@ describe("Initial State", () => {
     });
   });
 });
-
-// 2. FETCH UPCOMING EVENTS
 
 describe("fetchUpcomingEvents", () => {
   it("fetches upcoming events successfully", async () => {
@@ -175,7 +172,6 @@ describe("fetchUpcomingEvents", () => {
   });
 });
 
-// 3. FETCH CALENDARS
 
 describe("fetchCalendars", () => {
   it("fetches calendars successfully", async () => {
@@ -222,7 +218,6 @@ describe("fetchCalendars", () => {
   });
 });
 
-// 4. CREATE EVENT
 
 describe("createEvent", () => {
   it("creates an event successfully", async () => {
@@ -282,7 +277,6 @@ describe("createEvent", () => {
   });
 });
 
-// 5. DELETE EVENT
 
 describe("deleteEvent", () => {
   it("deletes an event successfully", async () => {
@@ -339,7 +333,6 @@ describe("deleteEvent", () => {
   });
 });
 
-// 6. STATE MANAGEMENT
 
 describe("State Management", () => {
   it("clears error before each fetch", async () => {
