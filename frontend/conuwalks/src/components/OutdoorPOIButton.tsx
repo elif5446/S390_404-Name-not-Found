@@ -29,10 +29,9 @@ const OutdoorPOIButton: React.FC<OutdoorPOIButtonProps> = ({
                     height: buttonSize,
                     borderRadius: buttonSize / 2,
                     marginBottom: buttonSpacing,
-                    // 👈 Platform-specific top adjustment
                     marginTop: Platform.select({
                         ios: insets.top + 12,
-                        android: Math.max(insets.top, 16) + 8, // Less top margin on Android
+                        android: Math.max(insets.top, 16) + 8,
                     }),
                 },
                 

@@ -98,7 +98,7 @@ const POIListPanel: React.FC<POIListPanelProps> = ({
 }) => {
   const translateY = useRef(new Animated.Value(PANEL_HEIGHT)).current;
 // Add at the top of POIListPanel component
-const RADIUS_OPTIONS = [1000, 100, 200, 500]; // 1km, 200m,500m, 100m
+const RADIUS_OPTIONS = [1000, 500, 200, 100]; // 1km, 500m, 200m, 100m
 const [radius, setRadius] = React.useState<number>(1000);
 
  //  Trigger POI fetch when radius changes ---
