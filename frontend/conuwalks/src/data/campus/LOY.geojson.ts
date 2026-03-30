@@ -4,7 +4,7 @@
     {
       "type": "Feature",
 
-      "properties": { "id": "VL" },
+      "properties": { "id": "VL", "name": "Vanier Library" },
       "geometry": {
         "type": "Polygon",
         "coordinates": [[
@@ -42,7 +42,7 @@
     {
       "type": "Feature",
 
-      "properties": { "id": "SP" },
+      "properties": { "id": "SP", "name": "Renaud Science Complex" },
       "geometry": {
         "type": "Polygon",
        "coordinates": [[
@@ -92,7 +92,7 @@
     {
       "type": "Feature",
 
-      "properties": { "id": "CJ" },
+      "properties": { "id": "CJ", "name": "Communication and Journalism" },
       "geometry": {
         "type": "Polygon",
         "coordinates": [
@@ -138,7 +138,7 @@
     {
       "type": "Feature",
 
-      "properties": { "id": "CC" },
+      "properties": { "id": "CC", "name": "Central" },
       "geometry": {
         "type": "Polygon",
        "coordinates": [[
@@ -156,7 +156,7 @@
     {
       "type": "Feature",
 
-      "properties": { "id": "AD" },
+      "properties": { "id": "AD", "name": "Administration" },
       "geometry": {
         "type": "Polygon",
         "coordinates": [[
@@ -198,7 +198,7 @@
     {
       "type": "Feature",
 
-      "properties": { "id": "FC" },
+      "properties": { "id": "FC", "name": "FC Smith" },
       "geometry": {
         "type": "Polygon",
        "coordinates": [[
@@ -242,7 +242,7 @@
     {
       "type": "Feature",
 
-      "properties": { "id": "HU" },
+      "properties": { "id": "HU", "name": "Applied Science Hub" },
       "geometry": {
         "type": "Polygon",
         "coordinates": [[

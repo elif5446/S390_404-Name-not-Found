@@ -1,4 +1,4 @@
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 export const styles = StyleSheet.create({
   overlay: {
     ...StyleSheet.absoluteFillObject,
@@ -230,5 +230,21 @@ export const styles = StyleSheet.create({
     color: "#B03060",
     fontWeight: "700",
     fontSize: 12,
+  },
+  openIndoorHeaderButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingVertical: Platform.OS === "android" ? 7 : 6,
+    paddingHorizontal: 8,
+    minHeight: 30,
+  },
+
+  openIndoorHeaderButtonText: {
+    fontWeight: "600" as const,
+    fontSize: 13,
+    fontFamily: Platform.OS === "ios" ? "System" : "Roboto",
   },
 });

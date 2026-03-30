@@ -17,7 +17,7 @@ const DestinationMarker: React.FC<DestinationMarkerProps> = ({ x, y }) => {
         top: y - 34,
       }}
     >
-      <Ionicons name="location-sharp" size={30} color= "#B03060" />
+      <Ionicons name="location-sharp" size={30} color="#B03060" />
     </View>
   );
 };

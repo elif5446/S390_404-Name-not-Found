@@ -70,7 +70,7 @@ export const useBuildingData = (buildingId: string, campus: "SGW" | "LOY") => {
       icons.push({
         key: "wheelchair",
         sf: "figure.roll",
-        material: "accessible",
+        material: "accessible-forward",
         label: "First Floor is Wheelchair Accessible",
       });
     }

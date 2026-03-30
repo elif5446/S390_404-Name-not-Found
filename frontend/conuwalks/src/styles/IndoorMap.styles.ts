@@ -1,6 +1,4 @@
-import { StyleSheet, Platform, Dimensions } from "react-native";
-
-const { width } = Dimensions.get("window");
+import { StyleSheet } from "react-native";
 
 export const THEME = {
   background: "#F2F2F7", // iOS System Gray 6
@@ -13,37 +11,52 @@ export const THEME = {
 };
 
 export const styles = StyleSheet.create({
-  // main container
   container: {
-    flex: 1,
-    backgroundColor: THEME.background,
     ...StyleSheet.absoluteFillObject,
     zIndex: 5000,
+    backgroundColor: THEME.background,
+    flexDirection: "column",
+    justifyContent: "space-between",
   },
 
-  // header 
+  mapSection: {
+    flex: 1,
+    width: "100%",
+    backgroundColor: THEME.white,
+  },
+
+  bottomSection: {
+    width: "100%",
+    justifyContent: "flex-end",
+    paddingBottom: 24,
+  },
+
+  // header
   headerWrapper: {
-    backgroundColor: "rgba(242, 242, 247, 0.95)",
+    backgroundColor: "#f2f2f7cc",
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: "#C6C6C8",
     zIndex: 5002,
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
   },
   headerContent: {
     flexDirection: "row",
-    justifyContent: "center",
+    justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 10,
+    width: "100%",
+  },
+  headerTitleWrap: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    paddingRight: 10,
   },
   buildingTitle: {
-    fontSize: 20,
+    fontSize: 19,
     fontWeight: "800",
     color: THEME.text,
-    maxWidth: width * 0.6,
   },
   floorBadge: {
     paddingVertical: 4,
@@ -55,26 +68,108 @@ export const styles = StyleSheet.create({
     fontWeight: "800",
     color: THEME.text,
   },
+  headerFloorToggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  headerFloorToggle: {
+    minWidth: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1,
+    borderColor: "#C6C6C8",
+    backgroundColor: "#ECECF1",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerFloorToggleActive: {
+    minWidth: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1,
+    borderColor: THEME.secondary,
+    backgroundColor: THEME.secondary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerFloorToggleText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#4A4A53",
+  },
+  headerFloorToggleTextActive: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: THEME.white,
+  },
 
-  // map area 
+  currentFloorButton: {
+    backgroundColor: THEME.primary,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  currentFloorText: {
+    color: THEME.white,
+    fontWeight: "700",
+    fontSize: 14,
+  },
+  floorDropdownMenu: {
+    position: "absolute",
+    top: "100%",
+    right: 16,
+    backgroundColor: THEME.white,
+    borderRadius: 12,
+    paddingVertical: 8,
+    width: 130,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
+    zIndex: 5005,
+  },
+  dropdownItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  dropdownItemActive: {
+    backgroundColor: "rgba(176, 48, 96, 0.1)",
+  },
+  dropdownItemText: {
+    fontSize: 15,
+    color: THEME.text,
+    fontWeight: "500",
+  },
+  dropdownItemTextActive: {
+    color: THEME.primary,
+    fontWeight: "700",
+  },
+
+  // map area components
   mapContainer: {
     flex: 1,
     width: "100%",
+    justifyContent: "center",
+    alignItems: "center",
     backgroundColor: THEME.background,
-    overflow: "hidden",
   },
   mapCanvas: {
     flex: 1,
     width: "100%",
     height: "100%",
   },
-  
-  // map content component 
+
+  // map content component
   floorImage: {
     width: "100%",
     height: "100%",
   },
   errorBox: {
+    flex: 1,
     backgroundColor: THEME.errorBg,
     alignItems: "center",
     justifyContent: "center",
@@ -85,54 +180,30 @@ export const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  // exit 
-  footerContainer: {
+  activeNavOverlay: {
     position: "absolute",
-    bottom: 30,
-    alignSelf: 'center',
-    zIndex: 6000,
-    pointerEvents: "box-none", // Allows touches to pass through to map if needed (except button)
+    bottom: 40,
+    right: 20,
+    zIndex: 1001,
   },
-  exitButton: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  iconCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: THEME.secondary,
+  endNavButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "#C83A32",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 4,
-    borderWidth: 2,
-    borderColor: THEME.white,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 6,
-      },
-    }),
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 8,
   },
-  exitText: {
-    color: THEME.secondary,
-    fontSize: 14,
-    fontWeight: "700",
-    marginTop: 4,
-    textShadowColor: 'rgba(255,255,255,0.5)',
-    textShadowRadius: 2,
-  },
-
-  // floor picker 
+  // floor picker
   pickerContainer: {
-    position: 'absolute',
+    position: "absolute",
     right: 12,
-    top: '50%',
+    top: "50%",
     maxHeight: 300,
     width: 50,
     transform: [{ translateY: -100 }], // centering logic
@@ -144,15 +215,15 @@ export const styles = StyleSheet.create({
     zIndex: 5003,
   },
   glassPanel: {
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    backgroundColor: "rgba(255, 255, 255, 0.8)",
     borderRadius: 25,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.4)',
-    overflow: 'hidden',
+    borderColor: "rgba(255,255,255,0.4)",
+    overflow: "hidden",
     paddingVertical: 8,
   },
   scrollContent: {
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 4,
     gap: 8,
   },
@@ -160,9 +231,9 @@ export const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#E5E5EA',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#E5E5EA",
   },
   activeButton: {
     backgroundColor: THEME.primary,
@@ -170,11 +241,11 @@ export const styles = StyleSheet.create({
   },
   pickerText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#8E8E93',
+    fontWeight: "600",
+    color: "#8E8E93",
   },
   activePickerText: {
     color: THEME.white,
-    fontWeight: '800',
+    fontWeight: "800",
   },
 });

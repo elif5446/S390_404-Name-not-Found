@@ -1,9 +1,7 @@
 import React, { createRef } from "react";
 import { Animated, Platform, useColorScheme } from "react-native";
 import { render, screen, act } from "@testing-library/react-native";
-import DestinationPopup, {
-  DestinationPopupHandle,
-} from "../../components/DestinationPopup";
+import DestinationPopup, { DestinationPopupHandle } from "../../components/DestinationPopup";
 
 import { useDestinationData } from "../../hooks/useDestinationData";
 import { useBottomSheet } from "../../hooks/useBottomSheet";
@@ -93,7 +91,7 @@ describe("DestinationPopup Component", () => {
       minimize: mockMinimize,
       snapTo: mockSnapTo,
       // wrap the mock dismiss so we can actually trigger the passed ondismiss callback
-      dismiss: jest.fn((payload) => {
+      dismiss: jest.fn(payload => {
         mockDismiss(payload);
         onDismiss(payload);
       }),
@@ -109,9 +107,7 @@ describe("DestinationPopup Component", () => {
 
   it("renders BlurView on iOS and solid background on Android", () => {
     Platform.OS = "ios";
-    const { rerender } = render(
-      <DestinationPopup visible={true} onClose={mockOnClose} />,
-    );
+    const { rerender } = render(<DestinationPopup visible={true} onClose={mockOnClose} />);
     expect(screen.getByTestId("mock-blur-view")).toBeTruthy();
 
     Platform.OS = "android";
@@ -126,7 +122,7 @@ describe("DestinationPopup Component", () => {
     const header = screen.getByTestId("mock-header");
     const content = screen.getByTestId("mock-content");
 
-    expect(header.props.isDark).toBe(true);
+    expect(header.props.mode).toBe("dark");
     expect(content.props.isDark).toBe(true);
   });
 

@@ -240,7 +240,7 @@ const UpcomingClassBanner: React.FC<UpcomingClassBannerProps> = ({
       setStartPoint("USER", userLocation, "My Location");
     }
 
-    setDestination(buildingCode, buildingCoordinates, destinationName);
+    setDestination(buildingCode, buildingCoordinates, destinationName, roomNumber);
     setShowDirections(true);
     onNavigateToClass?.();
     dismissCurrentBanner();

@@ -11,13 +11,7 @@ module.exports = defineConfig([
   },
   {
     // Apply Jest rules and globals ONLY to test files and setup file
-    files: [
-      "**/*.test.js",
-      "**/*.test.ts",
-      "**/*.test.tsx",
-      "**/__tests__/**",
-      "jest.setup.js",
-    ],
+    files: ["**/*.test.js", "**/*.test.ts", "**/*.test.tsx", "**/__tests__/**", "jest.setup.tsx"],
     ...jestPlugin.configs["flat/recommended"],
     languageOptions: {
       globals: {

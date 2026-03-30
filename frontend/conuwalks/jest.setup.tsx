@@ -1,16 +1,3 @@
-import { View, ViewProps } from "react-native";
-import { ReactNode } from "react";
-
-interface MockPolygonProps extends ViewProps {
-  children?: ReactNode;
-  testID?: string;
-  accessibilityLabel?: string;
-  coordinates?: LatLng[];
-  fillColor?: string;
-  strokeColor?: string;
-  strokeWidth?: number;
-}
-
 // Mock expo-location
 jest.mock("expo-location", () => ({
   requestForegroundPermissionsAsync: jest.fn(),
@@ -27,25 +14,24 @@ jest.mock("expo", () => ({
 }));
 
 // Mock expo module registry
-globalThis.__ExpoImportMetaRegistry = {
+(globalThis as any).__ExpoImportMetaRegistry = {
   register: jest.fn(),
   get: jest.fn(),
 };
 
 // Mock structuredClone
-// Fix: for 'Prefer structuredClone over JSON.parse(JSON.stringify)'
 // Includes providing a mock implementation that doesn't use the json hack
 if (typeof globalThis.structuredClone !== "function") {
-  globalThis.structuredClone = jest.fn((obj) => {
+  (globalThis as any).structuredClone = jest.fn((obj: any) => {
     if (obj === undefined) return undefined;
 
     // for a mock in test environment, a simple spread or
     // structured copy is preferred over json stringify
-    return typeof obj === 'object' ? { ...obj } : obj;
+    return typeof obj === "object" ? { ...obj } : obj;
   });
 } else {
-  // ff it exists, we just make it a mockable spy
-  globalThis.structuredClone = jest.fn(globalThis.structuredClone);
+  // if it exists, we just make it a mockable spy
+  (globalThis as any).structuredClone = jest.fn(globalThis.structuredClone as any);
 }
 
 // Mock react-native-maps
@@ -59,23 +45,15 @@ jest.mock("react-native-maps", () => {
     </View>
   );
 
-  const MockPolygon = ({
-    testID,
-    accessibilityLabel,
-    coordinates,
-    fillColor,
-    strokeColor,
-    strokeWidth,
-    ...props
-  } : any) => (
+  const MockPolygon = ({ testID, accessibilityLabel, coordinates, fillColor, strokeColor, strokeWidth, ...props }: any) => (
     <View
       testID={testID || "polygon"}
       accessibilityLabel={accessibilityLabel}
       {...({
-            "data-coordinates": JSON.stringify(coordinates),
-            "data-fill-color": fillColor,
-            "data-stroke-color": strokeColor,
-            "data-stroke-width": strokeWidth,
+        "data-coordinates": JSON.stringify(coordinates),
+        "data-fill-color": fillColor,
+        "data-stroke-color": strokeColor,
+        "data-stroke-width": strokeWidth,
       } as any)}
       {...props}
     />
@@ -108,32 +86,29 @@ jest.mock("react-native/Libraries/Utilities/useColorScheme", () => ({
 
 // Mock geo utility functions
 jest.mock("@/src/utils/geo", () => ({
-  polygonFromGeoJSON: jest.fn((coords) =>
-    coords.map(([longitude, latitude]) => ({ latitude, longitude })),
-  ),
+  polygonFromGeoJSON: jest.fn((coords: [number, number][]) => coords.map(([longitude, latitude]) => ({ latitude, longitude }))),
 }));
 
 // Suppress act() warnings
 const originalError = console.error;
-console.error = (...args) => {
-    const firstArg = args[0];
-    let message = "";
+console.error = (...args: any[]) => {
+  const firstArg = args[0];
+  let message = "";
 
-    // 1. extract the message into a logic block
-      if (typeof firstArg === "string") {
-        message = firstArg;
-      } else if (firstArg && typeof firstArg.message === "string") {
-        message = firstArg.message;
-      }
+  // 1. extract the message into a logic block
+  if (typeof firstArg === "string") {
+    message = firstArg;
+  } else if (firstArg && typeof firstArg.message === "string") {
+    message = firstArg.message;
+  }
 
-    // 2. filter out the act() warnings
-    const isActWarning = message.includes("Warning: An update to") && message.includes("was not wrapped in act");
+  // 2. filter out the act() warnings
+  const isActWarning = message.includes("Warning: An update to") && message.includes("was not wrapped in act");
+  const isStateUpdateWarning = message.includes("code that causes React state updates should be wrapped into act(...)");
 
-    const isStateUpdateWarning = message.includes("code that causes React state updates should be wrapped into act(...)");
-
-    if (isActWarning || isStateUpdateWarning) {
-        return;
-      }
+  if (isActWarning || isStateUpdateWarning) {
+    return;
+  }
 
   // 3. otherwise, log the error as usual
   originalError.call(console, ...args);
@@ -145,9 +120,9 @@ jest.mock("@react-native-segmented-control/segmented-control", () => {
 
   return {
     __esModule: true,
-    default: ({ values, selectedIndex, onChange, testID, ...props } : any) => (
+    default: ({ values, selectedIndex, onChange, testID, ...props }: any) => (
       <View testID={testID || "segmented-control"} {...props}>
-        {values.map((value, index) => (
+        {values.map((value: string, index: number) => (
           <TouchableOpacity
             key={value}
             testID={`segment-${index}`}
@@ -172,9 +147,9 @@ jest.mock("react-native-paper", () => {
   const { View, TouchableOpacity, Text } = require("react-native");
 
   return {
-    SegmentedButtons: ({ buttons, value, onValueChange, testID }) => (
+    SegmentedButtons: ({ buttons, value, onValueChange, testID }: any) => (
       <View testID={testID || "segmented-buttons"}>
-        {buttons.map((button) => (
+        {buttons.map((button: any) => (
           <TouchableOpacity
             key={button.value}
             testID={`segment-button-${button.value}`}
@@ -196,7 +171,7 @@ jest.mock("expo-blur", () => {
   const { View } = require("react-native");
 
   return {
-    BlurView: ({ children, testID, ...props } : any) => (
+    BlurView: ({ children, testID, ...props }: any) => (
       <View testID={testID || "blur-view"} {...props}>
         {children}
       </View>
@@ -212,15 +187,11 @@ jest.mock("react-native-safe-area-context", () => ({
     left: 0,
     right: 0,
   })),
-  SafeAreaProvider: ({ children }) => children,
+  SafeAreaProvider: ({ children }: any) => children,
 }));
 
 jest.mock("expo-auth-session/providers/google", () => ({
-  useAuthRequest: jest.fn(() => [
-    { url: "https://accounts.google.com/o/oauth2/v2/auth" },
-    null,
-    jest.fn(),
-  ]),
+  useAuthRequest: jest.fn(() => [{ url: "https://accounts.google.com/o/oauth2/v2/auth" }, null, jest.fn()]),
 }));
 
 jest.mock("expo-auth-session", () => ({
@@ -243,6 +214,3 @@ jest.mock("@react-native-async-storage/async-storage", () => ({
   multiSet: jest.fn(() => Promise.resolve(null)),
   multiRemove: jest.fn(() => Promise.resolve(null)),
 }));
-
-
-
