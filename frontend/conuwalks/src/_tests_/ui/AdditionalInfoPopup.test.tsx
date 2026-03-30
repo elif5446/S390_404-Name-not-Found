@@ -13,7 +13,6 @@ jest.mock("../../hooks/useBuildingData");
 jest.mock("../../hooks/useBottomSheet");
 jest.mock("../../hooks/useBuildingEvents");
 
-// mock child components to isolate the wrapper logic
 jest.mock("../../components/AdditionalInfoPopupHeader", () => {
   const { View } = require("react-native");
   const MockHeader = (props: any) => <View testID="mock-header" {...props} />;
@@ -38,12 +37,11 @@ jest.mock("expo-blur", () => {
 describe("AdditionalInfoPopup Component", () => {
   const mockSnapTo = jest.fn();
   const mockMinimize = jest.fn();
-  // simulate dismiss calling its completion callback immediately
+ 
   const mockDismiss = jest.fn((payload, onDone) => onDone?.());
   const mockOnClose = jest.fn();
   const mockOnDirectionsTrigger = jest.fn();
 
-  // create a mutable ref object so we can assert if handlescroll updates it
   const mockScrollOffsetRef = { current: 0 };
 
   const defaultProps = {
@@ -59,9 +57,9 @@ describe("AdditionalInfoPopup Component", () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.useFakeTimers(); // Intercept timers to prevent act() warnings from animations
+    jest.useFakeTimers();
 
-    // setup standard returns for our mocked hooks
+    
     (useBuildingData as jest.Mock).mockReturnValue({
       buildingInfo: { name: "Henry F. Hall" },
       isCopying: false,
@@ -101,8 +99,7 @@ describe("AdditionalInfoPopup Component", () => {
     jest.useRealTimers();
   });
 
-  // ─── Platform / BackgroundWrapper ─────────────────────────────────────────────
-
+  
   it("renders the blurred background wrapper on iOS", () => {
     Platform.OS = "ios";
     render(<AdditionalInfoPopup {...defaultProps} />);
@@ -112,7 +109,7 @@ describe("AdditionalInfoPopup Component", () => {
   it("renders the standard elevation view on Android", () => {
     Platform.OS = "android";
     render(<AdditionalInfoPopup {...defaultProps} />);
-    // if it's android, the blurview mock shouldn't be rendered
+    
     expect(screen.queryByTestId("mock-blur-view")).toBeNull();
   });
 
@@ -123,7 +120,7 @@ describe("AdditionalInfoPopup Component", () => {
     expect(screen.getByTestId("mock-content")).toBeTruthy();
   });
 
-  // ─── Props forwarding ────────────────────────────────────────────────────────
+ 
 
   it("passes correct props to Header and Content children", () => {
     render(<AdditionalInfoPopup {...defaultProps} />);
@@ -134,12 +131,11 @@ describe("AdditionalInfoPopup Component", () => {
     expect(header).toBeTruthy();
     expect(content).toBeTruthy();
 
-    // verify header props
+
     expect(header.props.buildingId).toBe("H");
     expect(header.props.directionsEtaLabel).toBe("10 min");
     expect(header.props.accessibilityIcons.length).toBe(1);
 
-    // verify content props (including the newly added building events data)
     expect(content.props.buildingInfo.name).toBe("Henry F. Hall");
     expect(content.props.directionsEtaLabel).toBe("10 min");
     expect(content.props.eventsLoading).toBe(false);
@@ -192,7 +188,7 @@ describe("AdditionalInfoPopup Component", () => {
     );
   });
 
-  // ─── Hook wiring ─────────────────────────────────────────────────────────────
+  
 
   it("passes onClose (as onDismiss) and visible to useBottomSheet", () => {
     render(<AdditionalInfoPopup {...defaultProps} />);
@@ -237,31 +233,29 @@ describe("AdditionalInfoPopup Component", () => {
     expect(content.props.nextEvent).toEqual(mockNextEvent);
   });
 
-  // ─── Imperative handle ───────────────────────────────────────────────────────
-
+  
   it("exposes collapse and minimize methods via ref", () => {
     const ref = createRef<AdditionalInfoPopupHandle>();
     render(<AdditionalInfoPopup {...defaultProps} ref={ref} />);
 
-    // call the imperative methods
+    
     act(() => {
       ref.current?.collapse();
       ref.current?.minimize();
     });
 
-    // verify they map to the correct usebottomsheet methods
-    expect(mockSnapTo).toHaveBeenCalledWith(400); // 400 is our mocked SNAP_OFFSET
+    expect(mockSnapTo).toHaveBeenCalledWith(400); 
     expect(mockMinimize).toHaveBeenCalledTimes(1);
   });
 
-  // ─── Directions press ────────────────────────────────────────────────────────
+
 
   it("triggers dismiss and invokes onDirectionsTrigger when directions are pressed", () => {
     render(<AdditionalInfoPopup {...defaultProps} />);
 
     const header = screen.getByTestId("mock-header");
 
-    // simulate the header calling the handledirectionspress callback with no argument
+   
     act(() => {
       header.props.onDirectionsPress();
     });
@@ -280,7 +274,7 @@ describe("AdditionalInfoPopup Component", () => {
     });
 
     expect(mockDismiss).toHaveBeenCalled();
-    // the string "H-820" should be forwarded as the specificRoom
+   
     expect(mockOnDirectionsTrigger).toHaveBeenCalledWith("H-820");
   });
 
@@ -290,12 +284,12 @@ describe("AdditionalInfoPopup Component", () => {
     const content = screen.getByTestId("mock-content");
 
     act(() => {
-      // simulate content passing a synthetic event object instead of a room string
+     
       content.props.onDirectionsPress({ nativeEvent: {} });
     });
 
     expect(mockDismiss).toHaveBeenCalled();
-    // typeof room !== "string" so specificRoom should be undefined
+   
     expect(mockOnDirectionsTrigger).toHaveBeenCalledWith(undefined);
   });
 
@@ -308,7 +302,7 @@ describe("AdditionalInfoPopup Component", () => {
         campus={campus}
         onClose={onClose}
         directionsEtaLabel={directionsEtaLabel}
-        // intentionally omit onDirectionsTrigger
+       
       />,
     );
 
@@ -320,12 +314,11 @@ describe("AdditionalInfoPopup Component", () => {
       });
     }).not.toThrow();
 
-    // dismiss should still be called even without the callback
+    
     expect(mockDismiss).toHaveBeenCalled();
   });
 
-  // ─── Header dismiss and toggle callbacks ─────────────────────────────────────
-
+  
   it("passes the dismiss function from useBottomSheet to PopupHeader as onDismiss", () => {
     render(<AdditionalInfoPopup {...defaultProps} />);
     const header = screen.getByTestId("mock-header");
@@ -362,7 +355,6 @@ describe("AdditionalInfoPopup Component", () => {
     expect(mockHandleToggleHeight).toHaveBeenCalled();
   });
 
-  // ─── buildingId change effect ────────────────────────────────────────────────
 
   it("triggers a crossfade animation and snaps to offset when buildingId changes while visible", () => {
     const timingSpy = jest.spyOn(Animated, "timing");
@@ -370,22 +362,17 @@ describe("AdditionalInfoPopup Component", () => {
       <AdditionalInfoPopup {...defaultProps} buildingId="H" />,
     );
 
-    // clear initial render calls
     mockSnapTo.mockClear();
     timingSpy.mockClear();
 
-    // rerender with a new building id
     rerender(<AdditionalInfoPopup {...defaultProps} buildingId="MB" />);
 
-    // fast-forward through the animation timers
     act(() => {
       jest.runAllTimers();
     });
 
-    // verify it snaps back to the default reading height
     expect(mockSnapTo).toHaveBeenCalledWith(400);
 
-    // verify the crossfade animation sequence was queued (tovalue: 0 then tovalue: 1)
     expect(timingSpy).toHaveBeenCalledTimes(2);
     expect(timingSpy).toHaveBeenNthCalledWith(
       1,
@@ -418,7 +405,7 @@ describe("AdditionalInfoPopup Component", () => {
       jest.runAllTimers();
     });
 
-    // the effect bails out early when visible is false
+    
     expect(mockSnapTo).not.toHaveBeenCalled();
     expect(timingSpy).not.toHaveBeenCalled();
 
@@ -434,7 +421,7 @@ describe("AdditionalInfoPopup Component", () => {
     mockSnapTo.mockClear();
     timingSpy.mockClear();
 
-    // rerender with identical buildingId — the prevBuildingId guard prevents action
+    
     rerender(
       <AdditionalInfoPopup
         {...defaultProps}
@@ -453,28 +440,27 @@ describe("AdditionalInfoPopup Component", () => {
     timingSpy.mockRestore();
   });
 
-  // ─── Accessibility actions ───────────────────────────────────────────────────
 
   it("handles accessibility increment and decrement correctly", () => {
     render(<AdditionalInfoPopup {...defaultProps} />);
 
     const header = screen.getByTestId("mock-header");
 
-    // simulate swipe up (increment)
+
     act(() => {
       header.props.onDragHandleAccessibilityAction({
         nativeEvent: { actionName: "increment" },
       });
     });
-    expect(mockSnapTo).toHaveBeenCalledWith(0); // Expand fully
+    expect(mockSnapTo).toHaveBeenCalledWith(0);
 
-    // simulate swipe down (decrement)
+
     act(() => {
       header.props.onDragHandleAccessibilityAction({
         nativeEvent: { actionName: "decrement" },
       });
     });
-    expect(mockSnapTo).toHaveBeenCalledWith(400); // Collapse to SNAP_OFFSET
+    expect(mockSnapTo).toHaveBeenCalledWith(400); 
   });
 
   it("ignores unrecognised accessibility action names without calling snapTo", () => {
@@ -483,28 +469,26 @@ describe("AdditionalInfoPopup Component", () => {
 
     act(() => {
       header.props.onDragHandleAccessibilityAction({
-        nativeEvent: { actionName: "activate" }, // not increment or decrement
+        nativeEvent: { actionName: "activate" },
       });
     });
 
     expect(mockSnapTo).not.toHaveBeenCalled();
   });
 
-  // ─── Scroll handling ─────────────────────────────────────────────────────────
 
   it("updates scrollOffsetRef when onScroll is called", () => {
     render(<AdditionalInfoPopup {...defaultProps} />);
 
     const content = screen.getByTestId("mock-content");
 
-    // simulate a scroll event
+    
     act(() => {
       content.props.onScroll({
         nativeEvent: { contentOffset: { y: 150 } },
       });
     });
 
-    // verify the ref object provided by the mock hook was updated correctly
     expect(mockScrollOffsetRef.current).toBe(150);
   });
 
