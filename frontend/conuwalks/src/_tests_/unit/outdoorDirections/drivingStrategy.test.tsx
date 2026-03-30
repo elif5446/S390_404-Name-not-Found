@@ -30,7 +30,6 @@ describe("DrivingStrategy", () => {
     expect(strategy.googleTravelMode).toBe("driving");
   });
 
-  // Driving's only unique behaviour is TRAFFIC_AWARE routing preference
   describe("applyTimeToRoutesBody", () => {
     it("sets departureTime and TRAFFIC_AWARE when timeMode is leave", () => {
       mocks.mockClampToFuture.mockReturnValueOnce(FUTURE_DATE);
@@ -55,7 +54,6 @@ describe("DrivingStrategy", () => {
     });
   });
 
-  // Smoke tests confirming base class behaviour is correctly inherited
   describe("inherited base behaviour", () => {
     it("appends departure_time to legacy URL when timeMode is leave", () => {
       mocks.mockClampToFuture.mockReturnValueOnce(FUTURE_DATE);
@@ -64,10 +62,88 @@ describe("DrivingStrategy", () => {
     });
 
     it("passes 'driving' as the travel mode to mapRoutesApiResponse", async () => {
+      mocks.mockFetchRoutesApi.mockResolvedValueOnce({
+        rawRoutes: [MOCK_ROUTE],
+        safeTargetTime: FUTURE_DATE,
+      });
+      mocks.mockMapRoutesApiResponse.mockReturnValueOnce([MOCK_ROUTE]);
+
       await strategy.fetchRoutes(START, DESTINATION, FUTURE_DATE, "leave");
+
       expect(mocks.mockMapRoutesApiResponse).toHaveBeenCalledWith(
-        expect.anything(), expect.anything(), expect.anything(), "driving", strategy,
+        [MOCK_ROUTE],
+        FUTURE_DATE,
+        "leave",
+        "driving",
+        strategy,
       );
+    });
+
+    it("handles AbortError and throws timeout message", async () => {
+      const abortError = new Error("request aborted");
+      abortError.name = "AbortError";
+
+      mocks.mockFetchRoutesApi.mockRejectedValueOnce(abortError);
+
+      await expect(
+        strategy.fetchRoutes(START, DESTINATION, FUTURE_DATE, "leave")
+      ).rejects.toThrow("Directions request timed out. Please try again.");
+    });
+
+    it("falls back to legacy API when blocked error is detected", async () => {
+      const blockedError = new Error("routes api blocked");
+
+      mocks.mockFetchRoutesApi.mockRejectedValueOnce(blockedError);
+      mocks.mockIsRoutesBlockedError.mockReturnValueOnce(true);
+      mocks.mockFetchLegacyApi.mockResolvedValueOnce({
+        rawRoutes: [MOCK_ROUTE],
+        safeTargetTime: FUTURE_DATE,
+      });
+      mocks.mockMapLegacyApiResponse.mockReturnValueOnce([MOCK_ROUTE]);
+
+      const result = await strategy.fetchRoutes(
+        START,
+        DESTINATION,
+        FUTURE_DATE,
+        "leave"
+      );
+
+      expect(mocks.mockIsRoutesBlockedError).toHaveBeenCalledWith(blockedError.message);
+      expect(mocks.mockFetchLegacyApi).toHaveBeenCalledWith(
+        START,
+        DESTINATION,
+        strategy,
+        FUTURE_DATE,
+        "leave",
+        "driving",
+      );
+      expect(mocks.mockMapLegacyApiResponse).toHaveBeenCalledWith(
+        [MOCK_ROUTE],
+        FUTURE_DATE,
+        "leave",
+        "driving",
+        strategy,
+      );
+      expect(result).toEqual([MOCK_ROUTE]);
+    });
+
+    it("rethrows normal Error objects when they are not blocked errors", async () => {
+      const error = new Error("some other failure");
+
+      mocks.mockFetchRoutesApi.mockRejectedValueOnce(error);
+      mocks.mockIsRoutesBlockedError.mockReturnValueOnce(false);
+
+      await expect(
+        strategy.fetchRoutes(START, DESTINATION, FUTURE_DATE, "leave")
+      ).rejects.toThrow("some other failure");
+    });
+
+    it("rethrows non-Error values unchanged", async () => {
+      mocks.mockFetchRoutesApi.mockRejectedValueOnce("plain string failure");
+
+      await expect(
+        strategy.fetchRoutes(START, DESTINATION, FUTURE_DATE, "leave")
+      ).rejects.toBe("plain string failure");
     });
   });
 });
