@@ -3,7 +3,7 @@ import { DirectionStep, useDirections } from "@/src/context/DirectionsContext";
 import { getDirections } from "@/src/outdoorDirections/directionsService";
 import { calculateIndoorPenaltySeconds } from "@/src/indoors/services/indoorRoutingHelper";
 import { formatDurationFromSeconds } from "../utils/time";
-import { GoogleTravelMode } from "@/src/outdoorDirections/TravelModeStrategy";
+import { GoogleTravelMode,TravelMode } from "@/src/outdoorDirections/TravelModeStrategy";
 
 export const useDestinationData = (
   visible: boolean,

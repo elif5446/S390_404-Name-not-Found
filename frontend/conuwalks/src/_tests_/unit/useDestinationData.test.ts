@@ -213,7 +213,125 @@ describe("useDestinationData", () => {
 
       expect(mockFormatDurationFromSeconds).toHaveBeenCalledWith(900);
     });
+
+    // ── normalizeDurationLabel branches ──────────────────────────────────────
+
+    it("returns 'X h Y min' label when normalizeDurationLabel receives an hour+minute string", async () => {
+      // normalizeDurationLabel: hourMatch && minuteMatch && minutes > 0 → `${hours} h ${minutes} min`
+      setupDirections({
+        routeData: makeRoute({ requestMode: "transit", duration: "1 h 30 mins", baseDurationSeconds: undefined }),
+      });
+      mockFetchRoutesApi.mockResolvedValue({ rawRoutes: [], safeTargetTime: null } as any);
+      mockMapRoutesApiResponse.mockReturnValue([]);
+
+      const { result } = renderHook(() => useDestinationData(false));
+
+      await waitFor(() => {
+        expect(result.current.getModeDurationLabel("transit")).toBe("1 h 30 min");
+      });
+    });
+
+    it("returns hours-only label when normalizeDurationLabel receives an hour-only string", async () => {
+      // normalizeDurationLabel: hourMatch only, no minuteMatch → `${hours} h`
+      setupDirections({
+        routeData: makeRoute({ requestMode: "transit", duration: "2 hours", baseDurationSeconds: undefined }),
+      });
+      mockFetchRoutesApi.mockResolvedValue({ rawRoutes: [], safeTargetTime: null } as any);
+      mockMapRoutesApiResponse.mockReturnValue([]);
+
+      const { result } = renderHook(() => useDestinationData(false));
+
+      await waitFor(() => {
+        expect(result.current.getModeDurationLabel("transit")).toBe("2 h");
+      });
+    });
+
+    it("returns hours-only label when normalizeDurationLabel receives plain 'X h' string", async () => {
+      // normalizeDurationLabel: hourMatch, no minuteMatch, remainingMinutes === 0 → `${hours} h`
+      setupDirections({
+        routeData: makeRoute({ requestMode: "driving", duration: "1 h", baseDurationSeconds: undefined }),
+      });
+      mockFetchRoutesApi.mockResolvedValue({ rawRoutes: [], safeTargetTime: null } as any);
+      mockMapRoutesApiResponse.mockReturnValue([]);
+
+      const { result } = renderHook(() => useDestinationData(false));
+
+      await waitFor(() => {
+        expect(result.current.getModeDurationLabel("driving")).toBe("1 h");
+      });
+    });
+
+    it("returns the raw value when normalizeDurationLabel cannot parse the duration string", async () => {
+      // normalizeDurationLabel: no hourMatch, no minuteMatch → return value as-is
+      setupDirections({
+        routeData: makeRoute({ requestMode: "walking", duration: "a while", baseDurationSeconds: undefined }),
+      });
+      mockFetchRoutesApi.mockResolvedValue({ rawRoutes: [], safeTargetTime: null } as any);
+      mockMapRoutesApiResponse.mockReturnValue([]);
+
+      const { result } = renderHook(() => useDestinationData(false));
+
+      await waitFor(() => {
+        expect(result.current.getModeDurationLabel("walking")).toBe("a while");
+      });
+    });
+
+    it("does not update cache when baseDurationSeconds is already the same value (dedup guard)", async () => {
+      // Covers: if (prev[activeRoute.requestMode] === activeRoute.baseDurationSeconds) return prev;
+      const route = makeRoute({ requestMode: "walking", baseDurationSeconds: 300 });
+      setupDirections({ routes: [route], selectedRouteIndex: 0 });
+      mockFormatDurationFromSeconds.mockReturnValue("5 min");
+
+      const { result, rerender } = renderHook(() => useDestinationData(true));
+
+      await waitFor(() => {
+        expect(result.current.getModeDurationLabel("walking")).toBe("5 min");
+      });
+
+      const callsBefore = mockFormatDurationFromSeconds.mock.calls.length;
+
+      // Re-render with the exact same route/baseDurationSeconds — dedup guard fires, prev is returned
+      rerender();
+
+      // formatDurationFromSeconds should not have been called additional times
+      expect(mockFormatDurationFromSeconds.mock.calls.length).toBe(callsBefore);
+    });
   });
+
+
+  describe("fetchModeDurations edge cases", () => {
+    it("skips updating cache when a mode's baseDurationSeconds is 0 (falsy → treated as null)", async () => {
+      // fetchedRoutes[0]?.baseDurationSeconds || null → 0 || null → null
+      // result.value.baseSeconds !== null → false → entry not written to cache
+      mockFetchRoutesApi.mockResolvedValue({ rawRoutes: [{ baseDurationSeconds: 0 }], safeTargetTime: null } as any);
+      mockMapRoutesApiResponse.mockReturnValue([makeMappedRoute({ baseDurationSeconds: 0 })]);
+
+      const { result } = renderHook(() => useDestinationData(true));
+
+      await waitFor(() => {
+        expect(mockFetchRoutesApi).toHaveBeenCalled();
+      });
+
+      // baseDurationSeconds of 0 is falsy → null → not written to cache → "--"
+      expect(result.current.getModeDurationLabel("walking")).toBe("--");
+    });
+
+    it("skips a mode entry in cache when getDirections returns an empty array", async () => {
+      // fetchedRoutes[0] is undefined → baseDurationSeconds undefined → undefined || null → null
+      // result.value.baseSeconds === null → condition false → cache not updated
+      mockFetchRoutesApi.mockResolvedValue({ rawRoutes: [], safeTargetTime: null } as any);
+      mockMapRoutesApiResponse.mockReturnValue([]);
+
+      const { result } = renderHook(() => useDestinationData(true));
+
+      await waitFor(() => {
+        expect(mockFetchRoutesApi).toHaveBeenCalled();
+      });
+
+      expect(result.current.getModeDurationLabel("driving")).toBe("--");
+    });
+  });
+
 
   describe("getTransitBadgeLabel()", () => {
     const step = (type: string) => ({ transitVehicleType: type } as any);
@@ -297,7 +415,29 @@ describe("useDestinationData", () => {
       const steps = [{ transitVehicleType: "subway", transitLineShortName: "" } as any];
       expect(result.current.getRouteTransitSummary(steps)).toBe("Metro");
     });
+
+    it("returns 'Transit <line>' for a vehicle type that is not subway, metro, bus, or shuttle", () => {
+      // type = "tram" → not subway/metro, not bus/shuttle → vehicle = "Transit"
+      const { result } = renderHook(() => useDestinationData(true));
+      const steps = [{ transitVehicleType: "tram", transitLineShortName: "T1" } as any];
+      expect(result.current.getRouteTransitSummary(steps)).toBe("Transit T1");
+    });
+
+    it("returns 'Bus <line>' for a shuttle vehicle type", () => {
+      // type.includes("shuttle") → vehicle = "Bus"
+      const { result } = renderHook(() => useDestinationData(true));
+      const steps = [{ transitVehicleType: "shuttle", transitLineShortName: "S9" } as any];
+      expect(result.current.getRouteTransitSummary(steps)).toBe("Bus S9");
+    });
+
+    it("returns bare vehicle label 'Transit' when type is unknown and no line name exists", () => {
+      // vehicle = "Transit", line = "" → label = "Transit" (nothing appended)
+      const { result } = renderHook(() => useDestinationData(true));
+      const steps = [{ transitVehicleType: "ferry", transitLineShortName: "" } as any];
+      expect(result.current.getRouteTransitSummary(steps)).toBe("Transit");
+    });
   });
+
 
   describe("transitSteps", () => {
     it("returns empty array when route has no steps", () => {
