@@ -57,7 +57,8 @@ const RouteList = memo(
         {routes.map((route: any, index: number) => {
           const selected = index === selectedRouteIndex;
           const transitSummary = getRouteTransitSummary(route.steps || []);
-          const borderColor = selected ? "#C48BA1" : isDark ? "#3F3F42" : "#ECECEF";
+          const unselectedBorderColor = isDark ? "#3F3F42" : "#ECECEF";
+          const borderColor = selected ? "#C48BA1" : unselectedBorderColor;
           return (
             <TouchableOpacity
               key={route.id}
