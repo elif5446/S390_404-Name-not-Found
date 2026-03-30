@@ -85,7 +85,6 @@ const mockedOpenNotificationSettings =
 const mockedOpenAppearanceSettings =
   openAppearanceSettings as jest.MockedFunction<typeof openAppearanceSettings>;
 
-
 describe("UserProfileContent", () => {
   const userInfo = {
     email: "student@test.com",
@@ -450,43 +449,81 @@ describe("UserProfileContent", () => {
     ).toBeTruthy();
   });
 
-it("renders iOS SymbolView icon", async () => {
-  const restorePlatform = mockPlatformOS("ios");
+  it("renders iOS SymbolView icon", async () => {
+    const restorePlatform = mockPlatformOS("ios");
 
-  const { UNSAFE_getByType } = render(
-    <UserProfileContent
-      userInfo={userInfo}
-      onSignOut={onSignOut}
-      mode="light"
-    />,
-  );
+    const { UNSAFE_getByType } = render(
+      <UserProfileContent
+        userInfo={userInfo}
+        onSignOut={onSignOut}
+        mode="light"
+      />,
+    );
 
-  await waitFor(() => {
-    expect(UNSAFE_getByType(SymbolView)).toBeTruthy();
+    await waitFor(() => {
+      expect(UNSAFE_getByType(SymbolView)).toBeTruthy();
+    });
+
+    restorePlatform();
   });
 
-  restorePlatform();
-});
+  it("applies iOS padding to notification row", () => {
+    const restorePlatform = mockPlatformOS("ios");
 
-it("applies iOS padding to notification row", () => {
-  const restorePlatform = mockPlatformOS("ios");
+    const { getByText } = render(
+      <UserProfileContent
+        userInfo={userInfo}
+        onSignOut={onSignOut}
+        mode="light"
+      />,
+    );
 
-  const { getByText } = render(
-    <UserProfileContent
-      userInfo={userInfo}
-      onSignOut={onSignOut}
-      mode="light"
-    />,
-  );
+    const text = getByText("System Notification Settings");
+    const touchable = text.parent?.parent;
 
-  const text = getByText("System Notification Settings");
-  const touchable = text.parent?.parent;
+    expect(touchable?.props.style).toEqual(
+      expect.objectContaining({ paddingTop: 35 }),
+    );
 
-  expect(touchable?.props.style).toEqual(
-    expect.objectContaining({ paddingTop: 35 }),
-  );
+    restorePlatform();
+  });
 
-  restorePlatform();
-});
+  it("does not update state after unmount", async () => {
+    let resolveReminder!: (value: number) => void;
 
+    mockedGetClassReminderLeadTime.mockImplementation(
+      () =>
+        new Promise<number>((resolve) => {
+          resolveReminder = resolve;
+        }),
+    );
+
+    const consoleErrorSpy = jest
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+
+    const { unmount } = render(
+      <UserProfileContent
+        userInfo={userInfo}
+        onSignOut={onSignOut}
+        mode="light"
+      />,
+    );
+
+    await waitFor(() => {
+      expect(mockedGetClassReminderLeadTime).toHaveBeenCalledTimes(1);
+    });
+
+    unmount();
+
+    resolveReminder(15);
+
+    await waitFor(() => {
+      expect(mockedGetWheelchairAccessibilityPreference).not.toHaveBeenCalled();
+    });
+
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
+
+    consoleErrorSpy.mockRestore();
+  });
 });
