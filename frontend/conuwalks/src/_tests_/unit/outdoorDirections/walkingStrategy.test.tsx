@@ -62,3 +62,19 @@ describe("WalkingStrategy", () => {
     });
   });
 });
+
+describe("strategyTestHelper clampToFuture mock", () => {
+  it("returns null when date is null", () => {
+    expect(mocks.mockClampToFuture(null)).toBeNull();
+  });
+
+  it("returns the same date when date is in the future", () => {
+    const future = new Date(Date.now() + 60_000);
+    expect(mocks.mockClampToFuture(future)).toEqual(future);
+  });
+
+  it("returns null when date is in the past", () => {
+    const past = new Date(Date.now() - 60_000);
+    expect(mocks.mockClampToFuture(past)).toBeNull();
+  });
+});

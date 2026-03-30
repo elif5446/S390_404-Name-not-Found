@@ -515,6 +515,37 @@ describe("fetchRoutesApi", () => {
     });
   });
 
+  it("throws fallback Routes API status message when error.message is missing", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 502,
+      json: jest.fn().mockResolvedValue({ error: {} }),
+    });
+
+    await expect(
+      fetchRoutesApi(start, destination, stubStrategy, targetTime, "leave"),
+    ).rejects.toThrow("Routes API failed: 502");
+  });
+
+  it("throws fallback legacy status message when error_message is missing", async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 418,
+      json: jest.fn().mockResolvedValue({}),
+    });
+
+    await expect(
+      fetchLegacyApi(
+        start,
+        destination,
+        stubStrategy,
+        targetTime,
+        "leave",
+        "driving",
+      ),
+    ).rejects.toThrow("Directions API failed: 418");
+  });
+
   it("throws when the Routes API response is not ok", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: false,
@@ -766,5 +797,131 @@ describe("mapLegacyApiResponse extra branch coverage", () => {
     );
 
     expect(results[0].steps[0].polylinePoints).toEqual([]);
+  });
+
+  it("handles a truncated polyline string without crashing", () => {
+    const result = decodePolyline("?");
+    expect(Array.isArray(result)).toBe(true);
+  });
+
+  it("decodes a polyline with zero delta coordinates", () => {
+    const result = decodePolyline("??");
+    expect(result).toEqual([{ latitude: 0, longitude: 0 }]);
+  });
+
+  it("decodes negative coordinate deltas", () => {
+    // Google's classic example includes negative longitude deltas
+    const result = decodePolyline("_p~iF~ps|U_ulLnnqC_mqNvxq`@");
+    expect(result[0].longitude).toBeLessThan(0);
+    expect(result[1].longitude).toBeLessThan(0);
+  });
+
+  it("decodes positive latitude deltas across points", () => {
+    const result = decodePolyline("_p~iF~ps|U_ulLnnqC_mqNvxq`@");
+    expect(result[1].latitude).toBeGreaterThan(result[0].latitude);
+    expect(result[2].latitude).toBeGreaterThan(result[1].latitude);
+  });
+
+  it("uses an empty steps array when Routes API leg.steps is missing", () => {
+    const rawRoute = {
+      distanceMeters: 1200,
+      duration: "300s",
+      polyline: { encodedPolyline: "_p~iF~ps|U" },
+      legs: [
+        {
+          distanceMeters: 1200,
+          duration: "300s",
+          steps: undefined,
+        },
+      ],
+    };
+
+    const results = mapRoutesApiResponse(
+      [rawRoute],
+      null,
+      "leave",
+      "driving",
+      stubStrategy,
+    );
+
+    expect(results).toHaveLength(1);
+    expect(results[0].steps).toEqual([]);
+  });
+
+  it('uses "0s" when both route.duration and leg.duration are missing', () => {
+    const rawRoute = {
+      distanceMeters: 1200,
+      duration: undefined,
+      polyline: { encodedPolyline: "_p~iF~ps|U" },
+      legs: [
+        {
+          distanceMeters: 1200,
+          duration: undefined,
+          steps: [],
+        },
+      ],
+    };
+
+    const results = mapRoutesApiResponse(
+      [rawRoute],
+      null,
+      "leave",
+      "driving",
+      stubStrategy,
+    );
+
+    expect(results).toHaveLength(1);
+    expect(results[0].baseDurationSeconds).toBe(0);
+    expect(results[0].duration).toBeDefined();
+  });
+
+  it("uses an empty steps array when legacy leg.steps is missing", () => {
+    const rawRoute = {
+      overview_polyline: { points: "_p~iF~ps|U" },
+      legs: [
+        {
+          distance: { text: "1.2 km", value: 1200 },
+          duration: { text: "5 mins", value: 300 },
+          steps: undefined,
+        },
+      ],
+    };
+
+    const results = mapLegacyApiResponse(
+      [rawRoute],
+      null,
+      "leave",
+      "walking",
+      stubStrategy,
+    );
+
+    expect(results).toHaveLength(1);
+    expect(results[0].steps).toEqual([]);
+  });
+
+  it("handles mixed positive and negative deltas explicitly", () => {
+    const result = decodePolyline("_p~iF~ps|U_ulLnnqC_mqNvxq`@");
+
+    // Ensure both branches of bitwise decoding are exercised
+    const hasPositiveLat = result.some(
+      (p, i) => i > 0 && p.latitude > result[i - 1].latitude,
+    );
+    const hasNegativeLng = result.some((p) => p.longitude < 0);
+
+    expect(hasPositiveLat).toBe(true);
+    expect(hasNegativeLng).toBe(true);
+  });
+
+  it("decodes a polyline whose first latitude delta is negative", () => {
+    // Encodes a first point at approximately (-38.5, -120.2)
+    const result = decodePolyline("~o~iF~ps|U");
+
+    expect(result).toHaveLength(1);
+    expect(result[0].latitude).toBeCloseTo(-38.5, 1);
+    expect(result[0].longitude).toBeCloseTo(-120.2, 1);
+  });
+
+  it("handles a malformed polyline while decoding latitude bytes", () => {
+    expect(() => decodePolyline("~")).not.toThrow();
   });
 });
