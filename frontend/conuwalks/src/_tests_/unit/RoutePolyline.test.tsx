@@ -1327,4 +1327,264 @@ describe("RoutePolyline", () => {
     // No successful routes were ever stored, so no indoor penalty should be applied
     expect(calculateIndoorPenaltySeconds).not.toHaveBeenCalled();
   });
+
+  it("maps shuttle travel mode to transit when calling getDirections", async () => {
+  (getDirections as jest.Mock).mockResolvedValue([
+    {
+      id: "shuttle-mode-route",
+      overviewPolyline: "encoded",
+      baseDurationSeconds: 300,
+      isShuttle: false,
+      steps: [],
+    },
+  ]);
+
+  (useDirections as jest.Mock).mockReturnValue({
+    ...baseDirectionsContext,
+    travelMode: "shuttle",
+    setRoutes: mockSetRoutes,
+    setRouteData: mockSetRouteData,
+    setLoading: mockSetLoading,
+    setError: mockSetError,
+  });
+
+  render(<RoutePolyline {...defaultProps} />);
+  await flushDebounce();
+
+  await waitFor(() => {
+    expect(getDirections).toHaveBeenCalledWith(
+      defaultProps.startLocation,
+      baseDirectionsContext.destinationCoords,
+      "transit",
+      baseDirectionsContext.targetTime,
+      baseDirectionsContext.timeMode,
+    );
+  });
+});
+
+it("parses public duration and injects shuttle route when targetTime is missing", async () => {
+  jest.setSystemTime(new Date("2026-03-01T12:00:00Z"));
+
+  const mockApiRoutes = [
+    {
+      id: "public-1",
+      duration: "1 h 20 min",
+      overviewPolyline: "xyz",
+      baseDurationSeconds: 4800,
+      isShuttle: false,
+      steps: [],
+    },
+  ];
+
+  const mockShuttle = {
+    id: "shuttle-1",
+    isShuttle: true,
+    departureDate: "2026-03-01T12:30:00Z",
+    polylinePoints: [{ latitude: 2, longitude: 2 }],
+    baseDurationSeconds: 300,
+    steps: [],
+  };
+
+  (getDirections as jest.Mock).mockResolvedValue(mockApiRoutes);
+  (getShuttleRouteIfApplicable as jest.Mock).mockResolvedValue(mockShuttle);
+
+  (useDirections as jest.Mock).mockReturnValue({
+    ...baseDirectionsContext,
+    travelMode: "transit",
+    targetTime: null,
+    timeMode: "leave",
+    setRoutes: mockSetRoutes,
+    setRouteData: mockSetRouteData,
+    setLoading: mockSetLoading,
+    setError: mockSetError,
+  });
+
+  render(<RoutePolyline {...defaultProps} />);
+  await flushDebounce();
+
+  await waitFor(() => {
+    expect(getShuttleRouteIfApplicable).toHaveBeenCalled();
+    expect(mockSetRoutes).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "shuttle-1", isShuttle: true }),
+        expect.objectContaining({ id: "public-1" }),
+      ]),
+    );
+  });
+});
+
+it("returns early from applyIndoorPatch when cached routes array is empty", async () => {
+  let currentDirectionsContext: any = {
+    ...baseDirectionsContext,
+    showDirections: false,
+    isNavigationActive: false,
+    setRoutes: mockSetRoutes,
+    setRouteData: mockSetRouteData,
+    setLoading: mockSetLoading,
+    setError: mockSetError,
+  };
+
+  (useDirections as jest.Mock).mockImplementation(() => currentDirectionsContext);
+
+  const { rerender } = render(<RoutePolyline {...defaultProps} />);
+  await flushDebounce();
+
+  currentDirectionsContext = {
+    ...currentDirectionsContext,
+    showDirections: true,
+    setRoutes: jest.fn(), // change fetchRoute dependency
+  };
+
+  rerender(<RoutePolyline {...defaultProps} />);
+  await flushDebounce();
+
+  expect(calculateIndoorPenaltySeconds).not.toHaveBeenCalled();
+});
+
+it("stores blocked request key after denied error and skips repeated fetch for same key", async () => {
+  (getDirections as jest.Mock).mockRejectedValue(
+    new Error("REQUEST_DENIED: API has not been used"),
+  );
+
+  const { rerender } = render(<RoutePolyline {...defaultProps} />);
+  await flushDebounce();
+
+  await waitFor(() => {
+    expect(mockSetError).toHaveBeenCalledWith(
+      "REQUEST_DENIED: API has not been used",
+    );
+  });
+
+  expect(getDirections).toHaveBeenCalledTimes(1);
+
+  rerender(<RoutePolyline {...defaultProps} />);
+  await flushDebounce();
+
+  expect(getDirections).toHaveBeenCalledTimes(1);
+});
+
+
+
+it("sets loading true, clears error, and sets loading false on successful mounted fetch", async () => {
+  (getDirections as jest.Mock).mockResolvedValue([
+    {
+      id: "success-route",
+      overviewPolyline: "encoded",
+      baseDurationSeconds: 300,
+      isShuttle: false,
+      steps: [],
+    },
+  ]);
+
+  render(<RoutePolyline {...defaultProps} />);
+  await flushDebounce();
+
+  await waitFor(() => {
+    expect(mockSetLoading).toHaveBeenCalledWith(true);
+    expect(mockSetError).toHaveBeenCalledWith(null);
+    expect(mockSetLoading).toHaveBeenCalledWith(false);
+  });
+});
+
+it("does not update state if component unmounts before directions resolve", async () => {
+  let resolveDirections: (value: any) => void = () => {};
+
+  (getDirections as jest.Mock).mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        resolveDirections = resolve;
+      }),
+  );
+
+  const { unmount } = render(<RoutePolyline {...defaultProps} />);
+  await flushDebounce();
+
+  expect(getDirections).toHaveBeenCalledTimes(1);
+
+  unmount();
+
+  await act(async () => {
+    resolveDirections([
+      {
+        id: "late-route",
+        overviewPolyline: "encoded",
+        baseDurationSeconds: 300,
+        isShuttle: false,
+        steps: [],
+      },
+    ]);
+    await Promise.resolve();
+  });
+
+  expect(mockSetRoutes).not.toHaveBeenCalledWith(
+    expect.arrayContaining([expect.objectContaining({ id: "late-route" })]),
+  );
+});
+
+it("clears previous debounce timer when dependencies change before timeout completes", async () => {
+  const clearTimeoutSpy = jest.spyOn(global, "clearTimeout");
+
+  let currentDirectionsContext: any = {
+    ...baseDirectionsContext,
+    travelMode: "walking",
+    setRoutes: mockSetRoutes,
+    setRouteData: mockSetRouteData,
+    setLoading: mockSetLoading,
+    setError: mockSetError,
+  };
+
+  (useDirections as jest.Mock).mockImplementation(() => currentDirectionsContext);
+
+  const { rerender } = render(<RoutePolyline {...defaultProps} />);
+
+  await act(async () => {
+    jest.advanceTimersByTime(100);
+  });
+
+  currentDirectionsContext = {
+    ...currentDirectionsContext,
+    travelMode: "driving",
+  };
+
+  rerender(<RoutePolyline {...defaultProps} />);
+
+  expect(clearTimeoutSpy).toHaveBeenCalled();
+
+  clearTimeoutSpy.mockRestore();
+});
+
+it("uses UNKNOWN for nextMode when next transit step has no transitVehicleType", () => {
+  (useDirections as jest.Mock).mockReturnValue({
+    ...baseDirectionsContext,
+    travelMode: "transit",
+    showDirections: true,
+    isNavigationActive: true,
+    routeData: {
+      id: "unknown-next-mode",
+      polylinePoints: [{ latitude: 1, longitude: 1 }],
+      isShuttle: false,
+      steps: [
+        {
+          travelMode: "walking",
+          polylinePoints: [{ latitude: 1, longitude: 1 }],
+          endLocation: { latitude: 10, longitude: 10 },
+        },
+        {
+          travelMode: "transit",
+          // intentionally no transitVehicleType
+          polylinePoints: [{ latitude: 2, longitude: 2 }],
+          endLocation: { latitude: 20, longitude: 20 },
+        },
+      ],
+    },
+    setRoutes: mockSetRoutes,
+    setRouteData: mockSetRouteData,
+    setLoading: mockSetLoading,
+    setError: mockSetError,
+  });
+
+  const { getAllByTestId } = render(<RoutePolyline {...defaultProps} />);
+
+  expect(getAllByTestId("mock-marker")).toHaveLength(1);
+});
 });
