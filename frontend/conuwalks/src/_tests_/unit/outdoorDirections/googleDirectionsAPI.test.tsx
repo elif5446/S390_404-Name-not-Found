@@ -911,4 +911,17 @@ describe("mapLegacyApiResponse extra branch coverage", () => {
     expect(hasPositiveLat).toBe(true);
     expect(hasNegativeLng).toBe(true);
   });
+
+  it("decodes a polyline whose first latitude delta is negative", () => {
+    // Encodes a first point at approximately (-38.5, -120.2)
+    const result = decodePolyline("~o~iF~ps|U");
+
+    expect(result).toHaveLength(1);
+    expect(result[0].latitude).toBeCloseTo(-38.5, 1);
+    expect(result[0].longitude).toBeCloseTo(-120.2, 1);
+  });
+
+  it("handles a malformed polyline while decoding latitude bytes", () => {
+    expect(() => decodePolyline("~")).not.toThrow();
+  });
 });

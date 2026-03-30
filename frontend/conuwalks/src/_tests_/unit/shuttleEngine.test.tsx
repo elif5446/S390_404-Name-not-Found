@@ -476,4 +476,59 @@ describe("shuttleRouting.ts", () => {
     );
     expect(result?.steps[2].instruction).toBe("Walk to destination");
   });
+
+  it("parses duration with hours only (no minutes)", async () => {
+    mockDistanceMetersBetween.mockImplementation((coord1, coord2) => {
+      if (coord1 === START_SGW && coord2.latitude < 45.49) return 200;
+      if (coord1 === DEST_LOY && coord2.latitude > 45.49) return 200;
+      return 5000;
+    });
+
+    mockGetDirections.mockResolvedValue([
+      {
+        duration: "2 h",
+        distance: "400 m",
+        steps: [{ instruction: "Walk straight", polylinePoints: [] }],
+        polylinePoints: [],
+      },
+    ]);
+
+    const mondayMorning = new Date(2026, 2, 2, 8, 0);
+
+    const result = await getShuttleRouteIfApplicable(
+      START_SGW,
+      DEST_LOY,
+      mondayMorning,
+      "leave",
+    );
+
+    expect(result).not.toBeNull();
+    expect(result?.steps.length).toBeGreaterThan(0);
+  });
+
+  it("returns 0 minutes when duration string has no hours or minutes", async () => {
+    mockDistanceMetersBetween.mockImplementation((coord1, coord2) => {
+      if (coord1 === START_SGW && coord2.latitude < 45.49) return 200;
+      if (coord1 === DEST_LOY && coord2.latitude > 45.49) return 200;
+      return 5000;
+    });
+
+    mockGetDirections.mockResolvedValue([
+      {
+        duration: "unknown",
+        distance: "400 m",
+        steps: [{ instruction: "Walk straight", polylinePoints: [] }],
+        polylinePoints: [],
+      },
+    ]);
+
+    const result = await getShuttleRouteIfApplicable(
+      START_SGW,
+      DEST_LOY,
+      new Date(2026, 2, 2, 9, 0),
+      "leave",
+    );
+
+    expect(result).not.toBeNull();
+  });
 });
