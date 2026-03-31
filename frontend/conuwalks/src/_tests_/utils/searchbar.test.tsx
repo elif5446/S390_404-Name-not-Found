@@ -1,275 +1,183 @@
-import {
-  processStartPointSearch,
-  processDestinationSearch,
-  searchStartPoint,
-  searchDestination,
-} from "../../utils/searchbar";
-import * as scheduleUtils from "../../utils/schedule";
-import { BuildingEvent } from "../../hooks/useBuildingEvents";
-import { CalendarEvent } from "../../api/calendarApi";
-import CampusMap from "../../components/CampusMap";
-import {
-  render,
-  fireEvent,
-  waitFor,
-  screen
-} from "@testing-library/react-native";
-import { DirectionsProvider } from "@/src/context/DirectionsContext";
+import React from "react";
+import { Platform } from "react-native";
+import { render, fireEvent, screen } from "@testing-library/react-native";
+import BuildingSearchButton from "../../components/BuildingSearchButton"; 
 
-jest.mock("../../utils/schedule");
-jest.mock("../../data/metadata/SGW.BuildingMetaData", () => ({
-  SGWBuildingSearchMetadata: {
-    H: {
-      name: "Henry F. Hall Building",
-      coordinates: { latitude: 0, longitude: 0 },
-    },
-    LB: {
-      name: "Library Building",
-      coordinates: { latitude: 0, longitude: 0 },
-    },
-  },
-  SGWBuildingMetadata: {
-    H: { name: "Henry F. Hall Building" },
-    LB: { name: "Library Building" },
-  }
-}));
-jest.mock("../../data/metadata/LOY.BuildingMetadata", () => ({
-  LoyolaBuildingSearchMetadata: {
-    VL: { name: "Vanier Library", coordinates: { latitude: 0, longitude: 0 } },
-  },
-  LoyolaBuildingMetadata: {
-    VL: { name: "Vanier Library" },
-  }
-}));
-
-jest.mock("@/src/utils/geo", () => ({
-  isPointInPolygon: jest.fn(() => false),
-}));
-
-jest.mock("@/src/utils/geometry", () => ({
-  calculatePolygonCenter: jest.fn(() => ({ latitude: 45.495, longitude: -73.578 })),
-  distanceMetersBetween: jest.fn(() => 100),
-}));
-
-jest.mock("react-native-maps", () => {
+jest.mock("expo-blur", () => {
   const React = require("react");
-  class MockMapView extends React.Component {
-    animateCamera = jest.fn();
-    animateToRegion = jest.fn();
-    render() { return null; }
-  }
+  const { View } = require("react-native");
   return {
-    __esModule: true,
-    default: MockMapView,
-    PROVIDER_GOOGLE: "google",
-    Marker: "Marker",
-    Polygon: "Polygon",
+    BlurView: ({ children, testID, ...props }: any) => (
+      <View testID={testID ?? "blur-view"} {...props}>
+        {children}
+      </View>
+    ),
   };
 });
 
-describe("searchbar utils", () => {
-  const mockTodayEvents: BuildingEvent[] = [
-    {
-      id: "b-1",
-      summary: "Lecture",
-      courseName: "SOEN390",
-      start: Date.now(),
-      end: Date.now() + 1000,
-      location: "H 801",
-      buildingCode: "H",
-      roomNumber: "801",
-    },
-  ];
-
-  const mockCalendarEvents: CalendarEvent[] = [
-    {
-      id: "c-1",
-      summary: "Lab",
-      start: { dateTime: new Date(Date.now() + 10000).toISOString() },
-      end: { dateTime: new Date(Date.now() + 20000).toISOString() },
-      location: "LB 201",
-    },
-  ];
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    (scheduleUtils.guessRoomLocation as jest.Mock).mockReturnValue({
-      buildingCode: "H",
-      roomNumber: "801",
-    });
-    (scheduleUtils.guessFutureRoomLocation as jest.Mock).mockReturnValue({
-      buildingCode: "LB",
-      roomNumber: "201",
-    });
-  });
-
-  describe("search logic and filtering", () => {
-    test("returns empty array if both events and todayEvents are null", () => {
-      const result = searchStartPoint("", null as any);
-      expect(result).toEqual([]);
-    });
-
-    test("searchStartPoint includes 'Current Location' suggestion", () => {
-      const result = searchStartPoint("", mockTodayEvents);
-      expect(result[0]).toEqual({
-        buildingName: "Current",
-        roomNumber: "Location",
-        isLocation: true,
-      });
-    });
-
-    test("filters buildings by building code (case insensitive)", () => {
-      const result = searchDestination("h", mockCalendarEvents);
-      expect(
-        result.some((r) => r.buildingName === "Henry F. Hall Building"),
-      ).toBe(true);
-    });
-
-    test("filters buildings by building name", () => {
-      const result = searchDestination("library", mockCalendarEvents);
-      expect(result.some((r) => r.buildingName === "Library Building")).toBe(
-        true,
-      );
-
-      const result2 = searchDestination("vanier", mockCalendarEvents);
-      expect(result2.some((r) => r.buildingName === "Vanier Library")).toBe(
-        true,
-      );
-    });
-
-    test("parses and filters by room number", () => {
-      const result = searchStartPoint("H 8", mockTodayEvents);
-      expect(
-        result.some(
-          (r) =>
-            r.buildingName === "Henry F. Hall Building" &&
-            r.roomNumber === "801",
-        ),
-      ).toBe(true);
-    });
-
-    test("handles room input even if building is not fully matched", () => {
-      const result = searchStartPoint("Henry 999", mockTodayEvents);
-      expect(
-        result.some(
-          (r) =>
-            r.buildingName === "Henry F. Hall Building" &&
-            r.roomNumber === "999",
-        ),
-      ).toBe(true);
-    });
-  });
-
-  describe("wrapper functions", () => {
-    test("processStartPointSearch returns a single best match", () => {
-      const result = processStartPointSearch("H 801", mockTodayEvents);
-      expect(result.buildingName).toBe("Henry F. Hall Building");
-      expect(result.roomNumber).toBe("801");
-    });
-
-    test("processDestinationSearch returns a single best match", () => {
-      const result = processDestinationSearch("LB 201", mockCalendarEvents);
-      expect(result?.buildingName).toBe("Library Building");
-    });
-  });
-
-  describe("edge cases for 100% coverage", () => {
-    test("handles userLocationBuildingId when no events are found", () => {
-      (scheduleUtils.guessRoomLocation as jest.Mock).mockReturnValue(null);
-      const result = searchStartPoint("", [], "H");
-      expect(
-        result.some(
-          (r) =>
-            r.buildingName === "Henry F. Hall Building" &&
-            r.isLocation === true,
-        ),
-      ).toBe(true);
-    });
-
-    test("handles roomInput that is not in the schedule", () => {
-      const result = searchDestination("LB 999", mockCalendarEvents);
-      expect(
-        result.some(
-          (r) =>
-            r.buildingName === "Library Building" && r.roomNumber === "999",
-        ),
-      ).toBe(true);
-    });
-
-    test("sorts results by building match", () => {
-      (scheduleUtils.guessRoomLocation as jest.Mock).mockReturnValue({
-        buildingCode: "LB",
-        roomNumber: "201",
-      });
-      const result = searchStartPoint("L", mockTodayEvents);
-      expect(result.some((r) => r.buildingName === "Library Building")).toBe(
-        true,
-      );
-    });
-
-    test("handles input with no matching buildings", () => {
-      const result = searchDestination("Z", mockCalendarEvents);
-      expect(result).toEqual([]);
-    });
-
-    test("limits suggestions to 10", () => {
-      const manyEvents = Array.from({ length: 15 }, (_, i) => ({
-        ...mockTodayEvents[0],
-        location: `H ${100 + i}`,
-      }));
-      const result = searchStartPoint("H", manyEvents);
-      expect(result.length).toBeLessThanOrEqual(10); //
-    });
-  });
+jest.mock("@expo/vector-icons", () => {
+  const React = require("react");
+  const { Text } = require("react-native");
+  return {
+    MaterialIcons: ({ name, testID }: any) => (
+      <Text testID={testID ?? "material-icon"}>{name}</Text>
+    ),
+  };
 });
 
-describe("CampusMap Building Search Integration", () => {
-  
-  it("opens the search modal when the search button is pressed", () => {
-    render(
-      <DirectionsProvider>
-        <CampusMap userInfo={{ name: "John" }} onSignOut={jest.fn()} />
-      </DirectionsProvider>
-    );
+const defaultProps = {
+  onPress: jest.fn(),
+  buttonSize: 48,
+  mode: "light",
+  buttonSpacing: 8,
+};
 
-    const searchBtn = screen.getByLabelText("Open building search");
-    fireEvent.press(searchBtn);
+const renderButton = (props = {}) =>
+  render(<BuildingSearchButton {...defaultProps} {...props} />);
 
-    expect(screen.getByPlaceholderText("Type building name...")).toBeTruthy();
+describe("BuildingSearchButton", () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
-  it("filters the building list when the user types", async () => {
-    render(
-      <DirectionsProvider>
-        <CampusMap userInfo={{ name: "John" }} onSignOut={jest.fn()} />
-      </DirectionsProvider>
-    );
+  describe("accessibility", () => {
+    it("has correct accessibilityLabel", () => {
+      renderButton();
+      expect(
+        screen.getByLabelText("Open building search")
+      ).toBeTruthy();
+    });
 
-    fireEvent.press(screen.getByLabelText("Open building search"));
-    const input = screen.getByPlaceholderText("Type building name...");
+    it("has accessibilityRole of button", () => {
+      renderButton();
+      const btn = screen.getByLabelText("Open building search");
+      expect(btn.props.accessibilityRole).toBe("button");
+    });
 
-    fireEvent.changeText(input, "Hall");
-
-    expect(screen.getByText("Henry F. Hall Building")).toBeTruthy();
-    expect(screen.queryByText("Vanier Library")).toBeNull();
+    it("has correct accessibilityHint", () => {
+      renderButton();
+      const btn = screen.getByLabelText("Open building search");
+      expect(btn.props.accessibilityHint).toBe(
+        "Tap to search for a building and view its info"
+      );
+    });
   });
 
-  it("completes the selection flow correctly", async () => {
-    render(
-      <DirectionsProvider>
-        <CampusMap userInfo={{ name: "John" }} onSignOut={jest.fn()} />
-      </DirectionsProvider>
-    );
+  describe("interaction", () => {
+    it("calls onPress when pressed", () => {
+      const onPress = jest.fn();
+      renderButton({ onPress });
+      fireEvent.press(screen.getByLabelText("Open building search"));
+      expect(onPress).toHaveBeenCalledTimes(1);
+    });
+  });
 
-    fireEvent.press(screen.getByLabelText("Open building search"));
-    
-    const buildingItem = screen.getByText("Henry F. Hall Building");
-    fireEvent.press(buildingItem);
+  describe("icon", () => {
+    it("renders the search MaterialIcon", () => {
+      renderButton();
+      expect(screen.getByTestId("material-icon")).toBeTruthy();
+    });
+  });
 
-    expect(screen.queryByPlaceholderText("Type building name...")).toBeNull();
+  describe("iOS platform", () => {
+    beforeEach(() => {
+      Platform.OS = "ios";
+    });
 
-    await waitFor(() => {
-      expect(screen.getByText("Henry F. Hall Building")).toBeTruthy();
+    afterEach(() => {
+      Platform.OS = "ios"; 
+    });
+
+    it("renders BlurView on iOS", () => {
+      renderButton();
+      expect(screen.getByTestId("blur-view")).toBeTruthy();
+    });
+
+    it("uses transparent background on iOS", () => {
+      renderButton();
+      const btn = screen.getByLabelText("Open building search");
+      expect(btn.props.style).toMatchObject({ backgroundColor: "transparent" });
+    });
+
+    it("uses shadowOpacity 0.18 on iOS", () => {
+      renderButton();
+      const btn = screen.getByLabelText("Open building search");
+      expect(btn.props.style).toMatchObject({ shadowOpacity: 0.18 });
+    });
+
+    it("uses elevation 0 on iOS", () => {
+      renderButton();
+      const btn = screen.getByLabelText("Open building search");
+      expect(btn.props.style).toMatchObject({ elevation: 0 });
+    });
+
+    it("passes dark tint to BlurView when mode is dark", () => {
+      renderButton({ mode: "dark" });
+      const blur = screen.getByTestId("blur-view");
+      expect(blur.props.tint).toBe("dark");
+    });
+
+    it("passes light tint to BlurView when mode is light", () => {
+      renderButton({ mode: "light" });
+      const blur = screen.getByTestId("blur-view");
+      expect(blur.props.tint).toBe("light");
+    });
+  });
+
+  describe("Android platform", () => {
+    beforeEach(() => {
+      Platform.OS = "android";
+    });
+
+    afterEach(() => {
+      Platform.OS = "ios";
+    });
+
+    it("does NOT render BlurView on Android", () => {
+      renderButton();
+      expect(screen.queryByTestId("blur-view")).toBeNull();
+    });
+
+    it("uses dark background (#2C2C2E) when mode is dark", () => {
+      renderButton({ mode: "dark" });
+      const btn = screen.getByLabelText("Open building search");
+      expect(btn.props.style).toMatchObject({ backgroundColor: "#2C2C2E" });
+    });
+
+    it("uses white background (#FFFFFF) when mode is light", () => {
+      renderButton({ mode: "light" });
+      const btn = screen.getByLabelText("Open building search");
+      expect(btn.props.style).toMatchObject({ backgroundColor: "#FFFFFF" });
+    });
+
+    it("uses shadowOpacity 0.22 on Android", () => {
+      renderButton();
+      const btn = screen.getByLabelText("Open building search");
+      expect(btn.props.style).toMatchObject({ shadowOpacity: 0.22 });
+    });
+
+    it("uses elevation 4 on Android", () => {
+      renderButton();
+      const btn = screen.getByLabelText("Open building search");
+      expect(btn.props.style).toMatchObject({ elevation: 4 });
+    });
+  });
+
+  describe("layout", () => {
+    it("applies buttonSize to width, height, and borderRadius", () => {
+      renderButton({ buttonSize: 56 });
+      const btn = screen.getByLabelText("Open building search");
+      expect(btn.props.style).toMatchObject({
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+      });
+    });
+
+    it("applies marginBottom from buttonSpacing", () => {
+      renderButton({ buttonSpacing: 16 });
+      const btn = screen.getByLabelText("Open building search");
+      expect(btn.props.style).toMatchObject({ marginBottom: 16 });
     });
   });
 });

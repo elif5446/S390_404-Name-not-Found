@@ -1,5 +1,5 @@
-import React from 'react';
-import Svg, { Circle, Path } from 'react-native-svg';
+import React from "react";
+import Svg, { Circle, Path } from "react-native-svg";
 
 interface MetroIconProps {
   width?: number | string;
@@ -7,19 +7,13 @@ interface MetroIconProps {
   color?: string;
 }
 
-export const MetroIcon = ({ width = 25, height = 25, color = '#333333' }: MetroIconProps) => {
+export const MetroIcon = ({ width = 25, height = 25, color = "#333333" }: MetroIconProps) => {
   return (
-    <Svg width={width} height={height} viewBox="0 0 100 100">
-      <Circle
-        cx="50"
-        cy="50"
-        r="38"
-        stroke={color}
-        strokeWidth="12"
-        fill="none"
-      />
-      
+    <Svg testID="metro-svg" width={width} height={height} viewBox="0 0 100 100">
+      <Circle testID="metro-circle" cx="50" cy="50" r="38" stroke={color} strokeWidth="12" fill="none" />
+
       <Path
+        testID="metro-path"
         d="
           M 44 12 
           H 56 

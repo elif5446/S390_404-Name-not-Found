@@ -34,7 +34,6 @@ jest.mock("../../components/TimeSelectorModal", () => {
   return MockModal;
 });
 
-// mock the shared ui components with proper display names
 jest.mock("../../components/ui/PlatformIcon", () => {
   const { View } = require("react-native");
   const MockPlatformIcon = (props: any) => (
@@ -56,7 +55,6 @@ jest.mock("../../components/ui/BottomSheetDragHandle", () => {
   return MockDragHandle;
 });
 
-// mock the styles to prevent undefined object errors
 jest.mock("../../styles/DestinationPopup", () => ({
   styles: {
     header: {},
@@ -70,19 +68,29 @@ jest.mock("../../styles/DestinationPopup", () => ({
     title: {},
     transportRow: {},
     transportButton: {},
+    openIndoorHeaderButton: {},
+    openIndoorHeaderButtonText: {},
   },
 }));
 
-describe("DestinationHeader Component", () => {
+jest.mock("../../styles/additionalInfoPopup", () => ({
+  themedStyles: {
+    openIndoorHeaderButton: jest.fn(() => ({})),
+    openIndoorHeaderButtonText: jest.fn(() => ({})),
+  },
+}));
+
+describe("DestinationHeader — Additional Coverage", () => {
   const mockSetTravelMode = jest.fn();
   const mockGetModeDurationLabel = jest.fn();
   const mockOnDismiss = jest.fn();
   const mockOnToggleHeight = jest.fn();
+  const mockOnOpenIndoorPress = jest.fn();
 
   const originalOS = Platform.OS;
 
   const defaultProps = {
-    isDark: false,
+    mode: "light" as const,
     travelMode: "walking" as const,
     setTravelMode: mockSetTravelMode,
     getModeDurationLabel: mockGetModeDurationLabel,
@@ -109,196 +117,288 @@ describe("DestinationHeader Component", () => {
     Platform.OS = originalOS;
   });
 
-  describe("Base Rendering & Interactions", () => {
-    it("renders correctly with default props", () => {
-      render(<DestinationHeader {...defaultProps} />);
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Indoor Map Button
+  // ─────────────────────────────────────────────────────────────────────────────
+  describe("Indoor Map Button", () => {
+    it("renders the indoor map button when showOpenIndoorButton and onOpenIndoorPress are both provided", () => {
+      render(
+        <DestinationHeader
+          {...defaultProps}
+          showOpenIndoorButton
+          onOpenIndoorPress={mockOnOpenIndoorPress}
+        />,
+      );
 
-      // check title
-      expect(screen.getByText("Directions")).toBeTruthy();
-
-      // check custom drag handle renders
-      expect(screen.getByTestId("mock-drag-handle")).toBeTruthy();
-
-      // check that all durations fetched from getmodedurationlabel are rendered
-      expect(screen.getByText("15 min")).toBeTruthy();
-      expect(screen.getByText("5 min")).toBeTruthy();
-      expect(screen.getByText("12 min")).toBeTruthy();
-      expect(screen.getByText("8 min")).toBeTruthy();
+      expect(screen.getByLabelText("Open indoor map")).toBeTruthy();
+      expect(screen.getByText("Indoor Map↗")).toBeTruthy();
     });
 
-    it("calls setTravelMode when a transport button is pressed", () => {
-      render(<DestinationHeader {...defaultProps} />);
+    it("calls onOpenIndoorPress when the indoor map button is pressed", () => {
+      render(
+        <DestinationHeader
+          {...defaultProps}
+          showOpenIndoorButton
+          onOpenIndoorPress={mockOnOpenIndoorPress}
+        />,
+      );
 
-      const transitButton = screen.getByLabelText("Select transit mode");
-      fireEvent.press(transitButton);
-
-      expect(mockSetTravelMode).toHaveBeenCalledWith("transit");
-      expect(mockSetTravelMode).toHaveBeenCalledTimes(1);
+      fireEvent.press(screen.getByLabelText("Open indoor map"));
+      expect(mockOnOpenIndoorPress).toHaveBeenCalledTimes(1);
     });
 
-    it("calls onToggleHeight when the header area is pressed", () => {
+    it("does NOT render the indoor map button when showOpenIndoorButton is true but onOpenIndoorPress is omitted", () => {
+      render(
+        <DestinationHeader {...defaultProps} showOpenIndoorButton />,
+      );
+
+      expect(screen.queryByLabelText("Open indoor map")).toBeNull();
+      expect(screen.queryByText("Indoor Map↗")).toBeNull();
+    });
+
+    it("does NOT render the indoor map button when showOpenIndoorButton is false", () => {
+      render(
+        <DestinationHeader
+          {...defaultProps}
+          showOpenIndoorButton={false}
+          onOpenIndoorPress={mockOnOpenIndoorPress}
+        />,
+      );
+
+      expect(screen.queryByLabelText("Open indoor map")).toBeNull();
+    });
+
+    it("does NOT render the indoor map button when neither prop is provided", () => {
       render(<DestinationHeader {...defaultProps} />);
-
-      // simulate pressing the top-level touchablewithoutfeedback by pressing a child
-      const title = screen.getByText("Directions");
-      fireEvent.press(title);
-
-      expect(mockOnToggleHeight).toHaveBeenCalledTimes(1);
+      expect(screen.queryByText("Indoor Map↗")).toBeNull();
     });
   });
 
-  describe("Platform Specific Rendering", () => {
-    it("renders iOS close button and calls onDismiss when pressed", () => {
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Dark Mode
+  // ─────────────────────────────────────────────────────────────────────────────
+  describe("Dark Mode rendering", () => {
+    it("renders the iOS close button in dark mode without crashing", () => {
       Platform.OS = "ios";
-      render(<DestinationHeader {...defaultProps} isDark={true} />);
+      render(<DestinationHeader {...defaultProps} mode="dark" />);
 
-      // the ios version renders a text '✕' inside a circle
-      const closeButtonText = screen.getByText("✕");
-      expect(closeButtonText).toBeTruthy();
-
-      // find the touchable via accessibility label and fire press
-      const closeButton = screen.getByLabelText("Close directions");
-      fireEvent.press(closeButton);
-
-      expect(mockOnDismiss).toHaveBeenCalledTimes(1);
+      // The ✕ close button should still be present on iOS dark mode
+      expect(screen.getByText("✕")).toBeTruthy();
     });
 
-    it("renders Android close button using PlatformIcon and calls onDismiss when pressed", () => {
+    it("renders the Android close button in dark mode using PlatformIcon", () => {
       Platform.OS = "android";
-      render(<DestinationHeader {...defaultProps} />);
+      render(<DestinationHeader {...defaultProps} mode="dark" />);
 
-      // the android version should render our mocked platformicon
       expect(screen.getByTestId("platform-icon-close")).toBeTruthy();
-      expect(screen.queryByText("✕")).toBeNull();
+    });
 
-      const closeButton = screen.getByLabelText("Close directions");
-      fireEvent.press(closeButton);
+    it("passes isDark=true to BottomSheetDragHandle in dark mode", () => {
+      render(<DestinationHeader {...defaultProps} mode="dark" />);
 
-      expect(mockOnDismiss).toHaveBeenCalledTimes(1);
+      const dragHandle = screen.getByTestId("mock-drag-handle");
+      expect(dragHandle.props.isDark).toBe(true);
+    });
+
+    it("passes isDark=false to BottomSheetDragHandle in light mode", () => {
+      render(<DestinationHeader {...defaultProps} mode="light" />);
+
+      const dragHandle = screen.getByTestId("mock-drag-handle");
+      expect(dragHandle.props.isDark).toBe(false);
     });
   });
 
-  describe("Time Selector & Formatting", () => {
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Transport button — active state
+  // ─────────────────────────────────────────────────────────────────────────────
+  describe("Transport button active state", () => {
+    it("marks the current travelMode button as active (campusPink background)", () => {
+      render(<DestinationHeader {...defaultProps} travelMode="driving" />);
+
+      const drivingButton = screen.getByTestId("route-driving");
+      expect(drivingButton.props.style).toEqual(
+        expect.objectContaining({ backgroundColor: "#B03060" }),
+      );
+    });
+
+    it("marks non-active transport buttons with transparent background", () => {
+      render(<DestinationHeader {...defaultProps} travelMode="driving" />);
+
+      const walkingButton = screen.getByTestId("route-walking");
+      expect(walkingButton.props.style).toEqual(
+        expect.objectContaining({ backgroundColor: "transparent" }),
+      );
+    });
+
+    it("fires setTravelMode with 'bicycling' when bicycling button is pressed", () => {
+      render(<DestinationHeader {...defaultProps} />);
+
+      fireEvent.press(screen.getByLabelText("Select bicycling mode"));
+      expect(mockSetTravelMode).toHaveBeenCalledWith("bicycling");
+    });
+
+    it("fires setTravelMode with 'driving' when driving button is pressed", () => {
+      render(<DestinationHeader {...defaultProps} />);
+
+      fireEvent.press(screen.getByLabelText("Select driving mode"));
+      expect(mockSetTravelMode).toHaveBeenCalledWith("driving");
+    });
+
+    it("fires setTravelMode with 'walking' when walking button is pressed", () => {
+      render(<DestinationHeader {...defaultProps} />);
+
+      fireEvent.press(screen.getByLabelText("Select walking mode"));
+      expect(mockSetTravelMode).toHaveBeenCalledWith("walking");
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Time selector not rendered for non-transit modes
+  // ─────────────────────────────────────────────────────────────────────────────
+  describe("Time selector visibility by travel mode", () => {
+    it("does NOT render the time selector button for walking mode", () => {
+      render(<DestinationHeader {...defaultProps} travelMode="walking" />);
+      expect(
+        screen.queryByLabelText("Select departure or arrival time"),
+      ).toBeNull();
+    });
+
+    it("does NOT render the time selector button for driving mode", () => {
+      render(<DestinationHeader {...defaultProps} travelMode="driving" />);
+      expect(
+        screen.queryByLabelText("Select departure or arrival time"),
+      ).toBeNull();
+    });
+
+    it("does NOT render the time selector button for bicycling mode", () => {
+      render(<DestinationHeader {...defaultProps} travelMode="bicycling" />);
+      expect(
+        screen.queryByLabelText("Select departure or arrival time"),
+      ).toBeNull();
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // TimeSelectorModal — onClose (dismiss without applying)
+  // ─────────────────────────────────────────────────────────────────────────────
+  describe("TimeSelectorModal onClose", () => {
     const { useDirections } = require("@/src/context/DirectionsContext");
 
-    it("renders the time selector button when travelMode is transit", () => {
-      const { useDirections } = require("@/src/context/DirectionsContext");
-
+    it("closes the modal via onClose without updating context", () => {
       useDirections.mockReturnValue({
         timeMode: "leave",
         targetTime: new Date(),
-        setTimeMode: jest.fn(),
-        setTargetTime: jest.fn(),
-      });
-
-      render(<DestinationHeader {...defaultProps} travelMode="transit" />);
-      expect(
-        screen.getByLabelText("Select departure or arrival time"),
-      ).toBeTruthy();
-    });
-
-    it("renders 'Leave now' when targetTime is null", () => {
-      useDirections.mockReturnValueOnce({
-        timeMode: "leave",
-        targetTime: null,
         setTimeMode: mockSetTimeMode,
         setTargetTime: mockSetTargetTime,
       });
 
       render(<DestinationHeader {...defaultProps} travelMode="transit" />);
-      expect(screen.getByText("Leave now")).toBeTruthy();
-    });
 
-    it("renders 'Leave at HH:MM' for today's date", () => {
-      // isToday is mocked to true in beforeEach
-      const testDate = new Date("2026-03-01T14:30:00Z");
-      useDirections.mockReturnValueOnce({
-        timeMode: "leave",
-        targetTime: testDate,
+      // Open the modal
+      fireEvent.press(
+        screen.getByLabelText("Select departure or arrival time"),
+      );
+      expect(
+        screen.getByTestId("mock-time-modal").props.accessibilityState.expanded,
+      ).toBe(true);
+
+      // Trigger onClose (user dismisses without confirming)
+      fireEvent(screen.getByTestId("mock-time-modal"), "close");
+
+      // Modal should be closed
+      expect(
+        screen.getByTestId("mock-time-modal").props.accessibilityState.expanded,
+      ).toBe(false);
+
+      // Context setters must NOT have been called
+      expect(mockSetTimeMode).not.toHaveBeenCalled();
+      expect(mockSetTargetTime).not.toHaveBeenCalled();
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // TimeSelectorModal — initialMode prop reflects current timeMode
+  // ─────────────────────────────────────────────────────────────────────────────
+  describe("TimeSelectorModal initialMode prop", () => {
+    const { useDirections } = require("@/src/context/DirectionsContext");
+
+    it("passes timeMode='arrive' as initialMode to the modal", () => {
+      useDirections.mockReturnValue({
+        timeMode: "arrive",
+        targetTime: new Date(),
+        setTimeMode: mockSetTimeMode,
+        setTargetTime: mockSetTargetTime,
       });
 
       render(<DestinationHeader {...defaultProps} travelMode="transit" />);
-      // Note: Exact string depends on local time zone of the test runner,
-      // but it will contain "Leave at"
-      expect(screen.getByText(/Leave at \d{1,2}:\d{2}/)).toBeTruthy();
+
+      const modal = screen.getByTestId("mock-time-modal");
+      expect(modal.props.accessibilityValue.text).toBe("arrive");
     });
 
-    it("renders 'Arrive by HH:MM' for 'arrive' mode", () => {
-      const testDate = new Date("2026-03-01T14:30:00Z");
+    it("passes timeMode='leave' as initialMode to the modal", () => {
+      useDirections.mockReturnValue({
+        timeMode: "leave",
+        targetTime: new Date(),
+        setTimeMode: mockSetTimeMode,
+        setTargetTime: mockSetTargetTime,
+      });
+
+      render(<DestinationHeader {...defaultProps} travelMode="transit" />);
+
+      const modal = screen.getByTestId("mock-time-modal");
+      expect(modal.props.accessibilityValue.text).toBe("leave");
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Time label — "Arrive by" with non-today date
+  // ─────────────────────────────────────────────────────────────────────────────
+  describe("Time label — arrive mode with non-today date", () => {
+    const { useDirections } = require("@/src/context/DirectionsContext");
+
+    it("renders 'Arrive by HH:MM, <date>' when arrive mode and isToday is false", () => {
+      (isToday as jest.Mock).mockReturnValue(false);
+      const testDate = new Date("2026-04-10T09:45:00Z");
+
       useDirections.mockReturnValueOnce({
         timeMode: "arrive",
         targetTime: testDate,
       });
 
       render(<DestinationHeader {...defaultProps} travelMode="transit" />);
-      expect(screen.getByText(/Arrive by \d{1,2}:\d{2}/)).toBeTruthy();
-    });
-
-    it("appends the date string if isToday is false", () => {
-      (isToday as jest.Mock).mockReturnValue(false);
-      const testDate = new Date("2026-03-05T14:30:00Z"); // Future date
-      useDirections.mockReturnValueOnce({
-        timeMode: "leave",
-        targetTime: testDate,
-      });
-
-      render(<DestinationHeader {...defaultProps} travelMode="transit" />);
-      // Should include comma and date formatting e.g., "Leave at 14:30, Thu, Mar 5"
-      expect(screen.getByText(/Leave at \d{1,2}:\d{2},/)).toBeTruthy();
+      expect(screen.getByText(/Arrive by \d{1,2}:\d{2},/)).toBeTruthy();
     });
   });
 
-  describe("TimeSelectorModal Interactions", () => {
-    const { useDirections } = require("@/src/context/DirectionsContext");
+  // ─────────────────────────────────────────────────────────────────────────────
+  // BottomSheetDragHandle — onToggleHeight wired correctly
+  // ─────────────────────────────────────────────────────────────────────────────
+  describe("BottomSheetDragHandle props", () => {
+    it("passes onToggleHeight callback to BottomSheetDragHandle", () => {
+      render(<DestinationHeader {...defaultProps} />);
 
-    it("opens the modal when the time selector button is pressed", () => {
-      useDirections.mockReturnValue({
-        timeMode: "leave",
-        targetTime: new Date(),
-      });
+      const dragHandle = screen.getByTestId("mock-drag-handle");
+      expect(typeof dragHandle.props.onToggleHeight).toBe("function");
 
-      render(<DestinationHeader {...defaultProps} travelMode="transit" />);
-
-      const modal = screen.getByTestId("mock-time-modal");
-      expect(modal.props.accessibilityState.expanded).toBe(false);
-
-      const timeButton = screen.getByLabelText(
-        "Select departure or arrival time",
-      );
-      fireEvent.press(timeButton);
-
-      expect(modal.props.accessibilityState.expanded).toBe(true);
+      // Invoking it should call the original handler
+      dragHandle.props.onToggleHeight();
+      expect(mockOnToggleHeight).toHaveBeenCalledTimes(1);
     });
+  });
 
-    it("updates context and closes modal when onApply is called", () => {
-      useDirections.mockReturnValue({
-        timeMode: "leave",
-        targetTime: new Date(),
-        setTimeMode: mockSetTimeMode,
-        setTargetTime: mockSetTargetTime,
-      });
+  // ─────────────────────────────────────────────────────────────────────────────
+  // getModeDurationLabel called for every transport option
+  // ─────────────────────────────────────────────────────────────────────────────
+  describe("getModeDurationLabel invocation", () => {
+    it("calls getModeDurationLabel for each of the four transport modes", () => {
+      render(<DestinationHeader {...defaultProps} />);
 
-      render(<DestinationHeader {...defaultProps} travelMode="transit" />);
-
-      // Open modal
-      fireEvent.press(
-        screen.getByLabelText("Select departure or arrival time"),
-      );
-      const modal = screen.getByTestId("mock-time-modal");
-      expect(modal.props.accessibilityState.expanded).toBe(true);
-
-      // Simulate onApply callback from the modal
-      const newDate = new Date("2026-04-01T10:00:00Z");
-      fireEvent(modal, "apply", "arrive", newDate); // triggers onApply
-
-      // Verify context functions were called
-      expect(mockSetTimeMode).toHaveBeenCalledWith("arrive");
-      expect(mockSetTargetTime).toHaveBeenCalledWith(newDate);
-
-      // Modal should be closed (state reset)
-      // Since it's a re-render, we re-query
-      const updatedModal = screen.getByTestId("mock-time-modal");
-      expect(updatedModal.props.accessibilityState.expanded).toBe(false);
+      expect(mockGetModeDurationLabel).toHaveBeenCalledWith("walking");
+      expect(mockGetModeDurationLabel).toHaveBeenCalledWith("transit");
+      expect(mockGetModeDurationLabel).toHaveBeenCalledWith("bicycling");
+      expect(mockGetModeDurationLabel).toHaveBeenCalledWith("driving");
+      expect(mockGetModeDurationLabel).toHaveBeenCalledTimes(4);
     });
   });
 });

@@ -6,6 +6,7 @@ import { getDirections, decodePolyline } from "@/src/outdoorDirections/direction
 import { getShuttleRouteIfApplicable } from "@/src/api/shuttleEngine";
 import { calculateIndoorPenaltySeconds } from "@/src/indoors/services/indoorRoutingHelper";
 import { calculateEtaFromSeconds, formatDurationFromSeconds } from "../utils/time";
+import {GoogleTravelMode} from "@/src/outdoorDirections/TravelModeStrategy"
 
 const TRANSFER_NODE_FREEZE_DELAY_MS = 250;
 
@@ -162,10 +163,12 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({ startLocation, zIndex = 5
   const effectiveStartLocation = startLocation || startCoords;
   const shouldShowRoute = showDirections || isNavigationActive;
 
-  const outdoorRequestKey =
-    effectiveStartLocation && destinationCoords
-      ? `${effectiveStartLocation.latitude.toFixed(4)},${effectiveStartLocation.longitude.toFixed(4)}->${destinationCoords.latitude.toFixed(4)},${destinationCoords.longitude.toFixed(4)}:${travelMode}:${timeMode}:${targetTime ? targetTime.getTime() : "now"}`
-      : null; // This ensures that reopening the same destination won't be falsely blocked.
+const targetTimeValue = targetTime ? targetTime.getTime() : "now";
+
+const outdoorRequestKey =
+  effectiveStartLocation && destinationCoords
+    ? `${effectiveStartLocation.latitude.toFixed(4)},${effectiveStartLocation.longitude.toFixed(4)}->${destinationCoords.latitude.toFixed(4)},${destinationCoords.longitude.toFixed(4)}:${travelMode}:${timeMode}:${targetTimeValue}`
+    : null;
 
   const indoorRequestKey = `${startBuildingId}_${startRoom}->${destinationBuildingId}_${destinationRoom}`;
 
@@ -215,7 +218,6 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({ startLocation, zIndex = 5
 
     if (!shouldShowRoute || !effectiveStartLocation || !destinationCoords) {
       if (!effectiveStartLocation || !destinationCoords) setRoutes([]);
-      // console.log("RoutePolyline: Missing start or destination, skipping");
       return;
     }
 
@@ -308,7 +310,16 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({ startLocation, zIndex = 5
       }
 
       // Fetch directions from API
-      let fetchedRoutes = await getDirections(effectiveStartLocation, destinationCoords, travelMode, targetTime, timeMode);
+      const googleTravelMode: GoogleTravelMode =
+          travelMode === "shuttle" ? "transit" : travelMode;
+
+        let fetchedRoutes = await getDirections(
+          effectiveStartLocation,
+          destinationCoords,
+          googleTravelMode,
+          targetTime,
+          timeMode,
+        );
 
       console.log("RoutePolyline: API call successful", {
         routesCount: fetchedRoutes.length,
@@ -388,11 +399,19 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({ startLocation, zIndex = 5
   ]);
 
   // recalculate when the indoor rooms change
-  useEffect(() => {
-    if (baseRoutesRef.current.length > 0) {
-      applyIndoorPatch(baseRoutesRef.current);
-    }
-  }, [indoorRequestKey, applyIndoorPatch]);
+  const prevIndoorRequestKeyRef = useRef<string | null>(null);
+
+// recalculate when the indoor rooms change
+useEffect(() => {
+  if (
+    baseRoutesRef.current.length > 0 &&
+    prevIndoorRequestKeyRef.current !== null &&
+    prevIndoorRequestKeyRef.current !== indoorRequestKey
+  ) {
+    applyIndoorPatch(baseRoutesRef.current);
+  }
+  prevIndoorRequestKeyRef.current = indoorRequestKey;
+}, [indoorRequestKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     blockedRequestKeyRef.current = null;
@@ -422,7 +441,7 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({ startLocation, zIndex = 5
   const walkDash = isIOS ? [1, 6] : [1, 8];
 
   const transferNodes = useMemo(() => {
-    if (travelMode !== "transit" || !routeData || !routeData.steps) return [];
+    if (travelMode !== "transit" || !routeData?.steps) return [];
 
     const nodes = [];
     for (let i = 0; i < routeData.steps.length - 1; i++) {

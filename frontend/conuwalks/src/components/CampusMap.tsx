@@ -17,6 +17,7 @@ import {
   useColorScheme,
 } from "react-native";
 import MapView, { LatLng, Region, Marker, PROVIDER_GOOGLE, Polygon, LongPressEvent } from "react-native-maps";
+import { TravelMode } from "../outdoorDirections/TravelModeStrategy";
 
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { SymbolView, SFSymbol } from "expo-symbols";
@@ -637,12 +638,13 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
   const isSheetVisibleForAccessibility = (selectedBuilding.visible && !showDirections) || showDirections;
 
-  const modeLabelMap: Record<"walking" | "driving" | "transit" | "bicycling", string> = {
-    walking: "Walking",
-    driving: "Driving",
-    transit: "Transit",
-    bicycling: "Bicycling",
-  };
+const modeLabelMap: Record<TravelMode, string> = {
+  walking: "Walking",
+  driving: "Driving",
+  transit: "Transit",
+  bicycling: "Bicycling",
+  shuttle: "Shuttle",
+};
 
   // Wrapped in useMemo to prevent dependency warning and unnecessary re-evaluations
   const transitNavigationStops = useMemo(() => {

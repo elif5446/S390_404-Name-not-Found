@@ -115,7 +115,7 @@ describe("DestinationPopup Component", () => {
     expect(screen.queryByTestId("mock-blur-view")).toBeNull();
   });
 
-  it("passes the correct isDark prop based on system color scheme", () => {
+  it("passes isDark=true to content and mode='dark' to header in dark scheme", () => {
     (useColorScheme as jest.Mock).mockReturnValue("dark");
     render(<DestinationPopup visible={true} onClose={mockOnClose} />);
 
@@ -124,6 +124,28 @@ describe("DestinationPopup Component", () => {
 
     expect(header.props.mode).toBe("dark");
     expect(content.props.isDark).toBe(true);
+  });
+
+  // NEW: mirror test for light scheme so the isDark=false branch is explicitly covered
+  it("passes isDark=false to content and mode='light' to header in light scheme", () => {
+    (useColorScheme as jest.Mock).mockReturnValue("light");
+    render(<DestinationPopup visible={true} onClose={mockOnClose} />);
+
+    const header = screen.getByTestId("mock-header");
+    const content = screen.getByTestId("mock-content");
+
+    expect(header.props.mode).toBe("light");
+    expect(content.props.isDark).toBe(false);
+  });
+
+  // NEW: useColorScheme returning null falls back to 'light'
+  it("defaults to light mode when useColorScheme returns null", () => {
+    (useColorScheme as jest.Mock).mockReturnValue(null);
+    render(<DestinationPopup visible={true} onClose={mockOnClose} />);
+
+    const header = screen.getByTestId("mock-header");
+    expect(header.props.mode).toBe("light");
+    expect(screen.getByTestId("mock-content").props.isDark).toBe(false);
   });
 
   it("exposes the minimize method via ref", () => {
@@ -135,6 +157,23 @@ describe("DestinationPopup Component", () => {
     });
 
     expect(mockMinimize).toHaveBeenCalledTimes(1);
+  });
+
+  // NEW: cover the dismiss() path on the imperative handle
+  it("exposes the dismiss method via ref, which triggers a full clear", () => {
+    const ref = createRef<DestinationPopupHandle>();
+    render(<DestinationPopup visible={true} onClose={mockOnClose} ref={ref} />);
+
+    act(() => {
+      ref.current?.dismiss();
+    });
+
+    // dismiss(true) should propagate through handleSheetDismiss
+    expect(mockDismiss).toHaveBeenCalledWith(true);
+    expect(mockSetIsNavigationActive).toHaveBeenCalledWith(false);
+    expect(mockClearDestination).toHaveBeenCalledTimes(1);
+    expect(mockClearRouteData).toHaveBeenCalledTimes(1);
+    expect(mockOnClose).toHaveBeenCalledTimes(1);
   });
 
   it("handles header dismiss request correctly (clearing routes)", () => {
@@ -152,6 +191,25 @@ describe("DestinationPopup Component", () => {
     // because the sheet dismissed with 'true', the clearing functions should fire
     expect(mockSetIsNavigationActive).toHaveBeenCalledWith(false);
     expect(mockClearDestination).toHaveBeenCalledTimes(1);
+    expect(mockOnClose).toHaveBeenCalledTimes(1);
+  });
+
+  // NEW: cover the shouldClear=false branch of handleSheetDismiss
+  it("calls onClose but skips clearing when dismissing with shouldClear=false", () => {
+    render(<DestinationPopup visible={true} onClose={mockOnClose} />);
+    const content = screen.getByTestId("mock-content");
+
+    act(() => {
+      // handleStartNavigation calls dismissBottomSheet(false), which fires onDismiss(false)
+      content.props.handleStartNavigation("route-1", 0);
+    });
+
+    expect(mockDismiss).toHaveBeenCalledWith(false);
+    // clearing functions must NOT be called when shouldClear is false
+    expect(mockSetIsNavigationActive).not.toHaveBeenCalledWith(false);
+    expect(mockClearDestination).not.toHaveBeenCalled();
+    expect(mockClearRouteData).not.toHaveBeenCalled();
+    // onClose still fires to hide the sheet
     expect(mockOnClose).toHaveBeenCalledTimes(1);
   });
 
@@ -219,5 +277,125 @@ describe("DestinationPopup Component", () => {
     expect(mockSetNavigationRouteId).toHaveBeenCalledWith("invalid-route");
     expect(mockSetRouteData).not.toHaveBeenCalled();
     expect(mockDismiss).not.toHaveBeenCalled(); // Safely aborted
+  });
+
+  // NEW: cover the handleScroll callback — updates scrollOffsetRef via onScroll
+  it("updates scrollOffsetRef when the scroll view fires an onScroll event", () => {
+    const mockScrollOffsetRef = { current: 0 };
+    (useBottomSheet as jest.Mock).mockImplementation(({ onDismiss }) => ({
+      translateY: new Animated.Value(0),
+      MAX_HEIGHT: 800,
+      SNAP_OFFSET: MOCK_SNAP_OFFSET,
+      scrollOffsetRef: mockScrollOffsetRef,
+      minimize: mockMinimize,
+      snapTo: mockSnapTo,
+      dismiss: jest.fn(payload => {
+        mockDismiss(payload);
+        onDismiss(payload);
+      }),
+      handleToggleHeight: jest.fn(),
+      handlePanResponder: { panHandlers: {} },
+      scrollAreaPanResponder: { panHandlers: {} },
+    }));
+
+    render(<DestinationPopup visible={true} onClose={mockOnClose} />);
+    const content = screen.getByTestId("mock-content");
+
+    act(() => {
+      content.props.onScroll({
+        nativeEvent: { contentOffset: { y: 120 } },
+      });
+    });
+
+    expect(mockScrollOffsetRef.current).toBe(120);
+  });
+
+  // NEW: verify optional indoor-map props are forwarded to the header
+  it("forwards showOpenIndoorButton and onOpenIndoorPress props to the header", () => {
+    const mockOnOpenIndoorPress = jest.fn();
+    render(
+      <DestinationPopup
+        visible={true}
+        onClose={mockOnClose}
+        showOpenIndoorButton={true}
+        onOpenIndoorPress={mockOnOpenIndoorPress}
+      />,
+    );
+
+    const header = screen.getByTestId("mock-header");
+    expect(header.props.showOpenIndoorButton).toBe(true);
+    expect(header.props.onOpenIndoorPress).toBe(mockOnOpenIndoorPress);
+  });
+
+  // NEW: when optional indoor props are omitted, header receives undefined/falsy values
+  it("passes undefined for optional indoor props when not provided", () => {
+    render(<DestinationPopup visible={true} onClose={mockOnClose} />);
+    const header = screen.getByTestId("mock-header");
+
+    expect(header.props.showOpenIndoorButton).toBeUndefined();
+    expect(header.props.onOpenIndoorPress).toBeUndefined();
+  });
+
+  // NEW: verify the Animated sheet receives the translateY transform from useBottomSheet
+  it("applies the translateY transform from useBottomSheet to the animated sheet", () => {
+    const animatedValue = new Animated.Value(50);
+    (useBottomSheet as jest.Mock).mockImplementation(({ onDismiss }) => ({
+      translateY: animatedValue,
+      MAX_HEIGHT: 800,
+      SNAP_OFFSET: MOCK_SNAP_OFFSET,
+      scrollOffsetRef: { current: 0 },
+      minimize: mockMinimize,
+      snapTo: mockSnapTo,
+      dismiss: jest.fn(payload => {
+        mockDismiss(payload);
+        onDismiss(payload);
+      }),
+      handleToggleHeight: jest.fn(),
+      handlePanResponder: { panHandlers: {} },
+      scrollAreaPanResponder: { panHandlers: {} },
+    }));
+
+    render(<DestinationPopup visible={true} onClose={mockOnClose} />);
+
+    // The Animated.Value should hold the value we passed in
+    expect((animatedValue as any).__getValue()).toBe(50);
+  });
+
+  // NEW: cover the visible=false render path (pointerEvents="none")
+  it("renders with pointer events disabled when visible is false", () => {
+    render(<DestinationPopup visible={false} onClose={mockOnClose} />);
+    // Component should still mount but overlay should have pointerEvents="none"
+    // The mock-header and mock-content are still in the tree (sheet is always mounted)
+    expect(screen.getByTestId("mock-header")).toBeTruthy();
+    expect(screen.getByTestId("mock-content")).toBeTruthy();
+  });
+
+  // NEW: cover handleToggleHeight being wired through the header's onToggleHeight prop
+  it("wires handleToggleHeight from useBottomSheet to the header's onToggleHeight prop", () => {
+    const mockHandleToggleHeight = jest.fn();
+    (useBottomSheet as jest.Mock).mockImplementation(({ onDismiss }) => ({
+      translateY: new Animated.Value(0),
+      MAX_HEIGHT: 800,
+      SNAP_OFFSET: MOCK_SNAP_OFFSET,
+      scrollOffsetRef: { current: 0 },
+      minimize: mockMinimize,
+      snapTo: mockSnapTo,
+      dismiss: jest.fn(payload => {
+        mockDismiss(payload);
+        onDismiss(payload);
+      }),
+      handleToggleHeight: mockHandleToggleHeight,
+      handlePanResponder: { panHandlers: {} },
+      scrollAreaPanResponder: { panHandlers: {} },
+    }));
+
+    render(<DestinationPopup visible={true} onClose={mockOnClose} />);
+    const header = screen.getByTestId("mock-header");
+
+    act(() => {
+      header.props.onToggleHeight();
+    });
+
+    expect(mockHandleToggleHeight).toHaveBeenCalledTimes(1);
   });
 });
