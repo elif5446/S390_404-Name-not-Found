@@ -77,6 +77,16 @@ describe("IndoorTopPanel", () => {
     expect(defaultProps.setSearchQuery).toHaveBeenCalledWith("Hall Building");
   });
 
+  it("handles input focus for the Destination field", () => {
+    const { getByPlaceholderText } = render(
+      <IndoorTopPanel {...defaultProps} activeField="start" />
+    );
+    const destInput = getByPlaceholderText("Destination");
+    fireEvent(destInput, "focus");
+    expect(defaultProps.onFocusField).toHaveBeenCalledWith("destination");
+    expect(defaultProps.setShowSearchResults).toHaveBeenCalledWith(true);
+  });
+
   it("handles clearing the destination input", () => {
     // we pass a searchquery length > 0 so the clear button (close-circle) appears
     const { getByTestId } = render(<IndoorTopPanel {...defaultProps} activeField="destination" searchQuery="H820" />);
