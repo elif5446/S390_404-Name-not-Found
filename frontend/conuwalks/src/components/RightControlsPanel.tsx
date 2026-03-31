@@ -28,9 +28,18 @@ interface Props {
   isDirections: boolean;
   isNavigation: boolean;
 }
-// helper for complexity
-const GlassBackground: React.FC<{ mode: "light" | "dark"; borderRadius: number }> = ({ mode, borderRadius }) => {
+
+interface GlassBackgroundProps {
+  mode: "light" | "dark";
+  borderRadius: number;
+}
+
+const GlassBackground: React.FC<GlassBackgroundProps> = ({
+  mode,
+  borderRadius,
+}) => {
   if (Platform.OS !== "ios") return null;
+
   return (
     <View
       style={{
@@ -41,7 +50,11 @@ const GlassBackground: React.FC<{ mode: "light" | "dark"; borderRadius: number }
         overflow: "hidden",
       }}
     >
-      <BlurView intensity={35} tint={mode === "dark" ? "dark" : "light"} style={{ flex: 1 }} />
+      <BlurView
+        intensity={35}
+        tint={mode === "dark" ? "dark" : "light"}
+        style={{ flex: 1 }}
+      />
     </View>
   );
 };
@@ -58,25 +71,31 @@ const RightControlsPanel: React.FC<Props> = ({
   isDirections,
   isNavigation,
 }) => {
-  const mode = useColorScheme() || "light";
+  const colorScheme = useColorScheme();
+  const mode: "light" | "dark" = colorScheme === "dark" ? "dark" : "light";
+
   const [isProfileExpanded, setIsProfileExpanded] = useState(false);
   const insets = useSafeAreaInsets();
 
-  // Don't show location button in certain conditions
-  const showLocationButton = userLocation && !indoorBuildingId && !isInfoPopupExpanded;
+  const showLocationButton =
+    userLocation !== null && !indoorBuildingId && !isInfoPopupExpanded;
 
-  // Calculate spacing between buttons
   const buttonSize = 50;
   const buttonSpacing = 12;
   const userIconSize = 50;
   const isIOS = Platform.OS === "ios";
-  const backgroundColor = isIOS
-    ? "transparent"
-    : mode === "dark"
-      ? "#2C2C2E"
-      : "#FFFFFF";
 
-  const style: ViewStyle = {
+  let backgroundColor: string;
+
+  if (isIOS) {
+    backgroundColor = "transparent";
+  } else if (mode === "dark") {
+    backgroundColor = "#2C2C2E";
+  } else {
+    backgroundColor = "#FFFFFF";
+  }
+
+  const baseButtonStyle: ViewStyle = {
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
@@ -89,63 +108,64 @@ const RightControlsPanel: React.FC<Props> = ({
     marginBottom: buttonSpacing,
   };
 
-  const locationIcon = locationLoading ? (
-    <ActivityIndicator size="small" color="#B03060" />
-  ) : isIOS ? (
-    <SymbolView
-      name="location.north.fill"
-      size={20}
-      weight="medium"
-      tintColor="#B03060"
-    />
-  ) : (
-    <MaterialIcons name="navigation" size={20} color="#B03060" />
-  );
+  let locationIcon;
+
+  if (locationLoading) {
+    locationIcon = <ActivityIndicator size="small" color="#B03060" />;
+  } else if (isIOS) {
+    locationIcon = (
+      <SymbolView
+        name="location.north.fill"
+        size={20}
+        weight="medium"
+        tintColor="#B03060"
+      />
+    );
+  } else {
+    locationIcon = (
+      <MaterialIcons name="navigation" size={20} color="#B03060" />
+    );
+  }
 
   return (
     <>
-      {/* Controls panel, user icon + location button + search button stacked */}
       <View
         style={{
           position: "absolute",
           right: 16,
           top: Math.max(insets.top + 80, 80),
           alignItems: "center",
-          //zIndex: 9999,
         }}
         pointerEvents="box-none"
       >
-        {/* User Profile Icon */}
         {!isDirections && (
           <>
             {!isNavigation && (
               <TouchableOpacity
                 onPress={() => setIsProfileExpanded(!isProfileExpanded)}
                 style={[
-                  style,
+                  baseButtonStyle,
                   {
                     width: userIconSize,
                     height: userIconSize,
                     borderRadius: userIconSize / 2,
                   },
                 ]}
-                pointerEvents="auto"
-                accessible={true}
+                accessible
                 accessibilityLabel="Open user profile"
                 accessibilityRole="button"
               >
-                <GlassBackground mode={mode} />
+                <GlassBackground mode={mode} borderRadius={userIconSize / 2} />
                 <MaterialIcons name="person" size={24} color="#B03060" />
               </TouchableOpacity>
             )}
 
-            {/* Location Recenter Button */}
             {showLocationButton && (
               <TouchableOpacity
                 onPress={onLocationPress}
                 activeOpacity={0.85}
                 style={[
-                  style,
+                  baseButtonStyle,
                   {
                     position: "relative",
                     width: buttonSize,
@@ -153,16 +173,15 @@ const RightControlsPanel: React.FC<Props> = ({
                     borderRadius: buttonSize / 2,
                   },
                 ]}
-                pointerEvents="auto"
-                accessible={true}
+                accessible
                 accessibilityLabel="Recenter to your location"
                 accessibilityHint="Moves the map camera back to your current location"
               >
-                <GlassBackground mode={mode} />
+                <GlassBackground mode={mode} borderRadius={buttonSize / 2} />
                 {locationIcon}
               </TouchableOpacity>
             )}
-            {/* Search Button */}
+
             {!isNavigation && (
               <BuildingSearchButton
                 onPress={handleOpenBuildingSearch}
@@ -174,7 +193,13 @@ const RightControlsPanel: React.FC<Props> = ({
           </>
         )}
       </View>
-      <UserProfilePopup visible={isProfileExpanded} userInfo={userInfo} onClose={() => setIsProfileExpanded(false)} onSignOut={onSignOut} />
+
+      <UserProfilePopup
+        visible={isProfileExpanded}
+        userInfo={userInfo}
+        onClose={() => setIsProfileExpanded(false)}
+        onSignOut={onSignOut}
+      />
     </>
   );
 };

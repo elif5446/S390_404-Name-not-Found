@@ -100,6 +100,34 @@ describe("TransitStrategy", () => {
           .toBe("Take Metro Orange toward Côte-Vertu");
       });
 
+      it("uses empty line text when short_name is missing", () => {
+  const rawStep = {
+    transit_details: {
+      line: {
+        vehicle: { name: "Subway" },
+      },
+      headsign: "Longueuil",
+    },
+  };
+
+  expect(strategy.buildStepInstruction("Continue", rawStep))
+    .toBe("Take Subway  toward Longueuil");
+});
+
+      it("uses empty line text when nameShort is missing", () => {
+  const rawStep = {
+    transitDetails: {
+      transitLine: {
+        vehicle: { name: { text: "Metro" } },
+      },
+      headsign: "Côte-Vertu",
+    },
+  };
+
+  expect(strategy.buildStepInstruction("Continue", rawStep))
+    .toBe("Take Metro  toward Côte-Vertu");
+});
+
       it("omits headsign when not present", () => {
         const rawStep = {
           transitDetails: {

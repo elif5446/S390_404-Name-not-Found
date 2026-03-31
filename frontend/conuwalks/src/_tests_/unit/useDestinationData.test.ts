@@ -4,18 +4,27 @@
 import { renderHook, act, waitFor } from "@testing-library/react";
 import { useDestinationData } from "../../hooks/useDestinationData";
 import { useDirections } from "@/src/context/DirectionsContext";
-import { getDirections } from "@/src/api/directions";
+import { fetchRoutesApi, mapRoutesApiResponse } from "../../api/googleDirectionsAPI";
 import { calculateIndoorPenaltySeconds } from "@/src/indoors/services/indoorRoutingHelper";
 import { formatDurationFromSeconds } from "../../utils/time";
 
-// --- Mocks ---
 
 jest.mock("@/src/context/DirectionsContext", () => ({
   useDirections: jest.fn(),
 }));
 
-jest.mock("@/src/api/directions", () => ({
-  getDirections: jest.fn(),
+jest.mock("../../api/googleDirectionsAPI", () => ({
+  decodePolyline: jest.fn(),
+  formatDistance: jest.fn(),
+  stripHtml: jest.fn(),
+  toLatLng: jest.fn(),
+  clampToFuture: jest.fn(),
+  isRoutesBlockedError: jest.fn(),
+  normalizeTravelMode: jest.fn(),
+  mapRoutesApiResponse: jest.fn(),
+  mapLegacyApiResponse: jest.fn(),
+  fetchLegacyApi: jest.fn(),
+  fetchRoutesApi: jest.fn(),
 }));
 
 jest.mock("@/src/indoors/services/indoorRoutingHelper", () => ({
@@ -27,10 +36,10 @@ jest.mock("../../utils/time", () => ({
 }));
 
 const mockUseDirections = useDirections as jest.MockedFunction<typeof useDirections>;
-const mockGetDirections = getDirections as jest.MockedFunction<typeof getDirections>;
+const mockFetchRoutesApi = fetchRoutesApi as jest.MockedFunction<typeof fetchRoutesApi>;
+const mockMapRoutesApiResponse = mapRoutesApiResponse as jest.MockedFunction<typeof mapRoutesApiResponse>;
 const mockCalculateIndoorPenaltySeconds = calculateIndoorPenaltySeconds as jest.MockedFunction<typeof calculateIndoorPenaltySeconds>;
 const mockFormatDurationFromSeconds = formatDurationFromSeconds as jest.MockedFunction<typeof formatDurationFromSeconds>;
-
 
 const defaultStart = { latitude: 45.495, longitude: -73.578 };
 const defaultDestination = { latitude: 45.497, longitude: -73.579 };
@@ -62,12 +71,29 @@ function setupDirections(overrides = {}) {
   mockUseDirections.mockReturnValue({ ...baseDirections, ...overrides } as any);
 }
 
+function makeMappedRoute(overrides = {}) {
+  return {
+    id: "route-0",
+    requestMode: "walking",
+    baseDurationSeconds: 300,
+    duration: "5 mins",
+    distance: "500 m",
+    steps: [],
+    polylinePoints: [],
+    overviewPolyline: "",
+    eta: null,
+    ...overrides,
+  } as any;
+}
+
 describe("useDestinationData", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     setupDirections();
     mockCalculateIndoorPenaltySeconds.mockResolvedValue(0);
-    mockGetDirections.mockResolvedValue([]);
+   
+    mockFetchRoutesApi.mockResolvedValue({ rawRoutes: [{}], safeTargetTime: null } as any);
+    mockMapRoutesApiResponse.mockReturnValue([makeMappedRoute()]);
     mockFormatDurationFromSeconds.mockImplementation((s) => `${Math.round(s / 60)} min`);
   });
 
@@ -109,64 +135,65 @@ describe("useDestinationData", () => {
       });
     });
 
-  it("defaults indoor penalty to 0 when calculateIndoorPenaltySeconds resolves null", async () => {
-  mockCalculateIndoorPenaltySeconds.mockResolvedValue(null as any);
-  mockGetDirections.mockResolvedValue([{ baseDurationSeconds: 600 } as any]);
-  mockFormatDurationFromSeconds.mockReturnValue("10 min");
+    it("defaults indoor penalty to 0 when calculateIndoorPenaltySeconds resolves null", async () => {
+      mockCalculateIndoorPenaltySeconds.mockResolvedValue(null as any);
+      mockMapRoutesApiResponse.mockReturnValue([makeMappedRoute({ baseDurationSeconds: 600 })]);
+      mockFormatDurationFromSeconds.mockReturnValue("10 min");
 
-  const { result } = renderHook(() => useDestinationData(true));
+      const { result } = renderHook(() => useDestinationData(true));
 
-  await waitFor(() => {
-    expect(result.current.getModeDurationLabel("walking")).toBe("10 min");
-  });
+      await waitFor(() => {
+        expect(result.current.getModeDurationLabel("walking")).toBe("10 min");
+      });
 
-  expect(mockFormatDurationFromSeconds).toHaveBeenCalledWith(600);
-});
+      expect(mockFormatDurationFromSeconds).toHaveBeenCalledWith(600);
+    });
 
-it("defaults indoor penalty to 0 when calculateIndoorPenaltySeconds rejects", async () => {
-  mockCalculateIndoorPenaltySeconds.mockRejectedValue(new Error("fail"));
-  mockGetDirections.mockResolvedValue([{ baseDurationSeconds: 120 } as any]);
-  mockFormatDurationFromSeconds.mockReturnValue("2 min");
+    it("defaults indoor penalty to 0 when calculateIndoorPenaltySeconds rejects", async () => {
+      mockCalculateIndoorPenaltySeconds.mockRejectedValue(new Error("fail"));
+      mockMapRoutesApiResponse.mockReturnValue([makeMappedRoute({ baseDurationSeconds: 120 })]);
+      mockFormatDurationFromSeconds.mockReturnValue("2 min");
 
-  const { result } = renderHook(() => useDestinationData(true));
+      const { result } = renderHook(() => useDestinationData(true));
 
-  await waitFor(() => {
-    expect(result.current.getModeDurationLabel("walking")).toBe("2 min");
-  });
+      await waitFor(() => {
+        expect(result.current.getModeDurationLabel("walking")).toBe("2 min");
+      });
 
-  expect(mockFormatDurationFromSeconds).toHaveBeenCalledWith(120);
-});
+      expect(mockFormatDurationFromSeconds).toHaveBeenCalledWith(120);
+    });
   });
 
 
   describe("getModeDurationLabel()", () => {
     it("returns '--' when no cache entry and no active route match", () => {
+      mockMapRoutesApiResponse.mockReturnValue([]);
       const { result } = renderHook(() => useDestinationData(true));
       expect(result.current.getModeDurationLabel("driving")).toBe("--");
     });
 
     it("uses formatDurationFromSeconds with base + penalty when cache is populated", async () => {
-  mockCalculateIndoorPenaltySeconds.mockResolvedValue(60);
-  mockGetDirections.mockResolvedValue([{ baseDurationSeconds: 300 } as any]);
-  mockFormatDurationFromSeconds.mockReturnValue("6 min");
+      mockCalculateIndoorPenaltySeconds.mockResolvedValue(60);
+      mockMapRoutesApiResponse.mockReturnValue([makeMappedRoute({ baseDurationSeconds: 300 })]);
+      mockFormatDurationFromSeconds.mockReturnValue("6 min");
 
-  const { result } = renderHook(() => useDestinationData(true));
+      const { result } = renderHook(() => useDestinationData(true));
 
-  await waitFor(() => {
-    expect(result.current.getModeDurationLabel("walking")).toBe("6 min");
-  });
+      await waitFor(() => {
+        expect(result.current.getModeDurationLabel("walking")).toBe("6 min");
+      });
 
-  expect(mockFormatDurationFromSeconds).toHaveBeenCalledWith(360);
-});
+      expect(mockFormatDurationFromSeconds).toHaveBeenCalledWith(360);
+    });
 
     it("falls back to normalizeDurationLabel when cache is empty but active route matches mode", async () => {
       setupDirections({
         routeData: makeRoute({ requestMode: "transit", duration: "12 mins", baseDurationSeconds: undefined }),
       });
-   
-      mockGetDirections.mockResolvedValue([]);
+      mockFetchRoutesApi.mockResolvedValue({ rawRoutes: [], safeTargetTime: null } as any);
+      mockMapRoutesApiResponse.mockReturnValue([]);
 
-      const { result } = renderHook(() => useDestinationData(false)); 
+      const { result } = renderHook(() => useDestinationData(false));
 
       await waitFor(() => {
         expect(result.current.getModeDurationLabel("transit")).toBe("12 min");
@@ -186,7 +213,125 @@ it("defaults indoor penalty to 0 when calculateIndoorPenaltySeconds rejects", as
 
       expect(mockFormatDurationFromSeconds).toHaveBeenCalledWith(900);
     });
+
+    // ── normalizeDurationLabel branches ──────────────────────────────────────
+
+    it("returns 'X h Y min' label when normalizeDurationLabel receives an hour+minute string", async () => {
+      // normalizeDurationLabel: hourMatch && minuteMatch && minutes > 0 → `${hours} h ${minutes} min`
+      setupDirections({
+        routeData: makeRoute({ requestMode: "transit", duration: "1 h 30 mins", baseDurationSeconds: undefined }),
+      });
+      mockFetchRoutesApi.mockResolvedValue({ rawRoutes: [], safeTargetTime: null } as any);
+      mockMapRoutesApiResponse.mockReturnValue([]);
+
+      const { result } = renderHook(() => useDestinationData(false));
+
+      await waitFor(() => {
+        expect(result.current.getModeDurationLabel("transit")).toBe("1 h 30 min");
+      });
+    });
+
+    it("returns hours-only label when normalizeDurationLabel receives an hour-only string", async () => {
+      // normalizeDurationLabel: hourMatch only, no minuteMatch → `${hours} h`
+      setupDirections({
+        routeData: makeRoute({ requestMode: "transit", duration: "2 hours", baseDurationSeconds: undefined }),
+      });
+      mockFetchRoutesApi.mockResolvedValue({ rawRoutes: [], safeTargetTime: null } as any);
+      mockMapRoutesApiResponse.mockReturnValue([]);
+
+      const { result } = renderHook(() => useDestinationData(false));
+
+      await waitFor(() => {
+        expect(result.current.getModeDurationLabel("transit")).toBe("2 h");
+      });
+    });
+
+    it("returns hours-only label when normalizeDurationLabel receives plain 'X h' string", async () => {
+      // normalizeDurationLabel: hourMatch, no minuteMatch, remainingMinutes === 0 → `${hours} h`
+      setupDirections({
+        routeData: makeRoute({ requestMode: "driving", duration: "1 h", baseDurationSeconds: undefined }),
+      });
+      mockFetchRoutesApi.mockResolvedValue({ rawRoutes: [], safeTargetTime: null } as any);
+      mockMapRoutesApiResponse.mockReturnValue([]);
+
+      const { result } = renderHook(() => useDestinationData(false));
+
+      await waitFor(() => {
+        expect(result.current.getModeDurationLabel("driving")).toBe("1 h");
+      });
+    });
+
+    it("returns the raw value when normalizeDurationLabel cannot parse the duration string", async () => {
+      // normalizeDurationLabel: no hourMatch, no minuteMatch → return value as-is
+      setupDirections({
+        routeData: makeRoute({ requestMode: "walking", duration: "a while", baseDurationSeconds: undefined }),
+      });
+      mockFetchRoutesApi.mockResolvedValue({ rawRoutes: [], safeTargetTime: null } as any);
+      mockMapRoutesApiResponse.mockReturnValue([]);
+
+      const { result } = renderHook(() => useDestinationData(false));
+
+      await waitFor(() => {
+        expect(result.current.getModeDurationLabel("walking")).toBe("a while");
+      });
+    });
+
+    it("does not update cache when baseDurationSeconds is already the same value (dedup guard)", async () => {
+      // Covers: if (prev[activeRoute.requestMode] === activeRoute.baseDurationSeconds) return prev;
+      const route = makeRoute({ requestMode: "walking", baseDurationSeconds: 300 });
+      setupDirections({ routes: [route], selectedRouteIndex: 0 });
+      mockFormatDurationFromSeconds.mockReturnValue("5 min");
+
+      const { result, rerender } = renderHook(() => useDestinationData(true));
+
+      await waitFor(() => {
+        expect(result.current.getModeDurationLabel("walking")).toBe("5 min");
+      });
+
+      const callsBefore = mockFormatDurationFromSeconds.mock.calls.length;
+
+      // Re-render with the exact same route/baseDurationSeconds — dedup guard fires, prev is returned
+      rerender();
+
+      // formatDurationFromSeconds should not have been called additional times
+      expect(mockFormatDurationFromSeconds.mock.calls.length).toBe(callsBefore);
+    });
   });
+
+
+  describe("fetchModeDurations edge cases", () => {
+    it("skips updating cache when a mode's baseDurationSeconds is 0 (falsy → treated as null)", async () => {
+      // fetchedRoutes[0]?.baseDurationSeconds || null → 0 || null → null
+      // result.value.baseSeconds !== null → false → entry not written to cache
+      mockFetchRoutesApi.mockResolvedValue({ rawRoutes: [{ baseDurationSeconds: 0 }], safeTargetTime: null } as any);
+      mockMapRoutesApiResponse.mockReturnValue([makeMappedRoute({ baseDurationSeconds: 0 })]);
+
+      const { result } = renderHook(() => useDestinationData(true));
+
+      await waitFor(() => {
+        expect(mockFetchRoutesApi).toHaveBeenCalled();
+      });
+
+      // baseDurationSeconds of 0 is falsy → null → not written to cache → "--"
+      expect(result.current.getModeDurationLabel("walking")).toBe("--");
+    });
+
+    it("skips a mode entry in cache when getDirections returns an empty array", async () => {
+      // fetchedRoutes[0] is undefined → baseDurationSeconds undefined → undefined || null → null
+      // result.value.baseSeconds === null → condition false → cache not updated
+      mockFetchRoutesApi.mockResolvedValue({ rawRoutes: [], safeTargetTime: null } as any);
+      mockMapRoutesApiResponse.mockReturnValue([]);
+
+      const { result } = renderHook(() => useDestinationData(true));
+
+      await waitFor(() => {
+        expect(mockFetchRoutesApi).toHaveBeenCalled();
+      });
+
+      expect(result.current.getModeDurationLabel("driving")).toBe("--");
+    });
+  });
+
 
   describe("getTransitBadgeLabel()", () => {
     const step = (type: string) => ({ transitVehicleType: type } as any);
@@ -270,7 +415,29 @@ it("defaults indoor penalty to 0 when calculateIndoorPenaltySeconds rejects", as
       const steps = [{ transitVehicleType: "subway", transitLineShortName: "" } as any];
       expect(result.current.getRouteTransitSummary(steps)).toBe("Metro");
     });
+
+    it("returns 'Transit <line>' for a vehicle type that is not subway, metro, bus, or shuttle", () => {
+      // type = "tram" → not subway/metro, not bus/shuttle → vehicle = "Transit"
+      const { result } = renderHook(() => useDestinationData(true));
+      const steps = [{ transitVehicleType: "tram", transitLineShortName: "T1" } as any];
+      expect(result.current.getRouteTransitSummary(steps)).toBe("Transit T1");
+    });
+
+    it("returns 'Bus <line>' for a shuttle vehicle type", () => {
+      // type.includes("shuttle") → vehicle = "Bus"
+      const { result } = renderHook(() => useDestinationData(true));
+      const steps = [{ transitVehicleType: "shuttle", transitLineShortName: "S9" } as any];
+      expect(result.current.getRouteTransitSummary(steps)).toBe("Bus S9");
+    });
+
+    it("returns bare vehicle label 'Transit' when type is unknown and no line name exists", () => {
+      // vehicle = "Transit", line = "" → label = "Transit" (nothing appended)
+      const { result } = renderHook(() => useDestinationData(true));
+      const steps = [{ transitVehicleType: "ferry", transitLineShortName: "" } as any];
+      expect(result.current.getRouteTransitSummary(steps)).toBe("Transit");
+    });
   });
+
 
   describe("transitSteps", () => {
     it("returns empty array when route has no steps", () => {
@@ -313,31 +480,33 @@ it("defaults indoor penalty to 0 when calculateIndoorPenaltySeconds rejects", as
   describe("coordinate overrides", () => {
     it("uses overrideDestination instead of context destination when provided", async () => {
       const override = { latitude: 10, longitude: 20 };
-      mockGetDirections.mockResolvedValue([]);
 
       renderHook(() => useDestinationData(true, override));
 
       await waitFor(() => {
-        expect(mockGetDirections).toHaveBeenCalledWith(
-          expect.anything(),
-          override,
-          expect.any(String)
-        );
+        expect(mockFetchRoutesApi).toHaveBeenCalled();
+      });
+
+      const calls = mockFetchRoutesApi.mock.calls;
+      expect(calls.length).toBeGreaterThan(0);
+      calls.forEach((call) => {
+        expect(call[1]).toEqual(override);
       });
     });
 
     it("uses overrideStart instead of context start when provided", async () => {
       const override = { latitude: 99, longitude: 88 };
-      mockGetDirections.mockResolvedValue([]);
 
       renderHook(() => useDestinationData(true, undefined, override));
 
       await waitFor(() => {
-        expect(mockGetDirections).toHaveBeenCalledWith(
-          override,
-          expect.anything(),
-          expect.any(String)
-        );
+        expect(mockFetchRoutesApi).toHaveBeenCalled();
+      });
+
+      const calls = mockFetchRoutesApi.mock.calls;
+      expect(calls.length).toBeGreaterThan(0);
+      calls.forEach((call) => {
+        expect(call[0]).toEqual(override);
       });
     });
   });
@@ -346,17 +515,16 @@ it("defaults indoor penalty to 0 when calculateIndoorPenaltySeconds rejects", as
     it("does not fetch mode durations when visible is false", async () => {
       renderHook(() => useDestinationData(false));
 
-      // Give any pending microtasks a chance to run
       await act(async () => {});
 
-      expect(mockGetDirections).not.toHaveBeenCalled();
+      expect(mockFetchRoutesApi).not.toHaveBeenCalled();
     });
 
     it("fetches mode durations when visible is true", async () => {
       renderHook(() => useDestinationData(true));
 
       await waitFor(() => {
-        expect(mockGetDirections).toHaveBeenCalled();
+        expect(mockFetchRoutesApi).toHaveBeenCalled();
       });
     });
   });
