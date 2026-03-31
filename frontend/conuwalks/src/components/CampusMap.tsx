@@ -2,7 +2,13 @@ import CampusLabels from "@/src/components/campusLabels";
 import RoutePolyline from "@/src/components/RoutePolyline";
 import { CampusConfig } from "@/src/data/campus/campusConfig";
 import { UserInfo } from "@/src/utils/tokenStorage";
+import OutdoorPOIButton from "./OutdoorPOIButton"; 
+import POIPanel from "./POIPanel"; 
+import OutdoorPOIMarkers from "./OutdoorPOIMarkers";
+import { fetchPOIs, POIPlace } from "@/src/api/places";
+import POIListPanel from "./POIListPanel";
 import React, { useState, useRef, useMemo, useCallback, useEffect } from "react";
+
 import {
   Modal,
   TextInput,
@@ -604,6 +610,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
   }, [setShowDirections]);
 
   const handleEndNavigation = useCallback(() => {
+    setActivePOIDestination(null);
     setIsNavigationActive(false);
     setShowDirections(true);
     setIsManualIndoorOverride(false);
@@ -708,6 +715,7 @@ const modeLabelMap: Record<TravelMode, string> = {
       .filter(item => item.stepIndex >= navigationStepIndex)
       .slice(0, 4);
   }, [isNavigationActive, travelMode, routeData?.steps, navigationStepIndex]);
+  const [activePOIDestination, setActivePOIDestination] = useState<string | null>(null);
 
   const selectedTransitStop = transitNavigationStops.find(stop => stop.key === selectedTransitStopKey) || null;
 
@@ -962,7 +970,77 @@ const modeLabelMap: Record<TravelMode, string> = {
   const mapID = useMemo(() => {
     return colorScheme === "dark" ? "eb0ccd6d2f7a95e23f1ec398" : "eb0ccd6d2f7a95e117328051";
   }, [colorScheme]);
+// State for selected POI type
+const [selectedPOIType, setSelectedPOIType] = useState<string | null>(null);
 
+// State for panel visibility
+const [isPOIPanelVisible, setPOIPanelVisible] = useState(false);
+
+// Handler to toggle panel
+const handleTogglePOIPanel = useCallback(() => {
+  setPOIPanelVisible(prev => !prev);
+}, []);
+
+const currentCampus: "SGW" | "LOY" = useMemo(() => {
+  if (mapRegion.latitude > 45.48) return "SGW";
+  return "LOY";
+}, [mapRegion.latitude]);// State for restaurants fetched from Google API
+
+const [pois, setPois] = useState<POIPlace[]>([]);
+const [selectedRadius, setSelectedRadius] = useState(1000);
+
+useEffect(() => {
+  if (!selectedPOIType) {
+    setPois([]);
+    return;
+  }
+  fetchPOIs(currentCampus, selectedPOIType)
+    .then(setPois)
+    .catch((err) => {
+      console.error(`Failed to fetch ${selectedPOIType}:`, err);
+      setPois([]);
+    });
+}, [currentCampus, selectedPOIType]);
+
+const [isPOIListPanelVisible, setIsPOIListPanelVisible] = useState(false);
+
+// Dans CampusMap.tsx, juste avant le return
+console.log("selectedPOIType:", selectedPOIType);
+//console.log("restaurants count:", restaurants.length);
+  
+// Add POI directions handler
+const handlePOIDirections = useCallback((poi: POIPlace) => {
+  console.log('Setting POI:', poi.name);  
+  // Close POI list
+  setIsPOIListPanelVisible(false);
+  setActivePOIDestination(poi.name);
+  
+  // Set as destination using your existing directions system
+  setDestination(`POI-${poi.id}`, { latitude: poi.latitude, longitude: poi.longitude }, poi.name);
+  
+  // Use user location as start point
+  if (userLocation) {
+    setStartPoint("USER", userLocation, "Your Location");
+  }
+  
+  // Open directions panel
+  setShowDirections(true);
+}, [userLocation, setDestination, setStartPoint, setShowDirections]);
+
+// Add clear POIs handler
+const handleClearPOIs = useCallback(() => {
+  setSelectedPOIType(null);
+  setPois([]);
+  setIsPOIListPanelVisible(false);
+}, []);
+
+
+const updatePOIs = async (radius: number) => {
+  if (!selectedPOIType) return;
+  const newPois = await fetchPOIs(currentCampus, selectedPOIType, radius);
+  setSelectedRadius(radius);
+  setPois(newPois);
+};
   const isIOS = Platform.OS === "ios";
   const navPanelBgColor = isIOS
     ? "transparent"
@@ -1085,6 +1163,15 @@ const modeLabelMap: Record<TravelMode, string> = {
             </View>
           </Marker>
         ))}
+        {selectedPOIType && pois.length > 0 && (
+  <OutdoorPOIMarkers
+    campus={currentCampus}
+    poiType={selectedPOIType}
+    pois={pois}
+    onPOIPress={(poi) => console.log("Clicked:", poi.name)}
+    radiusMeters={selectedRadius}
+  />
+)}
       </MapView>
 
       {selectedTransitStop && !indoorBuildingId && (
@@ -1154,6 +1241,41 @@ const modeLabelMap: Record<TravelMode, string> = {
           </Text>
         </View>
       )}
+      <View
+  style={{
+    position: "absolute",
+    bottom: 460,
+    right: 15,
+    zIndex: 999,
+  }}
+>
+  <OutdoorPOIButton
+    onPress={handleTogglePOIPanel}
+    buttonSize={50}
+    mode={colorScheme}
+    buttonSpacing={16}
+  />
+</View>
+<POIPanel
+  visible={isPOIPanelVisible}
+  onClose={() => setPOIPanelVisible(false)}
+  onPOISelect={(type) => {
+    setSelectedPOIType(type);
+    setPOIPanelVisible(false);
+      // Auto-open POI list when POIs load
+      setTimeout(() => setIsPOIListPanelVisible(true), 800);
+  }}
+  />
+  <POIListPanel
+  visible={isPOIListPanelVisible && !!selectedPOIType && pois.length > 0}
+  pois={pois}
+  userLocation={userLocation}
+  onClose={() => setIsPOIListPanelVisible(false)}
+  onPOIDirections={handlePOIDirections}
+  onClearPOIs={handleClearPOIs}
+  onUpdatePOIs={updatePOIs}
+/>
+
 
       {isNavigationActive && routeData && !indoorBuildingId && (
         <View
@@ -1459,13 +1581,13 @@ const modeLabelMap: Record<TravelMode, string> = {
             setStartPoint={setStartPoint}
             destinationBuildingId={destinationBuildingId}
             destinationRoom={destinationRoom}
+            destinationLabel={activePOIDestination} 
             setDestination={setDestination}
             userLocationBuildingId={userLocationBuildingId}
             isIndoorView={!!indoorBuildingId}
           />
         </View>
       )}
-
       {/* Right Controls Panel: User Profile + Location Recenter + Search Button */}
       {userInfo && onSignOut && (
         <RightControlsPanel
