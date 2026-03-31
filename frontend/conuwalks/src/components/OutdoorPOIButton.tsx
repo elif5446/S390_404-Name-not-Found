@@ -31,7 +31,7 @@ const OutdoorPOIButton: React.FC<OutdoorPOIButtonProps> = ({
                     marginBottom: buttonSpacing,
                     marginTop: Platform.select({
                         ios: insets.top + 12,
-                        android: Math.max(insets.top, 16) + 8,
+                        android:  24,
                     }),
                 },
                 

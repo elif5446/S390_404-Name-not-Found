@@ -5,7 +5,7 @@ import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { POIPlace } from "@/src/api/places";
 
 const POI_ICONS: Record<string, { icon: string; color: string }> = {
-  Restaurants: { icon: "restaurant", color: "#E53935" },
+  Restaurants: { icon: "restaurant", color: "#800020" },
   "Coffee shops": { icon: "local-cafe", color: "#6D4C41" },
   Banks: { icon: "account-balance", color: "#1565C0" },
   Hotels: { icon: "hotel", color: "#7B1FA2" },
