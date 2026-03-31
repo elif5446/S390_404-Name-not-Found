@@ -1,0 +1,58 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`PulsingUserMarker matches snapshot 1`] = `
+<View
+  accessibilityLabel="Your current location"
+  accessibilityRole="image"
+  accessible={true}
+  style={
+    {
+      "height": 24,
+      "left": 38,
+      "position": "absolute",
+      "top": 63,
+      "width": 24,
+      "zIndex": 1005,
+    }
+  }
+>
+  <View
+    collapsable={false}
+    style={
+      {
+        "backgroundColor": "#B03060",
+        "borderRadius": 12,
+        "height": 24,
+        "opacity": 0,
+        "position": "absolute",
+        "transform": [
+          {
+            "scale": 0,
+          },
+        ],
+        "width": 24,
+      }
+    }
+  />
+  <View
+    style={
+      {
+        "backgroundColor": "#B03060BF",
+        "borderColor": "#FFFFFF",
+        "borderRadius": 12,
+        "borderWidth": 3,
+        "elevation": 4,
+        "height": 24,
+        "shadowColor": "#000",
+        "shadowOffset": {
+          "height": 2,
+          "width": 0,
+        },
+        "shadowOpacity": 0.25,
+        "shadowRadius": 3,
+        "width": 24,
+      }
+    }
+  />
+</View>
+`;
