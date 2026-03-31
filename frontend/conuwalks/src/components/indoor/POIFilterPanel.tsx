@@ -167,6 +167,7 @@ const POIFilterPanel = forwardRef<POIFilterPanelHandle, Props>(
           <View style={{ flex: 1 }} {...scrollAreaPanResponder.panHandlers}>
             {visiblePOIs.length > 0 ? (
               <ScrollView
+                testID="poi-scrollview"
                 onScroll={handleScroll}
                 scrollEventThrottle={16}
                 contentContainerStyle={{
