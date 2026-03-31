@@ -4,14 +4,25 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "jsx": "react-jsx",
-    "lib": ["ES2015", "DOM"], 
+    "lib": [
+      "ES2015",
+      "DOM"
+    ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": [
+        "./*"
+      ]
     },
     "types": [
       "jest"
     ]
   },
-
-  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts", "jest.setup.tsx"]
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts",
+    "jest.setup.tsx"
+  ],
+  "extends": "expo/tsconfig.base"
 }

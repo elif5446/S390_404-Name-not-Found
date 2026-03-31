@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: "600",
-    color: "#B03060",
+    color: "#8B3A62",
     marginTop: 4,
     marginBottom: 20,
     textAlign: "center",
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
   },
   item: {
     fontSize: 17,
-    color: "#B03060",
+    color: "#8B3A62",
     fontWeight: "500",
     textAlign: "center",
   },
