@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">14.28% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>1/7</span>
+                <span class='fraction'>7/7</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/6</span>
+                <span class='fraction'>6/6</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/1</span>
+                <span class='fraction'>1/1</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">20% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>1/5</span>
+                <span class='fraction'>5/5</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -117,18 +117,18 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">148x</span>
+<span class="cline-any cline-yes">147x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">146x</span>
+<span class="cline-any cline-yes">146x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { LatLng } from "react-native-maps";
 import { RouteData } from "@/src/context/DirectionsContext";
 import {GoogleTravelMode } from "./TravelModeStrategy";
@@ -150,18 +150,18 @@ export { decodePolyline } from "@/src/api/googleDirectionsAPI";
  * @param targetTime  - User-selected time (null = now)
  * @param timeMode    - Whether targetTime is a departure or arrival time
  */
-export const getDirections = <span class="fstat-no" title="function not covered" >as</span>ync (
+export const getDirections = async (
   start: LatLng | null,
   destination: LatLng | null,
   mode: GoogleTravelMode,
-  targetTime: Date | null = <span class="branch-0 cbranch-no" title="branch not covered" >null,</span>
-  timeMode: "leave" | "arrive" = <span class="branch-0 cbranch-no" title="branch not covered" >"leave",</span>
+  targetTime: Date | null = null,
+  timeMode: "leave" | "arrive" = "leave",
 ): Promise&lt;RouteData[]&gt; =&gt; {
-<span class="cstat-no" title="statement not covered" >  if (!start) <span class="cstat-no" title="statement not covered" >throw new Error("Start location is required");</span></span>
-<span class="cstat-no" title="statement not covered" >  if (!destination) <span class="cstat-no" title="statement not covered" >throw new Error("Destination location is required");</span></span>
+  if (!start) throw new Error("Start location is required");
+  if (!destination) throw new Error("Destination location is required");
 &nbsp;
-  const strategy = <span class="cstat-no" title="statement not covered" >getStrategy(mode);</span>
-<span class="cstat-no" title="statement not covered" >  return strategy.fetchRoutes(start, destination, targetTime, timeMode);</span>
+  const strategy = getStrategy(mode);
+  return strategy.fetchRoutes(start, destination, targetTime, timeMode);
 };</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
@@ -169,7 +169,7 @@ export const getDirections = <span class="fstat-no" title="function not covered"
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-03-31T01:28:29.967Z
+                at 2026-03-31T16:24:52.891Z
             </div>
         <script src="../prettify.js"></script>
         <script>

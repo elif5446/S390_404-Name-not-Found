@@ -1,3 +1,4 @@
+
 import React from "react";
 import { render, fireEvent } from "@testing-library/react-native";
 import { Keyboard } from "react-native";
@@ -24,6 +25,42 @@ jest.mock("@/src/data/poiData", () => ({
 jest.spyOn(Keyboard, "dismiss");
 
 describe("IndoorTopPanel", () => {
+      it("calls onClearDestination if destination input is whitespace only (edge case)", () => {
+        const { getByPlaceholderText } = render(
+          <IndoorTopPanel {...defaultProps} activeField="destination" searchQuery="H820" />
+        );
+        const destInput = getByPlaceholderText("Destination");
+        // simulate user deleting all text to whitespace
+        fireEvent.changeText(destInput, "   ");
+        expect(defaultProps.onClearDestination).toHaveBeenCalled();
+      });
+
+      it("clears destination only if activeField is destination (branch 132)", () => {
+        const { getByTestId } = render(
+          <IndoorTopPanel {...defaultProps} activeField="destination" searchQuery="something" />
+        );
+        const clearButton = getByTestId("icon-close-circle");
+        fireEvent.press(clearButton);
+        expect(defaultProps.setSearchQuery).toHaveBeenCalledWith("");
+        expect(defaultProps.setShowSearchResults).toHaveBeenCalledWith(false);
+        expect(defaultProps.onClearDestination).toHaveBeenCalled();
+      });
+
+      it("shows empty state when searchResults is empty (branch 243)", () => {
+        const { getByText } = render(
+          <IndoorTopPanel {...defaultProps} showSearchResults={true} searchResults={[]} />
+        );
+        expect(getByText("No matching results found")).toBeTruthy();
+      });
+    it("calls onClearDestination if destination input is whitespace only", () => {
+      const { getByPlaceholderText } = render(
+        <IndoorTopPanel {...defaultProps} activeField="destination" searchQuery="H820" />
+      );
+      const destInput = getByPlaceholderText("Destination");
+      // simulate user deleting all text to whitespace
+      fireEvent.changeText(destInput, "   ");
+      expect(defaultProps.onClearDestination).toHaveBeenCalled();
+    });
   const defaultProps = {
     searchQuery: "",
     setSearchQuery: jest.fn(),
