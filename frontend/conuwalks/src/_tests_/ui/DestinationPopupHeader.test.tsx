@@ -70,6 +70,8 @@ jest.mock("../../styles/DestinationPopup", () => ({
     title: {},
     transportRow: {},
     transportButton: {},
+    openIndoorHeaderButton: {},
+    openIndoorHeaderButtonText: {},
   },
 }));
 
@@ -82,7 +84,7 @@ describe("DestinationHeader Component", () => {
   const originalOS = Platform.OS;
 
   const defaultProps = {
-    isDark: false,
+    mode: "light" as const,
     travelMode: "walking" as const,
     setTravelMode: mockSetTravelMode,
     getModeDurationLabel: mockGetModeDurationLabel,
@@ -150,7 +152,7 @@ describe("DestinationHeader Component", () => {
   describe("Platform Specific Rendering", () => {
     it("renders iOS close button and calls onDismiss when pressed", () => {
       Platform.OS = "ios";
-      render(<DestinationHeader {...defaultProps} isDark={true} />);
+      render(<DestinationHeader {...defaultProps} mode="dark" />);
 
       // the ios version renders a text '✕' inside a circle
       const closeButtonText = screen.getByText("✕");
