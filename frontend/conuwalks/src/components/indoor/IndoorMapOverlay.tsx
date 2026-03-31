@@ -836,7 +836,7 @@ function handleRoomSelection(
     isStart
   );
 }
-//handle POI selection
+//handle POI selection function
 function handlePOISelection(
   item: IndoorSearchResult,
   hotspots: IndoorHotspot[],
@@ -933,7 +933,6 @@ const handleSelectSearchResult = useCallback(
     handleSetLocation,
   ]
 );
-
   const handleSelectPOI = useCallback(
     (poi: POI, forceIsStart?: boolean) => {
       const isStart = forceIsStart !== undefined ? forceIsStart : activeField === "start";
