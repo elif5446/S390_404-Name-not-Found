@@ -139,7 +139,7 @@ const [radius, setRadius] = React.useState<number>(1000);
       };
     });
 
-    const sorted = poisWithDistance.sort((a, b) => a.distance - b.distance);
+    const sorted = [...poisWithDistance].sort((a, b) => a.distance - b.distance);
     return sorted.map((poi, index) => ({ ...poi, order: index + 1 }));
   }, [pois, userLocation]);
 
