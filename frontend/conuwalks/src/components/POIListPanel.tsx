@@ -139,7 +139,7 @@ const [radius, setRadius] = React.useState<number>(1000);
       };
     });
 
-    const sorted = poisWithDistance.sort((a, b) => a.distance - b.distance);
+    const sorted = [...poisWithDistance].sort((a, b) => a.distance - b.distance);
     return sorted.map((poi, index) => ({ ...poi, order: index + 1 }));
   }, [pois, userLocation]);
 
@@ -178,7 +178,7 @@ const [radius, setRadius] = React.useState<number>(1000);
   ).current;
 
   // Add this helper component right before the main return statement
-const EmptyStateContent = ({ onClearPOIs }: { onClearPOIs: () => void }) => (
+const EmptyStateContent = ({ onClearPOIs }: { onClearPOIs: () => void; radius:number }) => (
   <View style={styles.inner}>
     <View style={styles.header}>
       <Text style={styles.title}>No places found nearby</Text>
@@ -206,11 +206,11 @@ if (sortedPois.length === 0) {
     >
       {Platform.OS === "ios" ? (
         <BlurView intensity={40} tint="light" style={styles.blur}>
-          <EmptyStateContent onClearPOIs={onClearPOIs} />
+          <EmptyStateContent onClearPOIs={onClearPOIs} radius={radius}/>
         </BlurView>
       ) : (
         <View style={[styles.blur, styles.androidFallback]}>
-          <EmptyStateContent onClearPOIs={onClearPOIs} />
+          <EmptyStateContent onClearPOIs={onClearPOIs} radius={radius}/>
         </View>
       )}
     </Animated.View>
