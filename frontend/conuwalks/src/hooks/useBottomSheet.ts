@@ -89,29 +89,26 @@ export const useBottomSheet = ({
   );
 
   const minimize = useCallback(
-    (onDone?: () => void) => {
+    (height: number = MINIMIZED_OFFSET, onDone?: () => void) => {
       // If it's already minimized (or lower), ignore the command
-      if (
-        translateYRef.current >= MINIMIZED_OFFSET - 5 ||
-        targetAnimY.current === MINIMIZED_OFFSET
-      ) {
+      if (translateYRef.current >= height - 5 || targetAnimY.current === height) {
         onDone?.();
         return;
       }
-      targetAnimY.current = MINIMIZED_OFFSET;
+
+      targetAnimY.current = height;
       reportExpandedState(false);
 
       Animated.timing(translateY, {
-        toValue: MINIMIZED_OFFSET,
+        toValue: height,
         duration: 200,
         useNativeDriver: true,
       }).start(({ finished }) => {
         if (finished) {
-          translateYRef.current = MINIMIZED_OFFSET;
+          translateYRef.current = height;
           onDone?.();
         }
-        if (targetAnimY.current === MINIMIZED_OFFSET)
-          targetAnimY.current = null;
+        if (targetAnimY.current === height) targetAnimY.current = null;
       });
     },
     [translateY, MINIMIZED_OFFSET, reportExpandedState],
@@ -186,10 +183,7 @@ export const useBottomSheet = ({
         }
         return false;
       };
-      const backHandler = BackHandler.addEventListener(
-        "hardwareBackPress",
-        backAction,
-      );
+      const backHandler = BackHandler.addEventListener("hardwareBackPress", backAction);
       return () => backHandler.remove();
     }
   }, [dismiss, visible]);
@@ -197,25 +191,19 @@ export const useBottomSheet = ({
   const { handlePanResponder, scrollAreaPanResponder } = useMemo(() => {
     const onPanResponderGrant = () => {
       targetAnimY.current = null;
-      translateY.stopAnimation((val) => {
+      translateY.stopAnimation(val => {
         translateYAtGestureStart.current = val;
         translateYRef.current = val;
       });
     };
 
-    const onPanResponderMove = (
-      _: GestureResponderEvent,
-      g: PanResponderGestureState,
-    ) => {
+    const onPanResponderMove = (_: GestureResponderEvent, g: PanResponderGestureState) => {
       const newY = Math.max(0, translateYAtGestureStart.current + g.dy);
       translateY.setValue(newY);
       reportExpandedState(newY <= 12);
     };
 
-    const onPanResponderRelease = (
-      _: GestureResponderEvent,
-      g: PanResponderGestureState,
-    ) => {
+    const onPanResponderRelease = (_: GestureResponderEvent, g: PanResponderGestureState) => {
       const currentY = translateYRef.current;
       const velocity = g.vy;
 
@@ -227,13 +215,13 @@ export const useBottomSheet = ({
         if (currentY > SNAP_OFFSET + 40) snapTo(SNAP_OFFSET);
         else snapTo(0);
       } else if (currentY > MINIMIZED_OFFSET + 40) {
-          dismiss(true);
+        dismiss(true);
       } else if (currentY > (SNAP_OFFSET + MINIMIZED_OFFSET) / 2) {
-          minimize();
+        minimize();
       } else if (currentY > SNAP_OFFSET / 2) {
-          snapTo(SNAP_OFFSET);
+        snapTo(SNAP_OFFSET);
       } else {
-          snapTo(0);
+        snapTo(0);
       }
     };
 
@@ -241,8 +229,7 @@ export const useBottomSheet = ({
       handlePanResponder: PanResponder.create({
         onStartShouldSetPanResponder: () => true,
         onStartShouldSetPanResponderCapture: () => false,
-        onMoveShouldSetPanResponder: (_, g) =>
-          Math.abs(g.dy) > Math.abs(g.dx) * 1.2,
+        onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > Math.abs(g.dx) * 1.2,
         onMoveShouldSetPanResponderCapture: (_, g) => Math.abs(g.dy) > 5,
         onPanResponderGrant,
         onPanResponderMove,
@@ -265,15 +252,7 @@ export const useBottomSheet = ({
         onPanResponderRelease,
       }),
     };
-  }, [
-    SNAP_OFFSET,
-    MINIMIZED_OFFSET,
-    dismiss,
-    minimize,
-    snapTo,
-    translateY,
-    reportExpandedState,
-  ]);
+  }, [SNAP_OFFSET, MINIMIZED_OFFSET, dismiss, minimize, snapTo, translateY, reportExpandedState]);
 
   return {
     translateY,

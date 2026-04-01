@@ -1,6 +1,6 @@
 import { Text, View, ActivityIndicator } from "react-native";
 import React, { useState, useRef, useEffect } from "react";
-import GoogleCalendarAuth from "@/src/screens/GoogleCalendarAuth";
+import GoogleCalendarAuth from "@/src/components/GoogleCalendarAuth";
 import { useRouter } from "expo-router";
 import { getTokens, isTokenValid } from "@/src/utils/tokenStorage";
 import { styles } from "@/src/styles/login";

@@ -1,14 +1,13 @@
-import { renderHook, waitFor, act } from "@testing-library/react";
+import { renderHook, waitFor, act } from "@testing-library/react-native";
 import { useGoogleCalendar } from "../../hooks/useGoogleCalendar";
-import { getTokens, isTokenValid } from "../../utils/tokenStorage";
+import { getTokens, isTokenValid, clearTokens } from "../../utils/tokenStorage";
 import { GoogleCalendarApi } from "../../api/calendarApi";
 
-// Mock dependencies
 jest.mock("../../utils/tokenStorage", () => ({
   getTokens: jest.fn(),
   isTokenValid: jest.fn(),
   saveTokens: jest.fn(),
-  clearTokens: jest.fn()
+  clearTokens: jest.fn(),
 }));
 
 jest.mock("../../api/calendarApi", () => ({
@@ -17,12 +16,13 @@ jest.mock("../../api/calendarApi", () => ({
 
 const mockGetTokens = getTokens as jest.Mock;
 const mockIsTokenValid = isTokenValid as jest.Mock;
+const mockClearTokens = clearTokens as jest.Mock;
+
 const mockGetUpcomingEvents = jest.fn();
 const mockListCalendars = jest.fn();
 const mockCreateEvent = jest.fn();
 const mockDeleteEvent = jest.fn();
 
-// Mock GoogleCalendarApi instance
 (GoogleCalendarApi as jest.Mock).mockImplementation(() => ({
   getUpcomingEvents: mockGetUpcomingEvents,
   listCalendars: mockListCalendars,
@@ -37,11 +37,13 @@ const mockTokens = {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  jest.useRealTimers();
+  delete process.env.EXPO_PUBLIC_MOCK_CALENDAR;
+
   mockGetTokens.mockResolvedValue(mockTokens);
   mockIsTokenValid.mockReturnValue(true);
+  mockClearTokens.mockResolvedValue(undefined);
 });
-
-// 1. INITIAL STATE
 
 describe("Initial State", () => {
   it("has correct initial state", () => {
@@ -77,8 +79,6 @@ describe("Initial State", () => {
     });
   });
 });
-
-// 2. FETCH UPCOMING EVENTS
 
 describe("fetchUpcomingEvents", () => {
   it("fetches upcoming events successfully", async () => {
@@ -140,7 +140,9 @@ describe("fetchUpcomingEvents", () => {
 
   it("sets error when not authenticated", async () => {
     mockGetTokens.mockResolvedValue(null);
-    (require("../../utils/tokenStorage").clearTokens as jest.Mock).mockResolvedValue(undefined);
+    (
+      require("../../utils/tokenStorage").clearTokens as jest.Mock
+    ).mockResolvedValue(undefined);
 
     const { result } = renderHook(() => useGoogleCalendar());
 
@@ -177,8 +179,6 @@ describe("fetchUpcomingEvents", () => {
     expect(mockGetUpcomingEvents).toHaveBeenCalledWith(25);
   });
 });
-
-// 3. FETCH CALENDARS
 
 describe("fetchCalendars", () => {
   it("fetches calendars successfully", async () => {
@@ -224,8 +224,6 @@ describe("fetchCalendars", () => {
     expect(result.current.calendars).toEqual([]);
   });
 });
-
-// 4. CREATE EVENT
 
 describe("createEvent", () => {
   it("creates an event successfully", async () => {
@@ -285,8 +283,6 @@ describe("createEvent", () => {
   });
 });
 
-// 5. DELETE EVENT
-
 describe("deleteEvent", () => {
   it("deletes an event successfully", async () => {
     mockDeleteEvent.mockResolvedValue(undefined);
@@ -342,8 +338,6 @@ describe("deleteEvent", () => {
   });
 });
 
-// 6. STATE MANAGEMENT
-
 describe("State Management", () => {
   it("clears error before each fetch", async () => {
     mockGetUpcomingEvents.mockRejectedValueOnce(new Error("First error"));
@@ -384,5 +378,231 @@ describe("State Management", () => {
     });
 
     expect(result.current.loading).toBe(false);
+  });
+
+  describe("additional coverage - auth and fallback branches", () => {
+    it("clears tokens and sets error when tokens exist but are invalid", async () => {
+      const { useGoogleCalendar } = require("../../hooks/useGoogleCalendar");
+
+      mockGetTokens.mockResolvedValue(mockTokens);
+      mockIsTokenValid.mockReturnValue(false);
+      mockClearTokens.mockResolvedValue(undefined);
+
+      const { result } = renderHook(() => useGoogleCalendar());
+
+      await act(async () => {
+        await result.current.fetchUpcomingEvents();
+      });
+
+      expect(mockClearTokens).toHaveBeenCalled();
+      expect(result.current.error).toBe("Not authenticated or token expired");
+      expect(result.current.events).toEqual([]);
+    });
+
+    it("returns early in fetchCalendars when api instance is null", async () => {
+      const { useGoogleCalendar } = require("../../hooks/useGoogleCalendar");
+
+      mockGetTokens.mockResolvedValue(null);
+      mockClearTokens.mockResolvedValue(undefined);
+
+      const { result } = renderHook(() => useGoogleCalendar());
+
+      await act(async () => {
+        await result.current.fetchCalendars();
+      });
+
+      expect(result.current.calendars).toEqual([]);
+      expect(result.current.error).toBe("Not authenticated or token expired");
+    });
+
+    it("uses fallback message when fetchUpcomingEvents throws a non-Error", async () => {
+      const { useGoogleCalendar } = require("../../hooks/useGoogleCalendar");
+
+      mockGetUpcomingEvents.mockRejectedValue("boom");
+
+      const { result } = renderHook(() => useGoogleCalendar());
+
+      await act(async () => {
+        await result.current.fetchUpcomingEvents();
+      });
+
+      expect(result.current.error).toBe("Failed to fetch events");
+    });
+
+    it("uses fallback message when fetchCalendars throws a non-Error", async () => {
+      const { useGoogleCalendar } = require("../../hooks/useGoogleCalendar");
+
+      mockListCalendars.mockRejectedValue("boom");
+
+      const { result } = renderHook(() => useGoogleCalendar());
+
+      await act(async () => {
+        await result.current.fetchCalendars();
+      });
+
+      expect(result.current.error).toBe("Failed to fetch calendars");
+    });
+
+    it("uses fallback message when createEvent throws a non-Error", async () => {
+      const { useGoogleCalendar } = require("../../hooks/useGoogleCalendar");
+
+      mockCreateEvent.mockRejectedValue("boom");
+
+      const { result } = renderHook(() => useGoogleCalendar());
+
+      let createdEvent;
+      await act(async () => {
+        createdEvent = await result.current.createEvent({
+          summary: "Test event",
+        });
+      });
+
+      expect(createdEvent).toBeNull();
+      expect(result.current.error).toBe("Failed to create event");
+    });
+
+    it("returns null from createEvent when api instance is null", async () => {
+      const { useGoogleCalendar } = require("../../hooks/useGoogleCalendar");
+
+      mockGetTokens.mockResolvedValue(null);
+      mockClearTokens.mockResolvedValue(undefined);
+
+      const { result } = renderHook(() => useGoogleCalendar());
+
+      let createdEvent;
+      await act(async () => {
+        createdEvent = await result.current.createEvent({
+          summary: "Test event",
+        });
+      });
+
+      expect(createdEvent).toBeNull();
+      expect(result.current.error).toBe("Not authenticated or token expired");
+    });
+
+    it("uses fallback message when deleteEvent throws a non-Error", async () => {
+      const { useGoogleCalendar } = require("../../hooks/useGoogleCalendar");
+
+      mockDeleteEvent.mockRejectedValue("boom");
+
+      const { result } = renderHook(() => useGoogleCalendar());
+
+      let deleted;
+      await act(async () => {
+        deleted = await result.current.deleteEvent("event-1");
+      });
+
+      expect(deleted).toBe(false);
+      expect(result.current.error).toBe("Failed to delete event");
+    });
+
+    it("returns false from deleteEvent when api instance is null", async () => {
+      const { useGoogleCalendar } = require("../../hooks/useGoogleCalendar");
+
+      mockGetTokens.mockResolvedValue(null);
+      mockClearTokens.mockResolvedValue(undefined);
+
+      const { result } = renderHook(() => useGoogleCalendar());
+
+      let deleted;
+      await act(async () => {
+        deleted = await result.current.deleteEvent("event-1");
+      });
+
+      expect(deleted).toBe(false);
+      expect(result.current.error).toBe("Not authenticated or token expired");
+    });
+  });
+
+  describe("mock environment branches", () => {
+    const OLD_ENV = process.env;
+
+    beforeEach(() => {
+      jest.useFakeTimers();
+
+      process.env.EXPO_PUBLIC_MOCK_CALENDAR = "true";
+    });
+
+    afterEach(() => {
+      process.env = OLD_ENV;
+      jest.useRealTimers();
+      jest.clearAllMocks();
+    });
+
+    it("sets isAuthenticated to true on mount in mock mode", async () => {
+      const { result } = renderHook(() => useGoogleCalendar());
+
+      await waitFor(() => {
+        expect(result.current.isAuthenticated).toBe(true);
+      });
+    });
+
+    it("fetches mock upcoming events", async () => {
+      const {
+        MOCK_CALENDAR_EVENTS,
+      } = require("../../_tests_/mock/mockCalendarData");
+
+      const { result } = renderHook(() => useGoogleCalendar());
+
+      await act(async () => {
+        const promise = result.current.fetchUpcomingEvents();
+        jest.runAllTimers();
+        await promise;
+      });
+
+      expect(result.current.events).toEqual(MOCK_CALENDAR_EVENTS);
+      expect(result.current.error).toBeNull();
+      expect(result.current.loading).toBe(false);
+    });
+
+    it("fetches mock calendars", async () => {
+      const { result } = renderHook(() => useGoogleCalendar());
+
+      await act(async () => {
+        const promise = result.current.fetchCalendars();
+        jest.runAllTimers();
+        await promise;
+      });
+
+      expect(result.current.calendars).toEqual([
+        { id: "primary", summary: "Mock Primary Calendar" },
+      ]);
+      expect(result.current.error).toBeNull();
+      expect(result.current.loading).toBe(false);
+    });
+
+    it("creates a mock event", async () => {
+      const { result } = renderHook(() => useGoogleCalendar());
+
+      let createdEvent: any = null;
+
+      await act(async () => {
+        const promise = result.current.createEvent({ summary: "Mock Event" });
+        jest.runAllTimers();
+        createdEvent = await promise;
+      });
+
+      if (!createdEvent) throw new Error("Expected event");
+
+      expect(createdEvent.id).toMatch(/^mock-id-/);
+      expect(result.current.error).toBeNull();
+      expect(result.current.loading).toBe(false);
+    });
+
+    it("deletes a mock event", async () => {
+      const { result } = renderHook(() => useGoogleCalendar());
+
+      let deleted = false;
+
+      await act(async () => {
+        const promise = result.current.deleteEvent("id");
+        jest.runAllTimers();
+        deleted = await promise;
+      });
+
+      expect(deleted).toBe(true);
+      expect(result.current.error).toBeNull();
+      expect(result.current.loading).toBe(false);
+    });
   });
 });

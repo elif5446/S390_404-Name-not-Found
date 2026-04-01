@@ -12,11 +12,13 @@ import { useDirections } from "@/src/context/DirectionsContext";
 import TimeSelectorModal from "./TimeSelectorModal";
 import { styles } from "../styles/DestinationPopup";
 import { isToday } from "../utils/time";
+import { themedStyles } from "../styles/additionalInfoPopup";
 
 type TravelMode = "walking" | "driving" | "transit" | "bicycling";
 
 interface DestinationHeaderProps {
-  isDark: boolean;
+  mode: "light" | "dark";
+  showOpenIndoorButton?: boolean;
   travelMode: TravelMode;
   setTravelMode: (
     mode: TravelMode,
@@ -26,6 +28,7 @@ interface DestinationHeaderProps {
   ) => string;
   onDismiss: () => void;
   onToggleHeight: () => void;
+  onOpenIndoorPress?: () => void;
 }
 
 // outside the component to prevent recreation on every render
@@ -37,14 +40,17 @@ const TRANSPORT_OPTIONS = [
 ] as const;
 
 const DestinationHeader: React.FC<DestinationHeaderProps> = ({
-  isDark,
+  mode,
+  showOpenIndoorButton,
   travelMode,
   setTravelMode,
   getModeDurationLabel,
   onDismiss,
   onToggleHeight,
+  onOpenIndoorPress,
 }) => {
   const campusPink = "#B03060";
+  const isDark = mode === "dark";
 
   const { timeMode, targetTime, setTimeMode, setTargetTime } = useDirections();
   const [isTimeModalVisible, setTimeModalVisible] = useState(false);
@@ -119,7 +125,29 @@ const DestinationHeader: React.FC<DestinationHeaderProps> = ({
             <View style={styles.headerCenter}>
               <Text style={styles.title}>Directions</Text>
             </View>
-            <View style={[styles.headerSide, styles.headerSideRight]} />
+            <View style={[styles.headerSide, styles.headerSideRight]}>
+              {showOpenIndoorButton && onOpenIndoorPress && (
+                <TouchableOpacity
+                  onPress={onOpenIndoorPress}
+                  style={[
+                    styles.openIndoorHeaderButton,
+                    themedStyles.openIndoorHeaderButton(mode),
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Open indoor map"
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Text
+                    style={[
+                      styles.openIndoorHeaderButtonText,
+                      themedStyles.openIndoorHeaderButtonText(mode),
+                    ]}
+                  >
+                    Indoor Map↗
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
           </View>
 
           <View

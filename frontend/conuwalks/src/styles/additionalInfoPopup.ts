@@ -30,20 +30,19 @@ const additionalInfoPopupStyles = StyleSheet.create({
   },
   iosHeader: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "center",
     position: "relative",
     paddingHorizontal: 20,
     width: "100%",
     backgroundColor: "transparent",
-    minHeight: 100, // Reduced from 136
-    paddingTop: 8, // Added padding
+    paddingTop: 8,
+    marginBottom: 10
   },
   headerTextContainer: {
-    flex: 1, // Changed from absolute positioning
+    position:"absolute",
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 110, // Added padding instead of absolute positioning
     width: "100%",
   },
   buildingName: {
@@ -54,8 +53,6 @@ const additionalInfoPopupStyles = StyleSheet.create({
     marginBottom: 4,
     flexWrap: "wrap",
     flexShrink: 0,
-    width: "100%",
-    maxWidth: "100%",
     textAlignVertical: "center",
     alignSelf: "stretch",
   },
@@ -94,17 +91,26 @@ const additionalInfoPopupStyles = StyleSheet.create({
   accessibilityIcon: {
     fontSize: 22,
   },
+  leftHeaderActions: {
+    flexDirection: "column",
+    position:"absolute",
+    gap: Platform.OS === "ios" ? 5 : 0,
+    left:20,
+    top:10,
+    alignItems:"flex-start",
+    flex:1
+  },
   closeButton: {
     width: 44,
     height: 44,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "absolute",
+    justifyContent: "flex-start",
+    alignItems: "flex-start",
     left: 20,
     top: 0,
     padding: 4,
     zIndex: 10,
-    marginTop: -5,
+    marginTop: -10,
+    marginLeft: -20
   },
   closeButtonText: {
     fontSize: 24,
@@ -128,9 +134,9 @@ const additionalInfoPopupStyles = StyleSheet.create({
 rightHeaderActions: {
   position: "absolute",
   right: 20,
-  top: 4,
   alignItems: "flex-end",
   justifyContent: "flex-start",
+  flex:1,
   gap: 8,
 },
   directionsButton: {
@@ -138,24 +144,22 @@ rightHeaderActions: {
     alignItems: "center",
     borderRadius: 999,
     backgroundColor: "#B03060",
-    paddingVertical: 5,
-    paddingHorizontal: 4,
-    gap: 6,
+    gap: 0
   },
   directionsArrowCircle: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: "#FFFFFF",
+    width: 40,
+    height: 40,
+    borderRadius: 40,
+    backgroundColor: "transparent",
     alignItems: "center",
     justifyContent: "center",
   },
   directionsEtaText: {
     color: "#FFFFFF",
     fontWeight: "700" as const,
-    fontSize: 13,
+    fontSize: 15,
     lineHeight: 15,
-    paddingRight: 7,
+    paddingRight: 10,
   },
   rightAccessibilityRow: {
     marginTop: 2,
@@ -236,14 +240,15 @@ openIndoorHeaderButton: {
   justifyContent: "center",
   borderWidth: 1,
   borderRadius: 999,
-  paddingVertical: Platform.OS === "android" ? 7 : 6,
+  paddingVertical: 7,
   paddingHorizontal: 8,
   minHeight: 30,
+  gap: 5
 },
 
 openIndoorHeaderButtonText: {
   fontWeight: "600" as const,
-  fontSize: 13,
+  fontSize: 15,
   fontFamily: Platform.OS === "ios" ? "System" : "Roboto",
 },
   // Android styles

@@ -1,15 +1,12 @@
-import React, {
-  useEffect,
-  useRef,
-  useCallback,
-  useMemo,
-  useState,
-} from "react";
+import React, { useEffect, useRef, useCallback, useMemo, useState } from "react";
 import { Platform, View } from "react-native";
 import { LatLng, Polyline, Marker } from "react-native-maps";
-import { useDirections, DirectionStep } from "@/src/context/DirectionsContext";
-import { getDirections, decodePolyline } from "@/src/api/directions";
+import { useDirections, DirectionStep, RouteData } from "@/src/context/DirectionsContext";
+import { getDirections, decodePolyline } from "@/src/outdoorDirections/directionsService";
 import { getShuttleRouteIfApplicable } from "@/src/api/shuttleEngine";
+import { calculateIndoorPenaltySeconds } from "@/src/indoors/services/indoorRoutingHelper";
+import { calculateEtaFromSeconds, formatDurationFromSeconds } from "../utils/time";
+import {GoogleTravelMode} from "@/src/outdoorDirections/TravelModeStrategy"
 
 const TRANSFER_NODE_FREEZE_DELAY_MS = 250;
 
@@ -34,26 +31,10 @@ const getStepColorAndStyle = (step: DirectionStep, isIOS: boolean) => {
     color = "#B03060";
   } else if (type.includes("subway") || type.includes("metro")) {
     // STM Montreal Metro Colors
-    if (
-      shortName === "1" ||
-      longName.includes("green") ||
-      longName.includes("verte")
-    )
-      color = "#139D48";
-    else if (shortName === "2" || longName.includes("orange"))
-      color = "#F38031";
-    else if (
-      shortName === "4" ||
-      longName.includes("yellow") ||
-      longName.includes("jaune")
-    )
-      color = "#F1C40F";
-    else if (
-      shortName === "5" ||
-      longName.includes("blue") ||
-      longName.includes("bleue")
-    )
-      color = "#2980B9";
+    if (shortName === "1" || longName.includes("green") || longName.includes("verte")) color = "#139D48";
+    else if (shortName === "2" || longName.includes("orange")) color = "#F38031";
+    else if (shortName === "4" || longName.includes("yellow") || longName.includes("jaune")) color = "#F1C40F";
+    else if (shortName === "5" || longName.includes("blue") || longName.includes("bleue")) color = "#2980B9";
     else color = "#2980B9";
   } else if (type.includes("bus")) {
     color = "#A970FF"; // Light Purple for public buses
@@ -67,15 +48,7 @@ interface RoutePolylineProps {
   zIndex?: number;
 }
 
-const TransferNodeMarker = ({
-  coordinate,
-  color,
-  zIndex,
-}: {
-  coordinate: LatLng;
-  color: string;
-  zIndex: number;
-}) => {
+const TransferNodeMarker = ({ coordinate, color, zIndex }: { coordinate: LatLng; color: string; zIndex: number }) => {
   const [trackChanges, setTrackChanges] = useState(true);
   const freezeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -89,13 +62,7 @@ const TransferNodeMarker = ({
   }, []);
 
   return (
-    <Marker
-      coordinate={coordinate}
-      anchor={{ x: 0.5, y: 0.5 }}
-      zIndex={zIndex}
-      tracksViewChanges={trackChanges}
-      flat
-    >
+    <Marker coordinate={coordinate} anchor={{ x: 0.5, y: 0.5 }} zIndex={zIndex} tracksViewChanges={trackChanges} flat>
       <View
         onLayout={() => {
           if (!trackChanges) return;
@@ -133,38 +100,32 @@ const injectShuttleRoute = async (
   effectiveStartLocation: LatLng,
   destinationCoords: LatLng,
   routingTime: Date,
-  timeMode: "leave" | "arrive"
+  timeMode: "leave" | "arrive",
 ) => {
-  const shuttleRoute = await getShuttleRouteIfApplicable(
-    effectiveStartLocation,
-    destinationCoords,
-    routingTime,
-    timeMode
-  );
-
+  const shuttleRoute = await getShuttleRouteIfApplicable(effectiveStartLocation, destinationCoords, routingTime, timeMode);
   if (!shuttleRoute) return fetchedRoutes;
 
-  let showShuttle = true;
-  const bestPublicRoute = fetchedRoutes[0];
+  const durStr = fetchedRoutes[0]?.duration;
+  if (!durStr) {
+    fetchedRoutes.unshift(shuttleRoute);
+    return fetchedRoutes;
+  }
+  
+  const hMatch = /(\d{1,5})\s{0,5}h/.exec(durStr);
+  const mMatch = /(\d{1,5})\s{0,5}min/.exec(durStr);
+  const publicMins = Number.parseInt(hMatch?.[1] ?? "0")*60 + Number.parseInt(mMatch?.[1] ?? "0");
 
-  if (bestPublicRoute?.duration) {
-    const durStr = bestPublicRoute.duration;
-    const hMatch = /(\d{1,5})\s{0,5}h/.exec(durStr);
-    const mMatch = /(\d{1,5})\s{0,5}min/.exec(durStr);
-    const publicMins = (hMatch ? parseInt(hMatch[1], 10) * 60 : 0) + (mMatch ? parseInt(mMatch[1], 10) : 0);
+  const shuttleDepMs = new Date(shuttleRoute.departureDate).getTime();
+  const targetTimeMs = routingTime.getTime();
 
-    const shuttleDepMs = new Date(shuttleRoute.departureDate).getTime();
-    const targetTimeMs = routingTime.getTime();
-
-    if (timeMode === "leave") {
-      if ((shuttleDepMs - targetTimeMs) / 60000 >= publicMins) showShuttle = false;
-    } else {
-      const publicDepMs = targetTimeMs - publicMins * 60000;
-      if ((publicDepMs - shuttleDepMs) / 60000 >= 45) showShuttle = false;
-    }
+  if (!(
+    timeMode === "leave"
+    && (shuttleDepMs - targetTimeMs) / 60000 >= publicMins
+    || (targetTimeMs - publicMins * 60000 - shuttleDepMs) / 60000 >= 45
+  )) {
+    fetchedRoutes.unshift(shuttleRoute);
   }
 
-  if (showShuttle) fetchedRoutes.unshift(shuttleRoute);
   return fetchedRoutes;
 };
 
@@ -172,10 +133,7 @@ const injectShuttleRoute = async (
  * Component to render the route polyline on the map
  * Handles fetching directions and decoding polyline
  */
-const RoutePolyline: React.FC<RoutePolylineProps> = ({
-  startLocation,
-  zIndex = 5,
-}) => {
+const RoutePolyline: React.FC<RoutePolylineProps> = ({ startLocation, zIndex = 5 }) => {
   const {
     startCoords,
     destinationCoords,
@@ -189,21 +147,54 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
     setRouteData,
     setLoading,
     setError,
+    startBuildingId,
+    startRoom,
+    destinationBuildingId,
+    destinationRoom,
   } = useDirections();
 
   const isMountedRef = useRef(true);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const blockedRequestKeyRef = useRef<string | null>(null);
   const lastFetchedKeyRef = useRef<string | null>(null);
+  const baseRoutesRef = useRef<RouteData[]>([]);
 
   // Determine the actual start location to use
   const effectiveStartLocation = startLocation || startCoords;
   const shouldShowRoute = showDirections || isNavigationActive;
 
-  const requestKey =
-    effectiveStartLocation && destinationCoords
-      ? `${effectiveStartLocation.latitude.toFixed(4)},${effectiveStartLocation.longitude.toFixed(4)}->${destinationCoords.latitude.toFixed(4)},${destinationCoords.longitude.toFixed(4)}:${travelMode}:${timeMode}:${targetTime ? targetTime.getTime() : "now"}`
-      : null; // This ensures that reopening the same destination won't be falsely blocked.
+const targetTimeValue = targetTime ? targetTime.getTime() : "now";
+
+const outdoorRequestKey =
+  effectiveStartLocation && destinationCoords
+    ? `${effectiveStartLocation.latitude.toFixed(4)},${effectiveStartLocation.longitude.toFixed(4)}->${destinationCoords.latitude.toFixed(4)},${destinationCoords.longitude.toFixed(4)}:${travelMode}:${timeMode}:${targetTimeValue}`
+    : null;
+
+  const indoorRequestKey = `${startBuildingId}_${startRoom}->${destinationBuildingId}_${destinationRoom}`;
+
+  // helper function to apply the indoor time penalty
+  const applyIndoorPatch = useCallback(
+    async (routesToPatch: RouteData[]) => {
+      if (!routesToPatch.length) return;
+
+      const indoorPenaltyRaw = await calculateIndoorPenaltySeconds(startBuildingId, startRoom, destinationBuildingId, destinationRoom);
+      const indoorPenalty = indoorPenaltyRaw || 0;
+
+      const patchedRoutes = routesToPatch.map(route => {
+        const newTotalSeconds = route.baseDurationSeconds + indoorPenalty;
+
+        return {
+          ...route,
+          duration: formatDurationFromSeconds(newTotalSeconds),
+          eta: calculateEtaFromSeconds(newTotalSeconds, targetTime, timeMode),
+        };
+      });
+
+      setRoutes(patchedRoutes);
+      setRouteData(patchedRoutes[0]);
+    },
+    [startBuildingId, startRoom, destinationBuildingId, destinationRoom, targetTime, timeMode, setRoutes, setRouteData],
+  );
 
   // flush the request cache when the route is dismissed or destination is cleared
   useEffect(() => {
@@ -215,19 +206,18 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
 
   // Fetch directions when destination, start, or travel mode changes
   const fetchRoute = useCallback(async () => {
-      if (shouldShowRoute) {
-    console.log("RoutePolyline: fetchRoute called", {
-      showDirections,
-      isNavigationActive,
-      hasStart: !!effectiveStartLocation,
-      hasDestination: !!destinationCoords,
-      mode: travelMode,
-    });
-}
+    if (shouldShowRoute) {
+      console.log("RoutePolyline: fetchRoute called", {
+        showDirections,
+        isNavigationActive,
+        hasStart: !!effectiveStartLocation,
+        hasDestination: !!destinationCoords,
+        mode: travelMode,
+      });
+    }
 
     if (!shouldShowRoute || !effectiveStartLocation || !destinationCoords) {
       if (!effectiveStartLocation || !destinationCoords) setRoutes([]);
-      // console.log("RoutePolyline: Missing start or destination, skipping");
       return;
     }
 
@@ -258,14 +248,13 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
     }
 
     // block duplicate fetches for the same route parameters
-    if (requestKey && lastFetchedKeyRef.current === requestKey) {
+    if (outdoorRequestKey && lastFetchedKeyRef.current === outdoorRequestKey) {
+      await applyIndoorPatch(baseRoutesRef.current);
       return;
     }
 
     // block previously failed/blocked requests
-    if (requestKey && blockedRequestKeyRef.current === requestKey) {
-      return;
-    }
+    if (outdoorRequestKey && blockedRequestKeyRef.current === outdoorRequestKey) return;
 
     try {
       if (isMountedRef.current) {
@@ -273,14 +262,64 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
         setError(null);
       }
 
+      const isSameBuilding =
+        startBuildingId && destinationBuildingId && startBuildingId === destinationBuildingId && startBuildingId !== "USER";
+
+      const isSameLocation =
+        Math.abs(effectiveStartLocation.latitude - destinationCoords.latitude) < 0.00001 &&
+        Math.abs(effectiveStartLocation.longitude - destinationCoords.longitude) < 0.00001;
+
+      if (isSameBuilding || isSameLocation) {
+        console.log("RoutePolyline: Indoor-only route detected. Skipping outdoor API fetch.");
+
+        const mockRoute: RouteData = {
+          id: "indoor-only-route",
+          distance: "0 m",
+          duration: "0 min",
+          eta: "",
+          baseDurationSeconds: 0,
+          polylinePoints: [effectiveStartLocation, destinationCoords],
+          overviewPolyline: "",
+          steps: [
+            {
+              instruction: "Navigate indoors",
+              distance: "0 m",
+              duration: "0 min",
+              travelMode: "walking",
+              startLocation: effectiveStartLocation,
+              endLocation: destinationCoords,
+            },
+          ],
+          isShuttle: false,
+          requestMode: "walking",
+        };
+
+        if (isMountedRef.current) {
+          setRoutes([mockRoute]);
+          setRouteData(mockRoute);
+          setLoading(false);
+          setError(null);
+        }
+
+        baseRoutesRef.current = [mockRoute];
+        lastFetchedKeyRef.current = outdoorRequestKey;
+        blockedRequestKeyRef.current = null;
+
+        await applyIndoorPatch([mockRoute]);
+        return;
+      }
+
       // Fetch directions from API
-      let fetchedRoutes = await getDirections(
-        effectiveStartLocation,
-        destinationCoords,
-        travelMode,
-        targetTime,
-        timeMode,
-      );
+      const googleTravelMode: GoogleTravelMode =
+          travelMode === "shuttle" ? "transit" : travelMode;
+
+        let fetchedRoutes = await getDirections(
+          effectiveStartLocation,
+          destinationCoords,
+          googleTravelMode,
+          targetTime,
+          timeMode,
+        );
 
       console.log("RoutePolyline: API call successful", {
         routesCount: fetchedRoutes.length,
@@ -288,25 +327,27 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
 
       // Shuttle injection
       if (travelMode === "transit") {
-          fetchedRoutes = await injectShuttleRoute(fetchedRoutes, effectiveStartLocation, destinationCoords, targetTime || new Date(), timeMode);
+        fetchedRoutes = await injectShuttleRoute(
+          fetchedRoutes,
+          effectiveStartLocation,
+          destinationCoords,
+          targetTime || new Date(),
+          timeMode,
+        );
       }
 
       // Check if component is still mounted before updating state
       if (!isMountedRef.current) {
-        console.log(
-          "RoutePolyline: Component unmounted, skipping state update",
-        );
+        console.log("RoutePolyline: Component unmounted, skipping state update");
         return;
       }
 
       const decodedRoutes = fetchedRoutes
-        .map((route) => ({
+        .map(route => ({
           ...route,
-          polylinePoints: route.isShuttle
-            ? route.polylinePoints
-            : decodePolyline(route.overviewPolyline),
+          polylinePoints: route.isShuttle ? route.polylinePoints : decodePolyline(route.overviewPolyline),
         }))
-        .filter((route) => route.polylinePoints.length > 0);
+        .filter(route => route.polylinePoints.length > 0);
 
       if (decodedRoutes.length === 0) {
         throw new Error("Failed to decode route polyline");
@@ -314,8 +355,11 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
 
       setRoutes(decodedRoutes);
       setRouteData(decodedRoutes[0]);
-      lastFetchedKeyRef.current = requestKey;
+      baseRoutesRef.current = decodedRoutes;
+      lastFetchedKeyRef.current = outdoorRequestKey;
       blockedRequestKeyRef.current = null;
+
+      await applyIndoorPatch(decodedRoutes);
 
       if (isMountedRef.current) {
         setLoading(false);
@@ -323,13 +367,11 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
     } catch (err) {
       console.error("RoutePolyline: Fetch error", err);
       if (isMountedRef.current) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Failed to fetch directions";
+        const errorMessage = err instanceof Error ? err.message : "Failed to fetch directions";
         console.warn("Route fetch error:", errorMessage);
 
-        if ( /not been used|disabled|legacy api|request denied/i.exec(errorMessage)
-        ) {
-          if (requestKey) blockedRequestKeyRef.current = requestKey;
+        if (/not been used|disabled|legacy api|request denied/i.exec(errorMessage)) {
+          if (outdoorRequestKey) blockedRequestKeyRef.current = outdoorRequestKey;
         }
 
         setError(errorMessage);
@@ -338,20 +380,38 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
       }
     }
   }, [
-    showDirections,
-    isNavigationActive,
+    shouldShowRoute,
     effectiveStartLocation,
     destinationCoords,
+    isNavigationActive,
+    outdoorRequestKey,
+    showDirections,
     travelMode,
+    setRoutes,
+    applyIndoorPatch,
+    startBuildingId,
+    destinationBuildingId,
     targetTime,
     timeMode,
-    shouldShowRoute,
-    requestKey,
-    setRoutes,
     setRouteData,
     setLoading,
     setError,
   ]);
+
+  // recalculate when the indoor rooms change
+  const prevIndoorRequestKeyRef = useRef<string | null>(null);
+
+// recalculate when the indoor rooms change
+useEffect(() => {
+  if (
+    baseRoutesRef.current.length > 0 &&
+    prevIndoorRequestKeyRef.current !== null &&
+    prevIndoorRequestKeyRef.current !== indoorRequestKey
+  ) {
+    applyIndoorPatch(baseRoutesRef.current);
+  }
+  prevIndoorRequestKeyRef.current = indoorRequestKey;
+}, [indoorRequestKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     blockedRequestKeyRef.current = null;
@@ -371,7 +431,7 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
   }, [fetchRoute]);
 
   useEffect(() => {
-      isMountedRef.current = true;
+    isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
     };
@@ -381,7 +441,7 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
   const walkDash = isIOS ? [1, 6] : [1, 8];
 
   const transferNodes = useMemo(() => {
-    if (travelMode !== "transit" || !routeData || !routeData.steps) return [];
+    if (travelMode !== "transit" || !routeData?.steps) return [];
 
     const nodes = [];
     for (let i = 0; i < routeData.steps.length - 1; i++) {
@@ -389,23 +449,15 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
       const nextStep = routeData.steps[i + 1];
 
       // distinguish specific vehicles so a Bus to Metro transfer is recognized
-      const currentMode =
-        (currentStep.travelMode === "transit"
-          ? currentStep.transitVehicleType
-          : currentStep.travelMode) || "UNKNOWN";
-      const nextMode =
-        (nextStep.travelMode === "transit"
-          ? nextStep.transitVehicleType
-          : nextStep.travelMode) || "UNKNOWN";
+      const currentMode = (currentStep.travelMode === "transit" ? currentStep.transitVehicleType : currentStep.travelMode) || "UNKNOWN";
+      const nextMode = (nextStep.travelMode === "transit" ? nextStep.transitVehicleType : nextStep.travelMode) || "UNKNOWN";
 
       // mode changes, it's a transfer point
       if (currentMode !== nextMode && currentStep.endLocation) {
         const currentStyle = getStepColorAndStyle(currentStep, isIOS);
         const nextStyle = getStepColorAndStyle(nextStep, isIOS);
 
-        const nodeColor = !currentStyle.isWalk
-          ? currentStyle.color
-          : nextStyle.color;
+        const nodeColor = !currentStyle.isWalk ? currentStyle.color : nextStyle.color;
 
         nodes.push({
           key: `transfer-${routeData.id}-${i}`,
@@ -429,7 +481,6 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
           if (!step.polylinePoints?.length) return null;
 
           const style = getStepColorAndStyle(step, isIOS);
-          // restoring unique, mode-specific key
           const stepKey = `transit-step-${travelMode}-${routeData.id}-${idx}`;
 
           return (
@@ -439,7 +490,6 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
               strokeColor={style.color}
               strokeWidth={style.width}
               lineDashPattern={style.isWalk ? (walkDash as number[]) : undefined}
-              // explicitly setting lineCap and lineJoin as requested
               lineCap={style.isWalk ? "round" : "butt"}
               lineJoin="round"
               zIndex={style.isWalk ? zIndex : zIndex + 1}
@@ -448,13 +498,8 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
           );
         })}
 
-        {transferNodes.map((node) => (
-          <TransferNodeMarker
-            key={node.key}
-            coordinate={node.coordinate}
-            color={node.color}
-            zIndex={zIndex + 3}
-          />
+        {transferNodes.map(node => (
+          <TransferNodeMarker key={node.key} coordinate={node.coordinate} color={node.color} zIndex={zIndex + 3} />
         ))}
       </>
     );
@@ -489,16 +534,16 @@ const RoutePolyline: React.FC<RoutePolylineProps> = ({
   }
 
   return (
-      <Polyline
-        coordinates={routeData.polylinePoints}
-        strokeColor={mainColor}
-        strokeWidth={5}
-        lineDashPattern={isWalking ? (walkDash as number[]) : undefined}
-        lineCap={isWalking ? "round" : "butt"}
-        zIndex={zIndex}
-        geodesic
-      />
-    );
+    <Polyline
+      coordinates={routeData.polylinePoints}
+      strokeColor={mainColor}
+      strokeWidth={5}
+      lineDashPattern={isWalking ? (walkDash as number[]) : undefined}
+      lineCap={isWalking ? "round" : "butt"}
+      zIndex={zIndex}
+      geodesic
+    />
+  );
 };
 
 export default RoutePolyline;

@@ -1,0 +1,147 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`MetroIcon renders with custom width, height, and color 1`] = `
+<RNSVGSvgView
+  align="xMidYMid"
+  bbHeight={40}
+  bbWidth={50}
+  focusable={false}
+  height={40}
+  meetOrSlice={0}
+  minX={0}
+  minY={0}
+  style={
+    [
+      {
+        "backgroundColor": "transparent",
+        "borderWidth": 0,
+      },
+      {
+        "flex": 0,
+        "height": 40,
+        "width": 50,
+      },
+    ]
+  }
+  vbHeight={100}
+  vbWidth={100}
+  width={50}
+>
+  <RNSVGGroup
+    fill={
+      {
+        "payload": 4278190080,
+        "type": 0,
+      }
+    }
+  >
+    <RNSVGCircle
+      cx="50"
+      cy="50"
+      fill={null}
+      propList={
+        [
+          "fill",
+          "stroke",
+          "strokeWidth",
+        ]
+      }
+      r="38"
+      stroke={
+        {
+          "payload": 4294901760,
+          "type": 0,
+        }
+      }
+      strokeWidth="12"
+    />
+    <RNSVGPath
+      d=" M 44 12  H 56  V 58  L 70 42  L 80 52  L 50 82  L 20 52  L 30 42  L 44 58  Z "
+      fill={
+        {
+          "payload": 4294901760,
+          "type": 0,
+        }
+      }
+      propList={
+        [
+          "fill",
+        ]
+      }
+    />
+  </RNSVGGroup>
+</RNSVGSvgView>
+`;
+
+exports[`MetroIcon renders with default props 1`] = `
+<RNSVGSvgView
+  align="xMidYMid"
+  bbHeight={25}
+  bbWidth={25}
+  focusable={false}
+  height={25}
+  meetOrSlice={0}
+  minX={0}
+  minY={0}
+  style={
+    [
+      {
+        "backgroundColor": "transparent",
+        "borderWidth": 0,
+      },
+      {
+        "flex": 0,
+        "height": 25,
+        "width": 25,
+      },
+    ]
+  }
+  vbHeight={100}
+  vbWidth={100}
+  width={25}
+>
+  <RNSVGGroup
+    fill={
+      {
+        "payload": 4278190080,
+        "type": 0,
+      }
+    }
+  >
+    <RNSVGCircle
+      cx="50"
+      cy="50"
+      fill={null}
+      propList={
+        [
+          "fill",
+          "stroke",
+          "strokeWidth",
+        ]
+      }
+      r="38"
+      stroke={
+        {
+          "payload": 4281545523,
+          "type": 0,
+        }
+      }
+      strokeWidth="12"
+    />
+    <RNSVGPath
+      d=" M 44 12  H 56  V 58  L 70 42  L 80 52  L 50 82  L 20 52  L 30 42  L 44 58  Z "
+      fill={
+        {
+          "payload": 4281545523,
+          "type": 0,
+        }
+      }
+      propList={
+        [
+          "fill",
+        ]
+      }
+    />
+  </RNSVGGroup>
+</RNSVGSvgView>
+`;
