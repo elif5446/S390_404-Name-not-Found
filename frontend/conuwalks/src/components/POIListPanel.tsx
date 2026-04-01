@@ -63,6 +63,26 @@ const getPOITypeFromName = (name: string): string => {
   return "generic";
 };
 
+const EmptyStateContent = ({ onClearPOIs, radius }: { onClearPOIs: () => void; radius: number }) => ((
+  <View style={styles.inner}>
+    <View style={styles.header}>
+      <Text style={styles.title}>No places found nearby</Text>
+      <TouchableOpacity onPress={onClearPOIs} style={styles.clearButton}>
+        <MaterialIcons name="clear" size={24} color="#B03060" />
+      </TouchableOpacity>
+    </View>
+    
+    <View style={styles.emptyHint}>
+      <MaterialIcons name="search" size={48} color="#B0B0B0" />
+      <Text style={styles.emptyText}>
+        Try a larger radius or different category
+      </Text>
+      <Text style={styles.emptySubtext}>Current: {radius >= 1000 ? `${radius/1000}km` : `${radius}m`}</Text>
+    </View>
+  </View>
+));
+
+
 const getPOIIcon = (poiType: string): React.ComponentProps<typeof MaterialIcons>["name"] => {
   switch (poiType) {
     case "coffee": return "local-cafe";
@@ -139,7 +159,7 @@ const [radius, setRadius] = React.useState<number>(1000);
       };
     });
 
-    const sorted = poisWithDistance.sort((a, b) => a.distance - b.distance);
+    const sorted = [...poisWithDistance].sort((a, b) => a.distance - b.distance);
     return sorted.map((poi, index) => ({ ...poi, order: index + 1 }));
   }, [pois, userLocation]);
 
@@ -177,25 +197,6 @@ const [radius, setRadius] = React.useState<number>(1000);
     })
   ).current;
 
-  // Add this helper component right before the main return statement
-const EmptyStateContent = ({ onClearPOIs }: { onClearPOIs: () => void }) => (
-  <View style={styles.inner}>
-    <View style={styles.header}>
-      <Text style={styles.title}>No places found nearby</Text>
-      <TouchableOpacity onPress={onClearPOIs} style={styles.clearButton}>
-        <MaterialIcons name="clear" size={24} color="#B03060" />
-      </TouchableOpacity>
-    </View>
-    
-    <View style={styles.emptyHint}>
-      <MaterialIcons name="search" size={48} color="#B0B0B0" />
-      <Text style={styles.emptyText}>
-        Try a larger radius or different category
-      </Text>
-      <Text style={styles.emptySubtext}>Current: {radius >= 1000 ? `${radius/1000}km` : `${radius}m`}</Text>
-    </View>
-  </View>
-);
 // NEW: Show empty state when NO POIs OR after sorting/filtering
 if (sortedPois.length === 0) {
   return (
@@ -206,11 +207,11 @@ if (sortedPois.length === 0) {
     >
       {Platform.OS === "ios" ? (
         <BlurView intensity={40} tint="light" style={styles.blur}>
-          <EmptyStateContent onClearPOIs={onClearPOIs} />
+          <EmptyStateContent onClearPOIs={onClearPOIs} radius={radius}/>
         </BlurView>
       ) : (
         <View style={[styles.blur, styles.androidFallback]}>
-          <EmptyStateContent onClearPOIs={onClearPOIs} />
+          <EmptyStateContent onClearPOIs={onClearPOIs} radius={radius}/>
         </View>
       )}
     </Animated.View>
