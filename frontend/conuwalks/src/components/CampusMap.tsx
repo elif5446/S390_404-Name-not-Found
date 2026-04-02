@@ -295,6 +295,9 @@ const CampusMap: React.FC<CampusMapProps> = ({
   useEffect(() => {
     if (destinationBuildingId) {
       setTrackDestMarker(true);
+      trackMarkerTimeoutRef.current = setTimeout(() => {
+        setTrackDestMarker(false);
+      }, 500);
     }
   }, [destinationBuildingId]);
 
@@ -453,7 +456,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
         const feature = sourceGeo.features.find(item => (item as GeoJsonFeature).properties.id === buildingId) as
           | GeoJsonFeature
           | undefined;
-        // optional chaining for more concise check
         if (feature?.geometry.type === "Polygon") {
           coordinates = calculatePolygonCenter(feature.geometry.coordinates[0]);
         } else {

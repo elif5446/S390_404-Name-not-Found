@@ -126,6 +126,9 @@ jest.mock("react-native-safe-area-context", () => ({
   useSafeAreaInsets: () => ({ top: 44, bottom: 34, left: 0, right: 0 }),
 }));
 
+const mockAnimateCamera = jest.fn();
+const mockAnimateToRegion = jest.fn();
+
 jest.mock("react-native-maps", () => {
   const React = require("react");
   const { TouchableOpacity, View } = require("react-native");
@@ -143,8 +146,8 @@ jest.mock("react-native-maps", () => {
       ref: any,
     ) => {
       React.useImperativeHandle(ref, () => ({
-        animateCamera: jest.fn(),
-        animateToRegion: jest.fn(),
+        animateCamera: mockAnimateCamera,
+        animateToRegion: mockAnimateToRegion,
       }));
       return (
         <View
@@ -225,9 +228,11 @@ jest.mock("@/src/components/AdditionalInfoPopup", () => {
     (
       {
         visible,
+        onClose,
         directionsEtaLabel,
         onDirectionsTrigger,
         onExpansionChange,
+        onOpenIndoorPress,
       }: any,
       ref: any,
     ) => {
@@ -235,9 +240,15 @@ jest.mock("@/src/components/AdditionalInfoPopup", () => {
         minimize: jest.fn(),
         collapse: jest.fn(),
       }));
+
       if (!visible) return null;
+
       return (
         <View testID="additional-info-popup">
+          <TouchableOpacity 
+            testID="open-indoor-trigger" 
+            onPress={onOpenIndoorPress} 
+          />
           <View
             testID="eta-display"
             accessibilityLabel={String(directionsEtaLabel)}
@@ -272,10 +283,17 @@ jest.mock("@/src/components/DestinationPopup", () => {
 });
 
 jest.mock("@/src/components/RightControlsPanel", () => {
-  const { View } = require("react-native");
+  const { View, TouchableOpacity } = require("react-native");
   return {
     __esModule: true,
-    default: () => <View testID="right-controls-panel" />,
+    default: ({ handleOpenBuildingSearch }: any) => (
+      <View testID="right-controls-panel">
+        <TouchableOpacity 
+          testID="open-search-btn" 
+          onPress={handleOpenBuildingSearch} 
+        />
+      </View>
+    ),
   };
 });
 
@@ -296,10 +314,17 @@ jest.mock("@/src/components/RoutePolyline", () => {
 });
 
 jest.mock("@/src/components/campusLabels", () => {
-  const { View } = require("react-native");
+  const { View, TouchableOpacity } = require("react-native");
   return {
     __esModule: true,
-    default: () => <View testID="campus-labels" />,
+    default: ({ campus, onLabelPress }: any) => (
+      <View testID="campus-labels">
+        <TouchableOpacity 
+          testID={`trigger-label-${campus}`} 
+          onPress={() => onLabelPress("H")} 
+        />
+      </View>
+    ),
   };
 });
 
@@ -972,6 +997,28 @@ describe("CampusMap", () => {
 
       expect(screen.queryByTestId("indoor-map-overlay")).toBeNull();
     });
+
+    it("returns early and does nothing if the building has no indoor data", () => {
+      render(<CampusMap initialLocation={{ latitude: 45.458, longitude: -73.64 }} />);
+
+      act(() => fireEvent.press(screen.getByTestId("polygon-Administration Building")));
+
+      act(() => fireEvent.press(screen.getByTestId("open-indoor-trigger")));
+
+      expect(screen.queryByTestId("indoor-map-overlay")).toBeNull();
+      expect(screen.getByTestId("additional-info-popup")).toBeTruthy();
+    });
+
+    it("successfully sets state and opens overlay for a building with indoor data", () => {
+      render(<CampusMap initialLocation={{ latitude: 45.495, longitude: -73.578 }} />);
+
+      act(() => fireEvent.press(screen.getByTestId("polygon-Hall Building")));
+
+      act(() => fireEvent.press(screen.getByTestId("open-indoor-trigger")));
+
+      expect(screen.getByTestId("indoor-map-overlay")).toBeTruthy();
+      expect(screen.queryByTestId("additional-info-popup")).toBeNull();
+    });
   });
 
   //  Map press / pan-drag
@@ -1006,6 +1053,29 @@ describe("CampusMap", () => {
         fireEvent.press(screen.getByTestId("map-region-change-trigger"));
       });
       expect(screen.getByTestId("map-view")).toBeTruthy();
+    });
+
+    it("skips features that are not Polygons during a long press", () => {
+      const SGWGeoJSON = require("@/src/data/campus/SGW.geojson");
+      const LOYGeoJSON = require("@/src/data/campus/LOY.geojson");
+
+      render(<CampusMap initialLocation={{ latitude: 45.495, longitude: -73.578 }} />);
+
+      (isPointInPolygon as jest.Mock).mockClear();
+
+      SGWGeoJSON.features[0].geometry.type = "Point";
+      LOYGeoJSON.features[0].geometry.type = "Point";
+
+      act(() => {
+        fireEvent.press(screen.getByTestId("map-long-press-trigger"));
+      });
+
+      expect(isPointInPolygon).not.toHaveBeenCalled();
+
+      expect(screen.queryByTestId("indoor-map-overlay")).toBeNull();
+
+      SGWGeoJSON.features[0].geometry.type = "Polygon";
+      LOYGeoJSON.features[0].geometry.type = "Polygon";
     });
   });
 
@@ -1245,4 +1315,167 @@ describe("CampusMap", () => {
       expect(screen.queryByText(TEST_IDS.boardMetroGL)).toBeNull();
     });
   });
+
+  describe("Building interaction", () => {
+    it("calculates coordinates when coordinates are missing on press", () => {
+      const mockSetDestination = jest.fn(); 
+      
+      const expectedCoords = { latitude: 45.496, longitude: -73.577 };
+
+      (useDirections as jest.Mock).mockReturnValue(makeDirections({ setDestination: mockSetDestination }));
+
+      (calculatePolygonCenter as jest.Mock).mockReturnValue(expectedCoords);
+
+      render(<CampusMap />);
+
+      act(() => {
+        fireEvent.press(screen.getByTestId("marker-Hall Building"));
+      });
+
+      expect(calculatePolygonCenter).toHaveBeenCalled();
+      expect(mockSetDestination).toHaveBeenCalledWith(
+        "H",
+        expectedCoords,
+        "Hall Building"
+      );
+    });
+
+    it("calculates coordinates when coordinates are missing on press", () => {
+      const mockSetDestination = jest.fn(); 
+      
+      const expectedCoords = { latitude: 45.496, longitude: -73.577 };
+
+      (useDirections as jest.Mock).mockReturnValue(makeDirections({ setDestination: mockSetDestination }));
+
+      (calculatePolygonCenter as jest.Mock).mockReturnValue(expectedCoords);
+
+      render(<CampusMap />);
+
+      act(() => {
+        fireEvent.press(screen.getByTestId("marker-Hall Building"));
+      });
+
+      expect(calculatePolygonCenter).toHaveBeenCalled();
+      expect(mockSetDestination).toHaveBeenCalledWith(
+        "H",
+        expectedCoords,
+        "Hall Building"
+      );
+    });
+  });
+
+  describe("Building Search", () => {
+    const defaultProps = {
+      userInfo: { id: "1", name: "Test", email: "test@concordia.ca", photo: "" },
+      onSignOut: jest.fn(),
+    };
+
+    it("handleOpenBuildingSearch opens the search modal and hides directions", () => {
+      const mockSetShowDirections = jest.fn();
+      (useDirections as jest.Mock).mockReturnValue(
+        makeDirections({ setShowDirections: mockSetShowDirections }),
+      );
+
+      render(<CampusMap {...defaultProps} />);
+
+      expect(screen.queryByPlaceholderText("Type building name...")).toBeNull();
+
+      act(() => {
+        fireEvent.press(screen.getByTestId("open-search-btn"));
+      });
+
+      expect(mockSetShowDirections).toHaveBeenCalledWith(false);
+
+      expect(screen.getByPlaceholderText("Type building name...")).toBeTruthy();
+    });
+
+    it("filteredBuildings returns all buildings when query is empty, and filters when typing", () => {
+      render(<CampusMap {...defaultProps} />);
+
+      act(() => {
+        fireEvent.press(screen.getByTestId("open-search-btn"));
+      });
+
+      expect(screen.getByText("Hall Building")).toBeTruthy();
+      expect(screen.getByText("Administration Building")).toBeTruthy();
+
+      const searchInput = screen.getByPlaceholderText("Type building name...");
+      
+      act(() => {
+        fireEvent.changeText(searchInput, "Hall");
+      });
+
+      expect(screen.getByText("Hall Building")).toBeTruthy();
+      expect(screen.queryByText("Administration Building")).toBeNull();
+
+      act(() => {
+        fireEvent.changeText(searchInput, "hall");
+      });
+      expect(screen.getByText("Hall Building")).toBeTruthy();
+    });
+  });
+
+  describe("Location Press", () => {
+    it("animates camera and minimizes popups when handleLocationPress is triggered", () => {
+      const mockLocation = { latitude: 45.495, longitude: -73.578 };
+      (useUserLocation as jest.Mock).mockReturnValue(
+        makeUserLocation({ location: mockLocation })
+      );
+      
+      render(<CampusMap />);
+
+      const locationMarker = screen.getByTestId("marker-Current Location");
+      
+      act(() => {
+        fireEvent.press(locationMarker);
+      });
+
+      expect(mockAnimateCamera).toHaveBeenCalledWith(
+        {
+          center: {
+            latitude: mockLocation.latitude,
+            longitude: mockLocation.longitude,
+          },
+          zoom: 17.5,
+          pitch: 0,
+          heading: 0,
+        },
+        { duration: 500 }
+      );
+    });
+
+    it("does nothing if userLocation is null", () => {
+      (useUserLocation as jest.Mock).mockReturnValue(
+        makeUserLocation({ location: null })
+      );
+
+      render(<CampusMap />);
+
+      const locationMarker = screen.queryByTestId("marker-Current Location");
+      
+      expect(locationMarker).toBeNull();
+      expect(mockAnimateCamera).not.toHaveBeenCalled();
+    });
+  });
+
+  it("returns early and does nothing if the building feature is not a Polygon", () => {
+      const mockSetDestination = jest.fn();
+      (useDirections as jest.Mock).mockReturnValue(
+        makeDirections({ setDestination: mockSetDestination }),
+      );
+
+      const SGWGeoJSON = require("@/src/data/campus/SGW.geojson");
+
+      render(<CampusMap initialLocation={{ latitude: 45.495, longitude: -73.578 }} />);
+
+      SGWGeoJSON.features[0].geometry.type = "Point";
+
+      act(() => {
+        fireEvent.press(screen.getByTestId("trigger-label-SGW"));
+      });
+
+      expect(mockSetDestination).not.toHaveBeenCalled();
+
+      SGWGeoJSON.features[0].geometry.type = "Polygon";
+    });
 });
