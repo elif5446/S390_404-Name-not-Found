@@ -7,6 +7,7 @@ import POIPanel from "./POIPanel";
 import OutdoorPOIMarkers from "./OutdoorPOIMarkers";
 import { fetchPOIs, POIPlace } from "@/src/api/places";
 import POIListPanel from "./POIListPanel";
+import { Provider, MapType } from 'react-native-maps';
 import React, { useState, useRef, useMemo, useCallback, useEffect } from "react";
 
 import {
@@ -129,13 +130,20 @@ const BuildingGroup = React.memo(
 
     const themeColor = campusTheme[buildingId] || "#888888";
     const name = getBuildingDisplayName(buildingId, campus);
-    const fillColor = isSelected
-      ? themeColor + "F0"
-      : isDestination
-        ? themeColor + "C8"
-        : dimOthers
-          ? themeColor + "55"
-          : themeColor + "B0";
+    function getFillColorOpacity() {
+      let code: string;
+      if (isSelected) {
+        code = "F0";
+      } else if (isDestination) {
+        code = "C8";
+      } else if (dimOthers) {
+        code = "55"
+      } else {
+        code = "B0"
+      }
+      return themeColor + code;
+    }
+    const fillColor = getFillColorOpacity();
 
     return (
       <React.Fragment>
@@ -636,13 +644,6 @@ const CampusMap: React.FC<CampusMapProps> = ({
   const activeInstructionDistanceMeters =
     userLocation && activeInstruction?.endLocation ? Math.round(distanceMetersBetween(userLocation, activeInstruction.endLocation)) : null;
 
-  const [searchPanelHeight, setSearchPanelHeight] = useState(0);
-  useEffect(() => {
-    if (!showDirections || isNavigationActive) {
-      setSearchPanelHeight(0);
-    }
-  }, [showDirections, isNavigationActive]);
-
   const isSheetVisibleForAccessibility = (selectedBuilding.visible && !showDirections) || showDirections;
 
 const modeLabelMap: Record<TravelMode, string> = {
@@ -863,7 +864,7 @@ const modeLabelMap: Record<TravelMode, string> = {
       const feature = geojson.features.find(f => (f as GeoJsonFeature).properties.id === destinationBuildingId) as
         | GeoJsonFeature
         | undefined;
-      return feature && feature.geometry.type === "Polygon" ? calculatePolygonCenter(feature.geometry.coordinates[0]) : null;
+      return feature?.geometry.type === "Polygon" ? calculatePolygonCenter(feature.geometry.coordinates[0]) : null;
     };
     return findCenter(SGW) || findCenter(LOY);
   }, [destinationBuildingId]);
@@ -930,6 +931,9 @@ const modeLabelMap: Record<TravelMode, string> = {
 
   // memoize the polygon lists so they don't re-calculate on every render
   const { sgwPolygons, loyPolygons } = useMemo(() => {
+    function markerRefSetter(markerRef: any, markerKey: string) {
+      buildingMarkerRefs.current[markerKey] = markerRef;
+    }
     const generatePolygons = (geojson: any, campus: "SGW" | "LOY") => {
       return geojson.features
         .filter((f: GeoJsonFeature) => f.geometry.type === "Polygon")
@@ -953,9 +957,7 @@ const modeLabelMap: Record<TravelMode, string> = {
               dimOthers={dimOthers}
               handleBuildingPress={handleBuildingPress}
               trackDestMarker={trackDestMarker}
-              markerRefSetter={(markerRef: any) => {
-                buildingMarkerRefs.current[markerKey] = markerRef;
-              }}
+              markerRefSetter={markerRefSetter}
             />
           );
         });
@@ -1006,7 +1008,6 @@ const [isPOIListPanelVisible, setIsPOIListPanelVisible] = useState(false);
 
 // Dans CampusMap.tsx, juste avant le return
 console.log("selectedPOIType:", selectedPOIType);
-//console.log("restaurants count:", restaurants.length);
   
 // Add POI directions handler
 const handlePOIDirections = useCallback((poi: POIPlace) => {
@@ -1041,20 +1042,18 @@ const updatePOIs = async (radius: number) => {
   setSelectedRadius(radius);
   setPois(newPois);
 };
-  const isIOS = Platform.OS === "ios";
-  const navPanelBgColor = isIOS
-    ? "transparent"
-    : colorScheme === "dark"
-      ? "#2C2C2E"
-      : "#FFFFFF";
+  const ifDarkScheme = (dark: string | undefined = undefined, light: string | undefined = undefined) => colorScheme === "dark" ? dark : light
+  const ifAndroid = <T = unknown>(android: T | undefined = undefined, iOS: T | undefined = undefined) => Platform.OS === 'android' ? android : iOS
+  const ifiOS = <T = unknown>(iOS: T | undefined = undefined, android: T | undefined = undefined) => ifAndroid(android, iOS)
+  const navPanelBgColor = ifiOS("transparent", ifDarkScheme("#2C2C2E", "#FFFFFF"));
 
   return (
     <View style={styles.container}>
       <MapView
         key={mapID}
         ref={mapRef}
-        provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
-        googleMapId={Platform.OS === "android" ? mapID : undefined}
+        provider={ifAndroid(PROVIDER_GOOGLE) as Provider}
+        googleMapId={ifAndroid(mapID)}
         style={styles.map}
         initialRegion={{
           ...initialLocation,
@@ -1066,7 +1065,7 @@ const updatePOIs = async (radius: number) => {
         onPress={handleMapPress}
         onPanDrag={handleMapPanDrag}
         tintColor="#FF2D55"
-        mapType={Platform.OS === "ios" ? "mutedStandard" : "standard"}
+        mapType={ifiOS("mutedStandard", "standard") as MapType}
         showsPointsOfInterest={false}
         showsTraffic={false}
         showsIndoors={false}
@@ -1184,12 +1183,12 @@ const updatePOIs = async (radius: number) => {
             borderRadius: 16,
             paddingHorizontal: 12,
             paddingVertical: 10,
-            backgroundColor: colorScheme === "dark" ? "#2C2C2E" : "#FFFFFF",
+            backgroundColor: ifDarkScheme("#2C2C2E", "#FFFFFF"),
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: Platform.OS === "ios" ? 0.16 : 0.2,
+            shadowOpacity: ifiOS(0.16, 0.2),
             shadowRadius: 4,
-            elevation: Platform.OS === "ios" ? 0 : 4,
+            elevation: ifiOS(0, 4),
             zIndex: 10003,
           }}
         >
@@ -1220,17 +1219,17 @@ const updatePOIs = async (radius: number) => {
                 borderRadius: 14,
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: colorScheme === "dark" ? "#3A3A3C" : "#F2F2F7",
+                backgroundColor: ifDarkScheme("#3A3A3C", "#F2F2F7"),
               }}
               accessibilityRole="button"
               accessibilityLabel="Close transit stop info"
             >
-              <MaterialIcons name="close" size={16} color={colorScheme === "dark" ? "#F2F2F7" : "#1C1C1E"} />
+              <MaterialIcons name="close" size={16} color={ifDarkScheme("#F2F2F7", "#1C1C1E")} />
             </TouchableOpacity>
           </View>
           <Text
             style={{
-              color: colorScheme === "dark" ? "#D1D1D6" : "#3C3C43",
+              color: ifDarkScheme("#D1D1D6", "#3C3C43"),
               fontWeight: "500",
               fontSize: 12,
               marginTop: 5,
@@ -1288,16 +1287,13 @@ const updatePOIs = async (radius: number) => {
             paddingHorizontal: 12,
             paddingVertical: 10,
             backgroundColor: navPanelBgColor,
-            borderWidth: isIOS ? 1 : 0,
-            borderColor:
-              colorScheme === "dark"
-                ? "rgba(255,255,255,0.12)"
-                : "rgba(0,0,0,0.08)",
+            borderWidth: ifiOS(1, 0),
+            borderColor: ifDarkScheme("rgba(255,255,255,0.12)", "rgba(0,0,0,0.08)"),
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: isIOS ? 0.16 : 0.2,
+            shadowOpacity: ifiOS(0.16, 0.2),
             shadowRadius: 4,
-            elevation: isIOS ? 0 : 4,
+            elevation: ifiOS(0, 4),
             zIndex: 10002,
             overflow: "hidden",
           }}
@@ -1306,7 +1302,7 @@ const updatePOIs = async (radius: number) => {
           accessibilityLabel={`${modeLabelMap[travelMode]} navigation. ${routeData.duration}, ${routeData.distance}. ${activeInstruction?.instruction || "Continue on current route"}`}
         >
           {Platform.OS === "ios" && (
-            <BlurView intensity={35} tint={colorScheme === "dark" ? "dark" : "light"} style={StyleSheet.absoluteFill} />
+            <BlurView intensity={35} tint={colorScheme} style={StyleSheet.absoluteFill} />
           )}
           <Text
             style={{
@@ -1320,7 +1316,7 @@ const updatePOIs = async (radius: number) => {
           </Text>
           <Text
             style={{
-              color: colorScheme === "dark" ? "#F2F2F7" : "#1C1C1E",
+              color: ifDarkScheme("#F2F2F7", "#1C1C1E"),
               fontWeight: "600",
               fontSize: 13,
               marginTop: 2,
@@ -1356,16 +1352,16 @@ const updatePOIs = async (radius: number) => {
             paddingHorizontal: 12,
             paddingVertical: 10,
             backgroundColor: navPanelBgColor,
-            borderWidth: isIOS ? 1 : 0,
+            borderWidth: ifiOS(1, 0),
             borderColor:
               colorScheme === "dark"
                 ? "rgba(255,255,255,0.12)"
                 : "rgba(0,0,0,0.08)",
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: isIOS ? 0.16 : 0.2,
+            shadowOpacity: ifiOS(0.16, 0.2),
             shadowRadius: 4,
-            elevation: isIOS ? 0 : 4,
+            elevation: ifiOS(0, 4),
             zIndex: 10002,
             flexDirection: "row",
             alignItems: "center",
@@ -1375,7 +1371,7 @@ const updatePOIs = async (radius: number) => {
           accessible={false}
         >
           {Platform.OS === "ios" && (
-            <BlurView intensity={35} tint={colorScheme === "dark" ? "dark" : "light"} style={StyleSheet.absoluteFill} />
+            <BlurView intensity={35} tint={colorScheme} style={StyleSheet.absoluteFill} />
           )}
           <View>
             <Text
@@ -1390,7 +1386,7 @@ const updatePOIs = async (radius: number) => {
             </Text>
             <Text
               style={{
-                color: colorScheme === "dark" ? "#AFAFAF" : "#6B6B6F",
+                color: ifDarkScheme("#AFAFAF", "#6B6B6F"),
                 fontWeight: "500",
                 fontSize: 12,
                 marginTop: 1,
@@ -1436,7 +1432,7 @@ const updatePOIs = async (radius: number) => {
         >
           <View
             style={{
-              backgroundColor: colorScheme === "dark" ? "#1C1C1E" : "#FFFFFF",
+              backgroundColor: ifDarkScheme("#1C1C1E", "#FFFFFF"),
               borderRadius: 16,
               padding: 16,
             }}
@@ -1450,7 +1446,7 @@ const updatePOIs = async (radius: number) => {
                 borderColor: "#ccc",
                 borderRadius: 8,
                 padding: 8,
-                color: colorScheme === "dark" ? "#FFFFFF" : "#000000",
+                color: ifDarkScheme("#FFFFFF", "#000000"),
               }}
               onChangeText={text => setSearchQuery(text)}
             />
@@ -1478,7 +1474,7 @@ const updatePOIs = async (radius: number) => {
                   <Text
                     style={{
                       fontSize: 14,
-                      color: colorScheme === "dark" ? "#FFFFFF" : "#000000",
+                      color: ifDarkScheme("#FFFFFF", "#000000"),
                     }}
                   >
                     {item.name}
@@ -1565,9 +1561,6 @@ const updatePOIs = async (radius: number) => {
 
       {showDirections && !isNavigationActive && (
         <View
-          onLayout={event => {
-            setSearchPanelHeight(event.nativeEvent.layout.height);
-          }}
           style={{
             top: insets.top + 63,
             position: "absolute",
