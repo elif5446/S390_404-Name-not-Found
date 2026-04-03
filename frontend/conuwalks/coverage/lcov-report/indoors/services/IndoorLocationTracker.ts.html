@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">88.23% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>15/17</span>
+                <span class='fraction'>0/17</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">75% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>6/8</span>
+                <span class='fraction'>0/8</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">85.71% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>6/7</span>
+                <span class='fraction'>0/7</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">87.5% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>14/16</span>
+                <span class='fraction'>0/16</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line high'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -121,46 +121,46 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">27x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">27x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">8x</span>
-<span class="cline-any cline-yes">8x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">2x</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">7x</span>
-<span class="cline-any cline-yes">7x</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">5x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">3x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -173,46 +173,46 @@ import { Graph } from "./Graph";
 &nbsp;
 export class IndoorLocationTracker {
   private graph: Graph;
-  private userLocation: UserLocation | null = null;
+  private userLocation: UserLocation | null = <span class="cstat-no" title="statement not covered" >null;</span>
 &nbsp;
-  constructor(graph: Graph) {
-    this.graph = graph;
+<span class="fstat-no" title="function not covered" >  co</span>nstructor(graph: Graph) {
+<span class="cstat-no" title="statement not covered" >    this.graph = graph;</span>
   }
 &nbsp;
-  setGraph(graph: Graph): void {
-    this.graph = graph;
-    this.userLocation = null;
+<span class="fstat-no" title="function not covered" >  se</span>tGraph(graph: Graph): void {
+<span class="cstat-no" title="statement not covered" >    this.graph = graph;</span>
+<span class="cstat-no" title="statement not covered" >    this.userLocation = null;</span>
   }
 &nbsp;
-  setUserLocation(nodeId: string): void {
-    const node = this.graph.getNode(nodeId);
-    <span class="missing-if-branch" title="if path not taken" >I</span>if (!node) {
+<span class="fstat-no" title="function not covered" >  se</span>tUserLocation(nodeId: string): void {
+    const node = <span class="cstat-no" title="statement not covered" >this.graph.getNode(nodeId);</span>
+<span class="cstat-no" title="statement not covered" >    if (!node) {</span>
 <span class="cstat-no" title="statement not covered" >      throw new Error(`Node: ${nodeId} does not exist in the graph`);</span>
     }
-    this.userLocation = { nodeId: node.id, floorId: node.floorId };
+<span class="cstat-no" title="statement not covered" >    this.userLocation = { nodeId: node.id, floorId: node.floorId };</span>
   }
 &nbsp;
-  setDefaultLocation(defaultStartNodeId: string): void {
-    const startNode = this.graph.getNode(defaultStartNodeId);
-    if (startNode) {
-      this.userLocation = {
+<span class="fstat-no" title="function not covered" >  se</span>tDefaultLocation(defaultStartNodeId: string): void {
+    const startNode = <span class="cstat-no" title="statement not covered" >this.graph.getNode(defaultStartNodeId);</span>
+<span class="cstat-no" title="statement not covered" >    if (startNode) {</span>
+<span class="cstat-no" title="statement not covered" >      this.userLocation = {</span>
         nodeId: defaultStartNodeId,
         floorId: startNode.floorId,
       };
     } else {
-      throw new Error(
+<span class="cstat-no" title="statement not covered" >      throw new Error(</span>
         `IndoorLocationTracker: defaultStartNodeId "${defaultStartNodeId}" not found in graph`,
       );
     }
   }
 &nbsp;
-  getUserLocation(): UserLocation | null {
-    return this.userLocation;
+<span class="fstat-no" title="function not covered" >  ge</span>tUserLocation(): UserLocation | null {
+<span class="cstat-no" title="statement not covered" >    return this.userLocation;</span>
   }
 &nbsp;
-  getStartNode(): Node | null {
-    if (!this.userLocation) return null;
-    return this.graph.getNode(this.userLocation.nodeId) ?? <span class="branch-1 cbranch-no" title="branch not covered" >null;</span>
+<span class="fstat-no" title="function not covered" >  ge</span>tStartNode(): Node | null {
+<span class="cstat-no" title="statement not covered" >    if (!this.userLocation) <span class="cstat-no" title="statement not covered" >return null;</span></span>
+<span class="cstat-no" title="statement not covered" >    return this.graph.getNode(this.userLocation.nodeId) ?? null;</span>
   }
 &nbsp;
 <span class="fstat-no" title="function not covered" >  re</span>setLocation(): void {
@@ -226,7 +226,7 @@ export class IndoorLocationTracker {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-03T23:03:23.395Z
+                at 2026-04-03T23:17:46.568Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

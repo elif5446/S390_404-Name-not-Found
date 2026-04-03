@@ -23,9 +23,9 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">17.64% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>17/17</span>
+                <span class='fraction'>3/17</span>
             </div>
         
             
@@ -37,16 +37,16 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>5/5</span>
+                <span class='fraction'>0/5</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">21.42% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>14/14</span>
+                <span class='fraction'>3/14</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line high'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -108,32 +108,32 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">6x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { LatLng } from "react-native-maps";
 &nbsp;
@@ -142,34 +142,34 @@
  * @param coordinates - Array of [longitude, latitude] coordinates
  * @returns Center point as LatLng
  */
-export const calculatePolygonCenter = (coordinates: LatLng[]): LatLng =&gt; {
+export const calculatePolygonCenter = <span class="fstat-no" title="function not covered" >(c</span>oordinates: LatLng[]): LatLng =&gt; {
   const lat =
-    coordinates.reduce((s, c) =&gt; s + c.latitude, 0) / coordinates.length;
+<span class="cstat-no" title="statement not covered" >    coordinates.reduce(<span class="fstat-no" title="function not covered" >(s</span>, c) =&gt; <span class="cstat-no" title="statement not covered" >s + c.latitude,</span> 0) / coordinates.length;</span>
   const lng =
-    coordinates.reduce((s, c) =&gt; s + c.longitude, 0) / coordinates.length;
-  return { latitude: lat, longitude: lng };
+<span class="cstat-no" title="statement not covered" >    coordinates.reduce(<span class="fstat-no" title="function not covered" >(s</span>, c) =&gt; <span class="cstat-no" title="statement not covered" >s + c.longitude,</span> 0) / coordinates.length;</span>
+<span class="cstat-no" title="statement not covered" >  return { latitude: lat, longitude: lng };</span>
 };
 &nbsp;
-export const toRadians = (value: number): number =&gt; (value * Math.PI) / 180;
+export const toRadians = <span class="fstat-no" title="function not covered" >(v</span>alue: number): number =&gt; <span class="cstat-no" title="statement not covered" >(value * Math.PI) / 180;</span>
 &nbsp;
-export const distanceMetersBetween = (
+export const distanceMetersBetween = <span class="fstat-no" title="function not covered" >(</span>
   pointA: LatLng,
   pointB: LatLng,
 ): number =&gt; {
-  const earthRadius = 6371000;
-  const lat1 = toRadians(pointA.latitude);
-  const lat2 = toRadians(pointB.latitude);
-  const deltaLat = toRadians(pointB.latitude - pointA.latitude);
-  const deltaLng = toRadians(pointB.longitude - pointA.longitude);
+  const earthRadius = <span class="cstat-no" title="statement not covered" >6371000;</span>
+  const lat1 = <span class="cstat-no" title="statement not covered" >toRadians(pointA.latitude);</span>
+  const lat2 = <span class="cstat-no" title="statement not covered" >toRadians(pointB.latitude);</span>
+  const deltaLat = <span class="cstat-no" title="statement not covered" >toRadians(pointB.latitude - pointA.latitude);</span>
+  const deltaLng = <span class="cstat-no" title="statement not covered" >toRadians(pointB.longitude - pointA.longitude);</span>
 &nbsp;
   const a =
-    Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +
+<span class="cstat-no" title="statement not covered" >    Math.sin(deltaLat / 2) * Math.sin(deltaLat / 2) +</span>
     Math.cos(lat1) *
       Math.cos(lat2) *
       Math.sin(deltaLng / 2) *
       Math.sin(deltaLng / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return earthRadius * c;
+  const c = <span class="cstat-no" title="statement not covered" >2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));</span>
+<span class="cstat-no" title="statement not covered" >  return earthRadius * c;</span>
 };
 &nbsp;</pre></td></tr></table></pre>
 
@@ -178,7 +178,7 @@ export const distanceMetersBetween = (
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-03T23:03:23.395Z
+                at 2026-04-03T23:17:46.568Z
             </div>
         <script src="../prettify.js"></script>
         <script>

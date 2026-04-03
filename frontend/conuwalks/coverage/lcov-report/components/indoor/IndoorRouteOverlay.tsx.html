@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">5% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>20/20</span>
+                <span class='fraction'>1/20</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>4/4</span>
+                <span class='fraction'>0/4</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>5/5</span>
+                <span class='fraction'>0/5</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">5.55% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>18/18</span>
+                <span class='fraction'>1/18</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line high'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -154,35 +154,35 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">2x</span>
-<span class="cline-any cline-yes">63x</span>
-<span class="cline-any cline-yes">83x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">63x</span>
-<span class="cline-any cline-yes">62x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">20x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">40x</span>
-<span class="cline-any cline-yes">40x</span>
-<span class="cline-any cline-yes">40x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">63x</span>
-<span class="cline-any cline-yes">43x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">20x</span>
-<span class="cline-any cline-yes">20x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">20x</span>
-<span class="cline-any cline-yes">20x</span>
-<span class="cline-any cline-yes">20x</span>
-<span class="cline-any cline-yes">20x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">20x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -228,36 +228,36 @@ interface Props {
   scale: number;
 }
 &nbsp;
-const IndoorRouteOverlay: React.FC&lt;Props&gt; = ({ routeNodes, currentFloorId, canvasWidth, canvasHeight, offsetX, offsetY, scale }) =&gt; {
-  const nodesForCurrentFloor = useMemo(() =&gt; {
-    return routeNodes.filter(node =&gt; node.floorId === currentFloorId);
+const IndoorRouteOverlay: React.FC&lt;Props&gt; = <span class="fstat-no" title="function not covered" >({</span> routeNodes, currentFloorId, canvasWidth, canvasHeight, offsetX, offsetY, scale }) =&gt; {
+  const nodesForCurrentFloor = <span class="cstat-no" title="statement not covered" >useMemo(<span class="fstat-no" title="function not covered" >()</span> =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    return routeNodes.filter(<span class="fstat-no" title="function not covered" >no</span>de =&gt; <span class="cstat-no" title="statement not covered" >node.floorId === currentFloorId)</span>;</span>
   }, [routeNodes, currentFloorId]);
 &nbsp;
-  const points = useMemo(() =&gt; {
-    if (nodesForCurrentFloor.length &lt; 2) return "";
+  const points = <span class="cstat-no" title="statement not covered" >useMemo(<span class="fstat-no" title="function not covered" >()</span> =&gt; {</span>
+<span class="cstat-no" title="statement not covered" >    if (nodesForCurrentFloor.length &lt; 2) <span class="cstat-no" title="statement not covered" >return "";</span></span>
 &nbsp;
-    return nodesForCurrentFloor
-      .map(node =&gt; {
-        const x = offsetX + node.x * scale;
-        const y = offsetY + node.y * scale;
-        return `${x},${y}`;
+<span class="cstat-no" title="statement not covered" >    return nodesForCurrentFloor</span>
+      .map(<span class="fstat-no" title="function not covered" >no</span>de =&gt; {
+        const x = <span class="cstat-no" title="statement not covered" >offsetX + node.x * scale;</span>
+        const y = <span class="cstat-no" title="statement not covered" >offsetY + node.y * scale;</span>
+<span class="cstat-no" title="statement not covered" >        return `${x},${y}`;</span>
       })
       .join(" ");
   }, [nodesForCurrentFloor, offsetX, offsetY, scale]);
 &nbsp;
-  if (nodesForCurrentFloor.length &lt; 2) {
-    return null;
+<span class="cstat-no" title="statement not covered" >  if (nodesForCurrentFloor.length &lt; 2) {</span>
+<span class="cstat-no" title="statement not covered" >    return null;</span>
   }
 &nbsp;
-  const firstNode = nodesForCurrentFloor[0];
-  const lastNode = nodesForCurrentFloor[nodesForCurrentFloor.length - 1];
+  const firstNode = <span class="cstat-no" title="statement not covered" >nodesForCurrentFloor[0];</span>
+  const lastNode = <span class="cstat-no" title="statement not covered" >nodesForCurrentFloor[nodesForCurrentFloor.length - 1];</span>
 &nbsp;
-  const startX = offsetX + firstNode.x * scale;
-  const startY = offsetY + firstNode.y * scale;
-  const endX = offsetX + lastNode.x * scale;
-  const endY = offsetY + lastNode.y * scale;
+  const startX = <span class="cstat-no" title="statement not covered" >offsetX + firstNode.x * scale;</span>
+  const startY = <span class="cstat-no" title="statement not covered" >offsetY + firstNode.y * scale;</span>
+  const endX = <span class="cstat-no" title="statement not covered" >offsetX + lastNode.x * scale;</span>
+  const endY = <span class="cstat-no" title="statement not covered" >offsetY + lastNode.y * scale;</span>
 &nbsp;
-  return (
+<span class="cstat-no" title="statement not covered" >  return (</span>
     &lt;View
       pointerEvents="none"
       style={{
@@ -295,7 +295,7 @@ export default IndoorRouteOverlay;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-03T23:03:23.395Z
+                at 2026-04-03T23:17:46.568Z
             </div>
         <script src="../../prettify.js"></script>
         <script>

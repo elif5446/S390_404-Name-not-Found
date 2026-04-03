@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">11.11% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>18/18</span>
+                <span class='fraction'>2/18</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>4/4</span>
+                <span class='fraction'>0/4</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>3/3</span>
+                <span class='fraction'>0/3</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">100% </span>
+                <span class="strong">14.28% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>14/14</span>
+                <span class='fraction'>2/14</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line high'></div>
+    <div class='status-line low'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -95,57 +95,57 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">24x</span>
-<span class="cline-any cline-yes">24x</span>
-<span class="cline-any cline-yes">24x</span>
-<span class="cline-any cline-yes">24x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">24x</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">24x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { LatLng } from "react-native-maps";
 //this file convert GeoJSON coordinates into map coordinates
 &nbsp;
-export const polygonFromGeoJSON = (coordinates: number[][]): LatLng[] =&gt;
-  coordinates.map(([lng, lat]) =&gt; ({
+export const polygonFromGeoJSON = <span class="fstat-no" title="function not covered" >(c</span>oordinates: number[][]): LatLng[] =&gt;
+<span class="cstat-no" title="statement not covered" >  coordinates.map(<span class="fstat-no" title="function not covered" >([</span>lng, lat]) =&gt; (<span class="cstat-no" title="statement not covered" >{</span></span>
     latitude: lat,
     longitude: lng,
   }));
 &nbsp;
-export const isPointInPolygon = (point: LatLng, polygon: LatLng[]): boolean =&gt; {
-  const x = point.longitude;
-  const y = point.latitude;
+export const isPointInPolygon = <span class="fstat-no" title="function not covered" >(p</span>oint: LatLng, polygon: LatLng[]): boolean =&gt; {
+  const x = <span class="cstat-no" title="statement not covered" >point.longitude;</span>
+  const y = <span class="cstat-no" title="statement not covered" >point.latitude;</span>
 &nbsp;
-  let inside = false;
-  for (let i = 0, j = polygon.length - 1; i &lt; polygon.length; j = i++) {
-    const xi = polygon[i].longitude,
-      yi = polygon[i].latitude;
-    const xj = polygon[j].longitude,
-      yj = polygon[j].latitude;
+  let inside = <span class="cstat-no" title="statement not covered" >false;</span>
+<span class="cstat-no" title="statement not covered" >  for (let i = <span class="cstat-no" title="statement not covered" >0,</span> j = <span class="cstat-no" title="statement not covered" >polygon.length - 1;</span> i &lt; polygon.length; j = i++) {</span>
+    const xi = <span class="cstat-no" title="statement not covered" >polygon[i].longitude,</span>
+      yi = <span class="cstat-no" title="statement not covered" >polygon[i].latitude;</span>
+    const xj = <span class="cstat-no" title="statement not covered" >polygon[j].longitude,</span>
+      yj = <span class="cstat-no" title="statement not covered" >polygon[j].latitude;</span>
 &nbsp;
     const intersect =
-      yi &gt; y !== yj &gt; y &amp;&amp; x &lt; ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+<span class="cstat-no" title="statement not covered" >      yi &gt; y !== yj &gt; y &amp;&amp; x &lt; ((xj - xi) * (y - yi)) / (yj - yi) + xi;</span>
 &nbsp;
-    if (intersect) inside = !inside;
+<span class="cstat-no" title="statement not covered" >    if (intersect) <span class="cstat-no" title="statement not covered" >inside = !inside;</span></span>
   }
 &nbsp;
-  return inside;
+<span class="cstat-no" title="statement not covered" >  return inside;</span>
 };
 &nbsp;</pre></td></tr></table></pre>
 
@@ -154,7 +154,7 @@ export const isPointInPolygon = (point: LatLng, polygon: LatLng[]): boolean =&gt
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-04-03T23:03:23.395Z
+                at 2026-04-03T23:17:46.568Z
             </div>
         <script src="../prettify.js"></script>
         <script>
