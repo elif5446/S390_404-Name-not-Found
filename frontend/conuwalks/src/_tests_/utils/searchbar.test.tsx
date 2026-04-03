@@ -103,9 +103,10 @@ describe("searchbar utils", () => {
     });
   });
 
-  it("returns null when destination search has no matches", () => {
-    expect(processDestinationSearch("ZZZ", [] as any)).toBeNull();
-  });
+it("returns undefined when destination search has no matches", () => {
+  expect(processDestinationSearch("ZZZ", [] as any)).toBeUndefined();
+});
+
 
   it("uses the fallback user building when there is no current event", () => {
     const results = searchStartPoint("", [] as any, "MB");
