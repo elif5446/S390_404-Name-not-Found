@@ -80,7 +80,7 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
   setStartPoint,
   destinationBuildingId,
   destinationRoom,
-  destinationLabel, 
+  destinationLabel,
   setDestination,
   userLocationBuildingId,
   isIndoorView = false,
@@ -132,23 +132,23 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
 
   // sync local text state when global destination changes (e.g., from Indoor Map room select)
   useEffect(() => {
-      // 1. POI/custom label first
-      console.log('DEBUG:', { destinationLabel, destinationBuildingId });
-  
-  if (destinationLabel) {
-    console.log('Using POI name:', destinationLabel);
+    // 1. POI/custom label first
+    console.log("DEBUG:", { destinationLabel, destinationBuildingId });
 
-    setDestinationText(destinationLabel);
-    setStableDestinationText(destinationLabel);
-    return;
-  }
+    if (destinationLabel) {
+      console.log("Using POI name:", destinationLabel);
 
-  // 2. POI fallback
-  if (destinationBuildingId?.startsWith("POI-")) {
-    setDestinationText("Outdoor POI");
-    setStableDestinationText("Outdoor POI");
-    return;
-  }
+      setDestinationText(destinationLabel);
+      setStableDestinationText(destinationLabel);
+      return;
+    }
+
+    // 2. POI fallback
+    if (destinationBuildingId?.startsWith("POI-")) {
+      setDestinationText("Outdoor POI");
+      setStableDestinationText("Outdoor POI");
+      return;
+    }
     const buildingName =
       SGWBuildingSearchMetadata[destinationBuildingId || ""]?.name ||
       LoyolaBuildingSearchMetadata[destinationBuildingId || ""]?.name ||
@@ -162,7 +162,7 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
       setDestinationText(CURRENT_LOCATION);
       setStableDestinationText(CURRENT_LOCATION);
     }
-  }, [destinationLabel, destinationBuildingId, destinationRoom]);  // ✅ ADD destinationLabel
+  }, [destinationLabel, destinationBuildingId, destinationRoom]); // ✅ ADD destinationLabel
 
   // also sync the start text just in case it's changed externally
   useEffect(() => {
@@ -415,6 +415,15 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
                 accessibilityLabel="Start Point"
                 accessibilityHint="Enter the building and optionally the room you are starting from"
               />
+
+              {/* Edit icon - always visible in both views */}
+              <View style={styles.editIndicator}>
+                <SuggestionIcon
+                  iosName="square.and.pencil"
+                  androidName="edit"
+                  color={isIndoorView ? "rgba(176, 48, 96, 0.5)" : "#B03060"}
+                />
+              </View>
             </View>
           )}
           {destinationIsHidden === null && (
@@ -453,6 +462,14 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
                 accessibilityLabel="Destination"
                 accessibilityHint="Enter the building and optionally the room you are heading to"
               />
+              {/* Edit icon - always visible in both views */}
+              <View style={styles.editIndicator}>
+                <SuggestionIcon
+                  iosName="square.and.pencil"
+                  androidName="edit"
+                  color={isIndoorView ? "rgba(176, 48, 96, 0.5)" : "#B03060"}
+                />
+              </View>
             </View>
           )}
 
@@ -548,7 +565,9 @@ const DirectionsSearchPanel: React.FC<DirectionsSearchProps> = ({
                       accessibilityHint="Tap to select and enter this location"
                     >
                       <Text style={styles.listSuggestionText}>{destText}</Text>
-                      {!!(suggestion.buildingName && !suggestion.roomNumber) && (
+                      {!!(
+                        suggestion.buildingName && !suggestion.roomNumber
+                      ) && (
                         <TouchableOpacity
                           style={styles.suggestionIconButton}
                           onPress={() => setDestinationText(destText)}

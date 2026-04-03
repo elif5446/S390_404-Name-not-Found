@@ -94,5 +94,11 @@ const directionsSearchPanelStyles = StyleSheet.create({
     backgroundColor: "rgba(142, 142, 147, 0.12)",
     color: "#8E8E93",
   },
+  editIndicator: {
+    width: 30,
+    alignItems: "center",
+    justifyContent: "center",
+    opacity:0.4
+  }
 });
 export default directionsSearchPanelStyles;

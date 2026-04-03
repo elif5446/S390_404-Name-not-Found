@@ -5,7 +5,47 @@ import { BuildingEvent, parseLocation } from "../hooks/useBuildingEvents";
 import { CalendarEvent } from "../api/calendarApi";
 import { LatLng } from "react-native-maps/lib/sharedTypes";
 
+// Building aliases for more flexible search input
+const BUILDING_ALIASES: Record<string, string[]> = {
+  "MB": ["JMSB", "Business School", "John Molson"],
+  "ER": ["Engineering", "ER Building", "Engineering Research", "Engineering Research Building"],
+  "FG": ["Faubourg", "FG Building"],
+  "FB": ["Faubourg", "Faubourg Building", "Faubourg Ste-Catherine", "Faubourg Ste-Catherine Building"],
+  "EV": ["EV Building", "Engineering", "Computer Science", "Engineering, Computer Science and Visual Arts Integrated Building", "Visual Arts"],
+  "LB": ["Library", "Webster Library"],
+  "H": ["Hall", "Hall Building", "Henry F. Hall Building"],
+  "LS": ["Learning Square", "LS Building"],
+  "GM": ["GM Building", "Guy", "Guy-de Maisonneuve", "Maisonneuve"],
+  "CL": ["CL Annex", "CL Building"],
+  "VL": ["Vanier Library", "Vanier", "Vanier Library Building"],
+  "CJ": ["CJ Building", "Communication Studies", "Journalism", "Communication Studies and Journalism Building"],
+  "SP": ["Richard", "SP Building", "Richard SP Building", "Richard J. Renaud Science Complex", "Science Complex", "J Renaud"],
+  "AD": ["Administration", "Admin Building", "Administration Building", "Admin", "Loyola Student Services"],
+  "CC": ["Central", "Central Building"],
+  "HU": ["Applied Science", "Applied Science Hub"],
+  "FC": ["F.C.", "F.C. Smith", "F.C. Smith Building", "Smith"],
+};
 
+const matchBuildingName = (input: string, buildingId: string, buildingName: string): boolean => {
+    const normalizedInput = input.trim().toLowerCase();
+    const normalizedName = buildingName.trim().toLowerCase();
+    const lowerBuildingId = buildingId.trim().toLowerCase();
+
+    if (normalizedName.includes(normalizedInput) || normalizedInput.includes(normalizedName)) {
+    return true;
+  }
+
+  if (lowerBuildingId === normalizedInput || lowerBuildingId.includes(normalizedInput)) {
+    return true;
+  }
+  
+  const aliases = BUILDING_ALIASES[buildingId] || [];
+  if (aliases.some(alias => alias.toLowerCase().includes(normalizedInput))) {
+    return true;
+  }
+  
+  return false;
+}
 export const processStartPointSearch = (input: string, todayEvents: BuildingEvent[]): { buildingName: string; roomNumber: string | null; isLocation: boolean } => {
     return searchStartPoint(input, todayEvents)[1] || searchStartPoint(input, todayEvents)[0];
 }
@@ -34,7 +74,7 @@ const search = (input: string, events: CalendarEvent[] | null = null, todayEvent
     const filterCampusSearchMetadata = (metadata: Record<string, {name: string; coordinates: LatLng;}>) => {
         return Object.entries(metadata).filter(([id, data]) => {
             if(!buildingInput) return id === location?.buildingCode;
-            return id.startsWith(buildingInput.toUpperCase()) || data.name.toLowerCase().startsWith(buildingInput.toLowerCase());
+            return matchBuildingName(buildingInput, id, data.name);
         })
     }
     const filteredBuildings = [
