@@ -56,39 +56,51 @@ const CloseIcon = ({ isDark }: { isDark: boolean }) =>
     <Ionicons name="close" size={20} color={isDark ? "#FFFFFF" : "#333333"} />
   );
 
-const getStepContainerStyle = (isActive: boolean, isLast: boolean, isDark: boolean) => ({
-  flexDirection: "row" as const,
-  alignItems: "center" as const,
-  marginBottom: isLast ? 0 : 16,
-  opacity: isActive ? 1 : 0.3,
-  backgroundColor: isActive ? (isDark ? "#2A2025" : "#FFF0F5") : "transparent",
-  padding: isActive ? 18 : 10,
-  borderRadius: 14,
-  transform: [{ scale: isActive ? 1.02 : 1 }],
-});
+const getStepContainerStyle = (isActive: boolean, isLast: boolean, isDark: boolean) => {
+  const activeBg = isDark ? "#2A2025" : "#FFF0F5";
+  return {
+    flexDirection: "row" as const,
+    alignItems: "center" as const,
+    marginBottom: isLast ? 0 : 16,
+    opacity: isActive ? 1 : 0.3,
+    backgroundColor: isActive ? activeBg : "transparent",
+    padding: isActive ? 18 : 10,
+    borderRadius: 14,
+    transform: [{ scale: isActive ? 1.02 : 1 }],
+  };
+};
 
-const getStepCircleStyle = (isActive: boolean, isHighlighted: boolean, isDark: boolean) => ({
-  width: isActive ? 32 : 24,
-  height: isActive ? 32 : 24,
-  borderRadius: isActive ? 16 : 12,
-  backgroundColor: isHighlighted ? "#C2185B" : (isDark ? "#4B3D44" : "#FCE4EC"),
-  alignItems: "center" as const,
-  justifyContent: "center" as const,
-  marginRight: 14,
-});
+const getStepCircleStyle = (isActive: boolean, isHighlighted: boolean, isDark: boolean) => {
+  const unhighlightedBg = isDark ? "#4B3D44" : "#FCE4EC";
+  return {
+    width: isActive ? 32 : 24,
+    height: isActive ? 32 : 24,
+    borderRadius: isActive ? 16 : 12,
+    backgroundColor: isHighlighted ? "#C2185B" : unhighlightedBg,
+    alignItems: "center" as const,
+    justifyContent: "center" as const,
+    marginRight: 14,
+  };
+};
 
-const getStepIndexTextStyle = (isActive: boolean, isHighlighted: boolean, isDark: boolean) => ({
-  fontSize: isActive ? 15 : 12,
-  fontWeight: "900" as const,
-  color: isHighlighted ? "#FFFFFF" : (isDark ? "#E8C8D7" : "#C2185B"),
-});
+const getStepIndexTextStyle = (isActive: boolean, isHighlighted: boolean, isDark: boolean) => {
+  const unhighlightedColor = isDark ? "#E8C8D7" : "#C2185B";
+  return {
+    fontSize: isActive ? 15 : 12,
+    fontWeight: "900" as const,
+    color: isHighlighted ? "#FFFFFF" : unhighlightedColor,
+  };
+};
 
-const getStepTextStyle = (isActive: boolean, isHighlighted: boolean, isDark: boolean) => ({
-  flex: 1,
-  fontSize: isActive ? 18 : 15,
-  fontWeight: (isActive ? "800" : "500") as "800" | "500",
-  color: isHighlighted ? "#C2185B" : (isDark ? "#E0D7DB" : "#4A4A4A"),
-});
+const getStepTextStyle = (isActive: boolean, isHighlighted: boolean, isDark: boolean) => {
+  const unhighlightedColor = isDark ? "#E0D7DB" : "#4A4A4A";
+  return {
+    flex: 1,
+    fontSize: isActive ? 18 : 15,
+    fontWeight: isActive ? "800" as const : "500" as const,
+    color: isHighlighted ? "#C2185B" : unhighlightedColor,
+  };
+};
 
 interface IndoorStepItemProps {
   step: IndoorDirectionsStep;
