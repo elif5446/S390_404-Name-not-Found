@@ -76,7 +76,7 @@ const POIFilterPanel = forwardRef<POIFilterPanelHandle, Props>(
       [scrollOffsetRef],
     );
 
-    const normalize = (value: string) => value.trim().toLowerCase().replace(/\s+/g, " ");
+    const normalize = (value: string) => value.trim().toLowerCase().replaceAll(/\s+/g, " ");
 
     // Use testQuery if provided (for tests), otherwise use local state
     const effectiveQuery = typeof testQuery === "string" ? testQuery : query;
