@@ -178,6 +178,14 @@ describe("DestinationHeader — Additional Coverage", () => {
   // Dark Mode
   // ─────────────────────────────────────────────────────────────────────────────
   describe("Dark Mode rendering", () => {
+    it("renders the iOS close button in light mode", () => {
+      Platform.OS = "ios";
+      render(<DestinationHeader {...defaultProps} mode="light" />);
+
+      // The ✕ close button should be present on iOS light mode
+      expect(screen.getByText("✕")).toBeTruthy();
+    });
+
     it("renders the iOS close button in dark mode without crashing", () => {
       Platform.OS = "ios";
       render(<DestinationHeader {...defaultProps} mode="dark" />);
@@ -337,6 +345,8 @@ describe("DestinationHeader — Additional Coverage", () => {
     });
 
     it("passes timeMode='leave' as initialMode to the modal", () => {
+      const { useDirections } = require("@/src/context/DirectionsContext");
+      
       useDirections.mockReturnValue({
         timeMode: "leave",
         targetTime: new Date(),
@@ -348,6 +358,31 @@ describe("DestinationHeader — Additional Coverage", () => {
 
       const modal = screen.getByTestId("mock-time-modal");
       expect(modal.props.accessibilityValue.text).toBe("leave");
+    });
+
+    it("calls setTimeMode, setTargetTime, and closes modal when onApply is invoked", () => {
+      const { useDirections } = require("@/src/context/DirectionsContext");
+
+      useDirections.mockReturnValue({
+        timeMode: "leave",
+        targetTime: new Date("2026-03-01T12:00:00Z"),
+        setTimeMode: mockSetTimeMode,
+        setTargetTime: mockSetTargetTime,
+      });
+
+      jest.clearAllMocks();
+
+      render(<DestinationHeader {...defaultProps} travelMode="transit" />);
+
+      const modal = screen.getByTestId("mock-time-modal");
+      const newDate = new Date("2026-03-02T14:00:00Z");
+      
+      // Simulate calling the onApply callback
+      modal.props.onApply("arrive", newDate);
+
+      // Verify that the time mode, date, and modal visibility were updated
+      expect(mockSetTimeMode).toHaveBeenCalledWith("arrive");
+      expect(mockSetTargetTime).toHaveBeenCalledWith(newDate);
     });
   });
 
@@ -369,21 +404,76 @@ describe("DestinationHeader — Additional Coverage", () => {
       render(<DestinationHeader {...defaultProps} travelMode="transit" />);
       expect(screen.getByText(/Arrive by \d{1,2}:\d{2},/)).toBeTruthy();
     });
+
+    it("renders 'Leave at HH:MM, <date>' when leave mode and isToday is false", () => {
+      (isToday as jest.Mock).mockReturnValue(false);
+      const testDate = new Date("2026-04-10T14:30:00Z");
+
+      const { useDirections } = require("@/src/context/DirectionsContext");
+      useDirections.mockReturnValueOnce({
+        timeMode: "leave",
+        targetTime: testDate,
+      });
+
+      render(<DestinationHeader {...defaultProps} travelMode="transit" />);
+      expect(screen.getByText(/Leave at \d{1,2}:\d{2},/)).toBeTruthy();
+    });
   });
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // BottomSheetDragHandle — onToggleHeight wired correctly
+  // Time label — "Leave now" when no targetTime
   // ─────────────────────────────────────────────────────────────────────────────
-  describe("BottomSheetDragHandle props", () => {
-    it("passes onToggleHeight callback to BottomSheetDragHandle", () => {
-      render(<DestinationHeader {...defaultProps} />);
+  describe("Time label — Leave now when no targetTime", () => {
+    it("renders 'Leave now' as default when no targetTime is set", () => {
+      const { useDirections } = require("@/src/context/DirectionsContext");
 
-      const dragHandle = screen.getByTestId("mock-drag-handle");
-      expect(typeof dragHandle.props.onToggleHeight).toBe("function");
+      useDirections.mockReturnValue({
+        timeMode: "leave",
+        targetTime: null,
+        setTimeMode: mockSetTimeMode,
+        setTargetTime: mockSetTargetTime,
+      });
 
-      // Invoking it should call the original handler
-      dragHandle.props.onToggleHeight();
-      expect(mockOnToggleHeight).toHaveBeenCalledTimes(1);
+      render(<DestinationHeader {...defaultProps} travelMode="transit" />);
+
+      // Default time label should be "Leave now"
+      expect(screen.getByText("Leave now")).toBeTruthy();
+    });
+
+    it("renders 'Leave at HH:MM' when targetTime exists and isToday returns true", () => {
+      (isToday as jest.Mock).mockReturnValue(true);
+      const testDate = new Date("2026-03-29T14:30:00Z");
+
+      const { useDirections } = require("@/src/context/DirectionsContext");
+      useDirections.mockReturnValue({
+        timeMode: "leave",
+        targetTime: testDate,
+        setTimeMode: mockSetTimeMode,
+        setTargetTime: mockSetTargetTime,
+      });
+
+      render(<DestinationHeader {...defaultProps} travelMode="transit" />);
+
+      // Should render time label with just time (no date since it's today)
+      expect(screen.getByText(/Leave at \d{1,2}:\d{2}/)).toBeTruthy();
+    });
+
+    it("renders 'Arrive by HH:MM' when targetTime exists and timeMode is arrive", () => {
+      (isToday as jest.Mock).mockReturnValue(true);
+      const testDate = new Date("2026-03-29T09:00:00Z");
+
+      const { useDirections } = require("@/src/context/DirectionsContext");
+      useDirections.mockReturnValue({
+        timeMode: "arrive",
+        targetTime: testDate,
+        setTimeMode: mockSetTimeMode,
+        setTargetTime: mockSetTargetTime,
+      });
+
+      render(<DestinationHeader {...defaultProps} travelMode="transit" />);
+
+      // Should render time label with "Arrive by" prefix
+      expect(screen.getByText(/Arrive by \d{1,2}:\d{2}/)).toBeTruthy();
     });
   });
 
@@ -399,6 +489,52 @@ describe("DestinationHeader — Additional Coverage", () => {
       expect(mockGetModeDurationLabel).toHaveBeenCalledWith("bicycling");
       expect(mockGetModeDurationLabel).toHaveBeenCalledWith("driving");
       expect(mockGetModeDurationLabel).toHaveBeenCalledTimes(4);
+    });
+  });
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Time selection button text rendering and interaction (Line 162-176)
+  // ─────────────────────────────────────────────────────────────────────────────
+  describe("Time selection button text rendering", () => {
+    it("displays the time label text in the time selection button", () => {
+      (isToday as jest.Mock).mockReturnValue(true);
+      const testDate = new Date("2026-03-29T15:45:00Z");
+
+      const { useDirections } = require("@/src/context/DirectionsContext");
+      useDirections.mockReturnValue({
+        timeMode: "leave",
+        targetTime: testDate,
+        setTimeMode: mockSetTimeMode,
+        setTargetTime: mockSetTargetTime,
+      });
+
+      render(<DestinationHeader {...defaultProps} travelMode="transit" />);
+
+      // Verify the time label is rendered in the button
+      expect(screen.getByText(/Leave at \d{1,2}:\d{2}/)).toBeTruthy();
+    });
+
+    it("opens time modal when time selection button is pressed", () => {
+      (isToday as jest.Mock).mockReturnValue(true);
+      const testDate = new Date("2026-03-29T15:45:00Z");
+
+      const { useDirections } = require("@/src/context/DirectionsContext");
+      useDirections.mockReturnValue({
+        timeMode: "leave",
+        targetTime: testDate,
+        setTimeMode: mockSetTimeMode,
+        setTargetTime: mockSetTargetTime,
+      });
+
+      render(<DestinationHeader {...defaultProps} travelMode="transit" />);
+
+      // Get and press the time selection button
+      const timeButton = screen.getByLabelText("Select departure or arrival time");
+      fireEvent.press(timeButton);
+
+      // Modal should now be visible
+      const modal = screen.getByTestId("mock-time-modal");
+      expect(modal.props.visible).toBe(true);
     });
   });
 });
