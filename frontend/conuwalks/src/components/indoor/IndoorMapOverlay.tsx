@@ -874,7 +874,7 @@ const IndoorMapOverlay: React.FC<Props> = ({
   );
   const handleSelectPOI = useCallback(
     (poi: POI, forceIsStart?: boolean) => {
-      const isStart = forceIsStart === undefined ? activeField === "start" : forceIsStart;
+      const isStart = forceIsStart ?? (activeField === "start");
 
       if (isStart) {
         setSourcePOI(poi);
