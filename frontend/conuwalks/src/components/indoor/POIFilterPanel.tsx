@@ -265,11 +265,16 @@ const POIFilterPanel = forwardRef<POIFilterPanelHandle, Props>(
                         </Text>
                       </View>
 
-                      {sourcePOI?.id === poi.id ? (
-                        <Text style={S.rolePillSource}>Source</Text>
-                      ) : destinationPOI?.id === poi.id ? (
-                        <Text style={S.rolePillDestination}>Destination</Text>
-                      ) : null}
+                      {/* Refactored nested ternary for Source/Destination label */}
+                      {(() => {
+                        if (sourcePOI?.id === poi.id) {
+                          return <Text style={S.rolePillSource}>Source</Text>;
+                        }
+                        if (destinationPOI?.id === poi.id) {
+                          return <Text style={S.rolePillDestination}>Destination</Text>;
+                        }
+                        return null;
+                      })()}
                     </TouchableOpacity>
                   );
                 })}
