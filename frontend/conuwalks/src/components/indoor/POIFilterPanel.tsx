@@ -38,10 +38,14 @@ interface Props {
   onTargetModeChange: (mode: "SOURCE" | "DESTINATION") => void;
   onToggleCategory: (cat: POICategory) => void;
   onSelectPOI: (poi: POI) => void;
+  /**
+   * Used for testing only. Allows tests to control the query value for coverage.
+   */
+  testQuery?: string;
 }
 
 const POIFilterPanel = forwardRef<POIFilterPanelHandle, Props>(
-  ({ visible, buildingId, pois, activeCategories, floorLabel, sourcePOI, destinationPOI, onSelectPOI }, ref) => {
+  ({ visible, buildingId, pois, activeCategories, floorLabel, sourcePOI, destinationPOI, onSelectPOI, testQuery }, ref) => {
     const [query] = useState("");
     const [expanded, setExpanded] = useState(false);
 
@@ -74,7 +78,9 @@ const POIFilterPanel = forwardRef<POIFilterPanelHandle, Props>(
 
     const normalize = (value: string) => value.trim().toLowerCase().replace(/\s+/g, " ");
 
-    const queryNormalized = normalize(query);
+    // Use testQuery if provided (for tests), otherwise use local state
+    const effectiveQuery = typeof testQuery === "string" ? testQuery : query;
+    const queryNormalized = normalize(effectiveQuery);
     const queryRoom = queryNormalized.replace(/^h\s*-\s*/i, "").replace(/^room\s+/i, "");
 
     const visiblePOIs = useMemo(() => {
@@ -192,6 +198,28 @@ const POIFilterPanel = forwardRef<POIFilterPanelHandle, Props>(
 
                 {visiblePOIs.map((poi, idx) => {
                   const categoryIcon = getCategoryIcon(poi.category);
+                  let iconElement;
+                  if (categoryIcon.lib === "ion") {
+                    iconElement = (
+                      <Ionicons name={categoryIcon.name} size={16} color={getCategoryIconColor(poi.category)} />
+                    );
+                  } else if (categoryIcon.lib === "mci") {
+                    iconElement = (
+                      <MaterialCommunityIcons name={categoryIcon.name} size={16} color={getCategoryIconColor(poi.category)} />
+                    );
+                  } else {
+                    iconElement = (
+                      <Text
+                        style={{
+                          fontSize: 10,
+                          fontWeight: "bold",
+                          color: getCategoryIconColor(poi.category),
+                        }}
+                      >
+                        IT
+                      </Text>
+                    );
+                  }
 
                   return (
                     <TouchableOpacity
@@ -219,21 +247,7 @@ const POIFilterPanel = forwardRef<POIFilterPanelHandle, Props>(
                           marginRight: 12,
                         }}
                       >
-                        {categoryIcon.lib === "ion" ? (
-                          <Ionicons name={categoryIcon.name} size={16} color={getCategoryIconColor(poi.category)} />
-                        ) : categoryIcon.lib === "mci" ? (
-                          <MaterialCommunityIcons name={categoryIcon.name} size={16} color={getCategoryIconColor(poi.category)} />
-                        ) : (
-                          <Text
-                            style={{
-                              fontSize: 10,
-                              fontWeight: "bold",
-                              color: getCategoryIconColor(poi.category),
-                            }}
-                          >
-                            IT
-                          </Text>
-                        )}
+                        {iconElement}
                       </View>
 
                       <View style={{ flex: 1 }}>
@@ -257,11 +271,16 @@ const POIFilterPanel = forwardRef<POIFilterPanelHandle, Props>(
                         </Text>
                       </View>
 
-                      {sourcePOI?.id === poi.id ? (
-                        <Text style={S.rolePillSource}>Source</Text>
-                      ) : destinationPOI?.id === poi.id ? (
-                        <Text style={S.rolePillDestination}>Destination</Text>
-                      ) : null}
+                      {/* Refactored nested ternary for Source/Destination label */}
+                      {(() => {
+                        if (sourcePOI?.id === poi.id) {
+                          return <Text style={S.rolePillSource}>Source</Text>;
+                        }
+                        if (destinationPOI?.id === poi.id) {
+                          return <Text style={S.rolePillDestination}>Destination</Text>;
+                        }
+                        return null;
+                      })()}
                     </TouchableOpacity>
                   );
                 })}

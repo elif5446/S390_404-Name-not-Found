@@ -516,4 +516,155 @@ describe("UpcomingClassBanner", () => {
       expect(container.props.accessibilityState.checked).toBe(false);
     });
   });
+
+  describe("Timer Logic", () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    it("updates nowTs every 30 seconds and shows the banner when the class enters lead time", async () => {
+      const baseTime = new Date("2026-05-01T12:00:00Z").getTime();
+      jest.setSystemTime(baseTime);
+
+      mockGetClassReminderLeadTime.mockResolvedValue(10);
+      
+      const classStartTime = baseTime + (10 * 60 * 1000) + (15 * 1000); 
+      buildBaseMock([{
+        id: "timer-event",
+        summary: "Time Update Class",
+        start: { dateTime: new Date(classStartTime).toISOString() },
+        location: "H-820",
+      }]);
+
+      render(<UpcomingClassBanner />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId("upcoming-class-banner")).toBeNull();
+      });
+
+      act(() => {
+        jest.advanceTimersByTime(30000);
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId("upcoming-class-banner")).toBeTruthy();
+        expect(screen.getByText(/Next Class: Time Update Class/i)).toBeTruthy();
+      });
+    });
+
+    it("clears the interval when the component unmounts", () => {
+      const clearIntervalSpy = jest.spyOn(global, "clearInterval");
+      buildBaseMock([]);
+      
+      const { unmount } = render(<UpcomingClassBanner />);
+      unmount();
+
+      expect(clearIntervalSpy).toHaveBeenCalled();
+      clearIntervalSpy.mockRestore();
+    });
+  });
+
+  describe("PanResponder Gesture Logic", () => {
+    const mockEvent = {};
+
+    it("updates translateY and opacity when swiping up (dy < 0)", async () => {
+      buildBaseMock([createClassEvent("move-up", "Swipe Up", 5)]);
+      render(<UpcomingClassBanner />);
+
+      const banner = await waitFor(() => screen.getByTestId("upcoming-class-banner"));
+
+      const dy = -40;
+      act(() => {
+        capturedPanConfig.onPanResponderMove(mockEvent, { dy });
+      });
+
+      expect(banner.props.style).toEqual(
+        expect.objectContaining({
+          transform: [{ translateY: -40 }],
+          opacity: 0.5,
+        })
+      );
+    });
+
+    it("clumps opacity to 0 if swiped up very far", async () => {
+      buildBaseMock([createClassEvent("move-up-far", "Swipe Up Far", 5)]);
+      render(<UpcomingClassBanner />);
+
+      const banner = await waitFor(() => screen.getByTestId("upcoming-class-banner"));
+
+      act(() => {
+        capturedPanConfig.onPanResponderMove(mockEvent, { dy: -100 });
+      });
+
+      expect(banner.props.style).toEqual(
+        expect.objectContaining({
+          opacity: 0,
+        })
+      );
+    });
+
+    it("does not update translateY or opacity when swiping down (dy > 0)", async () => {
+      buildBaseMock([createClassEvent("move-down", "Swipe Down", 5)]);
+      render(<UpcomingClassBanner />);
+
+      const banner = await waitFor(() => screen.getByTestId("upcoming-class-banner"));
+
+      act(() => {
+        capturedPanConfig.onPanResponderMove(mockEvent, { dy: 20 });
+      });
+
+      expect(banner.props.style).toEqual(
+        expect.objectContaining({
+          transform: [{ translateY: 0 }],
+          opacity: 1,
+        })
+      );
+    });
+
+    it("onMoveShouldSetPanResponder only returns true for upward movement > 5px", () => {
+      buildBaseMock([createClassEvent("responder-check", "Check", 5)]);
+      render(<UpcomingClassBanner />);
+
+      const shouldSet1 = capturedPanConfig.onMoveShouldSetPanResponder(mockEvent, { dy: -6 });
+      const shouldSet2 = capturedPanConfig.onMoveShouldSetPanResponder(mockEvent, { dy: -2 });
+      const shouldSet3 = capturedPanConfig.onMoveShouldSetPanResponder(mockEvent, { dy: 10 });
+
+      expect(shouldSet1).toBe(true);
+      expect(shouldSet2).toBe(false);
+      expect(shouldSet3).toBe(false);
+    });
+  });
+
+  it("dismisses the banner and returns early if the building location is unknown", async () => {
+      buildBaseMock([
+        {
+          id: "unknown-loc-event",
+          summary: "Mystery Class",
+          start: { dateTime: getFromNow(10) },
+          end: { dateTime: getFromNow(70) },
+          location: "Somewhere far away", 
+        },
+      ]);
+
+      render(<UpcomingClassBanner />);
+
+      const banner = await waitFor(() => screen.getByTestId("upcoming-class-banner"));
+      expect(banner).toBeTruthy();
+
+      const navigateButton = screen.getByTestId("banner-navigate-button");
+      act(() => {
+        fireEvent.press(navigateButton);
+      });
+
+      await waitFor(() => {
+        expect(screen.queryByTestId("upcoming-class-banner")).toBeNull();
+      });
+
+      expect(mockSetDestination).not.toHaveBeenCalled();
+      expect(mockSetShowDirections).not.toHaveBeenCalled();
+    });
 });
