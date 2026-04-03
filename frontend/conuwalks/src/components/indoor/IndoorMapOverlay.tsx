@@ -450,6 +450,90 @@ function useLocationSync({
   return { location, setLocation };
 }
 
+//  zero-distance route handler 
+function handleZeroDistanceRoute(startNodeId: string, indoorMapService: IndoorMapService) {
+  const graphNode = indoorMapService.getGraph().getNode(startNodeId);
+  if (!graphNode) return null;
+  return { distance: 0, nodes: [graphNode] } as any;
+}
+
+//  POI selection handler 
+function handlePOISelection(
+  item: IndoorSearchResult,
+  hotspots: IndoorHotspot[],
+  buildingData: BuildingIndoorConfig,
+  currentLevel: number,
+  indoorMapService: IndoorMapService,
+  isStart: boolean,
+  handleSetLocation: any,
+) {
+  const matchingRoom = hotspots.find(spot => spot.label.replace("Room ", "") === item.room);
+
+  if (matchingRoom) {
+    return handleSetLocation(
+      { id: matchingRoom.id, x: matchingRoom.x, y: matchingRoom.y, floorLevel: matchingRoom.floorLevel, label: matchingRoom.label, buildingId: buildingData.id },
+      isStart,
+    );
+  }
+
+  if (item.x !== undefined && item.y !== undefined) {
+    const nearestNode = indoorMapService.getNearestRoomNode(`${buildingData.id}_${currentLevel}`, item.x, item.y);
+    return handleSetLocation(
+      { id: nearestNode ? nearestNode.id : item.id, x: item.x, y: item.y, floorLevel: item.floorLevel!, label: item.label, buildingId: buildingData.id },
+      isStart,
+    );
+  }
+}
+
+//  room selection handler 
+function handleRoomSelection(
+  item: IndoorSearchResult,
+  isStart: boolean,
+  buildingId: string,
+  handleSetLocation: any,
+) {
+  handleSetLocation(
+    {
+      id: item.id,
+      x: item.x!,
+      y: item.y!,
+      floorLevel: item.floorLevel!,
+      label: item.label,
+      buildingId,
+    },
+    isStart,
+  );
+}
+
+//  building selection handler 
+function handleBuildingSelection(
+  item: IndoorSearchResult,
+  isStart: boolean,
+  setStartLocation: any,
+  setDestination: any,
+  onSetStartRoom: any,
+  onSetDestinationRoom: any,
+) {
+  const syntheticDest: IndoorDestination = {
+    id: item.id,
+    label: item.label ?? "",
+    floorLevel: -999,
+    x: 0,
+    y: 0,
+    buildingId: item.buildingId || item.id,
+  };
+
+  if (isStart) {
+    setStartLocation(syntheticDest);
+    onSetStartRoom?.(item.id, item.buildingId);
+  } else {
+    setDestination(syntheticDest);
+    onSetDestinationRoom?.(item.id, item.buildingId);
+  }
+
+  return syntheticDest;
+}
+
 const IndoorMapOverlay: React.FC<Props> = ({
   buildingData,
   startBuildingId,
@@ -512,7 +596,6 @@ const IndoorMapOverlay: React.FC<Props> = ({
   const [searchQuery, setSearchQuery] = useState(destinationPointLabel);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [activeField, setActiveField] = useState<"start" | "destination">("destination");
-  //   const [showDirections, setShowDirections] = useState(false);
   const [routeTargetMode, setRouteTargetMode] = useState<"SOURCE" | "DESTINATION">("DESTINATION");
   const [sourcePOI, setSourcePOI] = useState<POI | null>(null);
   const [destinationPOI, setDestinationPOI] = useState<POI | null>(null);
@@ -697,17 +780,6 @@ const IndoorMapOverlay: React.FC<Props> = ({
     return null;
   }
 
-  //zero‑distance route handler
-  function handleZeroDistanceRoute(
-    startNodeId: string,
-    indoorMapService: IndoorMapService
-  ) {
-    const graphNode = indoorMapService.getGraph().getNode(startNodeId);
-    if (!graphNode) return null;
-  
-    return { distance: 0, nodes: [graphNode] } as any;
-  }
-      
   // Auto-Routing Calculator
   const calculateRoute = useCallback(async () => {
     try {
@@ -790,101 +862,6 @@ const IndoorMapOverlay: React.FC<Props> = ({
     [setStartLocation, onSetStartRoom, setDestination, onSetDestinationRoom],
   );
 //helper functions
-function handleBuildingSelection(
-  item: IndoorSearchResult,
-  isStart: boolean,
-  setStartLocation: any,
-  setDestination: any,
-  onSetStartRoom: any,
-  onSetDestinationRoom: any
-) {
-  const syntheticDest: IndoorDestination = {
-    id: item.id,
-    label: item.label ?? "",
-    floorLevel: -999,
-    x: 0,
-    y: 0,
-    buildingId: item.buildingId || item.id,
-  };
-
-  if (isStart) {
-    setStartLocation(syntheticDest);
-    onSetStartRoom?.(item.id, item.buildingId);
-  } else {
-    setDestination(syntheticDest);
-    onSetDestinationRoom?.(item.id, item.buildingId);
-  }
-
-  return syntheticDest;
-}
-//handle room selection
-function handleRoomSelection(
-  item: IndoorSearchResult,
-  isStart: boolean,
-  buildingId: string,
-  handleSetLocation: any
-) {
-  handleSetLocation(
-    {
-      id: item.id,
-      x: item.x!,
-      y: item.y!,
-      floorLevel: item.floorLevel!,
-      label: item.label,
-      buildingId,
-    },
-    isStart
-  );
-}
-//handle POI selection function
-function handlePOISelection(
-  item: IndoorSearchResult,
-  hotspots: IndoorHotspot[],
-  buildingData: BuildingIndoorConfig,
-  currentLevel: number,
-  indoorMapService: IndoorMapService,
-  isStart: boolean,
-  handleSetLocation: any
-) {
-  const matchingRoom = hotspots.find(
-    spot => spot.label.replace("Room ", "") === item.room
-  );
-
-  if (matchingRoom) {
-    return handleSetLocation(
-      {
-        id: matchingRoom.id,
-        x: matchingRoom.x,
-        y: matchingRoom.y,
-        floorLevel: matchingRoom.floorLevel,
-        label: matchingRoom.label,
-        buildingId: buildingData.id,
-      },
-      isStart
-    );
-  }
-
-  if (item.x !== undefined && item.y !== undefined) {
-    const nearestNode = indoorMapService.getNearestRoomNode(
-      `${buildingData.id}_${currentLevel}`,
-      item.x,
-      item.y
-    );
-
-    return handleSetLocation(
-      {
-        id: nearestNode ? nearestNode.id : item.id,
-        x: item.x,
-        y: item.y,
-        floorLevel: item.floorLevel!,
-        label: item.label,
-        buildingId: buildingData.id,
-      },
-      isStart
-    );
-  }
-}
-
 const handleSelectSearchResult = useCallback(
   (item: IndoorSearchResult) => {
     const isStart = activeField === "start";
@@ -935,7 +912,7 @@ const handleSelectSearchResult = useCallback(
 );
   const handleSelectPOI = useCallback(
     (poi: POI, forceIsStart?: boolean) => {
-      const isStart = forceIsStart !== undefined ? forceIsStart : activeField === "start";
+      const isStart = forceIsStart === undefined ? activeField === "start" : forceIsStart;
 
       if (isStart) {
         setSourcePOI(poi);
@@ -988,7 +965,7 @@ const handleSelectSearchResult = useCallback(
   }, []);
 
   const routeSteps = useMemo(() => {
-    if (!route || !route.nodes || route.nodes.length === 0) return [];
+    if (!route?.nodes?.length) return [];
 
     try {
       const instructions = indoorMapService.getRouteInstructions(route);
@@ -1021,7 +998,7 @@ const handleSelectSearchResult = useCallback(
   }, [route]);
 
   const endsAtEntrance = useMemo(() => {
-    if (!route || !route.nodes.length) return false;
+    if (!route?.nodes.length) return false;
     const entranceNode = indoorMapService.getEntranceNode();
     const lastNode = route.nodes[route.nodes.length - 1];
 
@@ -1039,7 +1016,7 @@ const handleSelectSearchResult = useCallback(
       if (routeSteps.length > 0 && routeSteps[activeStepIndex]) {
         const activeNode = routeSteps[activeStepIndex].node;
         const targetFloor = buildingData.floors.find(f => f.id === activeNode.floorId);
-        if (targetFloor && targetFloor.level !== undefined) {
+        if (targetFloor?.level !== undefined) {
           handleFloorChange(targetFloor.level);
         }
       }
@@ -1119,7 +1096,9 @@ const handleSelectSearchResult = useCallback(
                 {nonRoomPOIs
                   .filter(poi => activeCategories.has(poi.category))
                   .map(poi => {
-                    const selectionType = destinationPOI?.id === poi.id ? "destination" : sourcePOI?.id === poi.id ? "source" : undefined;
+                    let selectionType: "destination" | "source" | undefined;
+                    if (destinationPOI?.id === poi.id) selectionType = "destination";
+                    else if (sourcePOI?.id === poi.id) selectionType = "source";
                     const manualRoomOffset = ICON_POSITION_OVERRIDES[poi.room] ?? { x: 0, y: 0 };
                     const poiX = offsetX + poi.mapPosition.x * floorSvgWidth * scale;
                     const poiY = offsetY + poi.mapPosition.y * floorSvgHeight * scale;
@@ -1138,7 +1117,7 @@ const handleSelectSearchResult = useCallback(
                     );
                   })}
 
-                {startLocation && startLocation.floorLevel === currentLevel && (
+                {startLocation?.floorLevel === currentLevel && (
                   <IndoorPointMarker
                     x={offsetX + startLocation.x * scale}
                     y={offsetY + startLocation.y * scale}
@@ -1147,11 +1126,11 @@ const handleSelectSearchResult = useCallback(
                   />
                 )}
 
-                {destination && destination.floorLevel === currentLevel && (
+                {destination?.floorLevel === currentLevel && (
                   <DestinationMarker x={offsetX + destination.x * scale} y={offsetY + destination.y * scale} />
                 )}
 
-                {activeLocationNode && activeLocationNode.floorId === activeFloor.id && (
+                {activeLocationNode?.floorId === activeFloor.id && (
                   <PulsingUserMarker x={offsetX + activeLocationNode.x * scale} y={offsetY + activeLocationNode.y * scale} />
                 )}
               </View>
