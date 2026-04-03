@@ -43,6 +43,24 @@ const CAMPUS_COORDS = {
   LOY: { latitude: 45.458, longitude: -73.639 },
 };
 
+function getColor(poi: POIPlace): string {
+    if (poi.isOpen === true) {
+      return "green";
+    } else if (poi.isOpen === false) {
+      return "red";
+    }
+    return "gray";
+  }
+
+function isOpen(poi: POIPlace): string {
+  if(poi.isOpen === true) {
+    return "Open";
+  } else if(poi.isOpen === false) {
+    return "Closed";
+  }
+  return "Hours unknown";
+}
+
 const OutdoorPOIMarkers: React.FC<OutdoorPOIMarkersProps> = ({
   campus,
   poiType,
@@ -113,27 +131,16 @@ const OutdoorPOIMarkers: React.FC<OutdoorPOIMarkersProps> = ({
           {/* Callout */}
 <Callout>
   <View
+    testID="callout-container"
     style={{
       width: 200, 
       padding: 8,
     }}
   >
     <Text style={{ fontWeight: "bold" }}>{poi.name}</Text>
-    <Text
-      style={{
-        color:
-          poi.isOpen === true
-            ? "green"
-            : poi.isOpen === false
-            ? "red"
-            : "gray",
-      }}
-    >
-      {poi.isOpen === true
-        ? "Open"
-        : poi.isOpen === false
-        ? "Closed"
-        : "Hours unknown"}
+    
+    <Text style={{color: getColor(poi)}}>
+      {isOpen(poi)}
     </Text>
 
     {/* Keep stacked layout but limit vertical height */}
@@ -141,7 +148,7 @@ const OutdoorPOIMarkers: React.FC<OutdoorPOIMarkersProps> = ({
       <ScrollView style={{ maxHeight: 80, marginTop: 4 }}>
         {poi.openHours.map((line, idx) => (
           <Text
-            key={idx}
+            key={`${line}-${idx}`}
             style={{ fontSize: 12, color: "#555", lineHeight: 16 }}
           >
             {line}

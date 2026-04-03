@@ -118,4 +118,76 @@ describe('OutdoorPOIMarkers', () => {
     expect(screen.getByText('Open')).toBeTruthy();
     expect(screen.getByText('Closed')).toBeTruthy();
   });
+
+  it('renders "Hours unknown" and gray color when isOpen is null', () => {
+    const mysteryPoi: POIPlace = {
+      ...mockPoi,
+      isOpen: null as any,
+    };
+
+    render(
+      <OutdoorPOIMarkers
+        campus="SGW"
+        poiType="Coffee shops"
+        pois={[mysteryPoi]}
+      />
+    );
+
+    const statusText = screen.getByText('Hours unknown');
+    expect(statusText).toBeTruthy();
+    expect(statusText.props.style.color).toBe('gray');
+  });
+
+  it('renders the list of open hours when provided', () => {
+    const hours = ['Mon: 8am-5pm', 'Tue: 8am-5pm'];
+    const poiWithHours: POIPlace = {
+      ...mockPoi,
+      openHours: hours,
+    };
+
+    render(
+      <OutdoorPOIMarkers
+        campus="SGW"
+        poiType="Coffee shops"
+        pois={[poiWithHours]}
+      />
+    );
+
+    expect(screen.getByText('Mon: 8am-5pm')).toBeTruthy();
+    expect(screen.getByText('Tue: 8am-5pm')).toBeTruthy();
+  });
+
+  it('does not render the ScrollView when openHours is missing or empty', () => {
+    const poiNoHours: POIPlace = {
+      ...mockPoi,
+      openHours: undefined,
+    };
+
+    render(
+      <OutdoorPOIMarkers
+        campus="SGW"
+        poiType="Coffee shops"
+        pois={[poiNoHours]}
+      />
+    );
+
+    expect(screen.queryByText(/am-pm/)).toBeNull();
+  });
+
+  it('applies the correct layout styles to the Callout container', () => {
+    render(
+      <OutdoorPOIMarkers
+        campus="SGW"
+        poiType="Coffee shops"
+        pois={[mockPoi]}
+      />
+    );
+
+    const calloutContainer = screen.getByTestId('callout-container');
+    
+    expect(calloutContainer.props.style).toMatchObject({
+      width: 200,
+      padding: 8,
+    });
+  });
 });
