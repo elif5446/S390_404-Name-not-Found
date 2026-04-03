@@ -1,4 +1,4 @@
 appId: com.conuwalks.app
 ---
 - tapOn:
-    point: 50%, 65%
+    id: "close-popup-button"

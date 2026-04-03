@@ -1,0 +1,8 @@
+appId: com.conuwalks.app
+---
+- repeat:
+    while:
+      visible: "Next Class.*"
+    commands:
+      - tapOn:
+          id: "banner-close-button"

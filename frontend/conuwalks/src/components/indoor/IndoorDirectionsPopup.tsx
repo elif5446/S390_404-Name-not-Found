@@ -177,6 +177,7 @@ const IndoorDirectionsPopup = forwardRef<IndoorDirectionsPopupHandle, IndoorDire
                     accessibilityRole="button"
                     accessibilityLabel="Close indoor directions"
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    testID="indoor-directions-popup-close-btn"
                   >
                     {Platform.OS === "ios" ? (
                       <Text
@@ -290,6 +291,7 @@ const IndoorDirectionsPopup = forwardRef<IndoorDirectionsPopupHandle, IndoorDire
                     </View>
 
                     <Text
+                      testID={`nav-step-text-${index}`}
                       style={{
                         flex: 1,
                         fontSize: isActive ? 18 : 15,
@@ -335,6 +337,7 @@ const IndoorDirectionsPopup = forwardRef<IndoorDirectionsPopupHandle, IndoorDire
             }}
             disabled={disablePrev}
             style={[styles.navBtn, { backgroundColor: disablePrev ? "#DDD" : "#B03060" }]}
+            testID="nav-prev-button"
           >
             <Text style={{ color: disablePrev ? (isDark ? "#776D72" : "#A0A0A0") : "white", fontWeight: "700" }}>Previous</Text>
           </TouchableOpacity>
@@ -350,6 +353,7 @@ const IndoorDirectionsPopup = forwardRef<IndoorDirectionsPopupHandle, IndoorDire
             }}
             disabled={disableNext}
             style={[styles.navBtn, { backgroundColor: disableNext ? "#DDD" : "#B03060" }]}
+            testID="nav-next-button"
           >
             <Text style={{ color: disableNext ? (isDark ? "#776D72" : "#FFF") : "white", fontWeight: "700" }}>
               {isLastStep ? finishLabel || "Finish" : "Next"}

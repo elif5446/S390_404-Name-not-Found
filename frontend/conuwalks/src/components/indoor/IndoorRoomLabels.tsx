@@ -192,6 +192,8 @@ const IndoorRoomLabels: React.FC<Props> = ({
               }}
               accessibilityRole="button"
               accessibilityLabel={`Set destination to ${spot.label}`}
+              testID={`room-label-${spot.label.replace("Room ", "")}`}
+              accessible={true}
             >
               <Text
                 style={{

@@ -1,0 +1,51 @@
+appId: com.conuwalks.app
+tags:
+  - feature
+  - navigation
+  - inter-building
+---
+- runFlow:
+    file: ../subflows/launch.yaml
+    env:
+      USERNAME: "${USERNAME}"
+      PASSWORD: "${PASSWORD}"
+
+- runFlow:
+    file: ../subflows/clear-next-class-banner.yaml
+
+- setLocation:
+    latitude: 45.495633
+    longitude: -73.578902
+- tapOn:
+    id: "recenter-location-button"
+- waitForAnimationToEnd
+
+- tapOn:
+    point: 50%, 18%
+- waitForAnimationToEnd
+- assertVisible: "Henry F. Hall Building"
+
+- runFlow:
+    file: ../subflows/open-indoor-map-popup.yaml
+- assertVisible: "Hall Building"
+
+- tapOn:
+    id: "floor-8-button"
+- waitForAnimationToEnd
+- tapOn: "Points of Interest.*"
+- waitForAnimationToEnd
+
+# unable to target poi badges
+- assertVisible: "Computer Lab"
+- assertVisible: "807"
+- scroll
+- scroll
+- assertVisible: "Elevator"
+- assertVisible: "Stairs"
+- assertVisible: "Escalator"
+
+- tapOn: "Points of Interest.*"
+
+- tapOn:
+    id: "indoor-back-button"
+- waitForAnimationToEnd

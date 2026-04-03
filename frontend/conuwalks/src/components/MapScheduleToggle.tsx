@@ -1,11 +1,5 @@
 import React from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Platform,
-  useColorScheme,
-} from "react-native";
+import { View, Text, TouchableOpacity, Platform, useColorScheme } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { SymbolView } from "expo-symbols";
 import { BlurView } from "expo-blur";
@@ -42,6 +36,7 @@ const ToggleButton = ({ label, value, current, icon, iosIcon, colors, onPress }:
         alignItems: "center",
         justifyContent: "center",
       }}
+      testID={`${value}view-button`}
     >
       <ToggleIcon
         name={icon}
@@ -56,11 +51,7 @@ const ToggleButton = ({ label, value, current, icon, iosIcon, colors, onPress }:
     </TouchableOpacity>
   );
 };
-const MapCalendarToggle: React.FC<Props> = ({
-  selected,
-  onChange,
-  visible = true,
-}) => {
+const MapCalendarToggle: React.FC<Props> = ({ selected, onChange, visible = true }) => {
   const mode = useColorScheme() || "light";
 
   if (!visible) return null;
@@ -68,7 +59,7 @@ const MapCalendarToggle: React.FC<Props> = ({
   const isIOS = Platform.OS === "ios";
   const isCalendar = selected === "calendar";
 
-// extracted shadow logic
+  // extracted shadow logic
   let shadowOpacity = 0;
   let elevation = 0;
 
@@ -77,13 +68,12 @@ const MapCalendarToggle: React.FC<Props> = ({
     elevation = isIOS ? 0 : 6;
   }
 
-const colors = {
-   background : mode === "dark" ? "#1C1B1F" : "#FFFFFF",
-   activeBg : "#B03060",
-   activeColor : "#FFFFFF",
-   inactiveColor : mode === "dark" ? "#FFFFFF" : "#333333",
+  const colors = {
+    background: mode === "dark" ? "#1C1B1F" : "#FFFFFF",
+    activeBg: "#B03060",
+    activeColor: "#FFFFFF",
+    inactiveColor: mode === "dark" ? "#FFFFFF" : "#333333",
   };
-
 
   return (
     <View
@@ -115,9 +105,7 @@ const colors = {
           elevation: elevation,
         }}
       >
-
-
-        {isIOS &&
+        {isIOS && (
           <BlurView
             intensity={35}
             tint={mode === "dark" ? "dark" : "light"}
@@ -127,11 +115,18 @@ const colors = {
               height: "100%",
             }}
           />
-        }
+        )}
 
         <ToggleButton label="Map" value="map" current={selected} icon="map" iosIcon="map" colors={colors} onPress={onChange} />
-        <ToggleButton label="Schedule" value="calendar" current={selected} icon="event" iosIcon="calendar" colors={colors} onPress={onChange} />
-
+        <ToggleButton
+          label="Schedule"
+          value="calendar"
+          current={selected}
+          icon="event"
+          iosIcon="calendar"
+          colors={colors}
+          onPress={onChange}
+        />
       </View>
     </View>
   );

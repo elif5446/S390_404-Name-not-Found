@@ -8,16 +8,12 @@ interface UserProfileHeaderProps {
   mode: "light" | "dark";
 }
 
-const UserProfileHeader: React.FC<UserProfileHeaderProps> = ({
-  userInfo,
-  onClose,
-  mode,
-}) => {
+const UserProfileHeader: React.FC<UserProfileHeaderProps> = ({ userInfo, onClose, mode }) => {
   const textColor = mode === "dark" ? "#FFFFFF" : "#333333";
 
   return (
     <View style={styles.header}>
-      <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+      <TouchableOpacity onPress={onClose} style={styles.closeBtn} testID="profile-close-button">
         <MaterialIcons name="close" size={28} color={textColor} />
       </TouchableOpacity>
 
@@ -26,14 +22,10 @@ const UserProfileHeader: React.FC<UserProfileHeaderProps> = ({
           <Image source={{ uri: userInfo.photo }} style={styles.avatar} />
         ) : (
           <View style={styles.placeholderAvatar}>
-            <Text style={styles.placeholderText}>
-              {userInfo?.name?.charAt(0) || "U"}
-            </Text>
+            <Text style={styles.placeholderText}>{userInfo?.name?.charAt(0) || "U"}</Text>
           </View>
         )}
-        <Text style={[styles.userName, { color: textColor }]}>
-          {userInfo?.name || "User Name"}
-        </Text>
+        <Text style={[styles.userName, { color: textColor }]}>{userInfo?.name || "User Name"}</Text>
         <Text style={styles.userRole}>Concordia University Student</Text>
       </View>
     </View>

@@ -3,28 +3,31 @@ tags:
   - feature
   - directions
 ---
-- runFlow: 
+- runFlow:
     file: ../subflows/launch.yaml
     env:
-        USERNAME: "${USERNAME}"
-        PASSWORD: "${PASSWORD}"
+      USERNAME: "${USERNAME}"
+      PASSWORD: "${PASSWORD}"
 
-- waitForAnimationToEnd
-
-- doubleTapOn:
-    point: 50%, 50%
-
+- setLocation:
+    latitude: 45.495633
+    longitude: -73.578902
+- tapOn:
+    id: "recenter-location-button"
 - waitForAnimationToEnd
 
 - tapOn:
-    point: 60%, 80%
+    point: 66%, 80%
 
 - assertVisible: "Faubourg Ste-Catherine Building"
 - assertVisible: "Schedule"
-- tapOn: 
+- tapOn:
     id: "directions-button"
-    # text: ".*min" 
+    # text: ".*min"
 
+- assertVisible: "Current Location"
 - assertVisible: "Directions"
 - assertVisible: "Faubourg Ste-Catherine Building"
 - assertVisible: ".*min"
+- runFlow:
+    file: ../subflows/close-popup.yaml

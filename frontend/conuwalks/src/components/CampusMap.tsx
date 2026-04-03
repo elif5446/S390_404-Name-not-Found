@@ -2,12 +2,12 @@ import CampusLabels from "@/src/components/campusLabels";
 import RoutePolyline from "@/src/components/RoutePolyline";
 import { CampusConfig } from "@/src/data/campus/campusConfig";
 import { UserInfo } from "@/src/utils/tokenStorage";
-import OutdoorPOIButton from "./OutdoorPOIButton"; 
-import POIPanel from "./POIPanel"; 
+import OutdoorPOIButton from "./OutdoorPOIButton";
+import POIPanel from "./POIPanel";
 import OutdoorPOIMarkers from "./OutdoorPOIMarkers";
 import { fetchPOIs, POIPlace } from "@/src/api/places";
 import POIListPanel from "./POIListPanel";
-import { Provider, MapType } from 'react-native-maps';
+import MapView, { Provider, MapType, LatLng, Region, Marker, PROVIDER_GOOGLE, Polygon, LongPressEvent } from "react-native-maps";
 import React, { useState, useRef, useMemo, useCallback, useEffect } from "react";
 
 import {
@@ -23,7 +23,6 @@ import {
   TouchableOpacity,
   useColorScheme,
 } from "react-native";
-import MapView, { LatLng, Region, Marker, PROVIDER_GOOGLE, Polygon, LongPressEvent } from "react-native-maps";
 import { TravelMode } from "../outdoorDirections/TravelModeStrategy";
 
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
@@ -41,14 +40,8 @@ import { isPointInPolygon } from "@/src/utils/geo";
 import SGW from "@/src/data/campus/SGW.geojson";
 import LOY from "@/src/data/campus/LOY.geojson";
 import { INDOOR_DATA } from "@/src/data/indoorData";
-import {
-  LoyolaBuildingMetadata,
-  LoyolaBuildingSearchMetadata,
-} from "@/src/data/metadata/LOY.BuildingMetadata";
-import {
-  SGWBuildingMetadata,
-  SGWBuildingSearchMetadata,
-} from "@/src/data/metadata/SGW.BuildingMetaData";
+import { LoyolaBuildingMetadata, LoyolaBuildingSearchMetadata } from "@/src/data/metadata/LOY.BuildingMetadata";
+import { SGWBuildingMetadata, SGWBuildingSearchMetadata } from "@/src/data/metadata/SGW.BuildingMetaData";
 import IndoorMapOverlay from "./indoor/IndoorMapOverlay";
 import DirectionsSearchPanel from "./DirectionsSearchPanel";
 
@@ -124,9 +117,7 @@ const BuildingGroup = React.memo(
     markerRefSetter, // helper to set the ref from parent
   }: any) => {
     const centerCoordinates = calculatePolygonCenter(coordinates);
-    const campusTheme = BuildingTheme[
-      campus as keyof typeof BuildingTheme
-    ] as Record<string, string>;
+    const campusTheme = BuildingTheme[campus as keyof typeof BuildingTheme] as Record<string, string>;
 
     const themeColor = campusTheme[buildingId] || "#888888";
     const name = getBuildingDisplayName(buildingId, campus);
@@ -137,9 +128,9 @@ const BuildingGroup = React.memo(
       } else if (isDestination) {
         code = "C8";
       } else if (dimOthers) {
-        code = "55"
+        code = "55";
       } else {
-        code = "B0"
+        code = "B0";
       }
       return themeColor + code;
     }
@@ -150,33 +141,18 @@ const BuildingGroup = React.memo(
         <Polygon
           coordinates={coordinates}
           accessibilityLabel={name}
-          testID={`polygon-${name}`}
           fillColor={fillColor}
           strokeColor={"rgba(0,0,0,0.12)"}
           strokeWidth={1}
           tappable
-          onPress={() =>
-            handleBuildingPress(buildingId, campus, centerCoordinates)
-          }
+          onPress={() => handleBuildingPress(buildingId, campus, centerCoordinates)}
           zIndex={3}
         />
 
         {isSelected && (
           <>
-            <Polygon
-              coordinates={coordinates}
-              fillColor="transparent"
-              strokeColor="#515351ff"
-              strokeWidth={5}
-              zIndex={5}
-            />
-            <Polygon
-              coordinates={coordinates}
-              fillColor="transparent"
-              strokeColor="#FFFFFF"
-              strokeWidth={2}
-              zIndex={6}
-            />
+            <Polygon coordinates={coordinates} fillColor="transparent" strokeColor="#515351ff" strokeWidth={5} zIndex={5} />
+            <Polygon coordinates={coordinates} fillColor="transparent" strokeColor="#FFFFFF" strokeWidth={2} zIndex={6} />
           </>
         )}
 
@@ -188,7 +164,6 @@ const BuildingGroup = React.memo(
             tracksViewChanges={trackDestMarker}
             flat
             accessibilityLabel={`${name} destination`}
-            testID={`marker-${name}-destination`}
           >
             <MaterialIcons name="place" size={26} color="#B03060" />
           </Marker>
@@ -202,7 +177,6 @@ const BuildingGroup = React.memo(
           tracksViewChanges={false}
           title={name}
           accessibilityLabel={name}
-          testID={`marker-${name}`}
         >
           <View style={{ width: 44, height: 44, opacity: 0.01 }} />
         </Marker>
@@ -210,6 +184,8 @@ const BuildingGroup = React.memo(
     );
   },
 );
+
+BuildingGroup.displayName = "BuildingGroup";
 
 const CampusMap: React.FC<CampusMapProps> = ({
   initialLocation = { latitude: 45.49599, longitude: -73.57854 },
@@ -333,9 +309,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
   // Filter buildings based on the search query
   const filteredBuildings = useMemo(() => {
     if (!searchQuery) return allBuildings;
-    return allBuildings.filter((b) =>
-      b.name.toLowerCase().includes(searchQuery.toLowerCase()),
-    );
+    return allBuildings.filter(b => b.name.toLowerCase().includes(searchQuery.toLowerCase()));
   }, [searchQuery, allBuildings]);
   // Handlers for building search
   const handleOpenBuildingSearch = () => {
@@ -619,12 +593,50 @@ const CampusMap: React.FC<CampusMapProps> = ({
     setShowDirections(false);
   }, [setShowDirections]);
 
-  const handleEndNavigation = useCallback(() => {
-    setActivePOIDestination(null);
-    setIsNavigationActive(false);
-    setShowDirections(true);
-    setIsManualIndoorOverride(false);
-  }, [setIsNavigationActive, setShowDirections]);
+  const destinationCenter = useMemo(() => {
+    if (!destinationBuildingId) return null;
+    const findCenter = (geojson: typeof SGW | typeof LOY) => {
+      const feature = geojson.features.find(f => (f as GeoJsonFeature).properties.id === destinationBuildingId) as
+        | GeoJsonFeature
+        | undefined;
+      return feature?.geometry.type === "Polygon" ? calculatePolygonCenter(feature.geometry.coordinates[0]) : null;
+    };
+    return findCenter(SGW) || findCenter(LOY);
+  }, [destinationBuildingId]);
+
+  const handleEndNavigation = useCallback(
+    (arrived: boolean = false) => {
+      setActivePOIDestination(null);
+      setIsNavigationActive(false);
+
+      if (arrived && indoorBuildingId) {
+        // User arrived inside a building.
+        // KEEP them inside by maintaining the manual override.
+        setIsManualIndoorOverride(true);
+
+        // Set their new "Start Point" to the room they just arrived at!
+        if (destinationBuildingId && destinationRoom) {
+          setStartPoint(destinationBuildingId, destinationCenter || userLocation || initialLocation, "Current Location", destinationRoom);
+        }
+        setShowDirections(false); // Clear the panel so they can look at the room
+      } else {
+        // User cancelled, or arrived outside. Behave normally.
+        setShowDirections(true);
+        setIsManualIndoorOverride(false);
+      }
+    },
+    [
+      setIsNavigationActive,
+      setShowDirections,
+      indoorBuildingId,
+      destinationBuildingId,
+      destinationRoom,
+      destinationCenter,
+      userLocation,
+      initialLocation,
+      setStartPoint,
+    ],
+  );
 
   const handleToggleOutdoorMap = useCallback(() => {
     if (indoorBuildingId) {
@@ -648,13 +660,13 @@ const CampusMap: React.FC<CampusMapProps> = ({
 
   const isSheetVisibleForAccessibility = (selectedBuilding.visible && !showDirections) || showDirections;
 
-const modeLabelMap: Record<TravelMode, string> = {
-  walking: "Walking",
-  driving: "Driving",
-  transit: "Transit",
-  bicycling: "Bicycling",
-  shuttle: "Shuttle",
-};
+  const modeLabelMap: Record<TravelMode, string> = {
+    walking: "Walking",
+    driving: "Driving",
+    transit: "Transit",
+    bicycling: "Bicycling",
+    shuttle: "Shuttle",
+  };
 
   // Wrapped in useMemo to prevent dependency warning and unnecessary re-evaluations
   const transitNavigationStops = useMemo(() => {
@@ -860,17 +872,6 @@ const modeLabelMap: Record<TravelMode, string> = {
     };
   }, [userLocation, userLocationBuildingId]);
 
-  const destinationCenter = useMemo(() => {
-    if (!destinationBuildingId) return null;
-    const findCenter = (geojson: typeof SGW | typeof LOY) => {
-      const feature = geojson.features.find(f => (f as GeoJsonFeature).properties.id === destinationBuildingId) as
-        | GeoJsonFeature
-        | undefined;
-      return feature?.geometry.type === "Polygon" ? calculatePolygonCenter(feature.geometry.coordinates[0]) : null;
-    };
-    return findCenter(SGW) || findCenter(LOY);
-  }, [destinationBuildingId]);
-
   // auto-trigger entry/exit based on User Location & Navigation State
   useEffect(() => {
     if (!isNavigationActive || isManualIndoorOverride) {
@@ -879,21 +880,17 @@ const modeLabelMap: Record<TravelMode, string> = {
 
     let targetBuildingId = userLocationBuildingId;
 
-    if (
-      !targetBuildingId
-      && ![null, "USER"].includes(startBuildingId)
-      && navigationStepIndex === 0
-    ) {
+    if (!targetBuildingId && ![null, "USER"].includes(startBuildingId) && navigationStepIndex === 0) {
       targetBuildingId = startBuildingId;
     }
 
     // proximity fallback
     if (
-      !targetBuildingId
-      && destinationBuildingId
-      && destinationCenter
-      && userLocation
-      && 65 >= distanceMetersBetween(userLocation, destinationCenter)
+      !targetBuildingId &&
+      destinationBuildingId &&
+      destinationCenter &&
+      userLocation &&
+      65 >= distanceMetersBetween(userLocation, destinationCenter)
     ) {
       targetBuildingId = destinationBuildingId;
     }
@@ -904,9 +901,9 @@ const modeLabelMap: Record<TravelMode, string> = {
         setIndoorBuildingId(null);
       }
     } else if (
-      targetBuildingId
-      && INDOOR_DATA[targetBuildingId]
-      && ![indoorBuildingId, manuallyExitedBuildingId].includes(targetBuildingId)
+      targetBuildingId &&
+      INDOOR_DATA[targetBuildingId] &&
+      ![indoorBuildingId, manuallyExitedBuildingId].includes(targetBuildingId)
     ) {
       setIndoorBuildingId(targetBuildingId);
     }
@@ -943,8 +940,7 @@ const modeLabelMap: Record<TravelMode, string> = {
           const { id: buildingId } = feature.properties;
           const coordinates = polygonFromGeoJSON(feature.geometry.coordinates[0]);
 
-          const isSelected =
-            selectedBuilding.visible && selectedBuilding.name === buildingId;
+          const isSelected = selectedBuilding.visible && selectedBuilding.name === buildingId;
           const isDestination = destinationBuildingId === buildingId;
           const dimOthers = selectedBuilding.visible && !!selectedBuilding.name && !isSelected;
           const markerKey = `${campus}-${buildingId}`;
@@ -974,79 +970,77 @@ const modeLabelMap: Record<TravelMode, string> = {
   const mapID = useMemo(() => {
     return colorScheme === "dark" ? "eb0ccd6d2f7a95e23f1ec398" : "eb0ccd6d2f7a95e117328051";
   }, [colorScheme]);
-// State for selected POI type
-const [selectedPOIType, setSelectedPOIType] = useState<string | null>(null);
 
-// State for panel visibility
-const [isPOIPanelVisible, setPOIPanelVisible] = useState(false);
+  const [selectedPOIType, setSelectedPOIType] = useState<string | null>(null);
+  const [isPOIPanelVisible, setPOIPanelVisible] = useState(false);
 
-// Handler to toggle panel
-const handleTogglePOIPanel = useCallback(() => {
-  setPOIPanelVisible(prev => !prev);
-}, []);
+  const handleTogglePOIPanel = useCallback(() => {
+    setPOIPanelVisible(prev => !prev);
+  }, []);
 
-const currentCampus: "SGW" | "LOY" = useMemo(() => {
-  if (mapRegion.latitude > 45.48) return "SGW";
-  return "LOY";
-}, [mapRegion.latitude]);// State for restaurants fetched from Google API
+  const currentCampus: "SGW" | "LOY" = useMemo(() => {
+    if (mapRegion.latitude > 45.48) return "SGW";
+    return "LOY";
+  }, [mapRegion.latitude]); // State for restaurants fetched from Google API
 
-const [pois, setPois] = useState<POIPlace[]>([]);
-const [selectedRadius, setSelectedRadius] = useState(1000);
+  const [pois, setPois] = useState<POIPlace[]>([]);
+  const [selectedRadius, setSelectedRadius] = useState(1000);
 
-useEffect(() => {
-  if (!selectedPOIType) {
-    setPois([]);
-    return;
-  }
-  fetchPOIs(currentCampus, selectedPOIType)
-    .then(setPois)
-    .catch((err) => {
-      console.error(`Failed to fetch ${selectedPOIType}:`, err);
+  useEffect(() => {
+    if (!selectedPOIType) {
       setPois([]);
-    });
-}, [currentCampus, selectedPOIType]);
+      return;
+    }
+    fetchPOIs(currentCampus, selectedPOIType)
+      .then(setPois)
+      .catch(err => {
+        console.error(`Failed to fetch ${selectedPOIType}:`, err);
+        setPois([]);
+      });
+  }, [currentCampus, selectedPOIType]);
 
-const [isPOIListPanelVisible, setIsPOIListPanelVisible] = useState(false);
+  const [isPOIListPanelVisible, setIsPOIListPanelVisible] = useState(false);
 
-// Dans CampusMap.tsx, juste avant le return
-console.log("selectedPOIType:", selectedPOIType);
-  
-// Add POI directions handler
-const handlePOIDirections = useCallback((poi: POIPlace) => {
-  console.log('Setting POI:', poi.name);  
-  // Close POI list
-  setIsPOIListPanelVisible(false);
-  setActivePOIDestination(poi.name);
-  
-  // Set as destination using your existing directions system
-  setDestination(`POI-${poi.id}`, { latitude: poi.latitude, longitude: poi.longitude }, poi.name);
-  
-  // Use user location as start point
-  if (userLocation) {
-    setStartPoint("USER", userLocation, "Your Location");
-  }
-  
-  // Open directions panel
-  setShowDirections(true);
-}, [userLocation, setDestination, setStartPoint, setShowDirections]);
+  // Add POI directions handler
+  const handlePOIDirections = useCallback(
+    (poi: POIPlace) => {
+      console.log("Setting POI:", poi.name);
+      // Close POI list
+      setIsPOIListPanelVisible(false);
+      setActivePOIDestination(poi.name);
 
-// Add clear POIs handler
-const handleClearPOIs = useCallback(() => {
-  setSelectedPOIType(null);
-  setPois([]);
-  setIsPOIListPanelVisible(false);
-}, []);
+      // Set as destination using your existing directions system
+      setDestination(`POI-${poi.id}`, { latitude: poi.latitude, longitude: poi.longitude }, poi.name);
 
+      // Use user location as start point
+      if (userLocation) {
+        setStartPoint("USER", userLocation, "Your Location");
+      }
 
-const updatePOIs = async (radius: number) => {
-  if (!selectedPOIType) return;
-  const newPois = await fetchPOIs(currentCampus, selectedPOIType, radius);
-  setSelectedRadius(radius);
-  setPois(newPois);
-};
-  const ifDarkScheme = (dark: string | undefined = undefined, light: string | undefined = undefined) => colorScheme === "dark" ? dark : light
-  const ifAndroid = <T = unknown>(android: T | undefined = undefined, iOS: T | undefined = undefined) => Platform.OS === 'android' ? android : iOS
-  const ifiOS = <T = unknown>(iOS: T | undefined = undefined, android: T | undefined = undefined) => ifAndroid(android, iOS)
+      // Open directions panel
+      setShowDirections(true);
+    },
+    [userLocation, setDestination, setStartPoint, setShowDirections],
+  );
+
+  // Add clear POIs handler
+  const handleClearPOIs = useCallback(() => {
+    setSelectedPOIType(null);
+    setPois([]);
+    setIsPOIListPanelVisible(false);
+  }, []);
+
+  const updatePOIs = async (radius: number) => {
+    if (!selectedPOIType) return;
+    const newPois = await fetchPOIs(currentCampus, selectedPOIType, radius);
+    setSelectedRadius(radius);
+    setPois(newPois);
+  };
+  const ifDarkScheme = (dark: string | undefined = undefined, light: string | undefined = undefined) =>
+    colorScheme === "dark" ? dark : light;
+  const ifAndroid = <T = unknown,>(android: T | undefined = undefined, iOS: T | undefined = undefined) =>
+    Platform.OS === "android" ? android : iOS;
+  const ifiOS = <T = unknown,>(iOS: T | undefined = undefined, android: T | undefined = undefined) => ifAndroid(android, iOS);
   const navPanelBgColor = ifiOS("transparent", ifDarkScheme("#2C2C2E", "#FFFFFF"));
 
   return (
@@ -1105,6 +1099,7 @@ const updatePOIs = async (radius: number) => {
             accessibilityLabel="Current Location"
             importantForAccessibility="yes"
             anchor={{ x: 0.5, y: 0.5 }}
+            testID="user-location-marker"
           >
             <View
               onLayout={() => {
@@ -1112,6 +1107,8 @@ const updatePOIs = async (radius: number) => {
                   setTimeout(() => setTrackLocationMarker(false), 100);
                 }
               }}
+              testID="user-location-marker-view"
+              accessible={true}
               style={{
                 width: 30,
                 height: 30,
@@ -1165,14 +1162,14 @@ const updatePOIs = async (radius: number) => {
           </Marker>
         ))}
         {selectedPOIType && pois.length > 0 && (
-  <OutdoorPOIMarkers
-    campus={currentCampus}
-    poiType={selectedPOIType}
-    pois={pois}
-    onPOIPress={(poi) => console.log("Clicked:", poi.name)}
-    radiusMeters={selectedRadius}
-  />
-)}
+          <OutdoorPOIMarkers
+            campus={currentCampus}
+            poiType={selectedPOIType}
+            pois={pois}
+            onPOIPress={poi => console.log("Clicked:", poi.name)}
+            radiusMeters={selectedRadius}
+          />
+        )}
       </MapView>
 
       {selectedTransitStop && !indoorBuildingId && (
@@ -1243,40 +1240,33 @@ const updatePOIs = async (radius: number) => {
         </View>
       )}
       <View
-  style={{
-    position: "absolute",
-    bottom: 460,
-    right: 15,
-    zIndex: 999,
-  }}
->
-  <OutdoorPOIButton
-    onPress={handleTogglePOIPanel}
-    buttonSize={50}
-    mode={colorScheme}
-    buttonSpacing={16}
-  />
-</View>
-<POIPanel
-  visible={isPOIPanelVisible}
-  onClose={() => setPOIPanelVisible(false)}
-  onPOISelect={(type) => {
-    setSelectedPOIType(type);
-    setPOIPanelVisible(false);
-      // Auto-open POI list when POIs load
-      setTimeout(() => setIsPOIListPanelVisible(true), 800);
-  }}
-  />
-  <POIListPanel
-  visible={isPOIListPanelVisible && !!selectedPOIType && pois.length > 0}
-  pois={pois}
-  userLocation={userLocation}
-  onClose={() => setIsPOIListPanelVisible(false)}
-  onPOIDirections={handlePOIDirections}
-  onClearPOIs={handleClearPOIs}
-  onUpdatePOIs={updatePOIs}
-/>
-
+        style={{
+          position: "absolute",
+          bottom: 460,
+          right: 15,
+          zIndex: 999,
+        }}
+      >
+        <OutdoorPOIButton onPress={handleTogglePOIPanel} buttonSize={50} mode={colorScheme} buttonSpacing={16} />
+      </View>
+      <POIPanel
+        visible={isPOIPanelVisible}
+        onClose={() => setPOIPanelVisible(false)}
+        onPOISelect={type => {
+          setSelectedPOIType(type);
+          setPOIPanelVisible(false);
+          setTimeout(() => setIsPOIListPanelVisible(true), 800);
+        }}
+      />
+      <POIListPanel
+        visible={isPOIListPanelVisible && !!selectedPOIType && pois.length > 0}
+        pois={pois}
+        userLocation={userLocation}
+        onClose={() => setIsPOIListPanelVisible(false)}
+        onPOIDirections={handlePOIDirections}
+        onClearPOIs={handleClearPOIs}
+        onUpdatePOIs={updatePOIs}
+      />
 
       {isNavigationActive && routeData && !indoorBuildingId && (
         <View
@@ -1303,9 +1293,7 @@ const updatePOIs = async (radius: number) => {
           accessibilityRole="summary"
           accessibilityLabel={`${modeLabelMap[travelMode]} navigation. ${routeData.duration}, ${routeData.distance}. ${activeInstruction?.instruction || "Continue on current route"}`}
         >
-          {Platform.OS === "ios" && (
-            <BlurView intensity={35} tint={colorScheme} style={StyleSheet.absoluteFill} />
-          )}
+          {Platform.OS === "ios" && <BlurView intensity={35} tint={colorScheme} style={StyleSheet.absoluteFill} />}
           <Text
             style={{
               color: "#B03060",
@@ -1355,10 +1343,7 @@ const updatePOIs = async (radius: number) => {
             paddingVertical: 10,
             backgroundColor: navPanelBgColor,
             borderWidth: ifiOS(1, 0),
-            borderColor:
-              colorScheme === "dark"
-                ? "rgba(255,255,255,0.12)"
-                : "rgba(0,0,0,0.08)",
+            borderColor: colorScheme === "dark" ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)",
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: ifiOS(0.16, 0.2),
@@ -1372,9 +1357,7 @@ const updatePOIs = async (radius: number) => {
           }}
           accessible={false}
         >
-          {Platform.OS === "ios" && (
-            <BlurView intensity={35} tint={colorScheme} style={StyleSheet.absoluteFill} />
-          )}
+          {Platform.OS === "ios" && <BlurView intensity={35} tint={colorScheme} style={StyleSheet.absoluteFill} />}
           <View>
             <Text
               style={{
@@ -1400,7 +1383,7 @@ const updatePOIs = async (radius: number) => {
 
           <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
             <TouchableOpacity
-              onPress={handleEndNavigation}
+              onPress={() => handleEndNavigation(false)}
               style={{
                 width: 38,
                 height: 38,
@@ -1576,7 +1559,7 @@ const updatePOIs = async (radius: number) => {
             setStartPoint={setStartPoint}
             destinationBuildingId={destinationBuildingId}
             destinationRoom={destinationRoom}
-            destinationLabel={activePOIDestination} 
+            destinationLabel={activePOIDestination}
             setDestination={setDestination}
             userLocationBuildingId={userLocationBuildingId}
             isIndoorView={!!indoorBuildingId}
