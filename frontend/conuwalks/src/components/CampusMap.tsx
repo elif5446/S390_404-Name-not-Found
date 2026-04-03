@@ -7,7 +7,6 @@ import POIPanel from "./POIPanel";
 import OutdoorPOIMarkers from "./OutdoorPOIMarkers";
 import { fetchPOIs, POIPlace } from "@/src/api/places";
 import POIListPanel from "./POIListPanel";
-import { Provider, MapType } from 'react-native-maps';
 import React, { useState, useRef, useMemo, useCallback, useEffect } from "react";
 
 import {
@@ -23,7 +22,7 @@ import {
   TouchableOpacity,
   useColorScheme,
 } from "react-native";
-import MapView, { LatLng, Region, Marker, PROVIDER_GOOGLE, Polygon, LongPressEvent } from "react-native-maps";
+import MapView, { LatLng, Region, Marker, PROVIDER_GOOGLE, Polygon, LongPressEvent, Provider, MapType } from "react-native-maps";
 import { TravelMode } from "../outdoorDirections/TravelModeStrategy";
 
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
