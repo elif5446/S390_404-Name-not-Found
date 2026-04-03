@@ -112,11 +112,11 @@ const getApplicableDeparture = (
   return null;
 };
 
-// ── module-level formatters ────────────────────────────────────────────────
+//  module-level formatters 
 const formatDur = (m: number) => (m >= 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`);
 const formatDist = (m: number) => (m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${Math.round(m)} m`);
 
-// ── helper: fetch one walk leg, falling back to a straight-line estimate ───
+//  helper: fetch one walk leg, falling back to a straight-line estimate 
 type WalkLeg = { route: RouteData | null; mins: number; dist: number };
 
 const fetchWalkLeg = async (from: LatLng, to: LatLng, fallbackDist: number): Promise<WalkLeg> => {
@@ -132,7 +132,7 @@ const fetchWalkLeg = async (from: LatLng, to: LatLng, fallbackDist: number): Pro
   return { route: null, mins: Math.max(1, Math.round(fallbackDist / 80)), dist: 0 };
 };
 
-// ── helper: compute the overall trip window ────────────────────────────────
+//  helper: compute the overall trip window 
 const computeTripWindow = (
   timeMode: "leave" | "arrive",
   targetTime: Date,
@@ -146,7 +146,7 @@ const computeTripWindow = (
   return { tripStart, tripEnd, totalDurationMins: Math.round((tripEnd.getTime() - tripStart.getTime()) / 60000) };
 };
 
-// ── helper: build a walk leg (steps + polyline), using API result or fallback
+//  helper: build a walk leg (steps + polyline), using API result or fallback
 const buildWalkLeg = (
   walkRoute: RouteData | null,
   instruction: string,
@@ -164,7 +164,7 @@ const buildWalkLeg = (
   };
 };
 
-// ── main entry point ───────────────────────────────────────────────────────
+//  main entry point 
 export const getShuttleRouteIfApplicable = async (
   startCoords: LatLng,
   destinationCoords: LatLng,
