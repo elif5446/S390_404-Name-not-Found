@@ -98,6 +98,7 @@ const directionsSearchPanelStyles = StyleSheet.create({
     width: 30,
     alignItems: "center",
     justifyContent: "center",
+    opacity:0.4
   }
 });
 export default directionsSearchPanelStyles;
