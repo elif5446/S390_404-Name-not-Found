@@ -3,22 +3,25 @@ tags:
   - feature
   - directions
 ---
-- runFlow: 
+- runFlow:
     file: ../subflows/launch.yaml
     env:
-        USERNAME: "${USERNAME}"
-        PASSWORD: "${PASSWORD}"
+      USERNAME: "${USERNAME}"
+      PASSWORD: "${PASSWORD}"
+
+- setLocation:
+    latitude: 45.495633
+    longitude: -73.578902
+- waitForAnimationToEnd
+
+- runFlow:
+    file: ../subflows/clear-next-class-banner.yaml
 
 - tapOn: "Loyola"
 - waitForAnimationToEnd
 
-- doubleTapOn:
-    point: 50%, 50%
-- waitForAnimationToEnd
-
-- tapOn: 
-    point: 15%, 55% 
-    # text: "SP" 
+- tapOn:
+    point: 15%, 55%
 - assertVisible: "Richard J. Renaud Science Complex"
 
 - tapOn:
@@ -33,12 +36,12 @@ tags:
 
 - runScript:
     file: ../scripts/generateNextWeekDay.js
-- tapOn: 
+- tapOn:
     id: "picker-day-${output.setDate}"
 
 - repeat:
     while:
-      notVisible: 
+      notVisible:
         id: "picker-hour-9"
     commands:
       - swipe:
@@ -50,7 +53,7 @@ tags:
 
 - repeat:
     while:
-      notVisible: 
+      notVisible:
         id: "picker-minute-0"
     commands:
       - swipe:
@@ -66,11 +69,16 @@ tags:
 - tapOn:
     rightOf: "Concordia Shuttle"
     id: "navigate-button"
-
 - waitForAnimationToEnd
+- assertVisible:
+    id: "indoor-map-canvas"
+    optional: true
+- tapOn:
+    id: "indoor-back-button"
+    optional: true
 
 - assertVisible: ".*ETA"
-- assertVisible: 
+- assertVisible:
     id: "cancel-navigation-button"
 
 - tapOn:

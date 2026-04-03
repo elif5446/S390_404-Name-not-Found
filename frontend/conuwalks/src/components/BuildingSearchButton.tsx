@@ -10,18 +10,9 @@ interface BuildingSearchButtonProps {
   buttonSpacing: number;
 }
 
-const BuildingSearchButton: React.FC<BuildingSearchButtonProps> = ({
-  onPress,
-  buttonSize,
-  mode,
-  buttonSpacing,
-}) => {
+const BuildingSearchButton: React.FC<BuildingSearchButtonProps> = ({ onPress, buttonSize, mode, buttonSpacing }) => {
   const isIOS = Platform.OS === "ios";
-  const backgroundColor = isIOS
-    ? "transparent"
-    : mode === "dark"
-      ? "#2C2C2E"
-      : "#FFFFFF";
+  const backgroundColor = isIOS ? "transparent" : mode === "dark" ? "#2C2C2E" : "#FFFFFF";
   const shadowOpacity = isIOS ? 0.18 : 0.22;
   const elevation = isIOS ? 0 : 4;
 
@@ -48,6 +39,7 @@ const BuildingSearchButton: React.FC<BuildingSearchButtonProps> = ({
       accessibilityRole="button"
       accessibilityLabel="Open building search"
       accessibilityHint="Tap to search for a building and view its info"
+      testID="seach-button"
     >
       {isIOS && (
         <BlurView

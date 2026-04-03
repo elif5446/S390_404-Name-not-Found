@@ -1,5 +1,13 @@
 import React, { useState, memo } from "react";
-import { View, Text, TouchableOpacity, TouchableWithoutFeedback, Platform, AccessibilityActionEvent, LayoutChangeEvent } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  Platform,
+  AccessibilityActionEvent,
+  LayoutChangeEvent,
+} from "react-native";
 
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { SymbolView } from "expo-symbols";
@@ -65,32 +73,35 @@ const AdditionalInfoPopupHeader: React.FC<AdditionalInfoPopupHeaderProps> = ({
   const handleLeftHeight = (event: LayoutChangeEvent) => {
     const { height } = event.nativeEvent.layout;
     setLeftHeight(height);
-  }
+  };
   const [centerHeight, setCenterHeight] = useState(10);
   const handleCenterHeight = (event: LayoutChangeEvent) => {
     const { height } = event.nativeEvent.layout;
     setCenterHeight(height);
-  }
+  };
   const [rightHeight, setRightHeight] = useState(10);
   const handleRightHeight = (event: LayoutChangeEvent) => {
     const { height } = event.nativeEvent.layout;
     setRightHeight(height);
-  }
+  };
 
   return (
     <>
       <BottomSheetDragHandle isDark={isDark} onToggleHeight={onToggleHeight} onAccessibilityAction={onDragHandleAccessibilityAction} />
 
       <TouchableWithoutFeedback onPress={onToggleHeight}>
-        <View style={[styles.iosHeader, {height: Math.max(leftHeight, centerHeight, rightHeight)}]}>
+        <View style={[styles.iosHeader, { height: Math.max(leftHeight, centerHeight, rightHeight) }]}>
           <View style={styles.leftHeaderActions} onLayout={handleLeftHeight}>
             <TouchableOpacity
-              onPress={() => {onDismiss()}}
+              onPress={() => {
+                onDismiss();
+              }}
               style={[styles.closeButton, Platform.OS === "android" && { width: "auto", padding: 4 }]}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               accessible={true}
               accessibilityLabel="Close"
               accessibilityRole="button"
+              testID="close-popup-button"
             >
               {Platform.OS === "android" ? (
                 <MaterialIcons name="close" size={24} color={themedStyles.text(mode).color} />
@@ -107,14 +118,15 @@ const AdditionalInfoPopupHeader: React.FC<AdditionalInfoPopupHeaderProps> = ({
                 style={[styles.openIndoorHeaderButton, themedStyles.openIndoorHeaderButton(mode)]}
                 accessibilityRole="button"
                 accessibilityLabel="Open indoor map"
+                testID="indoor-map-button"
               >
-                <PlatformIcon materialName="map" iosName="map" size={25} color="black"/>
+                <PlatformIcon materialName="map" iosName="map" size={25} color="black" />
                 <Text style={[styles.openIndoorHeaderButtonText, themedStyles.openIndoorHeaderButtonText(mode)]}>Indoor</Text>
               </TouchableOpacity>
             )}
           </View>
 
-          <View style={[styles.headerTextContainer, {paddingHorizontal:sidePadding}]} onLayout={handleCenterHeight}>
+          <View style={[styles.headerTextContainer, { paddingHorizontal: sidePadding }]} onLayout={handleCenterHeight}>
             <Text style={[styles.buildingName, themedStyles.text(mode)]} accessibilityRole="header">
               {buildingInfo?.name || "Building"}
             </Text>
@@ -131,6 +143,7 @@ const AdditionalInfoPopupHeader: React.FC<AdditionalInfoPopupHeaderProps> = ({
               style={styles.directionsButton}
               accessibilityRole="button"
               accessibilityLabel={`Directions, ${directionsEtaLabel || "--"}`}
+              testID="directions-button"
             >
               <View style={styles.directionsArrowCircle}>
                 <PlatformIcon materialName="directions" iosName="arrow.trianglehead.turn.up.right.circle.fill" size={33} color="#FFFFFF" />

@@ -277,6 +277,7 @@ const IndoorDirectionsPopup = forwardRef<IndoorDirectionsPopupHandle, IndoorDire
                     accessibilityRole="button"
                     accessibilityLabel="Close indoor directions"
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    testID="indoor-directions-popup-close-btn"
                   >
                     <CloseIcon isDark={isDark} />
                   </TouchableOpacity>
@@ -333,17 +334,63 @@ const IndoorDirectionsPopup = forwardRef<IndoorDirectionsPopupHandle, IndoorDire
               showsVerticalScrollIndicator={false}
               nestedScrollEnabled
             >
-              {steps.map((step, index) => (
-                <IndoorStepItem
-                  key={step.id}
-                  step={step}
-                  index={index}
-                  totalSteps={steps.length}
-                  activeStepIndex={activeStepIndex}
-                  isDark={isDark}
-                  onLayout={(i, y) => { stepLayouts.current[i] = y; }}
-                />
-              ))}
+              {steps.map((step, index) => {
+                const isLast = index === steps.length - 1;
+                const isActive = index === activeStepIndex;
+
+                return (
+                  <View
+                    key={step.id}
+                    onLayout={e => {
+                      stepLayouts.current[index] = e.nativeEvent.layout.y;
+                    }}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      marginBottom: isLast ? 0 : 16,
+                      opacity: isActive ? 1 : 0.3,
+                      backgroundColor: isActive ? (isDark ? "#2A2025" : "#FFF0F5") : "transparent",
+                      padding: isActive ? 18 : 10,
+                      borderRadius: 14,
+                      transform: [{ scale: isActive ? 1.02 : 1 }],
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: isActive ? 32 : 24,
+                        height: isActive ? 32 : 24,
+                        borderRadius: isActive ? 16 : 12,
+                        backgroundColor: isActive || isLast ? "#C2185B" : isDark ? "#4B3D44" : "#FCE4EC",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginRight: 14,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: isActive ? 15 : 12,
+                          fontWeight: "900",
+                          color: isActive || isLast ? "#FFFFFF" : isDark ? "#E8C8D7" : "#C2185B",
+                        }}
+                      >
+                        {index + 1}
+                      </Text>
+                    </View>
+
+                    <Text
+                      testID={`nav-step-text-${index}`}
+                      style={{
+                        flex: 1,
+                        fontSize: isActive ? 18 : 15,
+                        fontWeight: isActive ? "800" : "500",
+                        color: isActive || isLast ? "#C2185B" : isDark ? "#E0D7DB" : "#4A4A4A",
+                      }}
+                    >
+                      {step.text}
+                    </Text>
+                  </View>
+                );
+              })}
             </ScrollView>
           </View>
         </Animated.View>
