@@ -503,7 +503,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
       setSelectedBuilding({
         name: foundId,
         campus: foundCampus,
-        coords: foundCenter || coordinate,
+        coords: foundCenter ?? coordinate,
         visible: false,
       });
     }
@@ -564,7 +564,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
         return;
       }
 
-      const finalRoom = room || destinationRoom;
+      const finalRoom = room ?? destinationRoom;
 
       setDestination(selectedBuilding.name, selectedBuilding.coords, buildingMetadata.name, finalRoom);
     },
