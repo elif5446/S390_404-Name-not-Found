@@ -68,8 +68,8 @@ const parseDur = (d?: string) => {
 
 const parseDist = (d?: string) => {
   if (!d) return 0;
-  if (d.includes("km")) return Number.parseFloat(d.replaceAll(/[^\d.]/g, "")) * 1000;
-  return Number.parseFloat(d.replaceAll(/[^\d.]/g, ""));
+  if (d.includes("km")) return Number.parseFloat(d.replace(/[^\d.]/g, "")) * 1000;
+  return Number.parseFloat(d.replace(/[^\d.]/g, ""));
 };
 
 /**
@@ -112,6 +112,59 @@ const getApplicableDeparture = (
   return null;
 };
 
+// ── module-level formatters ────────────────────────────────────────────────
+const formatDur = (m: number) => (m >= 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`);
+const formatDist = (m: number) => (m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${Math.round(m)} m`);
+
+// ── helper: fetch one walk leg, falling back to a straight-line estimate ───
+type WalkLeg = { route: RouteData | null; mins: number; dist: number };
+
+const fetchWalkLeg = async (from: LatLng, to: LatLng, fallbackDist: number): Promise<WalkLeg> => {
+  try {
+    const results = await getDirections(from, to, "walking");
+    if (results && results.length > 0) {
+      const route = results[0];
+      return { route, mins: parseDur(route.duration), dist: parseDist(route.distance) };
+    }
+  } catch (e) {
+    console.log("skipping...", e);
+  }
+  return { route: null, mins: Math.max(1, Math.round(fallbackDist / 80)), dist: 0 };
+};
+
+// ── helper: compute the overall trip window ────────────────────────────────
+const computeTripWindow = (
+  timeMode: "leave" | "arrive",
+  targetTime: Date,
+  departureDate: Date,
+  arrivalDate: Date,
+  walkToMins: number,
+  walkFromMins: number,
+) => {
+  const tripStart = timeMode === "leave" ? targetTime : new Date(departureDate.getTime() - walkToMins * 60000);
+  const tripEnd = timeMode === "leave" ? new Date(arrivalDate.getTime() + walkFromMins * 60000) : targetTime;
+  return { tripStart, tripEnd, totalDurationMins: Math.round((tripEnd.getTime() - tripStart.getTime()) / 60000) };
+};
+
+// ── helper: build a walk leg (steps + polyline), using API result or fallback
+const buildWalkLeg = (
+  walkRoute: RouteData | null,
+  instruction: string,
+  distanceStr: string,
+  durationMins: number,
+  from: LatLng,
+  to: LatLng,
+): { steps: DirectionStep[]; polyline: LatLng[] } => {
+  if (walkRoute && walkRoute.steps.length > 0) {
+    return { steps: walkRoute.steps, polyline: walkRoute.polylinePoints };
+  }
+  return {
+    steps: [{ instruction, distance: distanceStr, duration: `${durationMins} min`, travelMode: "walking", startLocation: from, endLocation: to, polylinePoints: [from, to] }],
+    polyline: [from, to],
+  };
+};
+
+// ── main entry point ───────────────────────────────────────────────────────
 export const getShuttleRouteIfApplicable = async (
   startCoords: LatLng,
   destinationCoords: LatLng,
@@ -128,45 +181,17 @@ export const getShuttleRouteIfApplicable = async (
 
   if (!isSGWtoLOY && !isLOYtoSGW) return null;
 
-  const OriginStop = isSGWtoLOY ? SGW_STOP : LOY_STOP;
-  const DestStop = isSGWtoLOY ? LOY_STOP : SGW_STOP;
+  const originStop = isSGWtoLOY ? SGW_STOP : LOY_STOP;
+  const destStop = isSGWtoLOY ? LOY_STOP : SGW_STOP;
   const departingCampus = isSGWtoLOY ? "SGW" : "LOY";
+  const startDistMeters = isSGWtoLOY ? distToSGW : distToLOY;
+  const destDistMeters = isSGWtoLOY ? destToLOY : destToSGW;
 
-  // fetch walking portion from api
-  let walkToRoute: RouteData | null = null;
-  let walkFromRoute: RouteData | null = null;
-  let walkToMins = 0,
-    walkFromMins = 0,
-    walkToDist = 0,
-    walkFromDist = 0;
+  const walkTo = await fetchWalkLeg(startCoords, originStop, startDistMeters);
+  const walkFrom = await fetchWalkLeg(destStop, destinationCoords, destDistMeters);
 
-  try {
-    const w1 = await getDirections(startCoords, OriginStop, "walking");
-    if (w1 && w1.length > 0) {
-      walkToRoute = w1[0];
-      walkToMins = parseDur(walkToRoute.duration);
-      walkToDist = parseDist(walkToRoute.distance);
-    }
-  } catch (e) {
-    console.log("skipping...", e);
-    walkToMins = Math.max(1, Math.round((isSGWtoLOY ? distToSGW : distToLOY) / 80));
-  }
-
-  try {
-    const w2 = await getDirections(DestStop, destinationCoords, "walking");
-    if (w2 && w2.length > 0) {
-      walkFromRoute = w2[0];
-      walkFromMins = parseDur(walkFromRoute.duration);
-      walkFromDist = parseDist(walkFromRoute.distance);
-    }
-  } catch (e) {
-    console.log("skipping...", e);
-    walkFromMins = Math.max(1, Math.round((isSGWtoLOY ? destToLOY : destToSGW) / 80));
-  }
-
-  // determine shuttle schedule factoring in walk times
   const schedule = await getLocalShuttleSchedule();
-  const timeStr = getApplicableDeparture(departingCampus, targetTime, schedule, timeMode, walkToMins, walkFromMins);
+  const timeStr = getApplicableDeparture(departingCampus, targetTime, schedule, timeMode, walkTo.mins, walkFrom.mins);
   if (!timeStr) return null;
 
   const [depH, depM] = timeStr.split(":").map(Number);
@@ -175,82 +200,35 @@ export const getShuttleRouteIfApplicable = async (
   const arrivalDate = new Date(departureDate);
   arrivalDate.setMinutes(arrivalDate.getMinutes() + SHUTTLE_DURATION_MINS);
 
-  // calculate full trip duration (start walking -> finish final walk)
-  let tripStart: Date, tripEnd: Date;
-  if (timeMode === "leave") {
-    tripStart = targetTime;
-    tripEnd = new Date(arrivalDate.getTime() + walkFromMins * 60000);
-  } else {
-    tripEnd = targetTime;
-    tripStart = new Date(departureDate.getTime() - walkToMins * 60000);
-  }
+  const { tripStart, tripEnd, totalDurationMins } = computeTripWindow(
+    timeMode, targetTime, departureDate, arrivalDate, walkTo.mins, walkFrom.mins,
+  );
 
-  const totalDurationMins = Math.round((tripEnd.getTime() - tripStart.getTime()) / 60000);
-  const totalDistance =
-    (walkToDist || (isSGWtoLOY ? distToSGW : distToLOY)) + 7200 + (walkFromDist || (isSGWtoLOY ? destToLOY : destToSGW));
-
-  const formatDur = (m: number) => (m >= 60 ? `${Math.floor(m / 60)} h ${m % 60} min` : `${m} min`);
-  const formatDist = (m: number) => (m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${Math.round(m)} m`);
+  const totalDistance = (walkTo.dist || startDistMeters) + 7200 + (walkFrom.dist || destDistMeters);
 
   const etaString =
     timeMode === "leave"
       ? `${tripEnd.getHours()}:${tripEnd.getMinutes().toString().padStart(2, "0")} ETA`
       : `Leave by ${tripStart.getHours()}:${tripStart.getMinutes().toString().padStart(2, "0")}`;
 
-  // assemble master route
-  const fullPolyline: LatLng[] = [];
-  const fullSteps: DirectionStep[] = [];
-
-  // step a: walk to shuttle
-  if (walkToRoute && walkToRoute.steps.length > 0) {
-    fullSteps.push(...walkToRoute.steps);
-    fullPolyline.push(...walkToRoute.polylinePoints);
-  } else {
-    fullSteps.push({
-      instruction: `Walk to ${departingCampus === "SGW" ? "SGW Hall Building" : "Loyola Campus"} Shuttle Stop`,
-      distance: formatDist(isSGWtoLOY ? distToSGW : distToLOY),
-      duration: `${walkToMins} min`,
-      travelMode: "walking",
-      startLocation: startCoords,
-      endLocation: OriginStop,
-      polylinePoints: [startCoords, OriginStop],
-    });
-    fullPolyline.push(startCoords, OriginStop);
-  }
-
-  // step b: shuttle trip
   const shuttlePolyline = isSGWtoLOY ? [...SHUTTLE_STREET_PATH] : [...SHUTTLE_STREET_PATH].reverse();
+  const stopLabel = departingCampus === "SGW" ? "SGW Hall Building" : "Loyola Campus";
+  const destLabel = isSGWtoLOY ? "Loyola Campus" : "SGW Hall Building";
 
-  fullSteps.push({
-    instruction: `Take the Concordia Shuttle to ${isSGWtoLOY ? "Loyola Campus" : "SGW Hall Building"} (Departs at ${timeStr})`,
+  const walkToLeg = buildWalkLeg(walkTo.route, `Walk to ${stopLabel} Shuttle Stop`, formatDist(startDistMeters), walkTo.mins, startCoords, originStop);
+  const shuttleStep: DirectionStep = {
+    instruction: `Take the Concordia Shuttle to ${destLabel} (Departs at ${timeStr})`,
     distance: "7.2 km",
     duration: "30 min",
     travelMode: "transit",
     transitVehicleType: "Shuttle",
     transitLineShortName: "C",
     transitLineName: "Concordia Student Shuttle",
-    startLocation: OriginStop,
-    endLocation: DestStop,
+    startLocation: originStop,
+    endLocation: destStop,
     polylinePoints: shuttlePolyline,
-  });
-  fullPolyline.push(...shuttlePolyline);
-
-  // step c: walk to destination
-  if (walkFromRoute && walkFromRoute.steps.length > 0) {
-    fullSteps.push(...walkFromRoute.steps);
-    fullPolyline.push(...walkFromRoute.polylinePoints);
-  } else {
-    fullSteps.push({
-      instruction: `Walk to destination`,
-      distance: formatDist(isSGWtoLOY ? destToLOY : destToSGW),
-      duration: `${walkFromMins} min`,
-      travelMode: "walking",
-      startLocation: DestStop,
-      endLocation: destinationCoords,
-      polylinePoints: [DestStop, destinationCoords],
-    });
-    fullPolyline.push(DestStop, destinationCoords);
-  }
+  };
+  const walkFromLeg = buildWalkLeg(walkFrom.route, `Walk to destination`, formatDist(destDistMeters), walkFrom.mins, destStop, destinationCoords);
 
   return {
     id: `shuttle-${Date.now()}`,
@@ -261,9 +239,9 @@ export const getShuttleRouteIfApplicable = async (
     baseDurationSeconds: totalDurationMins * 60,
     eta: etaString,
     overviewPolyline: "",
-    polylinePoints: fullPolyline,
+    polylinePoints: [...walkToLeg.polyline, ...shuttlePolyline, ...walkFromLeg.polyline],
     departureDate: departureDate.toISOString(),
     arrivalDate: arrivalDate.toISOString(),
-    steps: fullSteps,
+    steps: [...walkToLeg.steps, shuttleStep, ...walkFromLeg.steps],
   };
 };
