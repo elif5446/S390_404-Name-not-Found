@@ -321,9 +321,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
   // handle restoring the camera view when navigation ends
   useEffect(() => {
     if (isNavigationActive) {
-      if (!preNavigationRegionRef.current) {
-        preNavigationRegionRef.current = mapRegion;
-      }
+      preNavigationRegionRef.current ??= mapRegion;
     } else if (preNavigationRegionRef.current && mapRef.current) {
       const regionToRestore = preNavigationRegionRef.current;
 
