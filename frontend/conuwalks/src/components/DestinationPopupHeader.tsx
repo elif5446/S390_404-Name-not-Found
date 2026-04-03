@@ -115,7 +115,8 @@ const DestinationHeader: React.FC<DestinationHeaderProps> = ({
             {TRANSPORT_OPTIONS.map(option => {
               const active = option.mode === travelMode;
               const displayDuration = getModeDurationLabel(option.mode);
-              const textColor = active ? "#FFFFFF" : isDark ? "#F5F5F5" : "#202020";
+              const inactiveTextColor = isDark ? "#F5F5F5" : "#202020";
+              const textColor = active ? "#FFFFFF" : inactiveTextColor;
               return (
                 <TouchableOpacity
                   key={option.mode}
