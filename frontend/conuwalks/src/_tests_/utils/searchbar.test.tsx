@@ -275,9 +275,7 @@ it("returns undefined when destination search has no matches", () => {
 
     expect(results).toContainEqual({
       buildingName: "John Molson Building",
-      roomNumber: 
-      
-      ,
+      roomNumber: null,
       isLocation: false,
     });
   });
