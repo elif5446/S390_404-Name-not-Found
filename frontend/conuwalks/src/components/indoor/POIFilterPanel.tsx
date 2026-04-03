@@ -192,6 +192,28 @@ const POIFilterPanel = forwardRef<POIFilterPanelHandle, Props>(
 
                 {visiblePOIs.map((poi, idx) => {
                   const categoryIcon = getCategoryIcon(poi.category);
+                  let iconElement;
+                  if (categoryIcon.lib === "ion") {
+                    iconElement = (
+                      <Ionicons name={categoryIcon.name} size={16} color={getCategoryIconColor(poi.category)} />
+                    );
+                  } else if (categoryIcon.lib === "mci") {
+                    iconElement = (
+                      <MaterialCommunityIcons name={categoryIcon.name} size={16} color={getCategoryIconColor(poi.category)} />
+                    );
+                  } else {
+                    iconElement = (
+                      <Text
+                        style={{
+                          fontSize: 10,
+                          fontWeight: "bold",
+                          color: getCategoryIconColor(poi.category),
+                        }}
+                      >
+                        IT
+                      </Text>
+                    );
+                  }
 
                   return (
                     <TouchableOpacity
@@ -219,21 +241,7 @@ const POIFilterPanel = forwardRef<POIFilterPanelHandle, Props>(
                           marginRight: 12,
                         }}
                       >
-                        {categoryIcon.lib === "ion" ? (
-                          <Ionicons name={categoryIcon.name} size={16} color={getCategoryIconColor(poi.category)} />
-                        ) : categoryIcon.lib === "mci" ? (
-                          <MaterialCommunityIcons name={categoryIcon.name} size={16} color={getCategoryIconColor(poi.category)} />
-                        ) : (
-                          <Text
-                            style={{
-                              fontSize: 10,
-                              fontWeight: "bold",
-                              color: getCategoryIconColor(poi.category),
-                            }}
-                          >
-                            IT
-                          </Text>
-                        )}
+                        {iconElement}
                       </View>
 
                       <View style={{ flex: 1 }}>
