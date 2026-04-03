@@ -68,8 +68,8 @@ const parseDur = (d?: string) => {
 
 const parseDist = (d?: string) => {
   if (!d) return 0;
-  if (d.includes("km")) return Number.parseFloat(d.replace(/[^\d.]/g, "")) * 1000;
-  return Number.parseFloat(d.replace(/[^\d.]/g, ""));
+  if (d.includes("km")) return Number.parseFloat(d.replaceAll(/[^\d.]/g, "")) * 1000;
+  return Number.parseFloat(d.replaceAll(/[^\d.]/g, ""));
 };
 
 /**

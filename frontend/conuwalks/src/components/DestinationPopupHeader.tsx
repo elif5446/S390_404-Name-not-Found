@@ -115,6 +115,8 @@ const DestinationHeader: React.FC<DestinationHeaderProps> = ({
             {TRANSPORT_OPTIONS.map(option => {
               const active = option.mode === travelMode;
               const displayDuration = getModeDurationLabel(option.mode);
+              const inactiveTextColor = isDark ? "#F5F5F5" : "#202020";
+              const textColor = active ? "#FFFFFF" : inactiveTextColor;
               return (
                 <TouchableOpacity
                   key={option.mode}
@@ -129,12 +131,12 @@ const DestinationHeader: React.FC<DestinationHeaderProps> = ({
                     materialName={option.icon}
                     iosName={option.iosName}
                     size={15}
-                    color={active ? "#FFFFFF" : isDark ? "#F5F5F5" : "#202020"}
+                    color={textColor}
                   />
                   <Text
                     numberOfLines={1}
                     style={{
-                      color: active ? "#FFFFFF" : isDark ? "#F5F5F5" : "#202020",
+                      color: textColor,
                       fontSize: 9,
                       fontWeight: "600",
                     }}

@@ -321,9 +321,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
   // handle restoring the camera view when navigation ends
   useEffect(() => {
     if (isNavigationActive) {
-      if (!preNavigationRegionRef.current) {
-        preNavigationRegionRef.current = mapRegion;
-      }
+      preNavigationRegionRef.current ??= mapRegion;
     } else if (preNavigationRegionRef.current && mapRef.current) {
       const regionToRestore = preNavigationRegionRef.current;
 
@@ -505,7 +503,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
       setSelectedBuilding({
         name: foundId,
         campus: foundCampus,
-        coords: foundCenter || coordinate,
+        coords: foundCenter ?? coordinate,
         visible: false,
       });
     }
@@ -566,7 +564,7 @@ const CampusMap: React.FC<CampusMapProps> = ({
         return;
       }
 
-      const finalRoom = room || destinationRoom;
+      const finalRoom = room ?? destinationRoom;
 
       setDestination(selectedBuilding.name, selectedBuilding.coords, buildingMetadata.name, finalRoom);
     },

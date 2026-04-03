@@ -282,7 +282,8 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ onNavigateToClass }) => {
           data={groupedArray}
           keyExtractor={item => item.date}
           renderItem={({ item: dateGroup }) => {
-            const dateHeadingColor = dateGroup.date === "Today" ? "#B03060" : mode === "dark" ? "#fff" : "#333";
+            const modeBasedColor = mode === "dark" ? "#fff" : "#333";
+            const dateHeadingColor = dateGroup.date === "Today" ? "#B03060" : modeBasedColor;
             return (
               <View key={dateGroup.date} style={{ paddingHorizontal: 16 }}>
                 <Text
