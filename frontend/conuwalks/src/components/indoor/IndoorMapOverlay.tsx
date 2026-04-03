@@ -827,7 +827,7 @@ const IndoorMapOverlay: React.FC<Props> = ({
 
       return handleSetLocation(
         {
-          id: nearestNode ? nearestNode.id : item.id,
+          id: nearestNode?.id ?? item.id,
           x: item.x,
           y: item.y,
           floorLevel: item.floorLevel!,
