@@ -188,4 +188,54 @@ describe("ScheduleSection Component", () => {
       expect(directionsButton).toBeTruthy();
     });
   });
+
+  describe("Event Time and Date Formatting", () => {
+    beforeEach(() => {
+      jest.spyOn(Date.prototype, "toLocaleTimeString").mockImplementation(function (this: Date) {
+        if (this.getTime() === mockTodayEvents[0].start.getTime()) return "10:00 AM";
+        if (this.getTime() === mockTodayEvents[0].end.getTime()) return "11:15 AM";
+        if (this.getTime() === mockNextEvent.start.getTime()) return "09:00 AM";
+        return "12:00 PM";
+      });
+
+      jest.spyOn(Date.prototype, "toLocaleDateString").mockImplementation(() => "Mar 2");
+    });
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
+    it("renders the 'Start Time - End Time' format when showDate is false (today's events)", () => {
+      render(<ScheduleSection {...defaultProps} todayEvents={[mockTodayEvents[0]]} />);
+
+      expect(screen.getByText("10:00 AM - 11:15 AM")).toBeTruthy();
+      
+      expect(screen.queryByText(/at/)).toBeNull();
+    });
+
+    it("renders the 'Date at Start Time' format when showDate is true (next future event)", () => {
+      render(
+        <ScheduleSection 
+          {...defaultProps} 
+          todayEvents={[]} 
+          nextEvent={mockNextEvent} 
+        />
+      );
+
+      expect(screen.getByText("Mar 2 at 09:00 AM")).toBeTruthy();
+      
+      expect(screen.queryByText(/ - /)).toBeNull();
+    });
+  });
+
+  it("covers default parameters in renderScheduleItem", () => {
+    render(
+      <ScheduleSection 
+        {...defaultProps} 
+        todayEvents={[mockTodayEvents[0]]} 
+      />
+    );
+    
+    expect(screen.getByText("Graphics Programming")).toBeTruthy();
+  });
 });
