@@ -1,0 +1,42 @@
+appId: com.conuwalks.app
+tags:
+  - feature
+  - navigation
+  - inter-building
+---
+- runFlow:
+    file: ../subflows/launch-with-mock-data.yaml
+    env:
+      USERNAME: "${USERNAME}"
+      PASSWORD: "${PASSWORD}"
+
+- setLocation:
+    latitude: 45.495633
+    longitude: -73.578902
+- tapOn:
+    id: "recenter-location-button"
+- waitForAnimationToEnd
+
+- runFlow:
+    file: ../subflows/clear-next-class-banner.yaml
+
+- tapOn:
+    point: 50%, 59%
+- waitForAnimationToEnd
+- assertVisible: "John Molson Building"
+
+- runFlow:
+    file: ../subflows/expand-info-popup.yaml
+
+- assertVisible: "Schedule"
+
+# Verifies Class Code and Type (e.g., "COMP 346 - TUT" or "SOEN 390")
+- assertVisible: "[A-Z]{4} [0-9]{3}.*"
+- assertVisible: ".*[0-9]{1,2}:[0-9]{2}.*[AP]M.*-.*[0-9]{1,2}:[0-9]{2}.*[AP]M.*"
+- assertVisible: "Room.*"
+
+- assertVisible:
+    id: "directions-button"
+
+- runFlow:
+    file: ../subflows/close-popup.yaml

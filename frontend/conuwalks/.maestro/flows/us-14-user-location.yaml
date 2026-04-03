@@ -1,0 +1,28 @@
+appId: com.conuwalks.app
+tags:
+  - feature
+  - location
+  - permissions
+---
+- launchApp:
+    permissions:
+      all: allow
+- waitForAnimationToEnd
+- runFlow:
+    file: ../subflows/setup.yaml
+    env:
+      USERNAME: "${USERNAME}"
+      PASSWORD: "${PASSWORD}"
+
+- waitForAnimationToEnd
+
+- runFlow:
+    file: ../subflows/clear-next-class-banner.yaml
+
+- assertVisible: "Sir George Williams"
+
+- assertVisible:
+    id: "user-location-marker.*"
+    optional: true
+
+- assertVisible: "Current Location"

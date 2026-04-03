@@ -1,19 +1,8 @@
 import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  TextInput,
-  Switch,
-  Platform,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Switch, Platform } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { SymbolView } from "expo-symbols";
-import {
-  openNotificationSettings,
-  openAppearanceSettings,
-} from "@/src/utils/openSystemSettings";
+import { openNotificationSettings, openAppearanceSettings } from "@/src/utils/openSystemSettings";
 import {
   getClassReminderLeadTime,
   saveClassReminderLeadTime,
@@ -27,20 +16,12 @@ const REMINDER_OPTIONS_MINUTES = [0, 5, 10, 15, 30, 45, 60];
 
 const ProfileSection = ({ title, children, mode }: any) => (
   <View style={styles.section}>
-    <Text
-      style={[
-        styles.sectionTitle,
-        { color: mode === "dark" ? "#AAA" : "#888" },
-      ]}
-    >
-      {title}
-    </Text>
+    <Text style={[styles.sectionTitle, { color: mode === "dark" ? "#AAA" : "#888" }]}>{title}</Text>
     <View
       style={[
         styles.card,
         {
-          backgroundColor:
-            mode === "dark" ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)",
+          backgroundColor: mode === "dark" ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)",
         },
       ]}
     >
@@ -115,15 +96,11 @@ const UserProfileContent = ({ userInfo, onSignOut, mode }: any) => {
       <ProfileSection title="Account" mode={mode}>
         <View style={styles.row}>
           <MaterialIcons name="mail-outline" size={22} color="#B03060" />
-          <Text style={[styles.rowText, { color: textColor }]}>
-            {userInfo?.email || "No email linked"}
-          </Text>
+          <Text style={[styles.rowText, { color: textColor }]}>{userInfo?.email || "No email linked"}</Text>
         </View>
         <View style={styles.row}>
           <MaterialIcons name="badge" size={22} color="#B03060" />
-          <Text style={[styles.rowText, { color: textColor }]}>
-            Student ID: {userInfo?.studentId || "12345678"}
-          </Text>
+          <Text style={[styles.rowText, { color: textColor }]}>Student ID: {userInfo?.studentId || "12345678"}</Text>
         </View>
       </ProfileSection>
 
@@ -131,64 +108,48 @@ const UserProfileContent = ({ userInfo, onSignOut, mode }: any) => {
         <View style={styles.row}>
           <MaterialIcons name="notifications-none" size={22} color="#B03060" />
           <View style={{ flex: 1 }}>
-            <Text style={[styles.rowText, { color: textColor }]}>
-              Class Reminder
-            </Text>
-            <Text
-              style={[
-                styles.helperText,
-                { color: mode === "dark" ? "#B8B8B8" : "#777" },
-              ]}
-            >
+            <Text style={[styles.rowText, { color: textColor }]}>Class Reminder</Text>
+            <Text style={[styles.helperText, { color: mode === "dark" ? "#B8B8B8" : "#777" }]}>
               Choose how many minutes before class the banner appears
             </Text>
           </View>
         </View>
 
         <View style={styles.optionWrap}>
-          {[
-            ...REMINDER_OPTIONS_MINUTES,
-            ...(REMINDER_OPTIONS_MINUTES.includes(reminderLeadTime)
-              ? []
-              : [reminderLeadTime]),
-          ].map((minutes) => {
-            const selected = reminderLeadTime === minutes;
-            const label = minutes === 0 ? "Off" : `${minutes}m`;
+          {[...REMINDER_OPTIONS_MINUTES, ...(REMINDER_OPTIONS_MINUTES.includes(reminderLeadTime) ? [] : [reminderLeadTime])].map(
+            minutes => {
+              const selected = reminderLeadTime === minutes;
+              const label = minutes === 0 ? "Off" : `${minutes}m`;
 
-            return (
-              <TouchableOpacity
-                key={minutes}
-                style={[
-                  styles.optionChip,
-                  selected
-                    ? { backgroundColor: "#B03060", borderColor: "#B03060" }
-                    : {
-                        backgroundColor:
-                          mode === "dark"
-                            ? "rgba(255,255,255,0.06)"
-                            : "rgba(0,0,0,0.04)",
-                        borderColor:
-                          mode === "dark"
-                            ? "rgba(255,255,255,0.14)"
-                            : "rgba(0,0,0,0.12)",
-                      },
-                ]}
-                onPress={() => handleReminderChange(minutes)}
-                accessibilityRole="button"
-                accessibilityLabel={`Set class reminder to ${label}`}
-              >
-                <Text
-                  style={{
-                    color: selected ? "#FFF" : textColor,
-                    fontSize: 13,
-                    fontWeight: "700",
-                  }}
+              return (
+                <TouchableOpacity
+                  key={minutes}
+                  style={[
+                    styles.optionChip,
+                    selected
+                      ? { backgroundColor: "#B03060", borderColor: "#B03060" }
+                      : {
+                          backgroundColor: mode === "dark" ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.04)",
+                          borderColor: mode === "dark" ? "rgba(255,255,255,0.14)" : "rgba(0,0,0,0.12)",
+                        },
+                  ]}
+                  onPress={() => handleReminderChange(minutes)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Set class reminder to ${label}`}
                 >
-                  {label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
+                  <Text
+                    style={{
+                      color: selected ? "#FFF" : textColor,
+                      fontSize: 13,
+                      fontWeight: "700",
+                    }}
+                  >
+                    {label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            },
+          )}
         </View>
 
         <View style={styles.customReminderRow}>
@@ -202,23 +163,14 @@ const UserProfileContent = ({ userInfo, onSignOut, mode }: any) => {
               styles.customReminderInput,
               {
                 color: textColor,
-                borderColor:
-                  mode === "dark"
-                    ? "rgba(255,255,255,0.2)"
-                    : "rgba(0,0,0,0.15)",
-                backgroundColor:
-                  mode === "dark"
-                    ? "rgba(255,255,255,0.06)"
-                    : "rgba(0,0,0,0.03)",
+                borderColor: mode === "dark" ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.15)",
+                backgroundColor: mode === "dark" ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.03)",
               },
             ]}
             accessibilityLabel="Custom class reminder minutes"
           />
           <TouchableOpacity
-            style={[
-              styles.applyButton,
-              { opacity: isCustomReminderValid ? 1 : 0.5 },
-            ]}
+            style={[styles.applyButton, { opacity: isCustomReminderValid ? 1 : 0.5 }]}
             disabled={!isCustomReminderValid}
             onPress={() => {
               handleReminderChange(Math.round(parsedCustomReminder));
@@ -229,12 +181,7 @@ const UserProfileContent = ({ userInfo, onSignOut, mode }: any) => {
             <Text style={styles.applyButtonText}>Apply</Text>
           </TouchableOpacity>
         </View>
-        <Text
-          style={[
-            styles.rangeText,
-            { color: mode === "dark" ? "#AFAFAF" : "#666" },
-          ]}
-        >
+        <Text style={[styles.rangeText, { color: mode === "dark" ? "#AFAFAF" : "#666" }]}>
           {`Set any value from ${MIN_CLASS_REMINDER_LEAD_TIME_MINUTES} to ${MAX_CLASS_REMINDER_LEAD_TIME_MINUTES} minutes`}
         </Text>
 
@@ -268,45 +215,27 @@ const UserProfileContent = ({ userInfo, onSignOut, mode }: any) => {
                 fallback={<MaterialIcons name="accessible-forward" size={24} />}
               />
             ) : (
-              <MaterialIcons
-                name="accessible-forward"
-                size={24}
-                tintColor="#B03060"
-                color="#B03060"
-              />
+              <MaterialIcons name="accessible-forward" size={24} tintColor="#B03060" color="#B03060" />
             )}
             <View style={{ flexDirection: "column", paddingLeft: 10 }}>
-              <Text style={[styles.rowText, { color: textColor }]}>
-                {`Wheelchair-Accessible\nDirections & Navigation`}
-              </Text>
+              <Text style={[styles.rowText, { color: textColor }]}>{`Wheelchair-Accessible\nDirections & Navigation`}</Text>
             </View>
           </View>
           <Switch
             importantForAccessibility="no-hide-descendants"
             style={{ paddingVertical: 10 }}
             value={isWheelchairAccessible}
-            onValueChange={(value) =>
-              value
-                ? enableWheelchairAccessibility()
-                : disableWheelchairAccessibility()
-            }
+            onValueChange={value => (value ? enableWheelchairAccessibility() : disableWheelchairAccessibility())}
+            testID="wheelchair-switch"
           />
         </View>
 
-        <TouchableOpacity
-          style={[styles.row, Platform.OS === "ios" ? { paddingTop: 35 } : {}]}
-          onPress={() => openNotificationSettings()}
-        >
+        <TouchableOpacity style={[styles.row, Platform.OS === "ios" ? { paddingTop: 35 } : {}]} onPress={() => openNotificationSettings()}>
           <MaterialIcons name="settings" size={22} color="#B03060" />
-          <Text style={[styles.rowText, { color: textColor }]}>
-            System Notification Settings
-          </Text>
+          <Text style={[styles.rowText, { color: textColor }]}>System Notification Settings</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={[styles.row, { paddingBottom: 0 }]}
-          onPress={() => openAppearanceSettings()}
-        >
+        <TouchableOpacity style={[styles.row, { paddingBottom: 0 }]} onPress={() => openAppearanceSettings()}>
           <MaterialIcons name="dark-mode" size={22} color="#B03060" />
           <Text style={[styles.rowText, { color: textColor }]}>Appearance</Text>
         </TouchableOpacity>

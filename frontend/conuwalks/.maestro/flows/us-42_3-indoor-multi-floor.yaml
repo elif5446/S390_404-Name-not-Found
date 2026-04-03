@@ -1,0 +1,91 @@
+appId: com.conuwalks.app
+tags:
+  - feature
+  - directions
+  - inter-building
+---
+- runFlow:
+    file: ../subflows/launch.yaml
+    env:
+      USERNAME: "${USERNAME}"
+      PASSWORD: "${PASSWORD}"
+
+- runFlow:
+    file: ../subflows/clear-next-class-banner.yaml
+
+- setLocation:
+    latitude: 45.495633
+    longitude: -73.578902
+- tapOn:
+    id: "recenter-location-button"
+- waitForAnimationToEnd
+
+- tapOn:
+    point: 50%, 18%
+- waitForAnimationToEnd
+- assertVisible: "Henry F. Hall Building"
+
+- tapOn:
+    id: "indoor-map-button"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "indoor-map-canvas"
+
+- tapOn:
+    id: "indoor-destination-input"
+- inputText: "807"
+- pressKey: Enter
+- tapOn: "Room 807"
+
+- tapOn:
+    id: "indoor-start-input"
+- inputText: "110"
+- pressKey: Enter
+- tapOn: "Room 110"
+
+- tapOn:
+    id: "top-panel-navigate-button"
+
+- assertVisible: "Indoor directions"
+- assertVisible:
+    id: "nav-step-text-.*"
+
+- evalScript: ${output.stepIndex = 0}
+- repeat:
+    while:
+      notVisible:
+        id: "nav-step-text-${output.stepIndex}"
+        text: "(?i).*to floor 8.*"
+    commands:
+      - tapOn:
+          id: "nav-next-button"
+      - evalScript: ${output.stepIndex += 1}
+
+- assertVisible:
+    id: "nav-step-text-${output.stepIndex}"
+    text: "(?i).*to floor 8.*"
+
+- tapOn:
+    id: "nav-next-button"
+- waitForAnimationToEnd
+
+# Verify the app automatically switched to Floor 8
+- assertVisible:
+    id: "room-label-801"
+
+- tapOn:
+    id: "floor-1-button"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "room-label-110"
+
+# Cleanup
+- tapOn:
+    id: "indoor-directions-popup-close-btn"
+    optional: true
+- tapOn:
+    id: "indoor-back-button"
+- runFlow:
+    file: ../subflows/close-popup.yaml

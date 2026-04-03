@@ -42,7 +42,7 @@ interface Props {
   onSetStartRoom?: (roomLabel: string, buildingId?: string) => void;
   onSetDestinationRoom?: (roomLabel: string, buildingId?: string) => void;
   onExit: () => void;
-  onCancelNavigation?: () => void;
+  onCancelNavigation?: (arrived?: boolean) => void;
   onToggleOutdoorMap: () => void;
   onStartNavigation?: () => void;
 }
@@ -104,12 +104,7 @@ function createRoomResults(hotspots: IndoorHotspot[], buildingId: string): Indoo
   }));
 }
 
-function createPOIResults(
-  nonRoomPOIs: POI[], 
-  currentLevel: number, 
-  layout: any, 
-  buildingId: string
-): IndoorSearchResult[] {
+function createPOIResults(nonRoomPOIs: POI[], currentLevel: number, layout: any, buildingId: string): IndoorSearchResult[] {
   return nonRoomPOIs.map(poi => ({
     type: "poi",
     id: poi.id,
@@ -123,10 +118,7 @@ function createPOIResults(
 }
 
 function filterResults(items: IndoorSearchResult[], query: string): IndoorSearchResult[] {
-  return items.filter(item => 
-    item.label.toLowerCase().includes(query) || 
-    item.id.toLowerCase().includes(query)
-  );
+  return items.filter(item => item.label.toLowerCase().includes(query) || item.id.toLowerCase().includes(query));
 }
 
 function createExternalResults(query: string, buildingData: BuildingIndoorConfig): IndoorSearchResult[] {
@@ -134,13 +126,12 @@ function createExternalResults(query: string, buildingData: BuildingIndoorConfig
   const allBuildings = { ...SGWBuildingMetadata, ...LoyolaBuildingMetadata };
 
   Object.entries(allBuildings).forEach(([bId, meta]) => {
-    if (bId !== buildingData.id && 
-        (meta.name.toLowerCase().includes(query) || bId.toLowerCase().includes(query))) {
-      externalResults.push({ 
-        type: "building" as const, 
-        id: bId, 
-        label: meta.name, 
-        buildingId: bId 
+    if (bId !== buildingData.id && (meta.name.toLowerCase().includes(query) || bId.toLowerCase().includes(query))) {
+      externalResults.push({
+        type: "building" as const,
+        id: bId,
+        label: meta.name,
+        buildingId: bId,
       });
     }
   });
@@ -261,18 +252,12 @@ function useHotspots(buildingData: BuildingIndoorConfig) {
 }
 
 //helper functions
-const normalize = (value?: string | null): string =>
-  value?.toLowerCase().replace(/[^a-z0-9]/g, "") || "";
+const normalize = (value?: string | null): string => value?.toLowerCase().replace(/[^a-z0-9]/g, "") || "";
 
-const matches = (target: string, query: string): boolean =>
-  target === query || target.endsWith(query);
+const matches = (target: string, query: string): boolean => target === query || target.endsWith(query);
 
 //search functions
-function findHotspotTarget(
-  hotspots: IndoorHotspot[],
-  query: string,
-  buildingId: string
-): IndoorDestination | undefined {
+function findHotspotTarget(hotspots: IndoorHotspot[], query: string, buildingId: string): IndoorDestination | undefined {
   const found = hotspots.find(spot => {
     const id = normalize(spot.id);
     const label = normalize(spot.label);
@@ -291,10 +276,7 @@ function findHotspotTarget(
   };
 }
 
-function findNodeTarget(
-  buildingData: BuildingIndoorConfig,
-  roomId: string
-): IndoorDestination | undefined {
+function findNodeTarget(buildingData: BuildingIndoorConfig, roomId: string): IndoorDestination | undefined {
   const navConfig = navConfigRegistry[buildingData.id];
   if (!navConfig) return;
 
@@ -329,7 +311,7 @@ function findPOITarget(
   pois: POI[],
   buildingData: BuildingIndoorConfig,
   roomId: string,
-  currentLevel?: number
+  currentLevel?: number,
 ): IndoorDestination | undefined {
   const found = pois.find(p => p.id === roomId || p.room === roomId);
   if (!found) return;
@@ -368,9 +350,7 @@ function handleAutoFloorSwitch({
   if (type !== "destination" || !handleFloorChange || currentLevel === undefined) return;
 
   const targetLevel =
-    isNavigationActive && baseStartNode
-      ? buildingData.floors.find(f => f.id === baseStartNode.floorId)?.level
-      : targetNode.floorLevel;
+    isNavigationActive && baseStartNode ? buildingData.floors.find(f => f.id === baseStartNode.floorId)?.level : targetNode.floorLevel;
 
   if (targetLevel !== undefined && currentLevel !== targetLevel) {
     setTimeout(() => handleFloorChange(targetLevel), 100);
@@ -382,7 +362,7 @@ interface UseLocationSyncProps {
   buildingId?: string | null;
   roomId?: string | null;
   hotspots: IndoorHotspot[];
-  poisForFloor: POI[]; 
+  poisForFloor: POI[];
   isNavigationActive?: boolean;
   baseStartNode?: Node | null;
   currentLevel?: number;
@@ -409,24 +389,24 @@ function useLocationSync({
       lastSyncedRef.current = null;
       return;
     }
-  
+
     if (type === "destination" && !baseStartNode) return;
     if (roomId === lastSyncedRef.current) return;
-  
+
     const query = normalize(roomId);
-  
+
     const targetNode =
       findHotspotTarget(hotspots, query, buildingData.id) ||
       findNodeTarget(buildingData, roomId) ||
-      findPOITarget(poisForFloor, buildingData, roomId, currentLevel);  
+      findPOITarget(poisForFloor, buildingData, roomId, currentLevel);
     if (!targetNode) {
       setLocation(null);
       return;
     }
-  
+
     setLocation(targetNode);
     lastSyncedRef.current = roomId;
-  
+
     handleAutoFloorSwitch({
       type,
       targetNode,
@@ -436,17 +416,7 @@ function useLocationSync({
       currentLevel,
       handleFloorChange,
     });
-  }, [
-    type,
-    buildingId,
-    roomId,
-    buildingData,
-    hotspots,
-    isNavigationActive,
-    baseStartNode,
-    currentLevel,
-    handleFloorChange,
-  ]);
+  }, [type, buildingId, roomId, buildingData, hotspots, isNavigationActive, baseStartNode, currentLevel, handleFloorChange]);
   return { location, setLocation };
 }
 
@@ -588,7 +558,7 @@ const IndoorMapOverlay: React.FC<Props> = ({
     buildingId: startBuildingId,
     roomId: startRoomId,
     hotspots,
-    poisForFloor, 
+    poisForFloor,
   });
 
   const { location: destination, setLocation: setDestination } = useLocationSync({
@@ -657,22 +627,22 @@ const IndoorMapOverlay: React.FC<Props> = ({
     buildingData: BuildingIndoorConfig,
     indoorMapService: IndoorMapService,
     baseStartNode: any,
-    navConfig: any
+    navConfig: any,
   ): string {
     if (startBuildingId === buildingData.id) {
       if (startLocation) {
         return resolveDestinationNodeId(startLocation) ?? navConfig.defaultStartNodeId;
-            }
+      }
       if (startRoomId) {
         return indoorMapService.getNodeByRoomNumber(buildingData.id, startRoomId)?.id || navConfig.defaultStartNodeId;
       }
       return indoorMapService.getEntranceNode()?.id || navConfig.defaultStartNodeId;
     }
-  
+
     if (startBuildingId === "USER" || (startBuildingId && startBuildingId !== buildingData.id)) {
       return indoorMapService.getEntranceNode()?.id || navConfig.defaultStartNodeId;
     }
-  
+
     return baseStartNode?.id || navConfig.defaultStartNodeId;
   }
 
@@ -681,7 +651,7 @@ const IndoorMapOverlay: React.FC<Props> = ({
     destinationBuildingId: string | null | undefined,
     destination: any,
     buildingData: BuildingIndoorConfig,
-    indoorMapService: IndoorMapService
+    indoorMapService: IndoorMapService,
   ): string | null {
     if (destinationBuildingId === buildingData.id) {
       if (destination) {
@@ -689,31 +659,28 @@ const IndoorMapOverlay: React.FC<Props> = ({
       }
       return indoorMapService.getEntranceNode()?.id || null;
     }
-  
+
     if (destinationBuildingId && destinationBuildingId !== buildingData.id) {
       return indoorMapService.getEntranceNode()?.id || null;
     }
-  
+
     return null;
   }
 
   //zero‑distance route handler
-  function handleZeroDistanceRoute(
-    startNodeId: string,
-    indoorMapService: IndoorMapService
-  ) {
+  function handleZeroDistanceRoute(startNodeId: string, endNodeId: string, indoorMapService: IndoorMapService) {
+    if (startNodeId !== endNodeId) return null;
     const graphNode = indoorMapService.getGraph().getNode(startNodeId);
     if (!graphNode) return null;
-  
+
     return { distance: 0, nodes: [graphNode] } as any;
   }
-      
-  // Auto-Routing Calculator
+
   const calculateRoute = useCallback(async () => {
     try {
       const navConfig = navConfigRegistry[buildingData.id];
       if (!navConfig) return setRoute(null);
-  
+
       const startNodeId = resolveStartNode(
         startBuildingId,
         startLocation,
@@ -721,28 +688,23 @@ const IndoorMapOverlay: React.FC<Props> = ({
         buildingData,
         indoorMapService,
         baseStartNode,
-        navConfig
+        navConfig,
       );
-  
-      const endNodeId = resolveEndNode(
-        destinationBuildingId,
-        destination,
-        buildingData,
-        indoorMapService
-      );
-  
+
+      const endNodeId = resolveEndNode(destinationBuildingId, destination, buildingData, indoorMapService);
+
       if (!startNodeId || !endNodeId) return setRoute(null);
-  
-      const zeroRoute = handleZeroDistanceRoute(startNodeId, indoorMapService);
+
+      const zeroRoute = handleZeroDistanceRoute(startNodeId, endNodeId, indoorMapService);
       if (zeroRoute) return setRoute(zeroRoute);
-  
+
       const nextRoute = await indoorMapService.getRoute(startNodeId, endNodeId, avoidStairs);
       setRoute(nextRoute);
     } catch (error) {
       console.warn("Failed to compute indoor route:", error);
       setRoute(null);
     }
-  },[
+  }, [
     buildingData.id,
     destination,
     destinationBuildingId,
@@ -789,150 +751,124 @@ const IndoorMapOverlay: React.FC<Props> = ({
     },
     [setStartLocation, onSetStartRoom, setDestination, onSetDestinationRoom],
   );
-//helper functions
-function handleBuildingSelection(
-  item: IndoorSearchResult,
-  isStart: boolean,
-  setStartLocation: any,
-  setDestination: any,
-  onSetStartRoom: any,
-  onSetDestinationRoom: any
-) {
-  const syntheticDest: IndoorDestination = {
-    id: item.id,
-    label: item.label ?? "",
-    floorLevel: -999,
-    x: 0,
-    y: 0,
-    buildingId: item.buildingId || item.id,
-  };
-
-  if (isStart) {
-    setStartLocation(syntheticDest);
-    onSetStartRoom?.(item.id, item.buildingId);
-  } else {
-    setDestination(syntheticDest);
-    onSetDestinationRoom?.(item.id, item.buildingId);
-  }
-
-  return syntheticDest;
-}
-//handle room selection
-function handleRoomSelection(
-  item: IndoorSearchResult,
-  isStart: boolean,
-  buildingId: string,
-  handleSetLocation: any
-) {
-  handleSetLocation(
-    {
+  //helper functions
+  function handleBuildingSelection(
+    item: IndoorSearchResult,
+    isStart: boolean,
+    setStartLocation: any,
+    setDestination: any,
+    onSetStartRoom: any,
+    onSetDestinationRoom: any,
+  ) {
+    const syntheticDest: IndoorDestination = {
       id: item.id,
-      x: item.x!,
-      y: item.y!,
-      floorLevel: item.floorLevel!,
-      label: item.label,
-      buildingId,
-    },
-    isStart
-  );
-}
-//handle POI selection function
-function handlePOISelection(
-  item: IndoorSearchResult,
-  hotspots: IndoorHotspot[],
-  buildingData: BuildingIndoorConfig,
-  currentLevel: number,
-  indoorMapService: IndoorMapService,
-  isStart: boolean,
-  handleSetLocation: any
-) {
-  const matchingRoom = hotspots.find(
-    spot => spot.label.replace("Room ", "") === item.room
-  );
+      label: item.label ?? "",
+      floorLevel: -999,
+      x: 0,
+      y: 0,
+      buildingId: item.buildingId || item.id,
+    };
 
-  if (matchingRoom) {
-    return handleSetLocation(
-      {
-        id: matchingRoom.id,
-        x: matchingRoom.x,
-        y: matchingRoom.y,
-        floorLevel: matchingRoom.floorLevel,
-        label: matchingRoom.label,
-        buildingId: buildingData.id,
-      },
-      isStart
-    );
+    if (isStart) {
+      setStartLocation(syntheticDest);
+      onSetStartRoom?.(item.id, item.buildingId);
+    } else {
+      setDestination(syntheticDest);
+      onSetDestinationRoom?.(item.id, item.buildingId);
+    }
+
+    return syntheticDest;
   }
-
-  if (item.x !== undefined && item.y !== undefined) {
-    const nearestNode = indoorMapService.getNearestRoomNode(
-      `${buildingData.id}_${currentLevel}`,
-      item.x,
-      item.y
-    );
-
-    return handleSetLocation(
+  //handle room selection
+  function handleRoomSelection(item: IndoorSearchResult, isStart: boolean, buildingId: string, handleSetLocation: any) {
+    handleSetLocation(
       {
-        id: nearestNode ? nearestNode.id : item.id,
-        x: item.x,
-        y: item.y,
+        id: item.id,
+        x: item.x!,
+        y: item.y!,
         floorLevel: item.floorLevel!,
         label: item.label,
-        buildingId: buildingData.id,
+        buildingId,
       },
-      isStart
+      isStart,
     );
   }
-}
+  //handle POI selection function
+  function handlePOISelection(
+    item: IndoorSearchResult,
+    hotspots: IndoorHotspot[],
+    buildingData: BuildingIndoorConfig,
+    currentLevel: number,
+    indoorMapService: IndoorMapService,
+    isStart: boolean,
+    handleSetLocation: any,
+  ) {
+    const matchingRoom = hotspots.find(spot => spot.label.replace("Room ", "") === item.room);
 
-const handleSelectSearchResult = useCallback(
-  (item: IndoorSearchResult) => {
-    const isStart = activeField === "start";
-
-    if (item.type === "building" || item.type === "external_room") {
-      const synthetic = handleBuildingSelection(
-        item,
+    if (matchingRoom) {
+      return handleSetLocation(
+        {
+          id: matchingRoom.id,
+          x: matchingRoom.x,
+          y: matchingRoom.y,
+          floorLevel: matchingRoom.floorLevel,
+          label: matchingRoom.label,
+          buildingId: buildingData.id,
+        },
         isStart,
-        setStartLocation,
-        setDestination,
-        onSetStartRoom,
-        onSetDestinationRoom
       );
-
-      setSearchQuery(synthetic.label ?? "");
-      setShowSearchResults(false);
-      setRoute(null);
-      return;
     }
 
-    if (item.type === "room") {
-      handleRoomSelection(item, isStart, buildingData.id, handleSetLocation);
-      return;
-    }
+    if (item.x !== undefined && item.y !== undefined) {
+      const nearestNode = indoorMapService.getNearestRoomNode(`${buildingData.id}_${currentLevel}`, item.x, item.y);
 
-    handlePOISelection(
-      item,
+      return handleSetLocation(
+        {
+          id: nearestNode ? nearestNode.id : item.id,
+          x: item.x,
+          y: item.y,
+          floorLevel: item.floorLevel!,
+          label: item.label,
+          buildingId: buildingData.id,
+        },
+        isStart,
+      );
+    }
+  }
+
+  const handleSelectSearchResult = useCallback(
+    (item: IndoorSearchResult) => {
+      const isStart = activeField === "start";
+
+      if (item.type === "building" || item.type === "external_room") {
+        const synthetic = handleBuildingSelection(item, isStart, setStartLocation, setDestination, onSetStartRoom, onSetDestinationRoom);
+
+        setSearchQuery(synthetic.label ?? "");
+        setShowSearchResults(false);
+        setRoute(null);
+        return;
+      }
+
+      if (item.type === "room") {
+        handleRoomSelection(item, isStart, buildingData.id, handleSetLocation);
+        return;
+      }
+
+      handlePOISelection(item, hotspots, buildingData, currentLevel, indoorMapService, isStart, handleSetLocation);
+    },
+    [
+      activeField,
       hotspots,
       buildingData,
       currentLevel,
       indoorMapService,
-      isStart,
-      handleSetLocation
-    );
-  },
-  [
-    activeField,
-    hotspots,
-    buildingData,
-    currentLevel,
-    indoorMapService,
-    setStartLocation,
-    setDestination,
-    onSetStartRoom,
-    onSetDestinationRoom,
-    handleSetLocation,
-  ]
-);
+      setStartLocation,
+      setDestination,
+      onSetStartRoom,
+      onSetDestinationRoom,
+      handleSetLocation,
+    ],
+  );
   const handleSelectPOI = useCallback(
     (poi: POI, forceIsStart?: boolean) => {
       const isStart = forceIsStart !== undefined ? forceIsStart : activeField === "start";
@@ -1079,6 +1015,7 @@ const handleSelectSearchResult = useCallback(
             handleMapInteraction();
             return false;
           }}
+          testID="indoor-map-canvas"
         >
           <ReactNativeZoomableView
             ref={zoomRef}
@@ -1129,8 +1066,7 @@ const handleSelectSearchResult = useCallback(
                         key={poi.id}
                         poi={poi}
                         left={poiX - MAP_POI_BADGE_SIZE / 2 + manualRoomOffset.x}
-                        top=
-                        {poiY - MAP_POI_BADGE_SIZE / 2 + manualRoomOffset.y}
+                        top={poiY - MAP_POI_BADGE_SIZE / 2 + manualRoomOffset.y}
                         size={MAP_POI_BADGE_SIZE}
                         selectionType={selectionType}
                         onPress={poi => handleSelectPOI(poi, activeField === "start")}
@@ -1195,9 +1131,16 @@ const handleSelectSearchResult = useCallback(
         onNextStep={() => setActiveStepIndex(prev => Math.min(prev + 1, routeSteps.length - 1))}
         onPrevStep={() => setActiveStepIndex(prev => Math.max(prev - 1, 0))}
         onClose={() => {
-          if (onCancelNavigation) onCancelNavigation();
+          if (onCancelNavigation) onCancelNavigation(false);
         }}
-        onFinish={endsAtEntrance ? onToggleOutdoorMap : onCancelNavigation}
+        onFinish={() => {
+          if (endsAtEntrance) {
+            onToggleOutdoorMap();
+          } else {
+            // Pass 'true' to indicate they successfully arrived
+            if (onCancelNavigation) onCancelNavigation(true);
+          }
+        }}
         finishLabel={endsAtEntrance ? "Exit Building" : "Finish"}
       />
 

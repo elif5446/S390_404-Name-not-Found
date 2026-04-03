@@ -1,11 +1,6 @@
 // ScheduleSection.tsx
 import React from "react";
-import {
-  View,
-  Text,
-  ActivityIndicator,
-  TouchableOpacity,
-} from "react-native";
+import { View, Text, ActivityIndicator, TouchableOpacity } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { BuildingEvent } from "../hooks/useBuildingEvents";
 import scheduleStyles from "../styles/scheduleSection";
@@ -56,11 +51,7 @@ const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           justifyContent: "center",
         }}
       >
-        <MaterialIcons
-          name="subdirectory-arrow-right"
-          size={12}
-          color={campusPink}
-        />
+        <MaterialIcons name="subdirectory-arrow-right" size={12} color={campusPink} />
       </View>
       <Text
         style={{
@@ -77,21 +68,9 @@ const ScheduleSection: React.FC<ScheduleSectionProps> = ({
 
   const renderSchedule = (event: BuildingEvent, showDate: boolean = false) => (
     <View style={scheduleStyles.eventContent}>
-      <Text
-        style={[
-          scheduleStyles.eventTitle,
-          { color: mode === "dark" ? "#FFFFFF" : "#333333" },
-        ]}
-      >
-        {event.courseName}
-      </Text>
+      <Text style={[scheduleStyles.eventTitle, { color: mode === "dark" ? "#FFFFFF" : "#333333" }]}>{event.courseName}</Text>
       <View style={scheduleStyles.eventDetailsRow}>
-        <Text
-          style={[
-            scheduleStyles.eventTime,
-            { color: mode === "dark" ? "#CCCCCC" : "#585858" },
-          ]}
-        >
+        <Text testID={`schedule-time-${event.id}`} style={[scheduleStyles.eventTime, { color: mode === "dark" ? "#CCCCCC" : "#585858" }]}>
           {showDate ? (
             <>
               {event.start.toLocaleDateString([], {
@@ -119,30 +98,14 @@ const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           )}
         </Text>
         {event.roomNumber && (
-          <Text
-            style={[
-              scheduleStyles.eventRoom,
-              { color: mode === "dark" ? "#CCCCCC" : "#585858" },
-            ]}
-          >
-            Room {event.roomNumber}
-          </Text>
+          <Text style={[scheduleStyles.eventRoom, { color: mode === "dark" ? "#CCCCCC" : "#585858" }]}>Room {event.roomNumber}</Text>
         )}
       </View>
     </View>
   );
 
-  const renderScheduleItem = (
-    event: BuildingEvent,
-    showDate: boolean = false,
-    showBorder: boolean = false,
-  ) => (
-    <View
-      style={[
-        scheduleStyles.eventItemWithButton,
-        showBorder && scheduleStyles.eventItemBorder,
-      ]}
-    >
+  const renderScheduleItem = (event: BuildingEvent, showDate: boolean = false, showBorder: boolean = false) => (
+    <View style={[scheduleStyles.eventItemWithButton, showBorder && scheduleStyles.eventItemBorder]}>
       {renderSchedule(event, showDate)}
       {renderDirectionButton(event.courseName, event.roomNumber)}
     </View>
@@ -153,10 +116,7 @@ const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       <View style={scheduleStyles.section}>
         <View style={scheduleStyles.scheduleHeader}>
           <Text
-            style={[
-              scheduleStyles.sectionTitle,
-              { color: mode === "dark" ? "#FFFFFF" : "#333333" },
-            ]}
+            style={[scheduleStyles.sectionTitle, { color: mode === "dark" ? "#FFFFFF" : "#333333" }]}
             accessible={true}
             accessibilityRole="header"
           >
@@ -173,10 +133,7 @@ const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       <View style={scheduleStyles.section}>
         <View style={scheduleStyles.scheduleHeader}>
           <Text
-            style={[
-              scheduleStyles.sectionTitle,
-              { color: mode === "dark" ? "#FFFFFF" : "#333333" },
-            ]}
+            style={[scheduleStyles.sectionTitle, { color: mode === "dark" ? "#FFFFFF" : "#333333" }]}
             accessible={true}
             accessibilityRole="header"
           >
@@ -184,12 +141,7 @@ const ScheduleSection: React.FC<ScheduleSectionProps> = ({
           </Text>
         </View>
         <View style={scheduleStyles.noEventsContainer}>
-          <Text
-            style={[
-              scheduleStyles.noEventsText,
-              { color: mode === "dark" ? "#999999" : "#666666" },
-            ]}
-          >
+          <Text style={[scheduleStyles.noEventsText, { color: mode === "dark" ? "#999999" : "#666666" }]}>
             No classes scheduled in this building today
           </Text>
           {nextEvent && (
@@ -217,10 +169,7 @@ const ScheduleSection: React.FC<ScheduleSectionProps> = ({
     <View style={scheduleStyles.section}>
       <View style={scheduleStyles.scheduleHeader}>
         <Text
-          style={[
-            scheduleStyles.sectionTitle,
-            { color: mode === "dark" ? "#FFFFFF" : "#333333" },
-          ]}
+          style={[scheduleStyles.sectionTitle, { color: mode === "dark" ? "#FFFFFF" : "#333333" }]}
           accessible={true}
           accessibilityRole="header"
         >
@@ -229,9 +178,7 @@ const ScheduleSection: React.FC<ScheduleSectionProps> = ({
       </View>
       <View style={scheduleStyles.eventsList}>
         {todayEvents.map((event: BuildingEvent, index: number) => (
-          <View key={event.id}>
-            {renderScheduleItem(event, false, index < todayEvents.length - 1)}
-          </View>
+          <View key={event.id}>{renderScheduleItem(event, false, index < todayEvents.length - 1)}</View>
         ))}
       </View>
     </View>
