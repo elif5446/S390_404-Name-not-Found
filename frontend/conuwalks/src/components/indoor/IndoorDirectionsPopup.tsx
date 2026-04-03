@@ -56,6 +56,40 @@ const CloseIcon = ({ isDark }: { isDark: boolean }) =>
     <Ionicons name="close" size={20} color={isDark ? "#FFFFFF" : "#333333"} />
   );
 
+const getStepContainerStyle = (isActive: boolean, isLast: boolean, isDark: boolean) => ({
+  flexDirection: "row" as const,
+  alignItems: "center" as const,
+  marginBottom: isLast ? 0 : 16,
+  opacity: isActive ? 1 : 0.3,
+  backgroundColor: isActive ? (isDark ? "#2A2025" : "#FFF0F5") : "transparent",
+  padding: isActive ? 18 : 10,
+  borderRadius: 14,
+  transform: [{ scale: isActive ? 1.02 : 1 }],
+});
+
+const getStepCircleStyle = (isActive: boolean, isHighlighted: boolean, isDark: boolean) => ({
+  width: isActive ? 32 : 24,
+  height: isActive ? 32 : 24,
+  borderRadius: isActive ? 16 : 12,
+  backgroundColor: isHighlighted ? "#C2185B" : (isDark ? "#4B3D44" : "#FCE4EC"),
+  alignItems: "center" as const,
+  justifyContent: "center" as const,
+  marginRight: 14,
+});
+
+const getStepIndexTextStyle = (isActive: boolean, isHighlighted: boolean, isDark: boolean) => ({
+  fontSize: isActive ? 15 : 12,
+  fontWeight: "900" as const,
+  color: isHighlighted ? "#FFFFFF" : (isDark ? "#E8C8D7" : "#C2185B"),
+});
+
+const getStepTextStyle = (isActive: boolean, isHighlighted: boolean, isDark: boolean) => ({
+  flex: 1,
+  fontSize: isActive ? 18 : 15,
+  fontWeight: (isActive ? "800" : "500") as "800" | "500",
+  color: isHighlighted ? "#C2185B" : (isDark ? "#E0D7DB" : "#4A4A4A"),
+});
+
 interface IndoorStepItemProps {
   step: IndoorDirectionsStep;
   index: number;
@@ -68,51 +102,16 @@ interface IndoorStepItemProps {
 const IndoorStepItem = ({ step, index, totalSteps, activeStepIndex, isDark, onLayout }: IndoorStepItemProps) => {
   const isActive = index === activeStepIndex;
   const isLast = index === totalSteps - 1;
+  const isHighlighted = isActive || isLast;
   return (
     <View
       onLayout={e => onLayout(index, e.nativeEvent.layout.y)}
-      style={{
-        flexDirection: "row",
-        alignItems: "center",
-        marginBottom: isLast ? 0 : 16,
-        opacity: isActive ? 1 : 0.3,
-        backgroundColor: isActive ? (isDark ? "#2A2025" : "#FFF0F5") : "transparent",
-        padding: isActive ? 18 : 10,
-        borderRadius: 14,
-        transform: [{ scale: isActive ? 1.02 : 1 }],
-      }}
+      style={getStepContainerStyle(isActive, isLast, isDark)}
     >
-      <View
-        style={{
-          width: isActive ? 32 : 24,
-          height: isActive ? 32 : 24,
-          borderRadius: isActive ? 16 : 12,
-          backgroundColor: isActive || isLast ? "#C2185B" : isDark ? "#4B3D44" : "#FCE4EC",
-          alignItems: "center",
-          justifyContent: "center",
-          marginRight: 14,
-        }}
-      >
-        <Text
-          style={{
-            fontSize: isActive ? 15 : 12,
-            fontWeight: "900",
-            color: isActive || isLast ? "#FFFFFF" : isDark ? "#E8C8D7" : "#C2185B",
-          }}
-        >
-          {index + 1}
-        </Text>
+      <View style={getStepCircleStyle(isActive, isHighlighted, isDark)}>
+        <Text style={getStepIndexTextStyle(isActive, isHighlighted, isDark)}>{index + 1}</Text>
       </View>
-      <Text
-        style={{
-          flex: 1,
-          fontSize: isActive ? 18 : 15,
-          fontWeight: isActive ? "800" : "500",
-          color: isActive || isLast ? "#C2185B" : isDark ? "#E0D7DB" : "#4A4A4A",
-        }}
-      >
-        {step.text}
-      </Text>
+      <Text style={getStepTextStyle(isActive, isHighlighted, isDark)}>{step.text}</Text>
     </View>
   );
 };
