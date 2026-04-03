@@ -1,12 +1,5 @@
 import React, { useState } from "react";
-import {
-  View,
-  TouchableOpacity,
-  Platform,
-  useColorScheme,
-  ActivityIndicator,
-  ViewStyle,
-} from "react-native";
+import { View, TouchableOpacity, Platform, useColorScheme, ActivityIndicator, ViewStyle } from "react-native";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import { SymbolView } from "expo-symbols";
 import { BlurView } from "expo-blur";
@@ -34,10 +27,7 @@ interface GlassBackgroundProps {
   borderRadius: number;
 }
 
-const GlassBackground: React.FC<GlassBackgroundProps> = ({
-  mode,
-  borderRadius,
-}) => {
+const GlassBackground: React.FC<GlassBackgroundProps> = ({ mode, borderRadius }) => {
   if (Platform.OS !== "ios") return null;
 
   return (
@@ -50,11 +40,7 @@ const GlassBackground: React.FC<GlassBackgroundProps> = ({
         overflow: "hidden",
       }}
     >
-      <BlurView
-        intensity={35}
-        tint={mode === "dark" ? "dark" : "light"}
-        style={{ flex: 1 }}
-      />
+      <BlurView intensity={35} tint={mode === "dark" ? "dark" : "light"} style={{ flex: 1 }} />
     </View>
   );
 };
@@ -77,8 +63,7 @@ const RightControlsPanel: React.FC<Props> = ({
   const [isProfileExpanded, setIsProfileExpanded] = useState(false);
   const insets = useSafeAreaInsets();
 
-  const showLocationButton =
-    userLocation !== null && !indoorBuildingId && !isInfoPopupExpanded;
+  const showLocationButton = userLocation !== null && !indoorBuildingId && !isInfoPopupExpanded;
 
   const buttonSize = 50;
   const buttonSpacing = 12;
@@ -113,18 +98,9 @@ const RightControlsPanel: React.FC<Props> = ({
   if (locationLoading) {
     locationIcon = <ActivityIndicator size="small" color="#B03060" />;
   } else if (isIOS) {
-    locationIcon = (
-      <SymbolView
-        name="location.north.fill"
-        size={20}
-        weight="medium"
-        tintColor="#B03060"
-      />
-    );
+    locationIcon = <SymbolView name="location.north.fill" size={20} weight="medium" tintColor="#B03060" />;
   } else {
-    locationIcon = (
-      <MaterialIcons name="navigation" size={20} color="#B03060" />
-    );
+    locationIcon = <MaterialIcons name="navigation" size={20} color="#B03060" />;
   }
 
   return (
@@ -154,6 +130,7 @@ const RightControlsPanel: React.FC<Props> = ({
                 accessible
                 accessibilityLabel="Open user profile"
                 accessibilityRole="button"
+                testID="profile-button"
               >
                 <GlassBackground mode={mode} borderRadius={userIconSize / 2} />
                 <MaterialIcons name="person" size={24} color="#B03060" />
@@ -176,6 +153,7 @@ const RightControlsPanel: React.FC<Props> = ({
                 accessible
                 accessibilityLabel="Recenter to your location"
                 accessibilityHint="Moves the map camera back to your current location"
+                testID="recenter-location-button"
               >
                 <GlassBackground mode={mode} borderRadius={buttonSize / 2} />
                 {locationIcon}
@@ -183,23 +161,13 @@ const RightControlsPanel: React.FC<Props> = ({
             )}
 
             {!isNavigation && (
-              <BuildingSearchButton
-                onPress={handleOpenBuildingSearch}
-                buttonSize={buttonSize}
-                mode={mode}
-                buttonSpacing={buttonSpacing}
-              />
+              <BuildingSearchButton onPress={handleOpenBuildingSearch} buttonSize={buttonSize} mode={mode} buttonSpacing={buttonSpacing} />
             )}
           </>
         )}
       </View>
 
-      <UserProfilePopup
-        visible={isProfileExpanded}
-        userInfo={userInfo}
-        onClose={() => setIsProfileExpanded(false)}
-        onSignOut={onSignOut}
-      />
+      <UserProfilePopup visible={isProfileExpanded} userInfo={userInfo} onClose={() => setIsProfileExpanded(false)} onSignOut={onSignOut} />
     </>
   );
 };

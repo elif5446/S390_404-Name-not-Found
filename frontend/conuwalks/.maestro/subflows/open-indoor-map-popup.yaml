@@ -1,0 +1,8 @@
+appId: com.conuwalks.app
+---
+- tapOn:
+    id: "indoor-map-button"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "indoor-map-canvas"

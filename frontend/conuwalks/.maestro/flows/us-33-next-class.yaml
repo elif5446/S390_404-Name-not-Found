@@ -1,0 +1,49 @@
+appId: com.conuwalks.app
+tags:
+  - feature
+  - directions
+  - upcoming-class-banner
+---
+- runFlow:
+    file: ../subflows/launch-with-mock-data.yaml
+    env:
+      USERNAME: "${USERNAME}"
+      PASSWORD: "${PASSWORD}"
+- waitForAnimationToEnd
+
+- runFlow:
+    file: ../subflows/clear-next-class-banner.yaml
+
+- assertVisible:
+    id: "upcoming-class-banner"
+
+- tapOn:
+    id: "banner-navigate-button"
+- waitForAnimationToEnd
+
+- assertVisible: "Directions"
+- assertVisible: "Current Location"
+
+- tapOn:
+    id: "route-walking"
+- waitForAnimationToEnd
+
+- tapOn:
+    id: "navigate-button"
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "indoor-map-canvas"
+    optional: true
+- tapOn:
+    id: "indoor-back-button"
+    optional: true
+
+- assertVisible: ".* min"
+- assertVisible: ".* m|.* km"
+
+- tapOn:
+    id: "cancel-navigation-button"
+
+- runFlow:
+    file: ../subflows/close-popup.yaml

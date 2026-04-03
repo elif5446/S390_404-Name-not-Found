@@ -88,6 +88,7 @@ const IndoorTopPanel: React.FC<Props> = ({
               setShowSearchResults(true);
             }}
             returnKeyType="search"
+            testID="indoor-start-input"
           />
         </View>
 
@@ -124,6 +125,7 @@ const IndoorTopPanel: React.FC<Props> = ({
               }
             }}
             returnKeyType="search"
+            testID="indoor-destination-input"
           />
 
           {destValue.length > 0 && (
@@ -218,6 +220,10 @@ const IndoorTopPanel: React.FC<Props> = ({
               shadowRadius: 6,
               elevation: 5,
             }}
+            accessible={true}
+            accessibilityRole="button"
+            accessibilityLabel="Start Navigation"
+            testID="top-panel-navigate-button"
           >
             <Ionicons name="return-up-forward" size={16} color="#FFFFFF" />
           </TouchableOpacity>

@@ -165,7 +165,6 @@ describe("PopupContent Component", () => {
     const scrollView = screen.UNSAFE_getByType(ScrollView);
     expect(scrollView).toBeTruthy();
 
-    // simulate a scroll event
     fireEvent.scroll(scrollView, {
       nativeEvent: { contentOffset: { y: 100 } },
     });
@@ -196,7 +195,6 @@ describe("PopupContent Component", () => {
       const symbolIcon = screen.UNSAFE_getByType("SymbolView" as any);
       expect(symbolIcon.props.name).toBe("document.on.document");
 
-      // rerender with iscopying = true
       rerender(
         <PopupContent
           {...defaultProps}
@@ -219,11 +217,9 @@ describe("PopupContent Component", () => {
         />,
       );
 
-      // we use queryallbytype because the directions button also uses materialicons
       let icons = screen.UNSAFE_queryAllByType("MaterialIcons" as any);
       expect(icons.some((i) => i.props.name === "content-copy")).toBe(true);
 
-      // rerender with iscopying = true
       rerender(
         <PopupContent
           {...defaultProps}
@@ -235,5 +231,19 @@ describe("PopupContent Component", () => {
       icons = screen.UNSAFE_queryAllByType("MaterialIcons" as any);
       expect(icons.some((i) => i.props.name === "task")).toBe(true);
     });
+  });
+
+  it("uses the default empty array for todayEvents when the prop is omitted", () => {
+    const { todayEvents, ...propsWithoutTodayEvents } = defaultProps;
+
+    render(<PopupContent {...propsWithoutTodayEvents} />);
+
+    act(() => {
+      jest.runAllTimers();
+    });
+
+    expect(
+      screen.getByText("No classes scheduled in this building today")
+    ).toBeTruthy();
   });
 });

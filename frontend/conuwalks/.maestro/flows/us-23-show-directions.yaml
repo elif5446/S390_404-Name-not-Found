@@ -3,19 +3,24 @@ tags:
   - feature
   - navigation
 ---
-- runFlow: 
+- runFlow:
     file: ../subflows/launch.yaml
     env:
-        USERNAME: "${USERNAME}"
-        PASSWORD: "${PASSWORD}"
+      USERNAME: "${USERNAME}"
+      PASSWORD: "${PASSWORD}"
 
-- doubleTapOn:
-    point: 50%, 50%
+- runFlow:
+    file: ../subflows/clear-next-class-banner.yaml
 
+- setLocation:
+    latitude: 45.495633
+    longitude: -73.578902
+- tapOn:
+    id: "recenter-location-button"
 - waitForAnimationToEnd
 
 - tapOn:
-    point: 45%, 30%
+    point: 50%, 18%
 - waitForAnimationToEnd
 - assertVisible: "Henry F. Hall Building.*"
 - tapOn:
@@ -33,14 +38,23 @@ tags:
     id: "navigate-button"
     # point: 90%, 78%
 
-- waitForAnimationToEnd
+- assertVisible:
+    id: "indoor-map-canvas"
+    optional: true
+- tapOn:
+    id: "indoor-back-button"
+    optional: true
 
 - assertVisible: "Walking.*"
 - assertVisible: "Next in.*"
 - assertVisible: ".*ETA"
-- assertVisible: 
+
+- assertVisible:
     id: "cancel-navigation-button"
 
 - tapOn:
     id: "cancel-navigation-button"
 - assertNotVisible: "Turn right onto Blvd.*"
+
+- runFlow:
+    file: ../subflows/close-popup.yaml

@@ -1,0 +1,36 @@
+appId: com.conuwalks.app
+tags:
+  - critical
+  - feature
+---
+- runFlow:
+    file: ../subflows/launch.yaml
+    env:
+      USERNAME: "${USERNAME}"
+      PASSWORD: "${PASSWORD}"
+- waitForAnimationToEnd
+- tapOn: "Sir George Williams"
+
+- setLocation:
+    latitude: 45.495633
+    longitude: -73.578902
+- tapOn:
+    id: "recenter-location-button"
+- waitForAnimationToEnd
+
+- tapOn:
+    point: 50%, 59%
+- waitForAnimationToEnd
+- assertVisible: "John Molson Building.*"
+- runFlow: ../subflows/expand-info-popup.yaml
+- assertVisible: "Schedule"
+- assertVisible: "Opening Hours"
+- assertVisible: "Address"
+- assertVisible: "1450 Guy.*"
+- assertVisible: "Description"
+- assertVisible: "The JMSB building is a business.*"
+- runFlow: ../subflows/close-popup.yaml
+- waitForAnimationToEnd
+- assertNotVisible: "MB"
+- assertNotVisible: "Opening Hours"
+- assertNotVisible: "Address"

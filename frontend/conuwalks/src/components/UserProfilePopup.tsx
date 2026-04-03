@@ -39,6 +39,7 @@ const UserProfilePopup: React.FC<UserProfilePopupProps> = ({
     >
       <View style={{ flex: 1, backgroundColor: "transparent" }}>
         <View
+          testID="theme-container"
           style={{
             flex: 1,
             width: "100%",

@@ -4,27 +4,24 @@ tags:
   - navigation
   - cross-campus
 ---
-- runFlow: 
+- runFlow:
     file: ../subflows/launch.yaml
     env:
-        USERNAME: "${USERNAME}"
-        PASSWORD: "${PASSWORD}"
+      USERNAME: "${USERNAME}"
+      PASSWORD: "${PASSWORD}"
 
-- doubleTapOn:
-    point: 50%, 50%
-
+- setLocation:
+    latitude: 45.495633
+    longitude: -73.578902
 - waitForAnimationToEnd
+- runFlow:
+    file: ../subflows/clear-next-class-banner.yaml
+
 - tapOn: "Loyola"
 - waitForAnimationToEnd
 
-- doubleTapOn:
-    point: 50%, 50%
-
-- waitForAnimationToEnd
-
-- tapOn: 
-    point: 15%, 55% 
-    # text: "SP" 
+- tapOn:
+    point: 15%, 55%
 
 - assertVisible: "Richard J. Renaud Science Complex"
 - tapOn:
@@ -40,11 +37,22 @@ tags:
     id: "navigate-button"
 - waitForAnimationToEnd
 
+- assertVisible:
+    id: "indoor-map-canvas"
+    optional: true
+- tapOn:
+    id: "indoor-back-button"
+    optional: true
+
 - assertVisible: "Transit.*"
 - assertVisible: ".*ETA"
 
-- assertVisible: 
+- assertVisible:
     id: "cancel-navigation-button"
 - tapOn:
     id: "cancel-navigation-button"
+
+- runFlow:
+    file: ../subflows/close-popup.yaml
+
 - assertNotVisible: "Transit.*"
