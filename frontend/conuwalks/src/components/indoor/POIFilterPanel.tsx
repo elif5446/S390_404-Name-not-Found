@@ -38,10 +38,14 @@ interface Props {
   onTargetModeChange: (mode: "SOURCE" | "DESTINATION") => void;
   onToggleCategory: (cat: POICategory) => void;
   onSelectPOI: (poi: POI) => void;
+  /**
+   * Used for testing only. Allows tests to control the query value for coverage.
+   */
+  testQuery?: string;
 }
 
 const POIFilterPanel = forwardRef<POIFilterPanelHandle, Props>(
-  ({ visible, buildingId, pois, activeCategories, floorLabel, sourcePOI, destinationPOI, onSelectPOI }, ref) => {
+  ({ visible, buildingId, pois, activeCategories, floorLabel, sourcePOI, destinationPOI, onSelectPOI, testQuery }, ref) => {
     const [query] = useState("");
     const [expanded, setExpanded] = useState(false);
 
@@ -74,7 +78,9 @@ const POIFilterPanel = forwardRef<POIFilterPanelHandle, Props>(
 
     const normalize = (value: string) => value.trim().toLowerCase().replace(/\s+/g, " ");
 
-    const queryNormalized = normalize(query);
+    // Use testQuery if provided (for tests), otherwise use local state
+    const effectiveQuery = typeof testQuery === "string" ? testQuery : query;
+    const queryNormalized = normalize(effectiveQuery);
     const queryRoom = queryNormalized.replace(/^h\s*-\s*/i, "").replace(/^room\s+/i, "");
 
     const visiblePOIs = useMemo(() => {
