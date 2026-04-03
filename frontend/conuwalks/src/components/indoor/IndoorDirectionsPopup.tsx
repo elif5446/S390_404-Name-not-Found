@@ -37,6 +37,86 @@ interface IndoorDirectionsPopupProps {
   finishLabel?: string;
 }
 
+// module-scope helpers to reduce cognitive complexity 
+
+const getNavBtnBgColor = (disabled: boolean): string => (disabled ? "#DDD" : "#B03060");
+
+const getNavBtnTextColor = (disabled: boolean, isDark: boolean, disabledLightColor: string = "#A0A0A0"): string => {
+  if (disabled) return isDark ? "#776D72" : disabledLightColor;
+  return "white";
+};
+
+const getNextBtnLabel = (isLastStep: boolean, finishLabel?: string): string =>
+  isLastStep ? finishLabel || "Finish" : "Next";
+
+const CloseIcon = ({ isDark }: { isDark: boolean }) =>
+  Platform.OS === "ios" ? (
+    <Text style={{ fontSize: 16, fontWeight: "600", color: isDark ? "#FFFFFF" : "#333333", marginBottom: 2 }}>✕</Text>
+  ) : (
+    <Ionicons name="close" size={20} color={isDark ? "#FFFFFF" : "#333333"} />
+  );
+
+interface IndoorStepItemProps {
+  step: IndoorDirectionsStep;
+  index: number;
+  totalSteps: number;
+  activeStepIndex: number;
+  isDark: boolean;
+  onLayout: (index: number, y: number) => void;
+}
+
+const IndoorStepItem = ({ step, index, totalSteps, activeStepIndex, isDark, onLayout }: IndoorStepItemProps) => {
+  const isActive = index === activeStepIndex;
+  const isLast = index === totalSteps - 1;
+  return (
+    <View
+      onLayout={e => onLayout(index, e.nativeEvent.layout.y)}
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        marginBottom: isLast ? 0 : 16,
+        opacity: isActive ? 1 : 0.3,
+        backgroundColor: isActive ? (isDark ? "#2A2025" : "#FFF0F5") : "transparent",
+        padding: isActive ? 18 : 10,
+        borderRadius: 14,
+        transform: [{ scale: isActive ? 1.02 : 1 }],
+      }}
+    >
+      <View
+        style={{
+          width: isActive ? 32 : 24,
+          height: isActive ? 32 : 24,
+          borderRadius: isActive ? 16 : 12,
+          backgroundColor: isActive || isLast ? "#C2185B" : isDark ? "#4B3D44" : "#FCE4EC",
+          alignItems: "center",
+          justifyContent: "center",
+          marginRight: 14,
+        }}
+      >
+        <Text
+          style={{
+            fontSize: isActive ? 15 : 12,
+            fontWeight: "900",
+            color: isActive || isLast ? "#FFFFFF" : isDark ? "#E8C8D7" : "#C2185B",
+          }}
+        >
+          {index + 1}
+        </Text>
+      </View>
+      <Text
+        style={{
+          flex: 1,
+          fontSize: isActive ? 18 : 15,
+          fontWeight: isActive ? "800" : "500",
+          color: isActive || isLast ? "#C2185B" : isDark ? "#E0D7DB" : "#4A4A4A",
+        }}
+      >
+        {step.text}
+      </Text>
+    </View>
+  );
+};
+
 const IndoorDirectionsPopup = forwardRef<IndoorDirectionsPopupHandle, IndoorDirectionsPopupProps>(
   ({ visible, steps, activeStepIndex, onNextStep, onPrevStep, onClose, onFinish, finishLabel }, ref) => {
     const isDark = (useColorScheme() || "light") === "dark";
@@ -87,11 +167,20 @@ const IndoorDirectionsPopup = forwardRef<IndoorDirectionsPopupHandle, IndoorDire
       [scrollOffsetRef],
     );
 
-    if (!visible || steps.length === 0) return null;
-
     const disablePrev = activeStepIndex === 0;
     const isLastStep = activeStepIndex === steps.length - 1;
     const disableNext = isLastStep && !onFinish;
+
+    const handleNextPress = useCallback(() => {
+      if (isLastStep && onFinish) {
+        onFinish();
+        return;
+      }
+      snapTo(SNAP_OFFSET);
+      onNextStep();
+    }, [isLastStep, onFinish, snapTo, SNAP_OFFSET, onNextStep]);
+
+    if (!visible || steps.length === 0) return null;
 
     return (
       <View
@@ -178,20 +267,7 @@ const IndoorDirectionsPopup = forwardRef<IndoorDirectionsPopupHandle, IndoorDire
                     accessibilityLabel="Close indoor directions"
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   >
-                    {Platform.OS === "ios" ? (
-                      <Text
-                        style={{
-                          fontSize: 16,
-                          fontWeight: "600",
-                          color: isDark ? "#FFFFFF" : "#333333",
-                          marginBottom: 2,
-                        }}
-                      >
-                        ✕
-                      </Text>
-                    ) : (
-                      <Ionicons name="close" size={20} color={isDark ? "#FFFFFF" : "#333333"} />
-                    )}
+                    <CloseIcon isDark={isDark} />
                   </TouchableOpacity>
 
                   {/* Icon */}
@@ -246,62 +322,17 @@ const IndoorDirectionsPopup = forwardRef<IndoorDirectionsPopupHandle, IndoorDire
               showsVerticalScrollIndicator={false}
               nestedScrollEnabled
             >
-              {steps.map((step, index) => {
-                const isLast = index === steps.length - 1;
-                const isActive = index === activeStepIndex;
-
-                return (
-                  <View
-                    key={step.id}
-                    onLayout={e => {
-                      stepLayouts.current[index] = e.nativeEvent.layout.y;
-                    }}
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      marginBottom: isLast ? 0 : 16,
-                      opacity: isActive ? 1 : 0.3,
-                      backgroundColor: isActive ? (isDark ? "#2A2025" : "#FFF0F5") : "transparent",
-                      padding: isActive ? 18 : 10,
-                      borderRadius: 14,
-                      transform: [{ scale: isActive ? 1.02 : 1 }],
-                    }}
-                  >
-                    <View
-                      style={{
-                        width: isActive ? 32 : 24,
-                        height: isActive ? 32 : 24,
-                        borderRadius: isActive ? 16 : 12,
-                        backgroundColor: isActive || isLast ? "#C2185B" : isDark ? "#4B3D44" : "#FCE4EC",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        marginRight: 14,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontSize: isActive ? 15 : 12,
-                          fontWeight: "900",
-                          color: isActive || isLast ? "#FFFFFF" : isDark ? "#E8C8D7" : "#C2185B",
-                        }}
-                      >
-                        {index + 1}
-                      </Text>
-                    </View>
-
-                    <Text
-                      style={{
-                        flex: 1,
-                        fontSize: isActive ? 18 : 15,
-                        fontWeight: isActive ? "800" : "500",
-                        color: isActive || isLast ? "#C2185B" : isDark ? "#E0D7DB" : "#4A4A4A",
-                      }}
-                    >
-                      {step.text}
-                    </Text>
-                  </View>
-                );
-              })}
+              {steps.map((step, index) => (
+                <IndoorStepItem
+                  key={step.id}
+                  step={step}
+                  index={index}
+                  totalSteps={steps.length}
+                  activeStepIndex={activeStepIndex}
+                  isDark={isDark}
+                  onLayout={(i, y) => { stepLayouts.current[i] = y; }}
+                />
+              ))}
             </ScrollView>
           </View>
         </Animated.View>
@@ -329,30 +360,20 @@ const IndoorDirectionsPopup = forwardRef<IndoorDirectionsPopupHandle, IndoorDire
           }}
         >
           <TouchableOpacity
-            onPress={() => {
-              snapTo(SNAP_OFFSET);
-              onPrevStep();
-            }}
+            onPress={() => { snapTo(SNAP_OFFSET); onPrevStep(); }}
             disabled={disablePrev}
-            style={[styles.navBtn, { backgroundColor: disablePrev ? "#DDD" : "#B03060" }]}
+            style={[styles.navBtn, { backgroundColor: getNavBtnBgColor(disablePrev) }]}
           >
-            <Text style={{ color: disablePrev ? (isDark ? "#776D72" : "#A0A0A0") : "white", fontWeight: "700" }}>Previous</Text>
+            <Text style={{ color: getNavBtnTextColor(disablePrev, isDark), fontWeight: "700" }}>Previous</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
-            onPress={() => {
-              if (isLastStep && onFinish) {
-                onFinish();
-              } else {
-                snapTo(SNAP_OFFSET);
-                onNextStep();
-              }
-            }}
+            onPress={handleNextPress}
             disabled={disableNext}
-            style={[styles.navBtn, { backgroundColor: disableNext ? "#DDD" : "#B03060" }]}
+            style={[styles.navBtn, { backgroundColor: getNavBtnBgColor(disableNext) }]}
           >
-            <Text style={{ color: disableNext ? (isDark ? "#776D72" : "#FFF") : "white", fontWeight: "700" }}>
-              {isLastStep ? finishLabel || "Finish" : "Next"}
+            <Text style={{ color: getNavBtnTextColor(disableNext, isDark, "#FFF"), fontWeight: "700" }}>
+              {getNextBtnLabel(isLastStep, finishLabel)}
             </Text>
           </TouchableOpacity>
         </View>
