@@ -129,6 +129,59 @@ const injectShuttleRoute = async (
   return fetchedRoutes;
 };
 
+const areCoordinatesValid = (start: LatLng, dest: LatLng): boolean =>
+  Number.isFinite(start.latitude) &&
+  Number.isFinite(start.longitude) &&
+  Number.isFinite(dest.latitude) &&
+  Number.isFinite(dest.longitude);
+
+const buildIndoorOnlyRoute = (start: LatLng, dest: LatLng): RouteData => ({
+  id: "indoor-only-route",
+  distance: "0 m",
+  duration: "0 min",
+  eta: "",
+  baseDurationSeconds: 0,
+  polylinePoints: [start, dest],
+  overviewPolyline: "",
+  steps: [
+    {
+      instruction: "Navigate indoors",
+      distance: "0 m",
+      duration: "0 min",
+      travelMode: "walking",
+      startLocation: start,
+      endLocation: dest,
+    },
+  ],
+  isShuttle: false,
+  requestMode: "walking",
+});
+
+const fetchExternalRoutes = async (
+  start: LatLng,
+  dest: LatLng,
+  travelMode: string,
+  targetTime: Date | null | undefined,
+  timeMode: "leave" | "arrive",
+): Promise<RouteData[]> => {
+  const googleTravelMode: GoogleTravelMode = travelMode === "shuttle" ? "transit" : (travelMode as GoogleTravelMode);
+  let fetchedRoutes = await getDirections(start, dest, googleTravelMode, targetTime ?? null, timeMode);
+
+  if (travelMode === "transit") {
+    fetchedRoutes = await injectShuttleRoute(fetchedRoutes, start, dest, targetTime ?? new Date(), timeMode);
+  }
+
+  const decoded = fetchedRoutes
+    .map(route => ({
+      ...route,
+      polylinePoints: route.isShuttle ? route.polylinePoints : decodePolyline(route.overviewPolyline),
+    }))
+    .filter(route => route.polylinePoints.length > 0);
+
+  if (decoded.length === 0) throw new Error("Failed to decode route polyline");
+  return decoded;
+};
+
 /**
  * Component to render the route polyline on the map
  * Handles fetching directions and decoding polyline
@@ -196,6 +249,78 @@ const outdoorRequestKey =
     [startBuildingId, startRoom, destinationBuildingId, destinationRoom, targetTime, timeMode, setRoutes, setRouteData],
   );
 
+  const handleFetchError = useCallback(
+    (err: unknown) => {
+      const errorMessage = err instanceof Error ? err.message : "Failed to fetch directions";
+      console.warn("Route fetch error:", errorMessage);
+      if (/not been used|disabled|legacy api|request denied/i.exec(errorMessage)) {
+        if (outdoorRequestKey) blockedRequestKeyRef.current = outdoorRequestKey;
+      }
+      setError(errorMessage);
+      setRoutes([]);
+      setLoading(false);
+    },
+    [outdoorRequestKey, setError, setRoutes, setLoading],
+  );
+
+  const doFetch = useCallback(async () => {
+    if (isMountedRef.current) {
+      setLoading(true);
+      setError(null);
+    }
+
+    const isSameBuilding =
+      startBuildingId && destinationBuildingId && startBuildingId === destinationBuildingId && startBuildingId !== "USER";
+    const isSameLocation =
+      Math.abs(effectiveStartLocation!.latitude - destinationCoords!.latitude) < 0.00001 &&
+      Math.abs(effectiveStartLocation!.longitude - destinationCoords!.longitude) < 0.00001;
+
+    if (isSameBuilding || isSameLocation) {
+      console.log("RoutePolyline: Indoor-only route detected. Skipping outdoor API fetch.");
+      const mockRoute = buildIndoorOnlyRoute(effectiveStartLocation!, destinationCoords!);
+      if (isMountedRef.current) {
+        setRoutes([mockRoute]);
+        setRouteData(mockRoute);
+        setLoading(false);
+        setError(null);
+      }
+      baseRoutesRef.current = [mockRoute];
+      lastFetchedKeyRef.current = outdoorRequestKey;
+      blockedRequestKeyRef.current = null;
+      await applyIndoorPatch([mockRoute]);
+      return;
+    }
+
+    const decodedRoutes = await fetchExternalRoutes(effectiveStartLocation!, destinationCoords!, travelMode, targetTime, timeMode);
+
+    console.log("RoutePolyline: API call successful", { routesCount: decodedRoutes.length });
+
+    if (!isMountedRef.current) return;
+
+    setRoutes(decodedRoutes);
+    setRouteData(decodedRoutes[0]);
+    baseRoutesRef.current = decodedRoutes;
+    lastFetchedKeyRef.current = outdoorRequestKey;
+    blockedRequestKeyRef.current = null;
+    await applyIndoorPatch(decodedRoutes);
+
+    if (isMountedRef.current) setLoading(false);
+  }, [
+    effectiveStartLocation,
+    destinationCoords,
+    startBuildingId,
+    destinationBuildingId,
+    outdoorRequestKey,
+    travelMode,
+    targetTime,
+    timeMode,
+    setLoading,
+    setError,
+    setRoutes,
+    setRouteData,
+    applyIndoorPatch,
+  ]);
+
   // flush the request cache when the route is dismissed or destination is cleared
   useEffect(() => {
     if (!shouldShowRoute || !destinationCoords) {
@@ -206,28 +331,22 @@ const outdoorRequestKey =
 
   // Fetch directions when destination, start, or travel mode changes
   const fetchRoute = useCallback(async () => {
-    if (shouldShowRoute) {
-      console.log("RoutePolyline: fetchRoute called", {
-        showDirections,
-        isNavigationActive,
-        hasStart: !!effectiveStartLocation,
-        hasDestination: !!destinationCoords,
-        mode: travelMode,
-      });
-    }
+    if (!shouldShowRoute) return;
 
-    if (!shouldShowRoute || !effectiveStartLocation || !destinationCoords) {
-      if (!effectiveStartLocation || !destinationCoords) setRoutes([]);
+    console.log("RoutePolyline: fetchRoute called", {
+      showDirections,
+      isNavigationActive,
+      hasStart: !!effectiveStartLocation,
+      hasDestination: !!destinationCoords,
+      mode: travelMode,
+    });
+
+    if (!effectiveStartLocation || !destinationCoords) {
+      setRoutes([]);
       return;
     }
 
-    // Validate coordinates are valid numbers
-    if (
-      !Number.isFinite(effectiveStartLocation.latitude) ||
-      !Number.isFinite(effectiveStartLocation.longitude) ||
-      !Number.isFinite(destinationCoords.latitude) ||
-      !Number.isFinite(destinationCoords.longitude)
-    ) {
+    if (!areCoordinatesValid(effectiveStartLocation, destinationCoords)) {
       console.warn("RoutePolyline: Invalid coordinates", {
         start: effectiveStartLocation,
         destination: destinationCoords,
@@ -242,10 +361,7 @@ const outdoorRequestKey =
     });
 
     // block spam during active navigation
-    // don't need to check routeData here; if navigation is active, route exists
-    if (isNavigationActive) {
-      return;
-    }
+    if (isNavigationActive) return;
 
     // block duplicate fetches for the same route parameters
     if (outdoorRequestKey && lastFetchedKeyRef.current === outdoorRequestKey) {
@@ -257,127 +373,10 @@ const outdoorRequestKey =
     if (outdoorRequestKey && blockedRequestKeyRef.current === outdoorRequestKey) return;
 
     try {
-      if (isMountedRef.current) {
-        setLoading(true);
-        setError(null);
-      }
-
-      const isSameBuilding =
-        startBuildingId && destinationBuildingId && startBuildingId === destinationBuildingId && startBuildingId !== "USER";
-
-      const isSameLocation =
-        Math.abs(effectiveStartLocation.latitude - destinationCoords.latitude) < 0.00001 &&
-        Math.abs(effectiveStartLocation.longitude - destinationCoords.longitude) < 0.00001;
-
-      if (isSameBuilding || isSameLocation) {
-        console.log("RoutePolyline: Indoor-only route detected. Skipping outdoor API fetch.");
-
-        const mockRoute: RouteData = {
-          id: "indoor-only-route",
-          distance: "0 m",
-          duration: "0 min",
-          eta: "",
-          baseDurationSeconds: 0,
-          polylinePoints: [effectiveStartLocation, destinationCoords],
-          overviewPolyline: "",
-          steps: [
-            {
-              instruction: "Navigate indoors",
-              distance: "0 m",
-              duration: "0 min",
-              travelMode: "walking",
-              startLocation: effectiveStartLocation,
-              endLocation: destinationCoords,
-            },
-          ],
-          isShuttle: false,
-          requestMode: "walking",
-        };
-
-        if (isMountedRef.current) {
-          setRoutes([mockRoute]);
-          setRouteData(mockRoute);
-          setLoading(false);
-          setError(null);
-        }
-
-        baseRoutesRef.current = [mockRoute];
-        lastFetchedKeyRef.current = outdoorRequestKey;
-        blockedRequestKeyRef.current = null;
-
-        await applyIndoorPatch([mockRoute]);
-        return;
-      }
-
-      // Fetch directions from API
-      const googleTravelMode: GoogleTravelMode =
-          travelMode === "shuttle" ? "transit" : travelMode;
-
-        let fetchedRoutes = await getDirections(
-          effectiveStartLocation,
-          destinationCoords,
-          googleTravelMode,
-          targetTime,
-          timeMode,
-        );
-
-      console.log("RoutePolyline: API call successful", {
-        routesCount: fetchedRoutes.length,
-      });
-
-      // Shuttle injection
-      if (travelMode === "transit") {
-        fetchedRoutes = await injectShuttleRoute(
-          fetchedRoutes,
-          effectiveStartLocation,
-          destinationCoords,
-          targetTime || new Date(),
-          timeMode,
-        );
-      }
-
-      // Check if component is still mounted before updating state
-      if (!isMountedRef.current) {
-        console.log("RoutePolyline: Component unmounted, skipping state update");
-        return;
-      }
-
-      const decodedRoutes = fetchedRoutes
-        .map(route => ({
-          ...route,
-          polylinePoints: route.isShuttle ? route.polylinePoints : decodePolyline(route.overviewPolyline),
-        }))
-        .filter(route => route.polylinePoints.length > 0);
-
-      if (decodedRoutes.length === 0) {
-        throw new Error("Failed to decode route polyline");
-      }
-
-      setRoutes(decodedRoutes);
-      setRouteData(decodedRoutes[0]);
-      baseRoutesRef.current = decodedRoutes;
-      lastFetchedKeyRef.current = outdoorRequestKey;
-      blockedRequestKeyRef.current = null;
-
-      await applyIndoorPatch(decodedRoutes);
-
-      if (isMountedRef.current) {
-        setLoading(false);
-      }
+      await doFetch();
     } catch (err) {
       console.error("RoutePolyline: Fetch error", err);
-      if (isMountedRef.current) {
-        const errorMessage = err instanceof Error ? err.message : "Failed to fetch directions";
-        console.warn("Route fetch error:", errorMessage);
-
-        if (/not been used|disabled|legacy api|request denied/i.exec(errorMessage)) {
-          if (outdoorRequestKey) blockedRequestKeyRef.current = outdoorRequestKey;
-        }
-
-        setError(errorMessage);
-        setRoutes([]);
-        setLoading(false);
-      }
+      if (isMountedRef.current) handleFetchError(err);
     }
   }, [
     shouldShowRoute,
@@ -389,13 +388,8 @@ const outdoorRequestKey =
     travelMode,
     setRoutes,
     applyIndoorPatch,
-    startBuildingId,
-    destinationBuildingId,
-    targetTime,
-    timeMode,
-    setRouteData,
-    setLoading,
-    setError,
+    doFetch,
+    handleFetchError,
   ]);
 
   // recalculate when the indoor rooms change
