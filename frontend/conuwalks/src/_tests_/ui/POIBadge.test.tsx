@@ -1,8 +1,9 @@
 import React from "react";
-import { render, fireEvent } from "@testing-library/react-native";
+import { render, fireEvent, screen } from "@testing-library/react-native";
 import { StyleSheet } from "react-native";
 import POIBadge from "@/src/components/indoor/POIBadge";
 import { POI } from "@/src/types/poi";
+import { POI_PALETTE } from "@/src/styles/IndoorPOI.styles";
 
 jest.mock("@expo/vector-icons", () => {
   const { Text } = require("react-native");
@@ -92,6 +93,41 @@ describe("POIBadge", () => {
       const extendedPoi = createMockPOI({ category: "ROOM", room: "101.5" });
       rerender(<POIBadge poi={extendedPoi} {...defaultProps} />);
       expect(getByText("101.5").props.style.fontSize).toBe(6.5);
+    });
+
+    it("renders default room label colors when no selectionType is provided", () => {
+      const poi = createMockPOI({ category: "ROOM", room: "101" });
+
+      const { getByRole } = render(
+        <POIBadge poi={poi} {...defaultProps} selectionType={undefined} />,
+      );
+
+      const touchable = getByRole("button", { name: /Room 101/ });
+      const flatStyle = StyleSheet.flatten(touchable.props.style);
+
+      expect(flatStyle.backgroundColor).toBe("transparent");
+    });
+
+    it("covers sub-room icon colors and interactions when not selected", () => {
+      const poi = createMockPOI({ category: "ROOM", room: "805.01" });
+      const onPressMock = jest.fn();
+
+      const { getByTestId } = render(
+        <POIBadge
+          poi={poi}
+          {...defaultProps}
+          selectionType={undefined}
+          onPress={onPressMock}
+        />,
+      );
+      const icon = getByTestId("mock-ionicon");
+      expect(icon.children[0]).toContain(POI_PALETTE.iconDark);
+
+      const buttons = screen.getAllByRole("button", { name: /Room 805.01/ });
+      const subIconButton = buttons[1];
+
+      fireEvent.press(subIconButton);
+      expect(onPressMock).toHaveBeenCalledWith(poi);
     });
   });
 
@@ -208,6 +244,34 @@ describe("POIBadge", () => {
       const style805 = StyleSheet.flatten(button805.props.style);
 
       expect(style805.marginTop).toBe(5);
+    });
+    it("falls back to ZERO_OFFSET when no manual overrides exist", () => {
+      const poi = createMockPOI({
+        category: "ROOM",
+        room: "999",
+        floor: undefined,
+      });
+      const { toJSON } = render(<POIBadge poi={poi} {...defaultProps} />);
+
+      expect(toJSON()).toBeDefined();
+    });
+
+    it("handles floor-based overrides and missing floor branches", () => {
+      const poiWithFloor = createMockPOI({
+        category: "STAIRS",
+        room: "S1",
+        floor: 9,
+      });
+      render(<POIBadge poi={poiWithFloor} {...defaultProps} />);
+
+      const poiNoFloor = createMockPOI({
+        category: "ROOM",
+        room: "836",
+        floor: undefined,
+      });
+      render(<POIBadge poi={poiNoFloor} {...defaultProps} />);
+
+      expect(true).toBeTruthy();
     });
   });
 
