@@ -13,7 +13,7 @@ function vec(from: { x: number; y: number }, to: { x: number; y: number }) {
 }
 
 function magnitude(v: { dx: number; dy: number }) {
-  return Math.sqrt(v.dx * v.dx + v.dy * v.dy);
+  return Math.hypot(v.dx, v.dy);
 }
 
 function normalise(v: { dx: number; dy: number }) {
@@ -27,7 +27,10 @@ function cosSim(a: { dx: number; dy: number }, b: { dx: number; dy: number }) {
   return na.dx * nb.dx + na.dy * nb.dy;
 }
 
-function crossSign(a: { dx: number; dy: number }, b: { dx: number; dy: number }): number {
+function crossSign(
+  a: { dx: number; dy: number },
+  b: { dx: number; dy: number },
+): number {
   const na = normalise(a);
   const nb = normalise(b);
   return na.dx * nb.dy - na.dy * nb.dx;
@@ -47,7 +50,10 @@ function runDistance(nodes: Node[], fromIdx: number, toIdx: number): number {
 
 type TurnKind = "straight" | "left" | "right";
 
-function classifyTurn(from: { dx: number; dy: number }, to: { dx: number; dy: number }): TurnKind {
+function classifyTurn(
+  from: { dx: number; dy: number },
+  to: { dx: number; dy: number },
+): TurnKind {
   const cos = cosSim(from, to);
   if (cos > 0.75) return "straight";
   return crossSign(from, to) > 0 ? "right" : "left";
@@ -64,12 +70,15 @@ function getTransitKind(node: Node): TransitKind | null {
 
 function floorNum(floorId: string): number {
   const n = Number(floorId.split("_").pop());
-  return isNaN(n) ? 0 : n;
+  return Number.isNaN(n) ? 0 : n;
 }
 
 // Approach vector
 
-function buildApproachVec(nodes: Node[], i: number): { dx: number; dy: number } {
+function buildApproachVec(
+  nodes: Node[],
+  i: number,
+): { dx: number; dy: number } {
   let acc = vec(nodes[i - 1], nodes[i]);
   for (let k = i - 1; k >= 1; k--) {
     const seg = vec(nodes[k - 1], nodes[k]);
@@ -140,9 +149,21 @@ interface ArriveSegment {
   approachTurn?: "left" | "right";
 }
 
-type Segment = StartSegment | StraightSegment | TurnSegment | TransitSegment | ArriveSegment;
+type Segment =
+  | StartSegment
+  | StraightSegment
+  | TurnSegment
+  | TransitSegment
+  | ArriveSegment;
 
-function buildTransitNodeSegments(segs: Segment[], nodes: Node[], lastActionIdx: number, j: number, curr: Node, chosenKind: TransitKind): number {
+function buildTransitNodeSegments(
+  segs: Segment[],
+  nodes: Node[],
+  lastActionIdx: number,
+  j: number,
+  curr: Node,
+  chosenKind: TransitKind,
+): number {
   maybeEmitStraight(segs, nodes, lastActionIdx, j, chosenKind);
 
   const fromFloor = floorNum(curr.floorId);
@@ -150,21 +171,32 @@ function buildTransitNodeSegments(segs: Segment[], nodes: Node[], lastActionIdx:
   for (; j < nodes.length; j++) {
     const kk = getTransitKind(nodes[j]);
     if (!kk) break;
-    if (kk !== "stairs" && chosenKind !== "elevator")
-      chosenKind = kk;
+    if (kk !== "stairs" && chosenKind !== "elevator") chosenKind = kk;
   }
 
   const n = j - (j < nodes.length ? 0 : 1);
   const toFloor = floorNum(nodes[n].floorId);
 
   if (toFloor !== fromFloor) {
-    segs.push({ kind: "transit", node: curr, transitKind: chosenKind, fromFloor, toFloor });
+    segs.push({
+      kind: "transit",
+      node: curr,
+      transitKind: chosenKind,
+      fromFloor,
+      toFloor,
+    });
   }
-  
-  return j
+
+  return j;
 }
 
-function buildFinalDestinationSegments(segs: Segment[], nodes: Node[], lastActionIdx: number, i: number, curr: Node) {
+function buildFinalDestinationSegments(
+  segs: Segment[],
+  nodes: Node[],
+  lastActionIdx: number,
+  i: number,
+  curr: Node,
+) {
   maybeEmitStraight(segs, nodes, lastActionIdx, i);
   let lastTurn: TurnSegment | undefined;
   for (let k = segs.length - 1; k >= 0; k--) {
@@ -198,9 +230,16 @@ export function buildSegments(nodes: Node[]): Segment[] {
     const isLast = i === nodes.length - 1;
 
     //  Case A: transit node─
-    const transitKind = getTransitKind(curr)
+    const transitKind = getTransitKind(curr);
     if (transitKind) {
-      lastActionIdx = buildTransitNodeSegments(segs, nodes, lastActionIdx, i, curr, transitKind)
+      lastActionIdx = buildTransitNodeSegments(
+        segs,
+        nodes,
+        lastActionIdx,
+        i,
+        curr,
+        transitKind,
+      );
       i = lastActionIdx + 1;
       continue;
     }
@@ -213,7 +252,7 @@ export function buildSegments(nodes: Node[]): Segment[] {
 
     //Case C: final destination
     if (isLast) {
-      buildFinalDestinationSegments(segs, nodes, lastActionIdx, i, curr)
+      buildFinalDestinationSegments(segs, nodes, lastActionIdx, i, curr);
       break;
     }
 
@@ -251,7 +290,12 @@ function maybeEmitStraight(
   const dist = runDistance(nodes, fromIdx, toIdx);
   if (dist > 10) {
     const onOpenFloor = isOpenFloor(nodes[Math.max(fromIdx, 0)].floorId);
-    segs.push({ kind: "straight", node: nodes[fromIdx], onOpenFloor, nextTransitKind });
+    segs.push({
+      kind: "straight",
+      node: nodes[fromIdx],
+      onOpenFloor,
+      nextTransitKind,
+    });
   }
 }
 
@@ -264,32 +308,46 @@ function getStartText(seg: StartSegment): string {
 
   const cos = cosSim(initialVec, { dx: 0, dy: -1 });
   const cross = crossSign({ dx: 0, dy: -1 }, initialVec);
-  const isTurning = cos < 0.75
-  const direction = cross > 0 ? "right" : "left"
+  const isTurning = cos < 0.75;
+  const direction = cross > 0 ? "right" : "left";
 
   if (node.type === "entrance") {
-    return "Enter the building and " + (isTurning ? `turn ${direction} into the corridor` : "continue straight");
+    return (
+      "Enter the building and " +
+      (isTurning ? `turn ${direction} into the corridor` : "continue straight")
+    );
   }
 
   if (["room", "bathroom", "food", "helpDesk"].includes(node.type ?? "")) {
-    return "Exit the room and " + (isTurning ? `turn ${direction}` : "continue straight") + " into the hallway";
+    return (
+      "Exit the room and " +
+      (isTurning ? `turn ${direction}` : "continue straight") +
+      " into the hallway"
+    );
   }
 
-  return `Start at ${node.label ?? node.id} and head into the corridor`; 
+  return `Start at ${node.label ?? node.id} and head into the corridor`;
 }
 
 // Segment -> text
 
 function segmentToText(seg: Segment): string {
   switch (seg.kind) {
-    case "start": return getStartText(seg);
+    case "start":
+      return getStartText(seg);
 
     case "straight": {
       if (!seg.onOpenFloor) return "Continue straight in the hallway";
-      return "Walk " + (seg.nextTransitKind ? `to the ${seg.nextTransitKind}` : "across the open area");
+      return (
+        "Walk " +
+        (seg.nextTransitKind
+          ? `to the ${seg.nextTransitKind}`
+          : "across the open area")
+      );
     }
 
-    case "turn": return `Turn ${seg.direction} at the next hallway`;
+    case "turn":
+      return `Turn ${seg.direction} at the next hallway`;
 
     case "transit": {
       const verb = `Take the ${seg.transitKind}`;
@@ -299,7 +357,9 @@ function segmentToText(seg: Segment): string {
 
     case "arrive": {
       const dest = destinationLabel(seg.node);
-      return seg.approachTurn ? `Your destination is on the ${seg.approachTurn} — ${dest}` : `You have arrived at ${dest}`;
+      return seg.approachTurn
+        ? `Your destination is on the ${seg.approachTurn} — ${dest}`
+        : `You have arrived at ${dest}`;
     }
   }
 }
@@ -312,7 +372,10 @@ export function generateRouteSteps(nodes: Node[]): RouteStep[] {
 
   const collapsed: Segment[] = [];
   for (const seg of segments) {
-    if (seg.kind === "straight" && collapsed[collapsed.length - 1]?.kind === "straight") {
+    if (
+      seg.kind === "straight" &&
+      collapsed[collapsed.length - 1]?.kind === "straight"
+    ) {
       continue;
     }
     collapsed.push(seg);
