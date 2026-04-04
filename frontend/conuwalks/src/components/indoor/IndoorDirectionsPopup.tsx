@@ -37,7 +37,7 @@ interface IndoorDirectionsPopupProps {
   finishLabel?: string;
 }
 
-// module-scope helpers to reduce cognitive complexity 
+// module-scope helpers to reduce cognitive complexity
 
 const getNavBtnBgColor = (disabled: boolean): string => (disabled ? "#DDD" : "#B03060");
 
@@ -46,8 +46,7 @@ const getNavBtnTextColor = (disabled: boolean, isDark: boolean, disabledLightCol
   return "white";
 };
 
-const getNextBtnLabel = (isLastStep: boolean, finishLabel?: string): string =>
-  isLastStep ? finishLabel || "Finish" : "Next";
+const getNextBtnLabel = (isLastStep: boolean, finishLabel?: string): string => (isLastStep ? finishLabel || "Finish" : "Next");
 
 const CloseIcon = ({ isDark }: { isDark: boolean }) =>
   Platform.OS === "ios" ? (
@@ -97,7 +96,7 @@ const getStepTextStyle = (isActive: boolean, isHighlighted: boolean, isDark: boo
   return {
     flex: 1,
     fontSize: isActive ? 18 : 15,
-    fontWeight: isActive ? "800" as const : "500" as const,
+    fontWeight: isActive ? ("800" as const) : ("500" as const),
     color: isHighlighted ? "#C2185B" : unhighlightedColor,
   };
 };
@@ -116,14 +115,13 @@ const IndoorStepItem = ({ step, index, totalSteps, activeStepIndex, isDark, onLa
   const isLast = index === totalSteps - 1;
   const isHighlighted = isActive || isLast;
   return (
-    <View
-      onLayout={e => onLayout(index, e.nativeEvent.layout.y)}
-      style={getStepContainerStyle(isActive, isLast, isDark)}
-    >
+    <View onLayout={e => onLayout(index, e.nativeEvent.layout.y)} style={getStepContainerStyle(isActive, isLast, isDark)}>
       <View style={getStepCircleStyle(isActive, isHighlighted, isDark)}>
         <Text style={getStepIndexTextStyle(isActive, isHighlighted, isDark)}>{index + 1}</Text>
       </View>
-      <Text style={getStepTextStyle(isActive, isHighlighted, isDark)}>{step.text}</Text>
+      <Text testID={`nav-step-text-${index}`} style={getStepTextStyle(isActive, isHighlighted, isDark)}>
+        {step.text}
+      </Text>
     </View>
   );
 };
@@ -334,63 +332,19 @@ const IndoorDirectionsPopup = forwardRef<IndoorDirectionsPopupHandle, IndoorDire
               showsVerticalScrollIndicator={false}
               nestedScrollEnabled
             >
-              {steps.map((step, index) => {
-                const isLast = index === steps.length - 1;
-                const isActive = index === activeStepIndex;
-
-                return (
-                  <View
-                    key={step.id}
-                    onLayout={e => {
-                      stepLayouts.current[index] = e.nativeEvent.layout.y;
-                    }}
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      marginBottom: isLast ? 0 : 16,
-                      opacity: isActive ? 1 : 0.3,
-                      backgroundColor: isActive ? (isDark ? "#2A2025" : "#FFF0F5") : "transparent",
-                      padding: isActive ? 18 : 10,
-                      borderRadius: 14,
-                      transform: [{ scale: isActive ? 1.02 : 1 }],
-                    }}
-                  >
-                    <View
-                      style={{
-                        width: isActive ? 32 : 24,
-                        height: isActive ? 32 : 24,
-                        borderRadius: isActive ? 16 : 12,
-                        backgroundColor: isActive || isLast ? "#C2185B" : isDark ? "#4B3D44" : "#FCE4EC",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        marginRight: 14,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          fontSize: isActive ? 15 : 12,
-                          fontWeight: "900",
-                          color: isActive || isLast ? "#FFFFFF" : isDark ? "#E8C8D7" : "#C2185B",
-                        }}
-                      >
-                        {index + 1}
-                      </Text>
-                    </View>
-
-                    <Text
-                      testID={`nav-step-text-${index}`}
-                      style={{
-                        flex: 1,
-                        fontSize: isActive ? 18 : 15,
-                        fontWeight: isActive ? "800" : "500",
-                        color: isActive || isLast ? "#C2185B" : isDark ? "#E0D7DB" : "#4A4A4A",
-                      }}
-                    >
-                      {step.text}
-                    </Text>
-                  </View>
-                );
-              })}
+              {steps.map((step, index) => (
+                <IndoorStepItem
+                  key={step.id}
+                  step={step}
+                  index={index}
+                  totalSteps={steps.length}
+                  activeStepIndex={activeStepIndex}
+                  isDark={isDark}
+                  onLayout={(idx, y) => {
+                    stepLayouts.current[idx] = y;
+                  }}
+                />
+              ))}
             </ScrollView>
           </View>
         </Animated.View>
@@ -418,9 +372,13 @@ const IndoorDirectionsPopup = forwardRef<IndoorDirectionsPopupHandle, IndoorDire
           }}
         >
           <TouchableOpacity
-            onPress={() => { snapTo(SNAP_OFFSET); onPrevStep(); }}
+            onPress={() => {
+              snapTo(SNAP_OFFSET);
+              onPrevStep();
+            }}
             disabled={disablePrev}
             style={[styles.navBtn, { backgroundColor: getNavBtnBgColor(disablePrev) }]}
+            testID="nav-prev-button"
           >
             <Text style={{ color: getNavBtnTextColor(disablePrev, isDark), fontWeight: "700" }}>Previous</Text>
           </TouchableOpacity>
@@ -429,6 +387,7 @@ const IndoorDirectionsPopup = forwardRef<IndoorDirectionsPopupHandle, IndoorDire
             onPress={handleNextPress}
             disabled={disableNext}
             style={[styles.navBtn, { backgroundColor: getNavBtnBgColor(disableNext) }]}
+            testID="nav-next-button"
           >
             <Text style={{ color: getNavBtnTextColor(disableNext, isDark, "#FFF"), fontWeight: "700" }}>
               {getNextBtnLabel(isLastStep, finishLabel)}
