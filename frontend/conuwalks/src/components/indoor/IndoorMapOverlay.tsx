@@ -477,6 +477,49 @@ function handleZeroDistanceRoute(startNodeId: string, endNodeId: string, indoorM
   return { distance: 0, nodes: [graphNode] } as any;
 }
 
+//handle POI selection function
+function handlePOISelection(
+  item: IndoorSearchResult,
+  hotspots: IndoorHotspot[],
+  buildingData: BuildingIndoorConfig,
+  currentLevel: number,
+  indoorMapService: IndoorMapService,
+  isStart: boolean,
+  handleSetLocation: any,
+) {
+  const matchingRoom = hotspots.find(spot => spot.label.replace("Room ", "") === item.room);
+
+  if (matchingRoom) {
+    return handleSetLocation(
+      {
+        id: matchingRoom.id,
+        x: matchingRoom.x,
+        y: matchingRoom.y,
+        floorLevel: matchingRoom.floorLevel,
+        label: matchingRoom.label,
+        buildingId: buildingData.id,
+      },
+      isStart,
+    );
+  }
+
+  if (item.x !== undefined && item.y !== undefined) {
+    const nearestNode = indoorMapService.getNearestRoomNode(`${buildingData.id}_${currentLevel}`, item.x, item.y);
+
+    return handleSetLocation(
+      {
+        id: nearestNode?.id ?? item.id,
+        x: item.x,
+        y: item.y,
+        floorLevel: item.floorLevel!,
+        label: item.label,
+        buildingId: buildingData.id,
+      },
+      isStart,
+    );
+  }
+}
+
 const IndoorMapOverlay: React.FC<Props> = ({
   buildingData,
   startBuildingId,
@@ -796,48 +839,6 @@ const IndoorMapOverlay: React.FC<Props> = ({
     },
     [setStartLocation, onSetStartRoom, setDestination, onSetDestinationRoom],
   );
-  //handle POI selection function
-  function handlePOISelection(
-    item: IndoorSearchResult,
-    hotspots: IndoorHotspot[],
-    buildingData: BuildingIndoorConfig,
-    currentLevel: number,
-    indoorMapService: IndoorMapService,
-    isStart: boolean,
-    handleSetLocation: any,
-  ) {
-    const matchingRoom = hotspots.find(spot => spot.label.replace("Room ", "") === item.room);
-
-    if (matchingRoom) {
-      return handleSetLocation(
-        {
-          id: matchingRoom.id,
-          x: matchingRoom.x,
-          y: matchingRoom.y,
-          floorLevel: matchingRoom.floorLevel,
-          label: matchingRoom.label,
-          buildingId: buildingData.id,
-        },
-        isStart,
-      );
-    }
-
-    if (item.x !== undefined && item.y !== undefined) {
-      const nearestNode = indoorMapService.getNearestRoomNode(`${buildingData.id}_${currentLevel}`, item.x, item.y);
-
-      return handleSetLocation(
-        {
-          id: nearestNode?.id ?? item.id,
-          x: item.x,
-          y: item.y,
-          floorLevel: item.floorLevel!,
-          label: item.label,
-          buildingId: buildingData.id,
-        },
-        isStart,
-      );
-    }
-  }
 
   const handleSelectSearchResult = useCallback(
     (item: IndoorSearchResult) => {
