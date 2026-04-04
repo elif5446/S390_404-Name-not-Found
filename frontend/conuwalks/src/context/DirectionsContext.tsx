@@ -132,15 +132,15 @@ export const DirectionsProvider: React.FC<DirectionsProviderProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [timeMode, setTimeModeState] = useState<"leave" | "arrive">("leave");
-  const [targetTime, setTargetTimeState] = useState<Date | null>(null);
+  const [timeMode, setTimeMode] = useState<"leave" | "arrive">("leave");
+  const [targetTime, setTargetTime] = useState<Date | null>(null);
 
   const setTimeModeCallback = useCallback(
-    (mode: "leave" | "arrive") => setTimeModeState(mode),
+    (mode: "leave" | "arrive") => setTimeMode(mode),
     [],
   );
   const setTargetTimeCallback = useCallback(
-    (time: Date | null) => setTargetTimeState(time),
+    (time: Date | null) => setTargetTime(time),
     [],
   );
 
@@ -292,8 +292,8 @@ export const DirectionsProvider: React.FC<DirectionsProviderProps> = ({
     setIsNavigationActive(false);
     setLoading(false);
     setError(null);
-    setTimeModeState("leave");
-    setTargetTimeState(null);
+    setTimeMode("leave");
+    setTargetTime(null);
   }, []);
 
   // Memoize the context value to prevent layout thrashing across the app
