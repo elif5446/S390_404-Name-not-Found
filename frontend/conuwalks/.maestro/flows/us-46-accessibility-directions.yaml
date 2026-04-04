@@ -1,0 +1,103 @@
+appId: com.conuwalks.app
+tags:
+  - feature
+  - directions
+  - inter-building
+---
+- runFlow:
+    file: ../subflows/launch.yaml
+    env:
+      USERNAME: "${USERNAME}"
+      PASSWORD: "${PASSWORD}"
+
+- setLocation:
+    latitude: 45.495633
+    longitude: -73.578902
+- tapOn:
+    id: "recenter-location-button"
+- waitForAnimationToEnd
+
+- runFlow:
+    file: ../subflows/clear-next-class-banner.yaml
+
+- tapOn:
+    id: "profile-button"
+- waitForAnimationToEnd
+
+- assertVisible: "Wheelchair-Accessible.*"
+
+# handles enablling switch
+- runFlow:
+    when:
+      visible:
+        id: "wheelchair-switch"
+        checked: false
+    commands:
+      - tapOn:
+          id: "wheelchair-switch"
+- assertVisible:
+    id: "wheelchair-switch"
+    checked: true
+
+- tapOn:
+    id: "profile-close-button"
+
+- tapOn:
+    point: 50%, 18%
+- waitForAnimationToEnd
+- assertVisible: "Henry F. Hall Building"
+
+- tapOn:
+    id: "directions-button"
+- waitForAnimationToEnd
+
+- assertVisible: "Directions"
+
+- longPressOn:
+    id: "route-source-input"
+- tapOn: "Select All"
+- eraseText: 1
+- inputText: "Henry F. Hall Building 110"
+- pressKey: Enter
+
+- longPressOn:
+    id: "route-destination-input"
+- tapOn: "Select All"
+- eraseText: 1
+- inputText: "Henry F. Hall Building 807"
+- pressKey: Enter
+
+- tapOn:
+    id: "indoor-map-button"
+
+- assertVisible:
+    id: "indoor-map-canvas"
+- assertVisible: "Hall Building"
+
+- tapOn:
+    id: "top-panel-navigate-button"
+- assertVisible: "Indoor directions"
+
+# iterate through all steps to check accessibility instructions
+- evalScript: ${output.stepIndex = 0}
+- repeat:
+    while:
+      visible:
+        id: "nav-step-text-${output.stepIndex}"
+    commands:
+      - assertNotVisible:
+          id: "nav-step-text-${output.stepIndex}"
+          text: "(?i).*stairs.*"
+      - assertNotVisible:
+          id: "nav-step-text-${output.stepIndex}"
+          text: "(?i).*escalator.*"
+      # - assertVisible:
+      #     id: "nav-step-text-${output.stepIndex}"
+      #     text: "(?i).*elevator.*"
+      #     optional: true
+      - tapOn:
+          id: "nav-next-button"
+      - runScript: ../scripts/increment.js
+
+- tapOn:
+    id: "indoor-back-button"

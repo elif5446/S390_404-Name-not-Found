@@ -13,20 +13,11 @@ const POI_ICONS: Record<string, { icon: string; color: string }> = {
   Bars: { icon: "local-bar", color: "#F57C00" },
 };
 
-function getDistanceFromLatLonInMeters(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number
-) {
+function getDistanceFromLatLonInMeters(lat1: number, lon1: number, lat2: number, lon2: number) {
   const R = 6371000;
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) ** 2;
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLon / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
@@ -43,37 +34,43 @@ const CAMPUS_COORDS = {
   LOY: { latitude: 45.458, longitude: -73.639 },
 };
 
-const OutdoorPOIMarkers: React.FC<OutdoorPOIMarkersProps> = ({
-  campus,
-  poiType,
-  pois,
-  radiusMeters = 1000,
-  onPOIPress,
-}) => {
+function getColor(poi: POIPlace): string {
+  if (poi.isOpen === true) {
+    return "green";
+  } else if (poi.isOpen === false) {
+    return "red";
+  }
+  return "gray";
+}
+
+function isOpen(poi: POIPlace): string {
+  if (poi.isOpen === true) {
+    return "Open";
+  } else if (poi.isOpen === false) {
+    return "Closed";
+  }
+  return "Hours unknown";
+}
+
+const OutdoorPOIMarkers: React.FC<OutdoorPOIMarkersProps> = ({ campus, poiType, pois, radiusMeters = 1000, onPOIPress }) => {
   const origin = CAMPUS_COORDS[campus];
-  const { icon, color } =
-    POI_ICONS[poiType] || { icon: "place", color: "#B03060" };
+  const { icon, color } = POI_ICONS[poiType] || { icon: "place", color: "#B03060" };
 
   const filtered = useMemo(() => {
-    return pois.filter((p) => {
-      const d = getDistanceFromLatLonInMeters(
-        origin.latitude,
-        origin.longitude,
-        p.latitude,
-        p.longitude
-      );
+    return pois.filter(p => {
+      const d = getDistanceFromLatLonInMeters(origin.latitude, origin.longitude, p.latitude, p.longitude);
       return d <= radiusMeters;
     });
   }, [pois, origin, radiusMeters]);
 
   return (
     <>
-      {filtered.map((poi) => (
+      {filtered.map(poi => (
         <Marker
           key={poi.id}
           coordinate={{ latitude: poi.latitude, longitude: poi.longitude }}
           tracksViewChanges={false}
-          anchor={{ x: 0.5, y: 1 }} 
+          anchor={{ x: 0.5, y: 1 }}
         >
           {/* Marker Bubble */}
           <View
@@ -111,46 +108,30 @@ const OutdoorPOIMarkers: React.FC<OutdoorPOIMarkersProps> = ({
           </View>
 
           {/* Callout */}
-<Callout>
-  <View
-    style={{
-      width: 200, 
-      padding: 8,
-    }}
-  >
-    <Text style={{ fontWeight: "bold" }}>{poi.name}</Text>
-    <Text
-      style={{
-        color:
-          poi.isOpen === true
-            ? "green"
-            : poi.isOpen === false
-            ? "red"
-            : "gray",
-      }}
-    >
-      {poi.isOpen === true
-        ? "Open"
-        : poi.isOpen === false
-        ? "Closed"
-        : "Hours unknown"}
-    </Text>
+          <Callout>
+            <View
+              testID="callout-container"
+              style={{
+                width: 200,
+                padding: 8,
+              }}
+            >
+              <Text style={{ fontWeight: "bold" }}>{poi.name}</Text>
 
-    {/* Keep stacked layout but limit vertical height */}
-    {poi.openHours && (
-      <ScrollView style={{ maxHeight: 80, marginTop: 4 }}>
-        {poi.openHours.map((line, idx) => (
-          <Text
-            key={idx}
-            style={{ fontSize: 12, color: "#555", lineHeight: 16 }}
-          >
-            {line}
-          </Text>
-        ))}
-      </ScrollView>
-    )}
-  </View>
-</Callout>
+              <Text style={{ color: getColor(poi) }}>{isOpen(poi)}</Text>
+
+              {/* Keep stacked layout but limit vertical height */}
+              {poi.openHours && (
+                <ScrollView style={{ maxHeight: 80, marginTop: 4 }}>
+                  {poi.openHours.map((line, idx) => (
+                    <Text key={`${line}-${idx}`} style={{ fontSize: 12, color: "#555", lineHeight: 16 }}>
+                      {line}
+                    </Text>
+                  ))}
+                </ScrollView>
+              )}
+            </View>
+          </Callout>
         </Marker>
       ))}
     </>

@@ -5,6 +5,45 @@ import { calculateIndoorPenaltySeconds } from "@/src/indoors/services/indoorRout
 import { formatDurationFromSeconds } from "../utils/time";
 import { GoogleTravelMode,TravelMode } from "@/src/outdoorDirections/TravelModeStrategy";
 
+// module-scope helpers (keeps hook nesting ≤ 4 levels) 
+
+type Coords = { latitude: number; longitude: number };
+
+const ALL_TRAVEL_MODES: GoogleTravelMode[] = ["walking", "transit", "bicycling", "driving"];
+
+const fetchIndoorPenalty = async (
+  startBuildingId: string | null | undefined,
+  startRoom: string | null | undefined,
+  destinationBuildingId: string | null | undefined,
+  destinationRoom: string | null | undefined,
+): Promise<number> => {
+  try {
+    const penalty = await calculateIndoorPenaltySeconds(startBuildingId ?? null, startRoom ?? null, destinationBuildingId ?? null, destinationRoom ?? null);
+    return penalty || 0;
+  } catch {
+    return 0;
+  }
+};
+
+const fetchAllModeDurations = async (
+  start: Coords,
+  destination: Coords,
+): Promise<Partial<Record<GoogleTravelMode, number>>> => {
+  const results = await Promise.allSettled(
+    ALL_TRAVEL_MODES.map(async modeKey => {
+      const fetchedRoutes = await getDirections(start, destination, modeKey);
+      return { modeKey, baseSeconds: fetchedRoutes[0]?.baseDurationSeconds ?? null };
+    }),
+  );
+  const updates: Partial<Record<GoogleTravelMode, number>> = {};
+  for (const result of results) {
+    if (result.status === "fulfilled" && result.value.baseSeconds !== null) {
+      updates[result.value.modeKey] = result.value.baseSeconds;
+    }
+  }
+  return updates;
+};
+
 export const useDestinationData = (
   visible: boolean,
   overrideDestination?: { latitude: number; longitude: number },
@@ -35,23 +74,10 @@ export const useDestinationData = (
   // fetch and cache the indoor penalty asynchronously whenever the rooms change
   useEffect(() => {
     let isCancelled = false;
-
-    const fetchPenalty = async () => {
-      try {
-        const penalty = await calculateIndoorPenaltySeconds(startBuildingId, startRoom, destinationBuildingId, destinationRoom);
-        if (!isCancelled) {
-          setIndoorPenaltyCache(penalty || 0);
-        }
-      } catch (e) {
-        if (!isCancelled) setIndoorPenaltyCache(0);
-      }
-    };
-
-    fetchPenalty();
-
-    return () => {
-      isCancelled = true;
-    };
+    void fetchIndoorPenalty(startBuildingId, startRoom, destinationBuildingId, destinationRoom).then(penalty => {
+      if (!isCancelled) setIndoorPenaltyCache(penalty);
+    });
+    return () => { isCancelled = true; };
   }, [startBuildingId, startRoom, destinationBuildingId, destinationRoom]);
 
   const formatMinutes = useCallback((minutes: number): string => {
@@ -113,38 +139,10 @@ export const useDestinationData = (
     if (!visible || !effectiveStart || !effectiveDestination) return;
 
     let isCancelled = false;
-    const allModes: GoogleTravelMode[] = ["walking", "transit", "bicycling", "driving"];
-
-    const fetchModeDurations = async () => {
-      const results = await Promise.allSettled(
-        allModes.map(async modeKey => {
-          const fetchedRoutes = await getDirections(effectiveStart, effectiveDestination, modeKey);
-          return {
-            modeKey,
-            baseSeconds: fetchedRoutes[0]?.baseDurationSeconds || null,
-          };
-        }),
-      );
-
-      if (isCancelled) return;
-
-      setBaseModeSecondsCache(prev => {
-        const next = { ...prev };
-        
-        for (const result of results) {
-          if (result.status === "fulfilled" && result.value.baseSeconds !== null) {
-            next[result.value.modeKey] = result.value.baseSeconds;
-          }
-        }
-        
-        return next;
-      });
-    };
-
-    void fetchModeDurations();
-    return () => {
-      isCancelled = true;
-    };
+    void fetchAllModeDurations(effectiveStart, effectiveDestination).then(updates => {
+      if (!isCancelled) setBaseModeSecondsCache(prev => ({ ...prev, ...updates }));
+    });
+    return () => { isCancelled = true; };
   }, [visible, effectiveStart, effectiveDestination, routeScopeKey]);
 
   const getModeDurationLabel = useCallback(

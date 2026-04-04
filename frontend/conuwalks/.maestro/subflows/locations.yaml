@@ -1,0 +1,14 @@
+# concordia default position
+- setLocation:
+    latitude: 45.495633
+    longitude: -73.578902
+
+# MB
+- setLocation:
+    latitude: 45.495397
+    longitude: -73.579165
+
+# H
+- setLocation:
+    latitude: 45.497228
+    longitude: -73.578623

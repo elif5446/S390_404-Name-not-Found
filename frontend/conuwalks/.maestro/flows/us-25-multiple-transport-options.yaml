@@ -3,20 +3,23 @@ tags:
   - feature
   - directions
 ---
-- runFlow: 
+- runFlow:
     file: ../subflows/launch.yaml
     env:
-        USERNAME: "${USERNAME}"
-        PASSWORD: "${PASSWORD}"
+      USERNAME: "${USERNAME}"
+      PASSWORD: "${PASSWORD}"
 
-
-- doubleTapOn:
-    point: 50%, 50%
-
+- setLocation:
+    latitude: 45.495633
+    longitude: -73.578902
+- tapOn:
+    id: "recenter-location-button"
 - waitForAnimationToEnd
+- runFlow:
+    file: ../subflows/clear-next-class-banner.yaml
 
 - tapOn:
-    point: 45%, 30%
+    point: 50%, 18%
 - waitForAnimationToEnd
 - assertVisible: "Henry F. Hall Building.*"
 - tapOn:
@@ -26,60 +29,86 @@ tags:
 - assertVisible: "Current Location"
 - assertVisible: "Henry F. Hall Building"
 
-- tapOn:
-    point: 30%, 70%
-- tapOn:
-    point: 15%, 70%
-- assertVisible: 
+- assertVisible:
     id: "route-walking"
 - tapOn:
     id: "navigate-button"
 - waitForAnimationToEnd
+- assertVisible:
+    id: "indoor-map-canvas"
+    optional: true
+- tapOn:
+    id: "indoor-back-button"
+    optional: true
 - assertVisible: "Walking.*"
-- assertVisible: 
+- assertVisible:
     id: "cancel-navigation-button"
 - tapOn:
     id: "cancel-navigation-button"
 - waitForAnimationToEnd
 
+# transit
+- assertVisible:
+    id: "route-transit"
 - tapOn:
-    point: 30%, 70%
-- assertVisible: 
     id: "route-transit"
 - tapOn:
     id: "navigate-button"
 - waitForAnimationToEnd
+- assertVisible:
+    id: "indoor-map-canvas"
+    optional: true
+- tapOn:
+    id: "indoor-back-button"
+    optional: true
 - assertVisible: "Transit.*"
-- assertVisible: 
+- assertVisible:
     id: "cancel-navigation-button"
 - tapOn:
     id: "cancel-navigation-button"
 - waitForAnimationToEnd
 
+# biking
+- assertVisible:
+    id: "route-bicycling"
 - tapOn:
-    point: 65%, 70%
-- assertVisible: 
     id: "route-bicycling"
 - tapOn:
     id: "navigate-button"
 - waitForAnimationToEnd
+- assertVisible:
+    id: "indoor-map-canvas"
+    optional: true
+- tapOn:
+    id: "indoor-back-button"
+    optional: true
 - assertVisible: "Bicycling.*"
-- assertVisible: 
+- assertVisible:
     id: "cancel-navigation-button"
 - tapOn:
     id: "cancel-navigation-button"
 - waitForAnimationToEnd
 
+# driving
+- assertVisible:
+    id: "route-driving"
 - tapOn:
-    point: 85%, 70%
-- assertVisible: 
     id: "route-driving"
 - tapOn:
     id: "navigate-button"
 - waitForAnimationToEnd
+- assertVisible:
+    id: "indoor-map-canvas"
+    optional: true
+- tapOn:
+    id: "indoor-back-button"
+    optional: true
 - assertVisible: "Driving.*"
-- assertVisible: 
+- assertVisible:
     id: "cancel-navigation-button"
 - tapOn:
     id: "cancel-navigation-button"
 - waitForAnimationToEnd
+
+- runFlow:
+    file: ../subflows/close-popup.yaml

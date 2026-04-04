@@ -72,13 +72,32 @@ appId: com.conuwalks.app
 # Condition 1: "John Tester" is already an option
 - runFlow:
     when:
-      visible: "John Tester"
+      visible: "${USERNAME}"
     commands:
-      - tapOn: "John Tester"
+      - tapOn: "${USERNAME}"
+
+      # Wait for the webview to load either the Warning screen OR the Consent screen
+      - extendedWaitUntil:
+          visible: ".*verified this app.*|Conuwalks wants access to your Google Account"
+          timeout: 5000
+
+      # Scenario 1: Bypass "Google hasn't verified this app" (Point tap)
+      - runFlow:
+          when:
+            visible: ".*verified this app.*"
+          commands:
+            - tapOn:
+                "Continue"
+                # point: 13%, 48%
+
       - extendedWaitUntil:
           visible: "Conuwalks wants access to your Google Account"
-      - tapOn:
-          text: "Continue"
+          timeout: 5000
+      - scrollUntilVisible:
+          element:
+            text: "Continue"
+          direction: DOWN
+      - tapOn: "Continue"
     optional: true
 # Condition 2: "John Tester" is missing, need to add account manually
 # - runFlow:

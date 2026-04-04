@@ -150,6 +150,7 @@ const CollapsibleUserProfile: React.FC<Props> = ({ userInfo, onSignOut }) => {
       pointerEvents="box-none"
     >
       <TouchableOpacity
+        testID="profile-overlay"
         activeOpacity={1}
         onPress={() => setIsExpanded(false)}
         style={{ flex: 1, backgroundColor: "rgba(0, 0, 0, 0.3)" }}
@@ -172,6 +173,7 @@ const CollapsibleUserProfile: React.FC<Props> = ({ userInfo, onSignOut }) => {
           </BlurView>
         ) : (
           <View
+            testID="expanded-content-container"
             style={{
               backgroundColor:
                 mode === "dark" ? "#1C1B1F" : "rgba(255, 255, 255, 0.95)",

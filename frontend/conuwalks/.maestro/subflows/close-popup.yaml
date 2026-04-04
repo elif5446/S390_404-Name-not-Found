@@ -1,0 +1,4 @@
+appId: com.conuwalks.app
+---
+- tapOn:
+    id: "close-popup-button"

@@ -1,11 +1,5 @@
 import React, { memo, useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  Platform,
-} from "react-native";
+import { View, Text, TouchableOpacity, TouchableWithoutFeedback, Platform } from "react-native";
 import PlatformIcon from "./ui/PlatformIcon";
 import BottomSheetDragHandle from "./ui/BottomSheetDragHandle";
 import { useDirections } from "@/src/context/DirectionsContext";
@@ -20,12 +14,8 @@ interface DestinationHeaderProps {
   mode: "light" | "dark";
   showOpenIndoorButton?: boolean;
   travelMode: TravelMode;
-  setTravelMode: (
-    mode: TravelMode,
-  ) => void;
-  getModeDurationLabel: (
-    mode: TravelMode,
-  ) => string;
+  setTravelMode: (mode: TravelMode) => void;
+  getModeDurationLabel: (mode: TravelMode) => string;
   onDismiss: () => void;
   onToggleHeight: () => void;
   onOpenIndoorPress?: () => void;
@@ -81,10 +71,7 @@ const DestinationHeader: React.FC<DestinationHeaderProps> = ({
     <>
       <TouchableWithoutFeedback onPress={onToggleHeight}>
         <View>
-          <BottomSheetDragHandle
-            isDark={isDark}
-            onToggleHeight={onToggleHeight}
-          />
+          <BottomSheetDragHandle isDark={isDark} onToggleHeight={onToggleHeight} />
 
           <View style={styles.header}>
             <View style={[styles.headerSide, styles.headerSideLeft]}>
@@ -97,28 +84,11 @@ const DestinationHeader: React.FC<DestinationHeaderProps> = ({
                 testID="close-popup-button"
               >
                 {Platform.OS === "ios" ? (
-                  <View
-                    style={[
-                      styles.closeButtonCircle,
-                      { backgroundColor: isDark ? "#00000031" : "#85858522" },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.closeButtonText,
-                        { color: isDark ? "#FFFFFF" : "#333333" },
-                      ]}
-                    >
-                      ✕
-                    </Text>
+                  <View style={[styles.closeButtonCircle, { backgroundColor: isDark ? "#00000031" : "#85858522" }]}>
+                    <Text style={[styles.closeButtonText, { color: isDark ? "#FFFFFF" : "#333333" }]}>✕</Text>
                   </View>
                 ) : (
-                  <PlatformIcon
-                    materialName="close"
-                    iosName="xmark"
-                    size={22}
-                    color={campusPink}
-                  />
+                  <PlatformIcon materialName="close" iosName="xmark" size={22} color={campusPink} />
                 )}
               </TouchableOpacity>
             </View>
@@ -129,43 +99,28 @@ const DestinationHeader: React.FC<DestinationHeaderProps> = ({
               {showOpenIndoorButton && onOpenIndoorPress && (
                 <TouchableOpacity
                   onPress={onOpenIndoorPress}
-                  style={[
-                    styles.openIndoorHeaderButton,
-                    themedStyles.openIndoorHeaderButton(mode),
-                  ]}
+                  style={[styles.openIndoorHeaderButton, themedStyles.openIndoorHeaderButton(mode)]}
                   accessibilityRole="button"
                   accessibilityLabel="Open indoor map"
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  testID="indoor-map-button"
                 >
-                  <Text
-                    style={[
-                      styles.openIndoorHeaderButtonText,
-                      themedStyles.openIndoorHeaderButtonText(mode),
-                    ]}
-                  >
-                    Indoor Map↗
-                  </Text>
+                  <Text style={[styles.openIndoorHeaderButtonText, themedStyles.openIndoorHeaderButtonText(mode)]}>Indoor Map↗</Text>
                 </TouchableOpacity>
               )}
             </View>
           </View>
 
-          <View
-            style={[
-              styles.transportRow,
-              { backgroundColor: isDark ? "#3A3A3C" : "#E6E6E9" },
-            ]}
-          >
-            {TRANSPORT_OPTIONS.map((option) => {
+          <View style={[styles.transportRow, { backgroundColor: isDark ? "#3A3A3C" : "#E6E6E9" }]}>
+            {TRANSPORT_OPTIONS.map(option => {
               const active = option.mode === travelMode;
               const displayDuration = getModeDurationLabel(option.mode);
+              const inactiveTextColor = isDark ? "#F5F5F5" : "#202020";
+              const textColor = active ? "#FFFFFF" : inactiveTextColor;
               return (
                 <TouchableOpacity
                   key={option.mode}
-                  style={[
-                    styles.transportButton,
-                    { backgroundColor: active ? campusPink : "transparent" },
-                  ]}
+                  style={[styles.transportButton, { backgroundColor: active ? campusPink : "transparent" }]}
                   onPress={() => setTravelMode(option.mode)}
                   accessibilityRole="button"
                   accessibilityLabel={`Select ${option.mode} mode`}
@@ -176,16 +131,12 @@ const DestinationHeader: React.FC<DestinationHeaderProps> = ({
                     materialName={option.icon}
                     iosName={option.iosName}
                     size={15}
-                    color={active ? "#FFFFFF" : isDark ? "#F5F5F5" : "#202020"}
+                    color={textColor}
                   />
                   <Text
                     numberOfLines={1}
                     style={{
-                      color: active
-                        ? "#FFFFFF"
-                        : isDark
-                          ? "#F5F5F5"
-                          : "#202020",
+                      color: textColor,
                       fontSize: 9,
                       fontWeight: "600",
                     }}
@@ -229,12 +180,7 @@ const DestinationHeader: React.FC<DestinationHeaderProps> = ({
                 >
                   {timeLabel}
                 </Text>
-                <PlatformIcon
-                  materialName="arrow-drop-down"
-                  iosName="chevron.down"
-                  size={16}
-                  color={campusPink}
-                />
+                <PlatformIcon materialName="arrow-drop-down" iosName="chevron.down" size={16} color={campusPink} />
               </TouchableOpacity>
             </View>
           )}

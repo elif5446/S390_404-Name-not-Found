@@ -1,12 +1,5 @@
 import React, { useCallback, useEffect, useMemo } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  ActivityIndicator,
-  useColorScheme,
-  TouchableOpacity,
-} from "react-native";
+import { View, Text, FlatList, ActivityIndicator, useColorScheme, TouchableOpacity } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 import PlatformIcon from "./ui/PlatformIcon";
@@ -18,10 +11,7 @@ import { LoyolaBuildingMetadata } from "@/src/data/metadata/LOY.BuildingMetadata
 import { SGWBuildingMetadata } from "@/src/data/metadata/SGW.BuildingMetaData";
 import SGW from "@/src/data/campus/SGW.geojson";
 import LOY from "@/src/data/campus/LOY.geojson";
-import {
-  calculatePolygonCenter,
-  distanceMetersBetween,
-} from "@/src/utils/geometry";
+import { calculatePolygonCenter, distanceMetersBetween } from "@/src/utils/geometry";
 import { parseLocation } from "@/src/hooks/useBuildingEvents";
 import { LatLng } from "react-native-maps";
 
@@ -37,17 +27,15 @@ interface ScheduleViewProps {
 
 const getBuildingCenter = (buildingCode: string): LatLng | null => {
   const geoData = SGWBuildingMetadata[buildingCode] ? SGW : LOY;
-  const feature = geoData.features?.find(
-    (item: any) => item.properties?.id === buildingCode,
-  );
+  const feature = geoData.features?.find((item: any) => item.properties?.id === buildingCode);
 
   if (feature?.geometry?.type === "Polygon" && feature.geometry.coordinates) {
     const polygonCoords = feature.geometry.coordinates[0];
 
     // Convert [longitude, latitude] to { latitude, longitude }
     const latLngCoords: LatLng[] = polygonCoords
-      .filter((coord) => coord.length >= 2)
-      .map((coord) => ({
+      .filter(coord => coord.length >= 2)
+      .map(coord => ({
         latitude: coord[1],
         longitude: coord[0],
       }));
@@ -59,7 +47,7 @@ const getBuildingCenter = (buildingCode: string): LatLng | null => {
     if (!centerCoords || Number.isNaN(centerCoords.latitude)) {
       let sumLat = 0,
         sumLng = 0;
-      latLngCoords.forEach((coord) => {
+      latLngCoords.forEach(coord => {
         sumLat += coord.latitude;
         sumLng += coord.longitude;
       });
@@ -95,17 +83,12 @@ const NavigationButton = ({
     if (!userLocation || !coords) return "Dir";
     const walkingMetersPerSecond = 1.35;
     const meters = distanceMetersBetween(userLocation, coords);
-    const minutes = Math.max(
-      1,
-      Math.round(meters / walkingMetersPerSecond / 60),
-    );
+    const minutes = Math.max(1, Math.round(meters / walkingMetersPerSecond / 60));
 
     if (minutes >= 60) {
       const hours = Math.floor(minutes / 60);
       const remainingMinutes = minutes % 60;
-      return remainingMinutes > 0
-        ? `${hours}h ${remainingMinutes}m`
-        : `${hours}h`;
+      return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
     }
     return `${minutes} min`;
   }, [userLocation, coords]);
@@ -122,6 +105,7 @@ const NavigationButton = ({
         alignItems: "center",
         minWidth: 80,
       }}
+      testID="directions-button"
     >
       <View
         style={{
@@ -134,12 +118,7 @@ const NavigationButton = ({
           marginRight: 4,
         }}
       >
-        <PlatformIcon
-          materialName="subdirectory-arrow-right"
-          iosName="arrow.turn.up.right"
-          size={15}
-          color="#B03060"
-        />
+        <PlatformIcon materialName="subdirectory-arrow-right" iosName="arrow.turn.up.right" size={15} color="#B03060" />
       </View>
       <Text
         style={{
@@ -191,9 +170,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ onNavigateToClass }) => {
 
       if (!buildingCode) return;
 
-      const buildingMetadata =
-        SGWBuildingMetadata[buildingCode] ||
-        LoyolaBuildingMetadata[buildingCode];
+      const buildingMetadata = SGWBuildingMetadata[buildingCode] || LoyolaBuildingMetadata[buildingCode];
 
       if (!buildingMetadata) return;
 
@@ -210,17 +187,11 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ onNavigateToClass }) => {
         onNavigateToClass?.();
       }
     },
-    [
-      userLocation,
-      setStartPoint,
-      setDestination,
-      setShowDirections,
-      onNavigateToClass,
-    ],
+    [userLocation, setStartPoint, setDestination, setShowDirections, onNavigateToClass],
   );
 
   const groupedArray = useMemo(() => {
-    const enhancedEvents: EnhancedEvent[] = events.map((event) => {
+    const enhancedEvents: EnhancedEvent[] = events.map(event => {
       const startStr = event.start?.dateTime || event.start?.date || "";
       const endStr = event.end?.dateTime || event.end?.date || "";
 
@@ -233,8 +204,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ onNavigateToClass }) => {
       eventDate.setHours(0, 0, 0, 0);
 
       const isToday = eventDate.getTime() === today.getTime();
-      const isTomorrow =
-        eventDate.getTime() === new Date(today.getTime() + 86400000).getTime();
+      const isTomorrow = eventDate.getTime() === new Date(today.getTime() + 86400000).getTime();
 
       const options: Intl.DateTimeFormatOptions = {
         weekday: "short",
@@ -252,22 +222,15 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ onNavigateToClass }) => {
         hour12: true,
       };
 
-      const startTime = event.start?.dateTime
-        ? startDate.toLocaleTimeString("en-US", timeOptions)
-        : "";
-      const endTime = event.end?.dateTime
-        ? endDate.toLocaleTimeString("en-US", timeOptions)
-        : "";
+      const startTime = event.start?.dateTime ? startDate.toLocaleTimeString("en-US", timeOptions) : "";
+      const endTime = event.end?.dateTime ? endDate.toLocaleTimeString("en-US", timeOptions) : "";
 
-      const formattedTime =
-        startTime && endTime ? `${startTime} - ${endTime}` : startTime;
+      const formattedTime = startTime && endTime ? `${startTime} - ${endTime}` : startTime;
 
       return { ...event, formattedDate, formattedTime, isToday };
     });
 
-    const groupedByDate = enhancedEvents.reduce<
-      Record<string, EnhancedEvent[]>
-    >((acc, event) => {
+    const groupedByDate = enhancedEvents.reduce<Record<string, EnhancedEvent[]>>((acc, event) => {
       const dateKey = event.formattedDate || "No Date";
       if (!acc[dateKey]) acc[dateKey] = [];
       acc[dateKey].push(event);
@@ -317,17 +280,10 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ onNavigateToClass }) => {
       ) : (
         <FlatList
           data={groupedArray}
-          keyExtractor={(item) => item.date}
+          keyExtractor={item => item.date}
           renderItem={({ item: dateGroup }) => {
-            let dateHeadingColor;
-
-            if (dateGroup.date === "Today") {
-              dateHeadingColor = "#B03060";
-            } else if (mode === "dark") {
-              dateHeadingColor = "#fff";
-            } else {
-              dateHeadingColor = "#333";
-            }
+            const modeBasedColor = mode === "dark" ? "#fff" : "#333";
+            const dateHeadingColor = dateGroup.date === "Today" ? "#B03060" : modeBasedColor;
             return (
               <View key={dateGroup.date} style={{ paddingHorizontal: 16 }}>
                 <Text
@@ -342,7 +298,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ onNavigateToClass }) => {
                   {dateGroup.date}
                 </Text>
 
-                {dateGroup.events.map((event) => (
+                {dateGroup.events.map(event => (
                   <View
                     key={event.id}
                     style={{
@@ -379,11 +335,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ onNavigateToClass }) => {
                       </Text>
 
                       {event.location && (
-                        <NavigationButton
-                          location={event.location}
-                          userLocation={userLocation}
-                          onNavigate={handleGoToClass}
-                        />
+                        <NavigationButton location={event.location} userLocation={userLocation} onNavigate={handleGoToClass} />
                       )}
                     </View>
 
@@ -395,12 +347,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ onNavigateToClass }) => {
                           marginBottom: 6,
                         }}
                       >
-                        <MaterialIcons
-                          name="access-time"
-                          size={20}
-                          color={secondaryTextColor}
-                          style={{ marginRight: 6 }}
-                        />
+                        <MaterialIcons name="access-time" size={20} color={secondaryTextColor} style={{ marginRight: 6 }} />
                         <Text
                           style={{
                             fontSize: 17,
@@ -421,12 +368,7 @@ const ScheduleView: React.FC<ScheduleViewProps> = ({ onNavigateToClass }) => {
                           marginBottom: 4,
                         }}
                       >
-                        <MaterialIcons
-                          name="place"
-                          size={20}
-                          color={secondaryTextColor}
-                          style={{ marginRight: 6 }}
-                        />
+                        <MaterialIcons name="place" size={20} color={secondaryTextColor} style={{ marginRight: 6 }} />
                         <Text
                           style={{
                             fontSize: 17,

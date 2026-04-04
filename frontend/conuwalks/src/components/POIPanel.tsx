@@ -1,13 +1,5 @@
 import React, { useRef, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Animated,
-  PanResponder,
-  Platform,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Animated, PanResponder, Platform } from "react-native";
 import { BlurView } from "expo-blur";
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
 
@@ -17,12 +9,11 @@ const SNAP_POINTS = [0, PANEL_HEIGHT];
 interface POIPanelProps {
   visible: boolean;
   onClose: () => void;
-  onPOISelect?: (poiType: string) => void; 
-
+  onPOISelect?: (poiType: string) => void;
 }
 
 const POIPanel: React.FC<POIPanelProps> = ({ visible, onClose, onPOISelect }) => {
-    const translateY = useRef(new Animated.Value(PANEL_HEIGHT)).current;
+  const translateY = useRef(new Animated.Value(PANEL_HEIGHT)).current;
 
   // Slide panel in/out when `visible` changes
   useEffect(() => {
@@ -62,36 +53,30 @@ const POIPanel: React.FC<POIPanelProps> = ({ visible, onClose, onPOISelect }) =>
           }).start();
         }
       },
-    })
+    }),
   ).current;
 
   const content = (
     <View style={styles.inner}>
-      <TouchableOpacity
-        onPress={onClose}
-        style={styles.closeButton}
-        accessibilityLabel="Close POI panel"
-      >
+      <TouchableOpacity onPress={onClose} style={styles.closeButton} accessibilityLabel="Close POI panel">
         <MaterialIcons name="close" size={26} color="#B03060" />
       </TouchableOpacity>
 
       <Text style={styles.title}>Outdoor POIs</Text>
 
       <View style={styles.list}>
-        {["Restaurants", "Coffee shops", "Banks", "Hotels", "Libraries", "Bars"].map(
-        (item) => (
-            <Text
-              key={item}
-              style={styles.item}
-              onPress={() => {
-                onPOISelect?.(item); //  call the handler
-                onClose();            //  close panel after selection
-              }}
-            >
-              {item}
-            </Text>
-          )
-        )}
+        {["Restaurants", "Coffee shops", "Banks", "Hotels", "Libraries", "Bars"].map(item => (
+          <Text
+            key={item}
+            style={styles.item}
+            onPress={() => {
+              onPOISelect?.(item); //  call the handler
+              onClose(); //  close panel after selection
+            }}
+          >
+            {item}
+          </Text>
+        ))}
       </View>
     </View>
   );
@@ -99,11 +84,7 @@ const POIPanel: React.FC<POIPanelProps> = ({ visible, onClose, onPOISelect }) =>
   return (
     <Animated.View
       {...panResponder.panHandlers}
-      style={[
-        styles.container,
-        { transform: [{ translateY }] },
-        { zIndex: 999 },
-      ]}
+      style={[styles.container, { transform: [{ translateY }] }, { zIndex: 999 }]}
       pointerEvents={visible ? "auto" : "none"}
     >
       {Platform.OS === "ios" ? (
