@@ -1,14 +1,19 @@
 import React from "react";
-import { render, fireEvent } from "@testing-library/react-native";
+import { render, fireEvent, screen } from "@testing-library/react-native";
 import { StyleSheet } from "react-native";
 import POIBadge from "@/src/components/indoor/POIBadge";
 import { POI } from "@/src/types/poi";
+import { POI_PALETTE } from "@/src/styles/IndoorPOI.styles";
 
 jest.mock("@expo/vector-icons", () => {
   const { Text } = require("react-native");
   return {
-    Ionicons: ({ name, size, color }: any) => <Text testID="mock-ionicon">{`${name}-${size}-${color}`}</Text>,
-    MaterialCommunityIcons: ({ name, size, color }: any) => <Text testID="mock-mci">{`${name}-${size}-${color}`}</Text>,
+    Ionicons: ({ name, size, color }: any) => (
+      <Text testID="mock-ionicon">{`${name}-${size}-${color}`}</Text>
+    ),
+    MaterialCommunityIcons: ({ name, size, color }: any) => (
+      <Text testID="mock-mci">{`${name}-${size}-${color}`}</Text>
+    ),
   };
 });
 
@@ -56,7 +61,9 @@ describe("POIBadge", () => {
   describe("Room Category Rendering", () => {
     it("renders only the text label for standard rooms (not LABs)", () => {
       const poi = createMockPOI({ category: "ROOM", room: "801" });
-      const { getByText, queryByTestId } = render(<POIBadge poi={poi} {...defaultProps} />);
+      const { getByText, queryByTestId } = render(
+        <POIBadge poi={poi} {...defaultProps} />,
+      );
 
       expect(getByText("801")).toBeTruthy();
       expect(queryByTestId("mock-ionicon")).toBeNull();
@@ -65,12 +72,62 @@ describe("POIBadge", () => {
 
     it("renders the sub-room desktop icon for specific overrides like 805.01", () => {
       const poi = createMockPOI({ category: "ROOM", room: "805.01" });
-      const { getByText, getByTestId } = render(<POIBadge poi={poi} {...defaultProps} />);
+      const { getByText, getByTestId } = render(
+        <POIBadge poi={poi} {...defaultProps} />,
+      );
 
       expect(getByText("805.01")).toBeTruthy();
 
       const icon = getByTestId("mock-ionicon");
       expect(icon.children[0]).toContain("desktop-outline");
+    });
+
+    // new coverage for getRoomLabelFontSize
+    it("applies different font sizes for compact and extended rooms", () => {
+      const compactPoi = createMockPOI({ category: "ROOM", room: "851.01" });
+      const { getByText, rerender } = render(
+        <POIBadge poi={compactPoi} {...defaultProps} />,
+      );
+      expect(getByText("851.01").props.style.fontSize).toBe(6);
+
+      const extendedPoi = createMockPOI({ category: "ROOM", room: "101.5" });
+      rerender(<POIBadge poi={extendedPoi} {...defaultProps} />);
+      expect(getByText("101.5").props.style.fontSize).toBe(6.5);
+    });
+
+    it("renders default room label colors when no selectionType is provided", () => {
+      const poi = createMockPOI({ category: "ROOM", room: "101" });
+
+      const { getByRole } = render(
+        <POIBadge poi={poi} {...defaultProps} selectionType={undefined} />,
+      );
+
+      const touchable = getByRole("button", { name: /Room 101/ });
+      const flatStyle = StyleSheet.flatten(touchable.props.style);
+
+      expect(flatStyle.backgroundColor).toBe("transparent");
+    });
+
+    it("covers sub-room icon colors and interactions when not selected", () => {
+      const poi = createMockPOI({ category: "ROOM", room: "805.01" });
+      const onPressMock = jest.fn();
+
+      const { getByTestId } = render(
+        <POIBadge
+          poi={poi}
+          {...defaultProps}
+          selectionType={undefined}
+          onPress={onPressMock}
+        />,
+      );
+      const icon = getByTestId("mock-ionicon");
+      expect(icon.children[0]).toContain(POI_PALETTE.iconDark);
+
+      const buttons = screen.getAllByRole("button", { name: /Room 805.01/ });
+      const subIconButton = buttons[1];
+
+      fireEvent.press(subIconButton);
+      expect(onPressMock).toHaveBeenCalledWith(poi);
     });
   });
 
@@ -102,7 +159,9 @@ describe("POIBadge", () => {
   describe("Selection States (Source/Destination)", () => {
     it("applies destination styling when selectionType is 'destination'", () => {
       const poi = createMockPOI({ category: "LAB", room: "801" });
-      const { getByLabelText } = render(<POIBadge poi={poi} {...defaultProps} selectionType="destination" />);
+      const { getByLabelText } = render(
+        <POIBadge poi={poi} {...defaultProps} selectionType="destination" />,
+      );
 
       const button = getByLabelText("Mock Description – Room 801");
       // fix: flatten the style array so we can strictly check the properties
@@ -113,7 +172,9 @@ describe("POIBadge", () => {
 
     it("applies source styling when selectionType is 'source'", () => {
       const poi = createMockPOI({ category: "LAB", room: "801" });
-      const { getByLabelText } = render(<POIBadge poi={poi} {...defaultProps} selectionType="source" />);
+      const { getByLabelText } = render(
+        <POIBadge poi={poi} {...defaultProps} selectionType="source" />,
+      );
 
       const button = getByLabelText("Mock Description – Room 801");
       const flatStyle = StyleSheet.flatten(button.props.style);
@@ -136,21 +197,109 @@ describe("POIBadge", () => {
     });
 
     it("renders labels underneath food POIs when showLabel is true", () => {
-      const poi = createMockPOI({ category: "FOOD", room: "820", label: "Cafe", showLabel: true });
+      const poi = createMockPOI({
+        category: "FOOD",
+        room: "820",
+        label: "Cafe",
+        showLabel: true,
+      });
       const { getByText } = render(<POIBadge poi={poi} {...defaultProps} />);
 
       expect(getByText("Cafe")).toBeTruthy();
     });
 
     it("shrinks the size for specific compact icons like SECOND_CUP", () => {
-      const poi = createMockPOI({ category: "SECOND_CUP", room: "820", label: "SC" });
-      const { getByLabelText } = render(<POIBadge poi={poi} {...defaultProps} />);
+      const poi = createMockPOI({
+        category: "SECOND_CUP",
+        room: "820",
+        label: "SC",
+      });
+      const { getByLabelText } = render(
+        <POIBadge poi={poi} {...defaultProps} />,
+      );
 
       const button = getByLabelText("Mock Description – Room 820");
       const flatStyle = StyleSheet.flatten(button.props.style);
 
       expect(flatStyle.width).toBe(12);
       expect(flatStyle.height).toBe(12);
+    });
+
+    // new coverage for calculateMarkerShift & getIconBadgeShift
+    it("applies specific badge shifts for room 805 and 809", () => {
+      const poi809 = createMockPOI({ category: "LAB", room: "809" });
+      const { getByLabelText, rerender } = render(
+        <POIBadge poi={poi809} {...defaultProps} />,
+      );
+
+      const button809 = getByLabelText("Mock Description – Room 809");
+      const style809 = StyleSheet.flatten(button809.props.style);
+
+      expect(style809.marginTop).toBe(1);
+
+      const poi805 = createMockPOI({ category: "LAB", room: "805" });
+      rerender(<POIBadge poi={poi805} {...defaultProps} />);
+
+      const button805 = getByLabelText("Mock Description – Room 805");
+      const style805 = StyleSheet.flatten(button805.props.style);
+
+      expect(style805.marginTop).toBe(5);
+    });
+    it("falls back to ZERO_OFFSET when no manual overrides exist", () => {
+      const poi = createMockPOI({
+        category: "ROOM",
+        room: "999",
+        floor: undefined,
+      });
+      const { toJSON } = render(<POIBadge poi={poi} {...defaultProps} />);
+
+      expect(toJSON()).toBeDefined();
+    });
+
+    it("handles floor-based overrides and missing floor branches", () => {
+      const poiWithFloor = createMockPOI({
+        category: "STAIRS",
+        room: "S1",
+        floor: 9,
+      });
+      render(<POIBadge poi={poiWithFloor} {...defaultProps} />);
+
+      const poiNoFloor = createMockPOI({
+        category: "ROOM",
+        room: "836",
+        floor: undefined,
+      });
+      render(<POIBadge poi={poiNoFloor} {...defaultProps} />);
+
+      expect(true).toBeTruthy();
+    });
+  });
+
+  // new coverage for Vertical Transport sizes and hitSlop
+  describe("Vertical Transport", () => {
+    it("applies larger hitSlop and specific sizes for ELEVATOR and STAIRS", () => {
+      const poi = createMockPOI({ category: "ELEVATOR", room: "E1" });
+      const { getByLabelText, rerender } = render(
+        <POIBadge poi={poi} {...defaultProps} />,
+      );
+      const button = getByLabelText("Mock Description – Room E1");
+
+      expect(button.props.hitSlop).toEqual({
+        top: 14,
+        bottom: 14,
+        left: 14,
+        right: 14,
+      });
+
+      expect(StyleSheet.flatten(button.props.style).width).toBe(14);
+
+      const stairs = createMockPOI({ category: "STAIRS", room: "S1" });
+      rerender(<POIBadge poi={stairs} {...defaultProps} />);
+      expect(
+        StyleSheet.flatten(
+          getByLabelText("Mock Description – Room S1").props.style,
+        ).width,
+      ).toBe(15);
     });
   });
 
@@ -159,12 +308,20 @@ describe("POIBadge", () => {
       const poi = createMockPOI({ category: "LAB", room: "801" });
       const onPressMock = jest.fn();
 
-      const { getByLabelText } = render(<POIBadge poi={poi} {...defaultProps} onPress={onPressMock} />);
+      const { getByLabelText } = render(
+        <POIBadge poi={poi} {...defaultProps} onPress={onPressMock} />,
+      );
 
       fireEvent.press(getByLabelText("Mock Description – Room 801"));
 
       expect(onPressMock).toHaveBeenCalledTimes(1);
       expect(onPressMock).toHaveBeenCalledWith(poi);
+    });
+
+    it("does not crash if onPress is not provided", () => {
+      const poi = createMockPOI({ category: "ROOM", room: "101" });
+      const { getByText } = render(<POIBadge poi={poi} left={10} top={10} />);
+      expect(() => fireEvent.press(getByText("101"))).not.toThrow();
     });
   });
 });

@@ -3,7 +3,10 @@ import { Graph } from "./Graph";
 import { PathFinder } from "./PathFinder";
 import { getWheelchairAccessibilityPreference } from "@/src/utils/tokenStorage";
 import { IndoorLocationTracker } from "./IndoorLocationTracker";
-import { generateRouteSteps, RouteStep } from "@/src/indoors/services/RouteInstructionService";
+import {
+  generateRouteSteps,
+  RouteStep,
+} from "@/src/indoors/services/RouteInstructionService";
 import { BuildingNavConfig, Node, NodeType } from "../types/Navigation";
 
 export class IndoorMapService {
@@ -46,7 +49,8 @@ export class IndoorMapService {
       for (const edge of config.interFloorEdges) {
         const nodeA = this.graph.getNode(edge.nodeAId);
         const nodeB = this.graph.getNode(edge.nodeBId);
-        const isEscalator = nodeA?.type === "escalator" || nodeB?.type === "escalator";
+        const isEscalator =
+          nodeA?.type === "escalator" || nodeB?.type === "escalator";
         this.graph.addEdge(edge, isEscalator);
       }
     }
@@ -64,9 +68,18 @@ export class IndoorMapService {
     return this.graph;
   }
 
-  async getRoute(startNodeId: string, endNodeId: string, accessibleOnly: boolean | null = null): Promise<Route | null> {
-    const wheelchairOnly = accessibleOnly ?? (await getWheelchairAccessibilityPreference());
-    return this.pathFinder.findShortestPath(startNodeId, endNodeId, wheelchairOnly);
+  async getRoute(
+    startNodeId: string,
+    endNodeId: string,
+    accessibleOnly: boolean | null = null,
+  ): Promise<Route | null> {
+    const wheelchairOnly =
+      accessibleOnly ?? (await getWheelchairAccessibilityPreference());
+    return this.pathFinder.findShortestPath(
+      startNodeId,
+      endNodeId,
+      wheelchairOnly,
+    );
   }
 
   setUserLocation(nodeId: string): void {
@@ -82,13 +95,22 @@ export class IndoorMapService {
   }
 
   //find shortest route by giving only an end node (will use the default location or preset location as starting node)
-  getRouteFromCurrentLocation(endNodeId: string, accessibleOnly: boolean = false): Route | null {
+  getRouteFromCurrentLocation(
+    endNodeId: string,
+    accessibleOnly: boolean = false,
+  ): Route | null {
     const userLoc = this.getUserLocation();
     if (!userLoc) {
-      console.warn("[IndoorMapService] User location not set. Cannot calculate route.");
+      console.warn(
+        "[IndoorMapService] User location not set. Cannot calculate route.",
+      );
       return null;
     }
-    return this.pathFinder.findShortestPath(userLoc.nodeId, endNodeId, accessibleOnly);
+    return this.pathFinder.findShortestPath(
+      userLoc.nodeId,
+      endNodeId,
+      accessibleOnly,
+    );
   }
 
   //this will get the default start node for the building that is being loaded
@@ -107,7 +129,7 @@ export class IndoorMapService {
     if (targetNode) return targetNode;
 
     // fallback: search all nodes for an ID that ends with the target number
-    targetNode = allNodes.find(n => {
+    targetNode = allNodes.find((n) => {
       const cleanId = n.id.replaceAll(/[^a-zA-Z0-9]/g, "").toUpperCase();
       return cleanId.endsWith(cleanRoom);
     });
@@ -117,7 +139,7 @@ export class IndoorMapService {
 
   // finds the nearest room/poi node given cartesian x/y coordinates
   getNearestRoomNode(floorId: string, x: number, y: number): Node | null {
-    const validTypes: NodeType[] = [
+    const validTypes = new Set<NodeType>([
       "room",
       "poi",
       "bathroom",
@@ -128,15 +150,19 @@ export class IndoorMapService {
       "stairs",
       "entrance",
       "hallway",
-    ];
+    ]);
 
-    const nodesOnFloor = this.graph.getAllNodes().filter(n => n.floorId === floorId && validTypes.includes(n.type));
+    const nodesOnFloor = this.graph
+      .getAllNodes()
+      .filter((n) => n.floorId === floorId && validTypes.has(n.type));
 
     let nearestNode: Node | null = null;
     let minDistance = Infinity;
 
     for (const node of nodesOnFloor) {
-      const distance = Math.sqrt(Math.pow(node.x - x, 2) + Math.pow(node.y - y, 2));
+      const distance = Math.sqrt(
+        Math.pow(node.x - x, 2) + Math.pow(node.y - y, 2),
+      );
       if (distance < minDistance) {
         minDistance = distance;
         nearestNode = node;
@@ -156,7 +182,10 @@ export class IndoorMapService {
    * @param route The generated indoor Route object
    * @param pixelToMeterRatio The scale of SVG/Map. (e.g., if 10 pixels = 1 meter, pass 0.1)
    */
-  public getRouteDurationSeconds(route: Route | null, pixelToMeterRatio: number = 1): number {
+  public getRouteDurationSeconds(
+    route: Route | null,
+    pixelToMeterRatio: number = 1,
+  ): number {
     if (!route?.totalDistance) return 0;
 
     const distanceInMeters = route.totalDistance * pixelToMeterRatio;

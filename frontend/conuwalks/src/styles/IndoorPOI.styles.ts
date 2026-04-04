@@ -1,6 +1,6 @@
 import { StyleSheet, Platform } from "react-native";
 
-//Design tokens 
+//Design tokens
 export const POI_PALETTE = {
   pink: "#E8445A",
   pinkLight: "#FCE0E4",
@@ -13,18 +13,18 @@ export const POI_PALETTE = {
   textMid: "#6B6560",
   textMuted: "#9C968D",
   white: "#FFFFFF",
-  wcF: "#FCE0E4",     // light pink  – girls WC
-  wcM: "#D2E5FA",     // light blue  – boys WC
-  wcShared: "#EDEAE4",// neutral     – shared WC
-  wcA: "#E8445A",     // pink badge  – accessible WC
-  labBg: "#EDEAE4",   // neutral     – lab badge
+  wcF: "#FCE0E4", // light pink  – girls WC
+  wcM: "#D2E5FA", // light blue  – boys WC
+  wcShared: "#EDEAE4", // neutral     – shared WC
+  wcA: "#E8445A", // pink badge  – accessible WC
+  labBg: "#EDEAE4", // neutral     – lab badge
   stairsBg: "#EDEAE4",
   elevatorBg: "#EDEAE4",
   printBg: "#EDEAE4",
   itBg: "#EDEAE4",
 };
 
-//POI Badge 
+//POI Badge
 export const poiBadgeStyles = StyleSheet.create({
   badge: {
     width: 34,
@@ -54,7 +54,7 @@ export const poiBadgeStyles = StyleSheet.create({
   },
 });
 
-//Filter row + POI list 
+//Filter row + POI list
 export const poiPanelStyles = StyleSheet.create({
   panelContainer: {
     backgroundColor: POI_PALETTE.cream,
@@ -264,7 +264,7 @@ export const poiPanelStyles = StyleSheet.create({
   },
 });
 
-// Directions panel 
+// Directions panel
 export const directionsStyles = StyleSheet.create({
   panel: {
     backgroundColor: POI_PALETTE.white,
@@ -275,7 +275,7 @@ export const directionsStyles = StyleSheet.create({
       ios: {
         shadowColor: "#000",
         shadowOffset: { width: 0, height: -4 },
-        shadowOpacity: 0.10,
+        shadowOpacity: 0.1,
         shadowRadius: 14,
       },
       android: { elevation: 14 },
