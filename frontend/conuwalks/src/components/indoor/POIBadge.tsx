@@ -580,7 +580,6 @@ const POIBadge: React.FC<Props> = ({
   const markerSize = resolveMarkerSize(poi, size);
   const markerIconSize =
     poi.category === "SECOND_CUP" || isCompactRoom ? 8 : markerSize * 0.56;
-  const radius = markerSize * 0.42;
 
   const hasManualLabOffset =
     isLab &&
