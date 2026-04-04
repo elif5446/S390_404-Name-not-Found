@@ -81,4 +81,99 @@ describe("DirectionsContext", () => {
     expect(result.current.showDirections).toBe(false);
     expect(result.current.startRoom).toBe("H-200");
   });
+
+  it("setStartRoom cancels navigation and shows preview popup if active", () => {
+    const { result } = renderHook(() => useDirections(), { wrapper });
+    // Set navigation active first
+    act(() => {
+      result.current.setIsNavigationActive(true);
+    });
+    // Now set start room
+    act(() => {
+      result.current.setStartRoom("H-100");
+    });
+    expect(result.current.isNavigationActive).toBe(false);
+    expect(result.current.showDirections).toBe(true);
+    expect(result.current.startRoom).toBe("H-100");
+  });
+
+  it("updates travel mode correctly", () => {
+    const { result } = renderHook(() => useDirections(), { wrapper });
+
+    act(() => {
+      result.current.setTravelMode("driving");
+    });
+
+    expect(result.current.travelMode).toBe("driving");
+  });
+
+  it("updates time mode and target time", () => {
+    const { result } = renderHook(() => useDirections(), { wrapper });
+    const testDate = new Date("2025-12-25T10:00:00");
+
+    act(() => {
+      result.current.setTimeMode("arrive");
+      result.current.setTargetTime(testDate);
+    });
+
+    expect(result.current.timeMode).toBe("arrive");
+    expect(result.current.targetTime).toEqual(testDate);
+  });
+
+  it("manages loading and error states", () => {
+    const { result } = renderHook(() => useDirections(), { wrapper });
+
+    act(() => {
+      result.current.setLoading(true);
+      result.current.setError("Network error");
+    });
+
+    expect(result.current.loading).toBe(true);
+    expect(result.current.error).toBe("Network error");
+
+    act(() => {
+      result.current.setLoading(false);
+      result.current.setError(null);
+    });
+
+    expect(result.current.loading).toBe(false);
+    expect(result.current.error).toBeNull();
+  });
+
+  it("resets all directions correctly", () => {
+    const { result } = renderHook(() => useDirections(), { wrapper });
+
+    // Set various state values
+    act(() => {
+      result.current.setStartPoint(
+        "H-BUILDING",
+        { latitude: 45.497, longitude: -73.578 },
+        "Hall Building",
+        "H-100",
+      );
+      result.current.setTravelMode("driving");
+      result.current.setShowDirections(true);
+      result.current.setLoading(true);
+      result.current.setError("Some error");
+    });
+
+    // Reset
+    act(() => {
+      result.current.resetDirections();
+    });
+
+    // Verify all state is reset
+    expect(result.current.startBuildingId).toBeNull();
+    expect(result.current.startCoords).toBeNull();
+    expect(result.current.startLabel).toBeNull();
+    expect(result.current.startRoom).toBeNull();
+    expect(result.current.destinationBuildingId).toBeNull();
+    expect(result.current.destinationCoords).toBeNull();
+    expect(result.current.travelMode).toBe("walking");
+    expect(result.current.showDirections).toBe(false);
+    expect(result.current.loading).toBe(false);
+    expect(result.current.error).toBeNull();
+    expect(result.current.timeMode).toBe("leave");
+    expect(result.current.targetTime).toBeNull();
+  });
 });
