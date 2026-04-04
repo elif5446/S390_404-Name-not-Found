@@ -30,7 +30,7 @@ const MapContent = React.memo(({ floor, width, height }: MapContentProps) => {
   if (floor.type === "png" && floor.image) {
     return (
       <View style={{ width, height, position: "relative" }}>
-        <Image source={floor.image as ImageSourcePropType} style={[styles.floorImage, { width, height }]} resizeMode="contain" />
+        <Image source={floor.image} style={[styles.floorImage, { width, height }]} resizeMode="contain" />
       </View>
     );
   }

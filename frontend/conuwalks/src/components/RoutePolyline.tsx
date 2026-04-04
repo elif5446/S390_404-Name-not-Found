@@ -451,7 +451,7 @@ useEffect(() => {
         const currentStyle = getStepColorAndStyle(currentStep, isIOS);
         const nextStyle = getStepColorAndStyle(nextStep, isIOS);
 
-        const nodeColor = !currentStyle.isWalk ? currentStyle.color : nextStyle.color;
+        const nodeColor = currentStyle.isWalk ? nextStyle.color : currentStyle.color;
 
         nodes.push({
           key: `transfer-${routeData.id}-${i}`,
@@ -483,7 +483,7 @@ useEffect(() => {
               coordinates={step.polylinePoints}
               strokeColor={style.color}
               strokeWidth={style.width}
-              lineDashPattern={style.isWalk ? (walkDash as number[]) : undefined}
+              lineDashPattern={style.isWalk ? walkDash : undefined}
               lineCap={style.isWalk ? "round" : "butt"}
               lineJoin="round"
               zIndex={style.isWalk ? zIndex : zIndex + 1}
@@ -518,7 +518,7 @@ useEffect(() => {
         coordinates={routeData.polylinePoints}
         strokeColor={mainColor}
         strokeWidth={isIOS ? 3 : 4}
-        lineDashPattern={walkDash as number[]}
+        lineDashPattern={walkDash}
         lineCap="round"
         lineJoin="round"
         zIndex={zIndex}
@@ -532,7 +532,7 @@ useEffect(() => {
       coordinates={routeData.polylinePoints}
       strokeColor={mainColor}
       strokeWidth={5}
-      lineDashPattern={isWalking ? (walkDash as number[]) : undefined}
+      lineDashPattern={isWalking ? walkDash : undefined}
       lineCap={isWalking ? "round" : "butt"}
       zIndex={zIndex}
       geodesic

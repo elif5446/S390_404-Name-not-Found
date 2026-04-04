@@ -135,7 +135,7 @@ const {
     [snapTo, SNAP_OFFSET],
   );
 
-  const handleDirectionsPress = useCallback((room?: string | any) => {
+  const handleDirectionsPress = useCallback((room?: string) => {
     const specificRoom = typeof room === "string" ? room : undefined;
 
     dismiss(undefined, () => {
