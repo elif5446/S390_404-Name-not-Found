@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Image, Text, ImageSourcePropType } from "react-native";
+import { View, Image, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { FloorData } from "@/src/indoors/types/FloorPlans";
 import { styles } from "@/src/styles/IndoorMap.styles";
