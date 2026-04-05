@@ -109,38 +109,38 @@ interface DirectionsProviderProps {
 export const DirectionsProvider: React.FC<DirectionsProviderProps> = ({
   children,
 }) => {
-  const [startBuildingId, setStartBuildingId] = useState<string | null>(null);
-  const [startCoords, setStartCoords] = useState<LatLng | null>(null);
-  const [startLabel, setStartLabel] = useState<string | null>(null);
-  const [startRoom, setStartRoom] = useState<string | null>(null);
-  const [destinationBuildingId, setDestinationBuildingId] = useState<
+  const [startBuildingId, _setStartBuildingId] = useState<string | null>(null);
+  const [startCoords, _setStartCoords] = useState<LatLng | null>(null);
+  const [startLabel, _setStartLabel] = useState<string | null>(null);
+  const [startRoom, _setStartRoom] = useState<string | null>(null);
+  const [destinationBuildingId, _setDestinationBuildingId] = useState<
     string | null
   >(null);
-  const [destinationCoords, setDestinationCoords] = useState<LatLng | null>(
+  const [destinationCoords, _setDestinationCoords] = useState<LatLng | null>(
     null,
   );
-  const [destinationLabel, setDestinationLabel] = useState<string | null>(
+  const [destinationLabel, _setDestinationLabel] = useState<string | null>(
     null,
   );
-  const [destinationRoom, setDestinationRoom] = useState<string | null>(null);
-  const [routes, setRoutes] = useState<RouteData[]>([]);
-  const [selectedRouteIndex, setSelectedRouteIndex] = useState(0);
-  const [routeData, setRouteData] = useState<RouteData | null>(null);
-  const [travelModeState, setTravelModeState] = useState<TravelMode>("walking");
-  const [showDirections, setShowDirections] = useState(false);
-  const [isNavigationActive, setIsNavigationActive] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [destinationRoom, _setDestinationRoom] = useState<string | null>(null);
+  const [routes, _setRoutes] = useState<RouteData[]>([]);
+  const [selectedRouteIndex, _setSelectedRouteIndex] = useState(0);
+  const [routeData, _setRouteData] = useState<RouteData | null>(null);
+  const [travelModeState, _setTravelMode] = useState<TravelMode>("walking");
+  const [showDirections, _setShowDirections] = useState(false);
+  const [isNavigationActive, _setIsNavigationActive] = useState(false);
+  const [loading, _setLoading] = useState(false);
+  const [error, _setError] = useState<string | null>(null);
 
-  const [timeMode, setTimeMode] = useState<"leave" | "arrive">("leave");
-  const [targetTime, setTargetTime] = useState<Date | null>(null);
+  const [timeMode, _setTimeModeState] = useState<"leave" | "arrive">("leave");
+  const [targetTime, _setTargetTimeState] = useState<Date | null>(null);
 
-  const setTimeModeCallback = useCallback(
-    (mode: "leave" | "arrive") => setTimeMode(mode),
+  const setTimeMode = useCallback(
+    (mode: "leave" | "arrive") => _setTimeModeState(mode),
     [],
   );
-  const setTargetTimeCallback = useCallback(
-    (time: Date | null) => setTargetTime(time),
+  const setTargetTime = useCallback(
+    (time: Date | null) => _setTargetTimeState(time),
     [],
   );
 
@@ -152,14 +152,14 @@ export const DirectionsProvider: React.FC<DirectionsProviderProps> = ({
       label: string,
       room: string | null = null,
     ) => {
-      setStartBuildingId(buildingId);
-      setStartCoords(coords);
-      setStartLabel(label);
-      setStartRoom(room);
+      _setStartBuildingId(buildingId);
+      _setStartCoords(coords);
+      _setStartLabel(label);
+      _setStartRoom(room);
 
       // if active, cancel it and show the preview popup
-      setIsNavigationActive((prev) => {
-        if (prev) setShowDirections(true);
+      _setIsNavigationActive((prev) => {
+        if (prev) _setShowDirections(true);
         return false;
       });
     },
@@ -173,55 +173,55 @@ export const DirectionsProvider: React.FC<DirectionsProviderProps> = ({
       label: string,
       room: string | null = null,
     ) => {
-      setDestinationBuildingId(buildingId);
-      setDestinationCoords(coords);
-      setDestinationLabel(label);
-      setDestinationRoom(room);
+      _setDestinationBuildingId(buildingId);
+      _setDestinationCoords(coords);
+      _setDestinationLabel(label);
+      _setDestinationRoom(room);
 
       // if active, cancel it and show the preview popup
-      setIsNavigationActive((prev) => {
-        if (prev) setShowDirections(true);
+      _setIsNavigationActive((prev) => {
+        if (prev) _setShowDirections(true);
         return false;
       });
     },
     [],
   );
 
-  const setStartRoomCallback = useCallback((room: string | null) => {
-    setStartRoom(room);
+  const setStartRoom = useCallback((room: string | null) => {
+    _setStartRoom(room);
 
     // if active, cancel it and show the preview popup
-    setIsNavigationActive((prev) => {
-      if (prev) setShowDirections(true);
+    _setIsNavigationActive((prev) => {
+      if (prev) _setShowDirections(true);
       return false;
     });
   }, []);
 
-  const setDestinationRoomCallback = useCallback((room: string | null) => {
-    setDestinationRoom(room);
+  const setDestinationRoom = useCallback((room: string | null) => {
+    _setDestinationRoom(room);
     // if active, cancel it and show the preview popup
-    setIsNavigationActive((prev) => {
-      if (prev) setShowDirections(true);
+    _setIsNavigationActive((prev) => {
+      if (prev) _setShowDirections(true);
       return false;
     });
   }, []);
 
   const clearDestination = useCallback(() => {
-    setDestinationBuildingId(null);
-    setDestinationCoords(null);
-    setDestinationLabel(null);
-    setDestinationRoom(null);
-    setRoutes([]);
-    setSelectedRouteIndex(0);
-    setRouteData(null);
-    setShowDirections(false);
-    setIsNavigationActive(false);
-    setError(null);
+    _setDestinationBuildingId(null);
+    _setDestinationCoords(null);
+    _setDestinationLabel(null);
+    _setDestinationRoom(null);
+    _setRoutes([]);
+    _setSelectedRouteIndex(0);
+    _setRouteData(null);
+    _setShowDirections(false);
+    _setIsNavigationActive(false);
+    _setError(null);
   }, []);
 
-  const setRoutesCallback = useCallback((nextRoutes: RouteData[]) => {
-    setRoutes(nextRoutes);
-    setSelectedRouteIndex((previousIndex) => {
+  const setRoutes = useCallback((nextRoutes: RouteData[]) => {
+    _setRoutes(nextRoutes);
+    _setSelectedRouteIndex((previousIndex) => {
       if (nextRoutes.length === 0) {
         return 0;
       }
@@ -231,69 +231,69 @@ export const DirectionsProvider: React.FC<DirectionsProviderProps> = ({
     // add back indoor route
     if (nextRoutes.length > 0) {
       const activeRoute = nextRoutes[0];
-      setRouteData({
+      _setRouteData({
         ...activeRoute,
       });
     }
   }, []);
 
-  const setSelectedRouteIndexCallback = useCallback((index: number) => {
-    setSelectedRouteIndex(index);
+  const setSelectedRouteIndex = useCallback((index: number) => {
+    _setSelectedRouteIndex(index);
   }, []);
 
   useEffect(() => {
-    setRouteData(routes[selectedRouteIndex] || null);
+    _setRouteData(routes[selectedRouteIndex] || null);
   }, [routes, selectedRouteIndex]);
 
-  const setRouteDataCallback = useCallback((data: RouteData) => {
-    setRouteData(data);
+  const setRouteData = useCallback((data: RouteData) => {
+    _setRouteData(data);
   }, []);
 
   const clearRouteData = useCallback(() => {
-    setRoutes([]);
-    setSelectedRouteIndex(0);
-    setRouteData(null);
+    _setRoutes([]);
+    _setSelectedRouteIndex(0);
+    _setRouteData(null);
   }, []);
 
-  const setTravelModeCallback = useCallback((mode: TravelMode) => {
-    setTravelModeState(mode);
+  const setTravelMode = useCallback((mode: TravelMode) => {
+    _setTravelMode(mode);
   }, []);
 
-  const setShowDirectionsCallback = useCallback((show: boolean) => {
-    setShowDirections(show);
+  const setShowDirections = useCallback((show: boolean) => {
+    _setShowDirections(show);
   }, []);
 
-  const setIsNavigationActiveCallback = useCallback((active: boolean) => {
-    setIsNavigationActive(active);
+  const setIsNavigationActive = useCallback((active: boolean) => {
+    _setIsNavigationActive(active);
   }, []);
 
-  const setLoadingCallback = useCallback((loading: boolean) => {
-    setLoading(loading);
+  const setLoading = useCallback((loading: boolean) => {
+    _setLoading(loading);
   }, []);
 
-  const setErrorCallback = useCallback((error: string | null) => {
-    setError(error);
+  const setError = useCallback((error: string | null) => {
+    _setError(error);
   }, []);
 
   const resetDirections = useCallback(() => {
-    setStartBuildingId(null);
-    setStartCoords(null);
-    setStartLabel(null);
-    setStartRoom(null);
-    setDestinationBuildingId(null);
-    setDestinationCoords(null);
-    setDestinationLabel(null);
-    setDestinationRoom(null);
-    setRoutes([]);
-    setSelectedRouteIndex(0);
-    setRouteData(null);
-    setTravelModeState("walking");
-    setShowDirections(false);
-    setIsNavigationActive(false);
-    setLoading(false);
-    setError(null);
-    setTimeMode("leave");
-    setTargetTime(null);
+    _setStartBuildingId(null);
+    _setStartCoords(null);
+    _setStartLabel(null);
+    _setStartRoom(null);
+    _setDestinationBuildingId(null);
+    _setDestinationCoords(null);
+    _setDestinationLabel(null);
+    _setDestinationRoom(null);
+    _setRoutes([]);
+    _setSelectedRouteIndex(0);
+    _setRouteData(null);
+    _setTravelMode("walking");
+    _setShowDirections(false);
+    _setIsNavigationActive(false);
+    _setLoading(false);
+    _setError(null);
+    _setTimeModeState("leave");
+    _setTargetTimeState(null);
   }, []);
 
   // Memoize the context value to prevent layout thrashing across the app
@@ -309,31 +309,31 @@ export const DirectionsProvider: React.FC<DirectionsProviderProps> = ({
       destinationRoom,
       setStartPoint,
       setDestination,
-      setStartRoom: setStartRoomCallback,
-      setDestinationRoom: setDestinationRoomCallback,
+      setStartRoom,
+      setDestinationRoom,
       clearDestination,
       routes,
-      setRoutes: setRoutesCallback,
+      setRoutes,
       selectedRouteIndex,
-      setSelectedRouteIndex: setSelectedRouteIndexCallback,
+      setSelectedRouteIndex,
       routeData,
-      setRouteData: setRouteDataCallback,
+      setRouteData,
       clearRouteData,
       travelMode: travelModeState,
-      setTravelMode: setTravelModeCallback,
+      setTravelMode,
       showDirections,
-      setShowDirections: setShowDirectionsCallback,
+      setShowDirections,
       isNavigationActive,
-      setIsNavigationActive: setIsNavigationActiveCallback,
+      setIsNavigationActive,
       loading,
-      setLoading: setLoadingCallback,
+      setLoading,
       error,
-      setError: setErrorCallback,
+      setError,
       resetDirections,
       timeMode,
-      setTimeMode: setTimeModeCallback,
+      setTimeMode,
       targetTime,
-      setTargetTime: setTargetTimeCallback,
+      setTargetTime,
     }),
     [
       startBuildingId,
@@ -357,21 +357,21 @@ export const DirectionsProvider: React.FC<DirectionsProviderProps> = ({
       // setters are stable (wrapped in useCallback)
       setStartPoint,
       setDestination,
-      setStartRoomCallback,
-      setDestinationRoomCallback,
+      setStartRoom,
+      setDestinationRoom,
       clearDestination,
-      setRoutesCallback,
-      setSelectedRouteIndexCallback,
-      setRouteDataCallback,
+      setRoutes,
+      setSelectedRouteIndex,
+      setRouteData,
       clearRouteData,
-      setTravelModeCallback,
-      setShowDirectionsCallback,
-      setIsNavigationActiveCallback,
-      setLoadingCallback,
-      setErrorCallback,
+      setTravelMode,
+      setShowDirections,
+      setIsNavigationActive,
+      setLoading,
+      setError,
       resetDirections,
-      setTimeModeCallback,
-      setTargetTimeCallback,
+      setTimeMode,
+      setTargetTime,
     ],
   );
 

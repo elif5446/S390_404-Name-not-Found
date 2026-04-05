@@ -174,14 +174,12 @@ export const useDestinationData = (
       .filter(step => step.transitLineShortName || step.transitLineName || step.transitVehicleType)
       .map(step => {
         const type = (step.transitVehicleType || "Transit").toLowerCase();
-        let vehicle: string
-        if (type.includes("subway") || type.includes("metro")) {
-          vehicle = "Metro";
-        } else if (type.includes("bus") || type.includes("shuttle")) {
-          vehicle = "Bus";
-        } else {
-          vehicle = "Transit";
-        }
+        const vehicle =
+          type.includes("subway") || type.includes("metro")
+            ? "Metro"
+            : type.includes("bus") || type.includes("shuttle")
+              ? "Bus"
+              : "Transit";
         const line = (step.transitLineShortName || step.transitLineName || "").trim();
         return line ? `${vehicle} ${line}` : vehicle;
       });
