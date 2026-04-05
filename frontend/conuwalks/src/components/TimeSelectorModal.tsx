@@ -130,12 +130,8 @@ const WheelPicker = ({
         maxToRenderPerBatch={10}
         contentContainerStyle={{ paddingVertical: ITEM_HEIGHT * 2 }}
         renderItem={({ item, index: loopedIndex }) => {
-          const itemColor =
-            selectedValue === item.value
-              ? "#B03060"
-              : isDark
-                ? "#AFAFAF"
-                : "#8E8E93";
+          const unselectedColor = isDark ? "#AFAFAF" : "#8E8E93";
+          const itemColor = selectedValue === item.value ? "#B03060" : unselectedColor;
           return (
             <TouchableOpacity
               activeOpacity={0.6}

@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Image, Text, ImageSourcePropType } from "react-native";
+import { View, Image, Text } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { FloorData } from "@/src/indoors/types/FloorPlans";
 import { styles } from "@/src/styles/IndoorMap.styles";
@@ -30,7 +30,7 @@ const MapContent = React.memo(({ floor, width, height }: MapContentProps) => {
   if (floor.type === "png" && floor.image) {
     return (
       <View style={{ width, height, position: "relative" }}>
-        <Image source={floor.image as ImageSourcePropType} style={[styles.floorImage, { width, height }]} resizeMode="contain" />
+        <Image source={floor.image} style={[styles.floorImage, { width, height }]} resizeMode="contain" />
       </View>
     );
   }
