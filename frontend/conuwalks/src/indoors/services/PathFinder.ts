@@ -18,13 +18,18 @@ export class PathFinder {
     this.graph = graph;
   }
 
-  findShortestPath(startNodeId: string, endNodeId: string, accessibleOnly: boolean = false): Route | null {
+  findShortestPath(startNodeId: string, endNodeId: string, accessibleOnly: boolean = false): Route{
     const startNode = this.graph.getNode(startNodeId);
     const endNode = this.graph.getNode(endNodeId);
 
     if (!startNode || !endNode) {
       throw new Error(`[PathFinder] Cannot calculate route. Start or end node not found.`);
     }
+     // early return if start === end
+  if (startNodeId === endNodeId) {
+    return { nodes: [startNode], totalDistance: 0 };
+  }
+
 
     // gScore = actual cost from start to this node
     // fScore = gScore + heuristic (estimated cost to end)
