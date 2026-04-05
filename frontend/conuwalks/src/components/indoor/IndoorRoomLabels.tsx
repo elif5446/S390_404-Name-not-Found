@@ -9,7 +9,7 @@ const normalize = (label: string) => label.replace("Room ", "");
 /* ------------------------- Regex Helpers ------------------------- */
 
 const is961Special = (room: string) =>
-  /^961\.(1[9]|2[0-9]|3[0-3])$/.test(room);
+  /^961\.(19|2\d|3[0-3])$/.test(room);
 
 const is961Small = (room: string) =>
   /^961\.(0[1-9]|1[0-8])$/.test(room);
