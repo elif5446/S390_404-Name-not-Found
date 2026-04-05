@@ -37,7 +37,7 @@ interface IndoorDirectionsPopupProps {
   finishLabel?: string;
 }
 
-// module-scope helpers to reduce cognitive complexity
+// module-scope helpers to reduce cognitive complexity 
 
 const getNavBtnBgColor = (disabled: boolean): string => (disabled ? "#DDD" : "#B03060");
 
@@ -46,7 +46,8 @@ const getNavBtnTextColor = (disabled: boolean, isDark: boolean, disabledLightCol
   return "white";
 };
 
-const getNextBtnLabel = (isLastStep: boolean, finishLabel?: string): string => (isLastStep ? finishLabel || "Finish" : "Next");
+const getNextBtnLabel = (isLastStep: boolean, finishLabel?: string): string =>
+  isLastStep ? finishLabel || "Finish" : "Next";
 
 const CloseIcon = ({ isDark }: { isDark: boolean }) =>
   Platform.OS === "ios" ? (
@@ -96,7 +97,7 @@ const getStepTextStyle = (isActive: boolean, isHighlighted: boolean, isDark: boo
   return {
     flex: 1,
     fontSize: isActive ? 18 : 15,
-    fontWeight: isActive ? ("800" as const) : ("500" as const),
+    fontWeight: isActive ? "800" as const : "500" as const,
     color: isHighlighted ? "#C2185B" : unhighlightedColor,
   };
 };
@@ -115,131 +116,17 @@ const IndoorStepItem = ({ step, index, totalSteps, activeStepIndex, isDark, onLa
   const isLast = index === totalSteps - 1;
   const isHighlighted = isActive || isLast;
   return (
-    <View onLayout={e => onLayout(index, e.nativeEvent.layout.y)} style={getStepContainerStyle(isActive, isLast, isDark)}>
+    <View
+      onLayout={e => onLayout(index, e.nativeEvent.layout.y)}
+      style={getStepContainerStyle(isActive, isLast, isDark)}
+    >
       <View style={getStepCircleStyle(isActive, isHighlighted, isDark)}>
         <Text style={getStepIndexTextStyle(isActive, isHighlighted, isDark)}>{index + 1}</Text>
       </View>
-      <Text testID={`nav-step-text-${index}`} style={getStepTextStyle(isActive, isHighlighted, isDark)}>
-        {step.text}
-      </Text>
+      <Text style={getStepTextStyle(isActive, isHighlighted, isDark)}>{step.text}</Text>
     </View>
   );
 };
-
-interface IndoorDirectionsHeaderProps {
-  isDark: boolean;
-  onToggleHeight: () => void;
-  onDismiss: () => void;
-}
-
-const IndoorDirectionsHeader = ({ isDark, onToggleHeight, onDismiss }: IndoorDirectionsHeaderProps) => (
-  <TouchableWithoutFeedback onPress={onToggleHeight}>
-    <View
-      style={{
-        paddingBottom: 12,
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderBottomColor: isDark ? "#4B3D44" : "#E8C8D7",
-      }}
-    >
-      <BottomSheetDragHandle isDark={isDark} onToggleHeight={onToggleHeight} />
-      <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 16, paddingTop: 4 }}>
-        {/* Close Button */}
-        <TouchableOpacity
-          onPress={onDismiss}
-          style={{
-            marginRight: 12,
-            width: 30,
-            height: 30,
-            borderRadius: 15,
-            backgroundColor: isDark ? "#00000031" : "#85858522",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-          accessibilityRole="button"
-          accessibilityLabel="Close indoor directions"
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          testID="indoor-directions-popup-close-btn"
-        >
-          <CloseIcon isDark={isDark} />
-        </TouchableOpacity>
-        {/* Icon */}
-        <View
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 18,
-            backgroundColor: "#C2185B",
-            alignItems: "center",
-            justifyContent: "center",
-            marginRight: 10,
-          }}
-        >
-          <Ionicons name="walk" size={17} color="#FFFFFF" />
-        </View>
-        {/* Title Content */}
-        <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 16, fontWeight: "700", color: "#C2185B" }}>Indoor directions</Text>
-          <Text style={{ fontSize: 12, color: isDark ? "#C8BDC2" : "#6F6F6F", marginTop: 2 }}>
-            Step-by-step indoor route
-          </Text>
-        </View>
-      </View>
-    </View>
-  </TouchableWithoutFeedback>
-);
-
-interface IndoorNavFooterProps {
-  isDark: boolean;
-  disablePrev: boolean;
-  disableNext: boolean;
-  isLastStep: boolean;
-  finishLabel?: string;
-  onPrevPress: () => void;
-  onNextPress: () => void;
-}
-
-const IndoorNavFooter = ({ isDark, disablePrev, disableNext, isLastStep, finishLabel, onPrevPress, onNextPress }: IndoorNavFooterProps) => (
-  <View
-    style={{
-      position: "absolute",
-      bottom: Platform.OS === "ios" ? 40 : 24,
-      left: 16,
-      right: 16,
-      backgroundColor: isDark ? "#1F1A1D" : "#FFFFFF",
-      borderRadius: 16,
-      gap: 12,
-      padding: 8,
-      flexDirection: "row",
-      justifyContent: "space-between",
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.2,
-      shadowRadius: 8,
-      elevation: 10,
-      borderWidth: 1,
-      borderColor: isDark ? "#4B3D44" : "#FCE4EC",
-    }}
-  >
-    <TouchableOpacity
-      onPress={onPrevPress}
-      disabled={disablePrev}
-      style={[styles.navBtn, { backgroundColor: getNavBtnBgColor(disablePrev) }]}
-      testID="nav-prev-button"
-    >
-      <Text style={{ color: getNavBtnTextColor(disablePrev, isDark), fontWeight: "700" }}>Previous</Text>
-    </TouchableOpacity>
-    <TouchableOpacity
-      onPress={onNextPress}
-      disabled={disableNext}
-      style={[styles.navBtn, { backgroundColor: getNavBtnBgColor(disableNext) }]}
-      testID="nav-next-button"
-    >
-      <Text style={{ color: getNavBtnTextColor(disableNext, isDark, "#FFF"), fontWeight: "700" }}>
-        {getNextBtnLabel(isLastStep, finishLabel)}
-      </Text>
-    </TouchableOpacity>
-  </View>
-);
 
 const IndoorDirectionsPopup = forwardRef<IndoorDirectionsPopupHandle, IndoorDirectionsPopupProps>(
   ({ visible, steps, activeStepIndex, onNextStep, onPrevStep, onClose, onFinish, finishLabel }, ref) => {
@@ -304,15 +191,6 @@ const IndoorDirectionsPopup = forwardRef<IndoorDirectionsPopupHandle, IndoorDire
       onNextStep();
     }, [isLastStep, onFinish, snapTo, SNAP_OFFSET, onNextStep]);
 
-    const handleDismiss = useCallback(() => dismiss(true), [dismiss]);
-    const handlePrevPress = useCallback(() => {
-      snapTo(SNAP_OFFSET);
-      onPrevStep();
-    }, [snapTo, SNAP_OFFSET, onPrevStep]);
-    const handleStepLayout = useCallback((idx: number, y: number) => {
-      stepLayouts.current[idx] = y;
-    }, []);
-
     if (!visible || steps.length === 0) return null;
 
     return (
@@ -366,7 +244,83 @@ const IndoorDirectionsPopup = forwardRef<IndoorDirectionsPopupHandle, IndoorDire
           />
 
           <View {...handlePanResponder.panHandlers}>
-            <IndoorDirectionsHeader isDark={isDark} onToggleHeight={handleToggleHeight} onDismiss={handleDismiss} />
+            <TouchableWithoutFeedback onPress={handleToggleHeight}>
+              <View
+                style={{
+                  paddingBottom: 12,
+                  borderBottomWidth: StyleSheet.hairlineWidth,
+                  borderBottomColor: isDark ? "#4B3D44" : "#E8C8D7",
+                }}
+              >
+                <BottomSheetDragHandle isDark={isDark} onToggleHeight={handleToggleHeight} />
+
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    paddingHorizontal: 16,
+                    paddingTop: 4,
+                  }}
+                >
+                  {/* Close Button */}
+                  <TouchableOpacity
+                    onPress={() => dismiss(true)}
+                    style={{
+                      marginRight: 12,
+                      width: 30,
+                      height: 30,
+                      borderRadius: 15,
+                      backgroundColor: isDark ? "#00000031" : "#85858522",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Close indoor directions"
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                    testID="indoor-directions-popup-close-btn"
+                  >
+                    <CloseIcon isDark={isDark} />
+                  </TouchableOpacity>
+
+                  {/* Icon */}
+                  <View
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 18,
+                      backgroundColor: "#C2185B",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      marginRight: 10,
+                    }}
+                  >
+                    <Ionicons name="walk" size={17} color="#FFFFFF" />
+                  </View>
+
+                  {/* Title Content */}
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "700",
+                        color: "#C2185B",
+                      }}
+                    >
+                      Indoor directions
+                    </Text>
+                    <Text
+                      style={{
+                        fontSize: 12,
+                        color: isDark ? "#C8BDC2" : "#6F6F6F",
+                        marginTop: 2,
+                      }}
+                    >
+                      Step-by-step indoor route
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
           </View>
 
           <View style={{ flex: 1 }} {...scrollAreaPanResponder.panHandlers}>
@@ -380,31 +334,107 @@ const IndoorDirectionsPopup = forwardRef<IndoorDirectionsPopupHandle, IndoorDire
               showsVerticalScrollIndicator={false}
               nestedScrollEnabled
             >
-              {steps.map((step, index) => (
-                <IndoorStepItem
-                  key={step.id}
-                  step={step}
-                  index={index}
-                  totalSteps={steps.length}
-                  activeStepIndex={activeStepIndex}
-                  isDark={isDark}
-                  onLayout={handleStepLayout}
-                />
-              ))}
+              {steps.map((step, index) => {
+                const isLast = index === steps.length - 1;
+                const isActive = index === activeStepIndex;
+
+                return (
+                  <View
+                    key={step.id}
+                    onLayout={e => {
+                      stepLayouts.current[index] = e.nativeEvent.layout.y;
+                    }}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      marginBottom: isLast ? 0 : 16,
+                      opacity: isActive ? 1 : 0.3,
+                      backgroundColor: isActive ? (isDark ? "#2A2025" : "#FFF0F5") : "transparent",
+                      padding: isActive ? 18 : 10,
+                      borderRadius: 14,
+                      transform: [{ scale: isActive ? 1.02 : 1 }],
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: isActive ? 32 : 24,
+                        height: isActive ? 32 : 24,
+                        borderRadius: isActive ? 16 : 12,
+                        backgroundColor: isActive || isLast ? "#C2185B" : isDark ? "#4B3D44" : "#FCE4EC",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        marginRight: 14,
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: isActive ? 15 : 12,
+                          fontWeight: "900",
+                          color: isActive || isLast ? "#FFFFFF" : isDark ? "#E8C8D7" : "#C2185B",
+                        }}
+                      >
+                        {index + 1}
+                      </Text>
+                    </View>
+
+                    <Text
+                      testID={`nav-step-text-${index}`}
+                      style={{
+                        flex: 1,
+                        fontSize: isActive ? 18 : 15,
+                        fontWeight: isActive ? "800" : "500",
+                        color: isActive || isLast ? "#C2185B" : isDark ? "#E0D7DB" : "#4A4A4A",
+                      }}
+                    >
+                      {step.text}
+                    </Text>
+                  </View>
+                );
+              })}
             </ScrollView>
           </View>
         </Animated.View>
 
         {/* Navigation Controls Sticky Footer */}
-        <IndoorNavFooter
-          isDark={isDark}
-          disablePrev={disablePrev}
-          disableNext={disableNext}
-          isLastStep={isLastStep}
-          finishLabel={finishLabel}
-          onPrevPress={handlePrevPress}
-          onNextPress={handleNextPress}
-        />
+        <View
+          style={{
+            position: "absolute",
+            bottom: Platform.OS === "ios" ? 40 : 24,
+            left: 16,
+            right: 16,
+            backgroundColor: isDark ? "#1F1A1D" : "#FFFFFF",
+            borderRadius: 16,
+            gap: 12,
+            padding: 8,
+            flexDirection: "row",
+            justifyContent: "space-between",
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.2,
+            shadowRadius: 8,
+            elevation: 10,
+            borderWidth: 1,
+            borderColor: isDark ? "#4B3D44" : "#FCE4EC",
+          }}
+        >
+          <TouchableOpacity
+            onPress={() => { snapTo(SNAP_OFFSET); onPrevStep(); }}
+            disabled={disablePrev}
+            style={[styles.navBtn, { backgroundColor: getNavBtnBgColor(disablePrev) }]}
+          >
+            <Text style={{ color: getNavBtnTextColor(disablePrev, isDark), fontWeight: "700" }}>Previous</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={handleNextPress}
+            disabled={disableNext}
+            style={[styles.navBtn, { backgroundColor: getNavBtnBgColor(disableNext) }]}
+          >
+            <Text style={{ color: getNavBtnTextColor(disableNext, isDark, "#FFF"), fontWeight: "700" }}>
+              {getNextBtnLabel(isLastStep, finishLabel)}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   },
